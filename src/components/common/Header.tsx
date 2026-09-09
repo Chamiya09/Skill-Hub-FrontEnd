@@ -19,9 +19,12 @@ export const Header = () => {
         >
           Home
         </NavLink>
-        <a href="#find-jobs" className="nav-link">
+        <NavLink
+          to="/jobs"
+          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+        >
           Find Jobs
-        </a>
+        </NavLink>
         <NavLink
           to="/about"
           className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}

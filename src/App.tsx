@@ -5,6 +5,9 @@ import { Home } from "./pages/Home";
 import { About } from "./pages/About";
 import { Contact } from "./pages/Contact";
 import { FindJobs } from "./pages/FindJobs";
+import { Login } from "./pages/Login";
+import { Register } from "./pages/Register";
+import { UserManagement } from "./pages/UserManagement";
 import "./App.css";
 
 export default function App() {
@@ -19,6 +22,9 @@ export default function App() {
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/jobs" element={<FindJobs />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/users" element={<UserManagement />} />
             </Routes>
           </main>
         </div>

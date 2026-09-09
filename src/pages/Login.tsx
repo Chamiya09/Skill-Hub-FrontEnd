@@ -4,15 +4,18 @@ import { authApi } from '../services/api';
 import {
   SparkleIcon,
   MailIcon,
+  LockIcon,
   ShieldCheckIcon,
   CheckIcon,
   ArrowRightIcon,
+  ArrowLeftIcon,
 } from '../components/common/Icons';
 
 export const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -31,20 +34,36 @@ export const Login = () => {
       setSuccessMessage(`Welcome back, ${response.user.fullName}!`);
       setTimeout(() => {
         navigate('/users');
-      }, 1000);
+      }, 900);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to authenticate. Please check your credentials.');
+      setErrorMessage(err.message || 'Failed to authenticate. Please check your corporate credentials.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-page-container">
-      <div className="auth-card">
+    <div className="auth-viewport-wrapper">
+      <div className="auth-card-premium">
+        {/* Top Navigation & Brand */}
+        <div className="auth-top-nav">
+          <Link to="/" className="auth-back-link">
+            <ArrowLeftIcon />
+            <span>Back to Home</span>
+          </Link>
+          <Link to="/" className="auth-brand-mark">
+            <div className="logo-icon-wrap" style={{ width: '30px', height: '30px', borderRadius: '8px' }}>
+              <SparkleIcon />
+            </div>
+            <span className="brand-name">
+              Skill<span>Hub</span>
+            </span>
+          </Link>
+        </div>
+
         {/* Header Branding */}
         <div className="auth-header">
-          <div className="badge-tag">
+          <div className="badge-tag" style={{ display: 'inline-flex', marginBottom: '12px' }}>
             <SparkleIcon />
             <span>ENTERPRISE PORTAL</span>
           </div>
@@ -54,7 +73,7 @@ export const Login = () => {
           </p>
         </div>
 
-        {/* Error Alert */}
+        {/* Alerts */}
         {errorMessage && (
           <div className="auth-alert-error">
             <span>⚠️</span>
@@ -62,7 +81,6 @@ export const Login = () => {
           </div>
         )}
 
-        {/* Success Alert */}
         {successMessage && (
           <div className="auth-alert-success">
             <CheckIcon />
@@ -71,9 +89,11 @@ export const Login = () => {
         )}
 
         {/* Login Form */}
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form onSubmit={handleSubmit} className="auth-form" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div className="form-group-item">
-            <label htmlFor="loginEmail">Corporate Email Address</label>
+            <label htmlFor="loginEmail" style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
+              Corporate Email Address
+            </label>
             <div className="auth-input-wrapper">
               <span className="auth-input-icon">
                 <MailIcon />
@@ -87,33 +107,78 @@ export const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 className="input-field-standard"
                 style={{ paddingLeft: '42px' }}
+                autoComplete="email"
               />
             </div>
           </div>
 
           <div className="form-group-item">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label htmlFor="loginPassword">Password</label>
-              <a href="#forgot" style={{ fontSize: '12.5px', color: '#00b074', fontWeight: 600, textDecoration: 'none' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label htmlFor="loginPassword" style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                Password
+              </label>
+              <a
+                href="#forgot"
+                onClick={(e) => {
+                  e.preventDefault();
+                  alert('Password reset link will be dispatched to your registered administrator email.');
+                }}
+                style={{ fontSize: '12px', color: '#00b074', fontWeight: 600, textDecoration: 'none' }}
+              >
                 Forgot Password?
               </a>
             </div>
-            <input
-              id="loginPassword"
-              type="password"
-              required
-              placeholder="••••••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input-field-standard"
-            />
+            <div className="auth-input-wrapper">
+              <span className="auth-input-icon">
+                <LockIcon />
+              </span>
+              <input
+                id="loginPassword"
+                type={showPassword ? 'text' : 'password'}
+                required
+                placeholder="••••••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input-field-standard"
+                style={{ paddingLeft: '42px', paddingRight: '40px' }}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  background: 'none',
+                  border: 'none',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  padding: '4px',
+                }}
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
             className="btn-primary"
-            style={{ width: '100%', padding: '14px', borderRadius: '12px', fontSize: '15px', marginTop: '8px' }}
+            style={{
+              width: '100%',
+              padding: '13px',
+              borderRadius: '12px',
+              fontSize: '14.5px',
+              fontWeight: 700,
+              marginTop: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
           >
             {loading ? (
               <span>Authenticating...</span>

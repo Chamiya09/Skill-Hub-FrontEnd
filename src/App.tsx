@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Header } from "./components/common/Header";
 import { Footer } from "./components/common/Footer";
 import { Home } from "./pages/Home";
@@ -10,26 +10,36 @@ import { Register } from "./pages/Register";
 import { UserManagement } from "./pages/UserManagement";
 import "./App.css";
 
+function AppContent() {
+  const location = useLocation();
+  const hideHeaderFooter = location.pathname === "/login" || location.pathname === "/register";
+
+  return (
+    <div className={`page-container ${hideHeaderFooter ? "auth-full-screen" : ""}`}>
+      <div className={`content-wrapper ${hideHeaderFooter ? "auth-wrapper-full" : ""}`}>
+        {!hideHeaderFooter && <Header />}
+        <main className={`main-content ${hideHeaderFooter ? "auth-main-full" : ""}`}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/jobs" element={<FindJobs />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/users" element={<UserManagement />} />
+          </Routes>
+        </main>
+      </div>
+      {!hideHeaderFooter && <Footer />}
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="page-container">
-        <div className="content-wrapper">
-          <Header />
-          <main className="main-content">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/jobs" element={<FindJobs />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/users" element={<UserManagement />} />
-            </Routes>
-          </main>
-        </div>
-        <Footer />
-      </div>
+      <AppContent />
     </BrowserRouter>
   );
 }
+

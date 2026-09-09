@@ -1,5 +1,5 @@
-// API Base URL - Configurable via Vite env or fallback to ASP.NET Core port
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7194/api/v1';
+// API Base URL - Matches ASP.NET Core port from launchSettings.json (http://localhost:5155 or https://localhost:7231)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5155/api/v1';
 
 export interface UserDto {
   id: string;

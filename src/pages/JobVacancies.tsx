@@ -6,11 +6,11 @@ import {
   PlusIcon,
   EditIcon,
   TrashIcon,
-  BriefcaseIcon,
   BuildingIcon,
   MapPinIcon,
   CheckIcon,
 } from '../components/common/Icons';
+import { JobFormModal, type JobFormData } from '../components/jobs/JobFormModal';
 
 export interface JobVacancyItem {
   id: string;
@@ -23,6 +23,9 @@ export interface JobVacancyItem {
   aiMatchScore: number;
   postedDate: string;
   description?: string;
+  benefits?: string;
+  experienceLevel?: string;
+  salaryRange?: string;
 }
 
 const initialVacancies: JobVacancyItem[] = [
@@ -33,10 +36,13 @@ const initialVacancies: JobVacancyItem[] = [
     location: 'Remote (APAC)',
     type: 'Full-time',
     status: 'Active',
+    experienceLevel: 'Senior Level (5+ Yrs)',
+    salaryRange: '$135,000 - $175,000 USD / yr',
     applicantsCount: 42,
     aiMatchScore: 96,
     postedDate: '2026-09-08',
     description: 'Lead architecture and development of scalable cloud microservices and responsive React web applications.',
+    benefits: 'Remote flexibility, health insurance, equity options, and annual learning allowance.',
   },
   {
     id: 'vac-2',
@@ -45,10 +51,13 @@ const initialVacancies: JobVacancyItem[] = [
     location: 'San Francisco, CA (Hybrid)',
     type: 'Full-time',
     status: 'Active',
+    experienceLevel: 'Lead / Staff (7+ Yrs)',
+    salaryRange: '$220,000 - $280,000 USD / yr',
     applicantsCount: 28,
     aiMatchScore: 92,
     postedDate: '2026-09-06',
     description: 'Design distributed model training pipelines, vector databases, and real-time LLM inference clusters.',
+    benefits: 'Top-tier base salary, founding-tier equity, and dual RTX workstations.',
   },
   {
     id: 'vac-3',
@@ -57,10 +66,13 @@ const initialVacancies: JobVacancyItem[] = [
     location: 'London, UK (Remote)',
     type: 'Full-time',
     status: 'Active',
+    experienceLevel: 'Senior Level (5+ Yrs)',
+    salaryRange: '£95,000 - £125,000 GBP / yr',
     applicantsCount: 35,
     aiMatchScore: 88,
     postedDate: '2026-09-03',
     description: 'Own the unified design system, enterprise UI components, and end-to-end recruitment UX workflows.',
+    benefits: 'Generous pension, private medical cover, and full home office budget.',
   },
   {
     id: 'vac-4',
@@ -69,10 +81,13 @@ const initialVacancies: JobVacancyItem[] = [
     location: 'Remote (Global)',
     type: 'Contract',
     status: 'Active',
+    experienceLevel: 'Principal / Executive (10+ Yrs)',
+    salaryRange: '$110 - $145 USD / hr',
     applicantsCount: 19,
     aiMatchScore: 94,
     postedDate: '2026-08-30',
     description: 'Manage multi-region AWS/GCP clusters, SOC-2 compliance automation, and zero-trust perimeter security.',
+    benefits: 'Competitive rolling contract rate with annual retention bonuses.',
   },
   {
     id: 'vac-5',
@@ -81,10 +96,13 @@ const initialVacancies: JobVacancyItem[] = [
     location: 'New York, NY',
     type: 'Full-time',
     status: 'Draft',
+    experienceLevel: 'Senior Level (5+ Yrs)',
+    salaryRange: '$160,000 - $200,000 USD / yr',
     applicantsCount: 0,
     aiMatchScore: 0,
     postedDate: '2026-09-09',
     description: 'Define product vision and roadmap for next-generation automated candidate matching and interview orchestration.',
+    benefits: 'Comprehensive healthcare, 401(k) matching, and parental leave.',
   },
   {
     id: 'vac-6',
@@ -93,10 +111,13 @@ const initialVacancies: JobVacancyItem[] = [
     location: 'Austin, TX',
     type: 'Full-time',
     status: 'Closed',
+    experienceLevel: 'Entry Level (0-2 Yrs)',
+    salaryRange: '$75,000 - $95,000 USD / yr',
     applicantsCount: 64,
     aiMatchScore: 85,
     postedDate: '2026-08-15',
     description: 'Position successfully filled by Skill Hub AI matching engine candidate.',
+    benefits: 'Mentorship program, learning stipend, and paid leave.',
   },
 ];
 
@@ -106,6 +127,10 @@ export const JobVacancies = () => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [departmentFilter, setDepartmentFilter] = useState('All');
   const [successToast, setSuccessToast] = useState<string | null>(null);
+
+  // Multi-Step Modal State
+  const [isJobModalOpen, setIsJobModalOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState<JobVacancyItem | null>(null);
 
   // Modal states for Direct Delete
   const [vacancyToDelete, setVacancyToDelete] = useState<JobVacancyItem | null>(null);
@@ -136,6 +161,61 @@ export const JobVacancies = () => {
     setTimeout(() => {
       setSuccessToast(null);
     }, 4000);
+  };
+
+  const handleOpenCreate = () => {
+    setEditingJob(null);
+    setIsJobModalOpen(true);
+  };
+
+  const handleOpenEdit = (job: JobVacancyItem) => {
+    setEditingJob(job);
+    setIsJobModalOpen(true);
+  };
+
+  const handleJobModalSubmit = (data: JobFormData) => {
+    if (editingJob) {
+      // Update existing
+      setVacancies((prev) =>
+        prev.map((v) =>
+          v.id === editingJob.id
+            ? {
+                ...v,
+                title: data.title,
+                department: data.department,
+                location: data.location,
+                type: data.type,
+                status: data.status,
+                experienceLevel: data.experienceLevel,
+                salaryRange: data.salaryRange,
+                description: data.description,
+                benefits: data.benefits,
+              }
+            : v
+        )
+      );
+      showToast(`Vacancy "${data.title}" updated successfully.`);
+    } else {
+      // Create new
+      const newJob: JobVacancyItem = {
+        id: `vac-${Date.now()}`,
+        title: data.title,
+        department: data.department,
+        location: data.location,
+        type: data.type,
+        status: data.status,
+        experienceLevel: data.experienceLevel,
+        salaryRange: data.salaryRange,
+        applicantsCount: 0,
+        aiMatchScore: 92,
+        postedDate: new Date().toISOString().split('T')[0],
+        description: data.description,
+        benefits: data.benefits,
+      };
+      setVacancies([newJob, ...vacancies]);
+      showToast(`New vacancy "${data.title}" published successfully.`);
+    }
+    setIsJobModalOpen(false);
   };
 
   // Direct Physical Deletion Handler
@@ -173,13 +253,14 @@ export const JobVacancies = () => {
           </p>
         </div>
 
-        <Link
-          to="/dashboard/jobs/new"
+        <button
+          type="button"
           className="btn-primary vacancies-create-btn"
+          onClick={handleOpenCreate}
         >
           <PlusIcon />
           <span>Create New Job</span>
-        </Link>
+        </button>
       </div>
 
       {/* =========================================================
@@ -345,14 +426,15 @@ export const JobVacancies = () => {
                     {/* Actions Column: Edit & Direct Delete */}
                     <td style={{ textAlign: 'right' }}>
                       <div className="actions-cell-group">
-                        <Link
-                          to={`/dashboard/jobs/${job.id}/edit`}
+                        <button
+                          type="button"
                           className="action-icon-btn edit-btn"
                           title="Edit Job Vacancy"
+                          onClick={() => handleOpenEdit(job)}
                           aria-label={`Edit ${job.title}`}
                         >
                           <EditIcon />
-                        </Link>
+                        </button>
                         <button
                           type="button"
                           className="action-icon-btn delete-btn"
@@ -368,19 +450,18 @@ export const JobVacancies = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="vacancies-empty-cell">
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '48px 24px' }}>
                     <div className="vacancies-empty-state">
                       <div className="empty-icon-circle">
-                        <BriefcaseIcon />
+                        <SearchIcon />
                       </div>
-                      <h3 className="empty-state-title">No job vacancies found</h3>
+                      <h4 className="empty-state-title">No job vacancies found</h4>
                       <p className="empty-state-desc">
-                        No requisitions matched your search query or active filter selections.
+                        No requisitions matched your search query or filter selection.
                       </p>
                       <button
                         type="button"
-                        className="btn-secondary"
-                        style={{ marginTop: '12px' }}
+                        className="btn-secondary empty-reset-btn"
                         onClick={() => {
                           setSearchQuery('');
                           setStatusFilter('All');
@@ -432,6 +513,31 @@ export const JobVacancies = () => {
           </div>
         </div>
       )}
+
+      {/* =========================================================
+          5. MULTI-STEP JOB FORM MODAL (CREATE & EDIT)
+          ========================================================= */}
+      <JobFormModal
+        isOpen={isJobModalOpen}
+        onClose={() => setIsJobModalOpen(false)}
+        onSubmit={handleJobModalSubmit}
+        initialData={
+          editingJob
+            ? {
+                title: editingJob.title,
+                department: editingJob.department,
+                location: editingJob.location,
+                type: editingJob.type,
+                status: editingJob.status,
+                experienceLevel: editingJob.experienceLevel || 'Senior Level (5+ Yrs)',
+                salaryRange: editingJob.salaryRange || '$130,000 - $170,000 USD / yr',
+                description: editingJob.description || '',
+                benefits: editingJob.benefits || '',
+              }
+            : null
+        }
+        isEditMode={!!editingJob}
+      />
     </div>
   );
 };

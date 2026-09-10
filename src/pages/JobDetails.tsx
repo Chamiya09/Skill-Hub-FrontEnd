@@ -18,6 +18,7 @@ import {
   ShieldCheckIcon,
   ClockIcon,
 } from '../components/common/Icons';
+import { JobFormModal, type JobFormData } from '../components/jobs/JobFormModal';
 
 export interface JobDetailModel {
   id: string;
@@ -377,9 +378,33 @@ export const JobDetails = () => {
     };
   }, [id]);
 
-  const [job] = useState<JobDetailModel>(initialJob);
+  const [job, setJob] = useState<JobDetailModel>(initialJob);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [toastMessage] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3500);
+  };
+
+  const handleEditSubmit = (data: JobFormData) => {
+    setJob((prev) => ({
+      ...prev,
+      title: data.title,
+      department: data.department,
+      location: data.location,
+      type: data.type,
+      status: data.status,
+      experienceLevel: data.experienceLevel,
+      salaryRange: data.salaryRange,
+      overview: data.description.replace(/<[^>]*>?/gm, ' ').slice(0, 200) + '...',
+    }));
+    setIsEditModalOpen(false);
+    showToast(`Job vacancy "${data.title}" updated successfully.`);
+  };
 
   // Direct Physical Deletion Handler
   const handleConfirmDirectDelete = () => {
@@ -490,7 +515,7 @@ export const JobDetails = () => {
             <button
               type="button"
               className="btn-secondary job-action-btn"
-              onClick={() => navigate(`/dashboard/jobs/${job.id}/edit`)}
+              onClick={() => setIsEditModalOpen(true)}
             >
               <EditIcon />
               <span>Edit Job</span>
@@ -823,6 +848,27 @@ export const JobDetails = () => {
           </div>
         </div>
       )}
+
+      {/* =========================================================
+          5. MULTI-STEP EDIT JOB FORM MODAL
+          ========================================================= */}
+      <JobFormModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleEditSubmit}
+        initialData={{
+          title: job.title,
+          department: job.department,
+          location: job.location,
+          type: job.type,
+          status: job.status,
+          experienceLevel: job.experienceLevel,
+          salaryRange: job.salaryRange,
+          description: job.overview,
+          benefits: job.benefits ? job.benefits.join('<br/>') : '',
+        }}
+        isEditMode={true}
+      />
     </div>
   );
 };

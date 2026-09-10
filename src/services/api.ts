@@ -87,6 +87,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     let errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
     try {
       const errorData = await response.json();
+      console.error('Server Error Data:', errorData);
       if (errorData && errorData.message) {
         errorMessage = errorData.message;
       } else if (errorData && errorData.errors) {

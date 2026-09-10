@@ -10,8 +10,6 @@ import {
   LightningIcon,
   TrendUpIcon,
   SettingsIcon,
-  PlusIcon,
-  SearchIcon,
   MenuIcon,
   XIcon,
   LogOutIcon,
@@ -49,8 +47,33 @@ export const Dashboard = () => {
   const [currentUser, setCurrentUser] = useState<UserDto | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'vacancies' | 'pipelines' | 'candidates' | 'settings'>('overview')
-  const [searchQuery, setSearchQuery] = useState('')
   const [selectedFilter, setSelectedFilter] = useState('All')
+
+  // Real-time Date and Time state
+  const [currentDateTime, setCurrentDateTime] = useState<Date>(new Date())
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date())
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  // Format cleanly: e.g. Friday, Sep 11, 2026 | 10:30 AM
+  const formattedDateTime = (() => {
+    const dateStr = currentDateTime.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
+    const timeStr = currentDateTime.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    })
+    return `${dateStr} | ${timeStr}`
+  })()
 
   useEffect(() => {
     const user = authStorage.getUser()
@@ -73,12 +96,12 @@ export const Dashboard = () => {
       id: 'job-1',
       title: 'Senior Full Stack Engineer (React / .NET)',
       department: 'Engineering',
-      location: 'Remote / Singapore',
+      location: 'Remote (APAC)',
       type: 'Full-time',
       applicantsCount: 42,
       aiMatchScore: 96,
       status: 'Active',
-      postedDate: '2 days ago',
+      postedDate: '2d ago',
     },
     {
       id: 'job-2',
@@ -89,65 +112,65 @@ export const Dashboard = () => {
       applicantsCount: 28,
       aiMatchScore: 92,
       status: 'Active',
-      postedDate: '4 days ago',
+      postedDate: '4d ago',
     },
     {
       id: 'job-3',
       title: 'Lead Product Designer (Design Systems)',
-      department: 'Product Design',
+      department: 'Product',
       location: 'London, UK (Remote)',
       type: 'Full-time',
-      applicantsCount: 35,
-      aiMatchScore: 88,
+      applicantsCount: 19,
+      aiMatchScore: 89,
       status: 'Active',
-      postedDate: '1 week ago',
+      postedDate: '1w ago',
     },
     {
       id: 'job-4',
-      title: 'Cloud DevOps & Kubernetes Engineer',
+      title: 'Enterprise DevOps & Security Engineer',
       department: 'Infrastructure',
-      location: 'Remote',
+      location: 'New York, NY (Onsite)',
       type: 'Contract',
-      applicantsCount: 19,
-      aiMatchScore: 94,
-      status: 'Active',
-      postedDate: '1 week ago',
+      applicantsCount: 14,
+      aiMatchScore: 85,
+      status: 'Draft',
+      postedDate: '1w ago',
     },
   ]
 
   const sampleCandidates: CandidateActivity[] = [
     {
       id: 'cand-1',
-      candidateName: 'Alexander Wright',
+      candidateName: 'Alexander Hayes',
       role: 'Senior Full Stack Engineer',
       matchScore: 98,
-      stage: 'Technical Round',
-      appliedTime: '25m ago',
-      avatarBg: '#3b82f6',
+      stage: 'AI Screened',
+      appliedTime: '10m ago',
+      avatarBg: '#00b074',
     },
     {
       id: 'cand-2',
-      candidateName: 'Sophia Lin, PhD',
-      role: 'Staff AI Infrastructure Architect',
+      candidateName: 'Dr. Elena Rostova',
+      role: 'Staff AI / ML Infrastructure Architect',
       matchScore: 95,
-      stage: 'Executive Review',
-      appliedTime: '2h ago',
-      avatarBg: '#10b981',
+      stage: 'Technical Round',
+      appliedTime: '1h ago',
+      avatarBg: '#3b82f6',
     },
     {
       id: 'cand-3',
       candidateName: 'Marcus Vance',
       role: 'Lead Product Designer',
       matchScore: 91,
-      stage: 'AI Screened',
-      appliedTime: '4h ago',
+      stage: 'Executive Review',
+      appliedTime: '3h ago',
       avatarBg: '#8b5cf6',
     },
     {
       id: 'cand-4',
-      candidateName: 'Elena Rostova',
-      role: 'Cloud DevOps Engineer',
-      matchScore: 94,
+      candidateName: 'Sophia Lin',
+      role: 'Enterprise DevOps & Security Engineer',
+      matchScore: 88,
       stage: 'Offer Sent',
       appliedTime: 'Yesterday',
       avatarBg: '#f59e0b',
@@ -155,11 +178,8 @@ export const Dashboard = () => {
   ]
 
   const filteredVacancies = sampleVacancies.filter((v) => {
-    const matchesSearch =
-      v.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.department.toLowerCase().includes(searchQuery.toLowerCase())
-    if (selectedFilter === 'All') return matchesSearch
-    return matchesSearch && v.department.toLowerCase().includes(selectedFilter.toLowerCase())
+    if (selectedFilter === 'All') return true
+    return v.department.toLowerCase().includes(selectedFilter.toLowerCase())
   })
 
   const companyDisplayName = currentUser?.companyName || 'Corporate Employer'
@@ -349,33 +369,12 @@ export const Dashboard = () => {
           </div>
 
           <div className="topbar-right">
-            {/* Global ATS Search Bar */}
-            <div className="topbar-search-box">
-              <SearchIcon />
-              <input
-                type="text"
-                placeholder="Search candidates, vacancies, skills..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="topbar-search-input"
-              />
+            <div className="topbar-live-clock">
+              <span className="topbar-clock-icon">
+                <ClockIcon />
+              </span>
+              <span>{formattedDateTime}</span>
             </div>
-
-            {/* Public Portal Link */}
-            <Link to="/jobs" className="topbar-link-btn" title="View Public Job Board">
-              <BriefcaseIcon />
-              <span className="desktop-only">Public Portal</span>
-            </Link>
-
-            {/* Post Job Quick CTA */}
-            <button
-              type="button"
-              className="btn-primary dashboard-post-btn"
-              onClick={() => setActiveTab('vacancies')}
-            >
-              <PlusIcon />
-              <span>Post Vacancy</span>
-            </button>
           </div>
         </header>
 

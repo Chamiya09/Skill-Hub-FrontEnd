@@ -14,7 +14,6 @@ import {
   EditIcon,
   TrashIcon,
   CheckIcon,
-  XIcon,
   KanbanIcon,
   ShieldCheckIcon,
   ClockIcon,
@@ -378,60 +377,9 @@ export const JobDetails = () => {
     };
   }, [id]);
 
-  const [job, setJob] = useState<JobDetailModel>(initialJob);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [job] = useState<JobDetailModel>(initialJob);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Edit form state
-  const [editForm, setEditForm] = useState({
-    title: job.title,
-    department: job.department,
-    location: job.location,
-    type: job.type,
-    status: job.status,
-    salaryRange: job.salaryRange,
-    experienceLevel: job.experienceLevel,
-    overview: job.overview,
-  });
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 3500);
-  };
-
-  const handleOpenEdit = () => {
-    setEditForm({
-      title: job.title,
-      department: job.department,
-      location: job.location,
-      type: job.type,
-      status: job.status,
-      salaryRange: job.salaryRange,
-      experienceLevel: job.experienceLevel,
-      overview: job.overview,
-    });
-    setIsEditModalOpen(true);
-  };
-
-  const handleSaveEdit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setJob((prev) => ({
-      ...prev,
-      title: editForm.title,
-      department: editForm.department,
-      location: editForm.location,
-      type: editForm.type,
-      status: editForm.status,
-      salaryRange: editForm.salaryRange,
-      experienceLevel: editForm.experienceLevel,
-      overview: editForm.overview,
-    }));
-    setIsEditModalOpen(false);
-    showToast(`Job vacancy "${editForm.title}" updated successfully.`);
-  };
+  const [toastMessage] = useState<string | null>(null);
 
   // Direct Physical Deletion Handler
   const handleConfirmDirectDelete = () => {
@@ -542,7 +490,7 @@ export const JobDetails = () => {
             <button
               type="button"
               className="btn-secondary job-action-btn"
-              onClick={handleOpenEdit}
+              onClick={() => navigate(`/dashboard/jobs/${job.id}/edit`)}
             >
               <EditIcon />
               <span>Edit Job</span>
@@ -828,182 +776,7 @@ export const JobDetails = () => {
       </div>
 
       {/* =========================================================
-          4. EDIT VACANCY MODAL
-          ========================================================= */}
-      {isEditModalOpen && (
-        <div className="modal-backdrop-overlay" onClick={() => setIsEditModalOpen(false)}>
-          <div
-            className="vacancies-form-modal job-edit-modal-card"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="form-modal-header">
-              <div className="modal-title-wrap">
-                <div className="modal-icon-badge">
-                  <EditIcon />
-                </div>
-                <div>
-                  <h3 className="form-modal-title">Edit Job Vacancy</h3>
-                  <p className="form-modal-desc">
-                    Update position details, requirements, and hiring status.
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="modal-close-btn"
-                onClick={() => setIsEditModalOpen(false)}
-              >
-                <XIcon />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveEdit} className="vacancies-modal-form">
-              {/* Job Title */}
-              <div className="form-group-box">
-                <label className="form-field-label">
-                  Job Title <span className="text-red-500">*</span>
-                </label>
-                <div className="form-input-wrapper">
-                  <input
-                    type="text"
-                    required
-                    value={editForm.title}
-                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                    className="form-text-input"
-                  />
-                </div>
-              </div>
-
-              {/* Department & Location Grid */}
-              <div className="form-two-col-grid">
-                <div className="form-group-box">
-                  <label className="form-field-label">
-                    Department <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={editForm.department}
-                    onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
-                    className="form-select-input"
-                  >
-                    <option value="Engineering">Engineering</option>
-                    <option value="AI Research">AI Research</option>
-                    <option value="Product Design">Product Design</option>
-                    <option value="Product">Product</option>
-                    <option value="Infrastructure">Infrastructure</option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Sales & GTM">Sales & GTM</option>
-                  </select>
-                </div>
-
-                <div className="form-group-box">
-                  <label className="form-field-label">
-                    Location <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editForm.location}
-                    onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-                    className="form-text-input"
-                  />
-                </div>
-              </div>
-
-              {/* Type & Status Grid */}
-              <div className="form-two-col-grid">
-                <div className="form-group-box">
-                  <label className="form-field-label">Employment Type</label>
-                  <select
-                    value={editForm.type}
-                    onChange={(e) =>
-                      setEditForm({
-                        ...editForm,
-                        type: e.target.value as 'Full-time' | 'Contract' | 'Part-time' | 'Remote',
-                      })
-                    }
-                    className="form-select-input"
-                  >
-                    <option value="Full-time">Full-time</option>
-                    <option value="Contract">Contract</option>
-                    <option value="Part-time">Part-time</option>
-                    <option value="Remote">Remote</option>
-                  </select>
-                </div>
-
-                <div className="form-group-box">
-                  <label className="form-field-label">Vacancy Status</label>
-                  <select
-                    value={editForm.status}
-                    onChange={(e) =>
-                      setEditForm({
-                        ...editForm,
-                        status: e.target.value as 'Active' | 'Draft' | 'Closed',
-                      })
-                    }
-                    className="form-select-input"
-                  >
-                    <option value="Active">Active (Accepting Applicants)</option>
-                    <option value="Draft">Draft (Internal Only)</option>
-                    <option value="Closed">Closed (Position Filled)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Salary & Experience */}
-              <div className="form-two-col-grid">
-                <div className="form-group-box">
-                  <label className="form-field-label">Salary Range</label>
-                  <input
-                    type="text"
-                    value={editForm.salaryRange}
-                    onChange={(e) => setEditForm({ ...editForm, salaryRange: e.target.value })}
-                    className="form-text-input"
-                  />
-                </div>
-
-                <div className="form-group-box">
-                  <label className="form-field-label">Experience Level</label>
-                  <input
-                    type="text"
-                    value={editForm.experienceLevel}
-                    onChange={(e) => setEditForm({ ...editForm, experienceLevel: e.target.value })}
-                    className="form-text-input"
-                  />
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="form-group-box">
-                <label className="form-field-label">Job Overview & Description</label>
-                <textarea
-                  rows={4}
-                  value={editForm.overview}
-                  onChange={(e) => setEditForm({ ...editForm, overview: e.target.value })}
-                  className="form-textarea-input"
-                ></textarea>
-              </div>
-
-              {/* Modal Actions */}
-              <div className="form-modal-actions">
-                <button
-                  type="button"
-                  className="btn-secondary modal-cancel-btn"
-                  onClick={() => setIsEditModalOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary modal-submit-btn">
-                  <CheckIcon />
-                  <span>Save Changes</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================
-          5. DIRECT PHYSICAL DELETION CONFIRMATION MODAL
+          4. DIRECT PHYSICAL DELETION CONFIRMATION MODAL
           ========================================================= */}
       {isDeleteModalOpen && (
         <div className="modal-backdrop-overlay" onClick={() => setIsDeleteModalOpen(false)}>

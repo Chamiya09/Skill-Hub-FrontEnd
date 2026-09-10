@@ -4527,5 +4527,506 @@
   }
 }
 
+/* =========================================================
+   EDIT JOB FORM PAGE (PREMIUM CORPORATE LIGHT THEME)
+   ========================================================= */
+.job-edit-page-wrapper {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  padding: 32px 24px 80px;
+  width: 100%;
+}
+
+.job-edit-inner-container {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.job-edit-top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.job-edit-card-container {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.job-edit-card-header {
+  padding: 32px 36px 24px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.job-edit-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #00b074;
+  background: #e6f9f2;
+  border: 1px solid #bbf7d0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.job-edit-page-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+  margin: 0 0 6px 0;
+}
+
+.job-edit-page-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.job-edit-loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 60px;
+  color: #64748b;
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.job-edit-form-content {
+  padding: 32px 36px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.job-edit-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.job-edit-section-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1e293b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f1f5f9;
+  margin: 0;
+}
+
+.job-edit-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.job-edit-three-col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.form-label-standard {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.select-field-standard {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 13.5px;
+  color: #0f172a;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.select-field-standard:focus {
+  border-color: #00b074;
+  box-shadow: 0 0 0 3px rgba(0, 176, 116, 0.12);
+}
+
+.textarea-field-standard {
+  width: 100%;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 13.5px;
+  color: #0f172a;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.textarea-field-standard:focus {
+  border-color: #00b074;
+  box-shadow: 0 0 0 3px rgba(0, 176, 116, 0.12);
+}
+
+.form-helper-note {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 6px;
+  display: block;
+}
+
+.job-edit-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding-top: 24px;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 6px;
+}
+
+.job-cancel-btn {
+  padding: 11px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.job-save-btn {
+  padding: 11px 28px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px -2px rgba(0, 176, 116, 0.35);
+  transition: all 0.2s ease;
+}
+
+.job-save-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px -2px rgba(0, 176, 116, 0.45);
+}
+
+@media (max-width: 768px) {
+  .job-edit-two-col,
+  .job-edit-three-col {
+    grid-template-columns: 1fr;
+  }
+
+  .job-edit-card-header,
+  .job-edit-form-content {
+    padding: 24px 20px;
+  }
+
+  .job-edit-page-title {
+    font-size: 22px;
+  }
+}
+
+/* =========================================================
+   SHARED REUSABLE JOB FORM & RICH TEXT EDITOR STYLES
+   ========================================================= */
+.job-form-wrapper {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  padding: 32px 24px 80px;
+  width: 100%;
+}
+
+.job-form-inner-container {
+  max-width: 920px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.job-form-top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.job-form-card-container {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.job-form-card-header {
+  padding: 32px 36px 24px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.job-form-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #00b074;
+  background: #e6f9f2;
+  border: 1px solid #bbf7d0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.job-form-page-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+  margin: 0 0 6px 0;
+}
+
+.job-form-page-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.job-form-main-body {
+  padding: 32px 36px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.job-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.job-form-section-title {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f1f5f9;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: #00b074;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.section-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 10px;
+}
+
+.perks-badge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 750;
+  color: #c026d3;
+  background: #fdf4ff;
+  border: 1px solid #f5d0fe;
+  padding: 3px 9px;
+  border-radius: 6px;
+  letter-spacing: 0.4px;
+}
+
+.job-form-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.job-form-three-col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.job-form-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding-top: 24px;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 8px;
+}
+
+/* =========================================================
+   RICH TEXT EDITOR (REACT-QUILL) CUSTOM STYLING OVERRIDES
+   ========================================================= */
+.rich-editor-wrapper {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.rich-editor-wrapper:focus-within {
+  border-color: #00b074;
+  box-shadow: 0 0 0 3px rgba(0, 176, 116, 0.12);
+}
+
+.rich-editor-wrapper .ql-toolbar.ql-snow {
+  background: #f8fafc;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  font-family: inherit;
+}
+
+.rich-editor-wrapper .ql-container.ql-snow {
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.rich-editor-wrapper .ql-editor {
+  min-height: 160px;
+  padding: 14px 16px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #0f172a;
+  font-family: inherit;
+}
+
+.rich-editor-wrapper .ql-editor.ql-blank::before {
+  color: #94a3b8;
+  font-style: normal;
+  left: 16px;
+  right: 16px;
+  font-size: 13.5px;
+}
+
+.rich-editor-wrapper .ql-editor h2 {
+  font-size: 17px;
+  font-weight: 750;
+  color: #0f172a;
+  margin-top: 14px;
+  margin-bottom: 6px;
+}
+
+.rich-editor-wrapper .ql-editor h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+
+.rich-editor-wrapper .ql-editor ul,
+.rich-editor-wrapper .ql-editor ol {
+  padding-left: 20px;
+  margin-bottom: 10px;
+}
+
+.rich-editor-wrapper .ql-editor li {
+  margin-bottom: 4px;
+  color: #334155;
+}
+
+.rich-editor-wrapper .ql-snow .ql-stroke {
+  stroke: #64748b;
+  transition: stroke 0.15s ease;
+}
+
+.rich-editor-wrapper .ql-snow .ql-fill {
+  fill: #64748b;
+  transition: fill 0.15s ease;
+}
+
+.rich-editor-wrapper .ql-snow.ql-toolbar button:hover .ql-stroke,
+.rich-editor-wrapper .ql-snow.ql-toolbar button.ql-active .ql-stroke {
+  stroke: #00b074;
+}
+
+.rich-editor-wrapper .ql-snow.ql-toolbar button:hover .ql-fill,
+.rich-editor-wrapper .ql-snow.ql-toolbar button.ql-active .ql-fill {
+  fill: #00b074;
+}
+
+.rich-editor-wrapper .ql-snow .ql-picker {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.rich-editor-wrapper .ql-snow .ql-picker-label:hover,
+.rich-editor-wrapper .ql-snow .ql-picker-label.ql-active {
+  color: #00b074;
+}
+
+@media (max-width: 768px) {
+  .job-form-two-col,
+  .job-form-three-col {
+    grid-template-columns: 1fr;
+  }
+
+  .job-form-card-header,
+  .job-form-main-body {
+    padding: 24px 20px;
+  }
+
+  .job-form-page-title {
+    font-size: 22px;
+  }
+}
+
+
+
 
 

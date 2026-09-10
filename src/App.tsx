@@ -11,6 +11,8 @@ import { UserManagement } from "./pages/UserManagement";
 import { Dashboard } from "./pages/Dashboard";
 import { JobVacancies } from "./pages/JobVacancies";
 import { JobDetails } from "./pages/JobDetails";
+import { EditJob } from "./pages/EditJob";
+import { CreateJob } from "./pages/CreateJob";
 import "./App.css";
 
 function AppContent() {
@@ -38,10 +40,18 @@ function AppContent() {
             <Route path="/register" element={<Register />} />
             <Route path="/users" element={<UserManagement />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/jobs/new" element={<CreateJob />} />
+            <Route path="/dashboard/jobs/create" element={<CreateJob />} />
             <Route path="/dashboard/jobs/:id" element={<JobDetails />} />
+            <Route path="/dashboard/jobs/:id/edit" element={<EditJob />} />
             <Route path="/vacancies" element={<JobVacancies />} />
+            <Route path="/vacancies/new" element={<CreateJob />} />
+            <Route path="/vacancies/create" element={<CreateJob />} />
             <Route path="/vacancies/:id" element={<JobDetails />} />
+            <Route path="/vacancies/:id/edit" element={<EditJob />} />
+            <Route path="/jobs/create" element={<CreateJob />} />
             <Route path="/jobs/details/:id" element={<JobDetails />} />
+            <Route path="/jobs/details/:id/edit" element={<EditJob />} />
           </Routes>
         </main>
       </div>

@@ -10,7 +10,6 @@ import {
   BuildingIcon,
   MapPinIcon,
   CheckIcon,
-  XIcon,
 } from '../components/common/Icons';
 
 export interface JobVacancyItem {
@@ -108,18 +107,6 @@ export const JobVacancies = () => {
   const [departmentFilter, setDepartmentFilter] = useState('All');
   const [successToast, setSuccessToast] = useState<string | null>(null);
 
-  // Modal states for Create/Edit
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [editingVacancy, setEditingVacancy] = useState<JobVacancyItem | null>(null);
-  const [formData, setFormData] = useState({
-    title: '',
-    department: 'Engineering',
-    location: 'Remote',
-    type: 'Full-time' as 'Full-time' | 'Contract' | 'Part-time' | 'Remote',
-    status: 'Active' as 'Active' | 'Draft' | 'Closed',
-    description: '',
-  });
-
   // Modal states for Direct Delete
   const [vacancyToDelete, setVacancyToDelete] = useState<JobVacancyItem | null>(null);
 
@@ -149,78 +136,6 @@ export const JobVacancies = () => {
     setTimeout(() => {
       setSuccessToast(null);
     }, 4000);
-  };
-
-  // Open modal for Create
-  const handleOpenCreateModal = () => {
-    setEditingVacancy(null);
-    setFormData({
-      title: '',
-      department: 'Engineering',
-      location: 'Remote',
-      type: 'Full-time',
-      status: 'Active',
-      description: '',
-    });
-    setIsFormModalOpen(true);
-  };
-
-  // Open modal for Edit
-  const handleOpenEditModal = (job: JobVacancyItem) => {
-    setEditingVacancy(job);
-    setFormData({
-      title: job.title,
-      department: job.department,
-      location: job.location,
-      type: job.type,
-      status: job.status,
-      description: job.description || '',
-    });
-    setIsFormModalOpen(true);
-  };
-
-  // Submit Create or Edit Form
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.title.trim()) return;
-
-    if (editingVacancy) {
-      // Update existing
-      setVacancies((prev) =>
-        prev.map((v) =>
-          v.id === editingVacancy.id
-            ? {
-                ...v,
-                title: formData.title,
-                department: formData.department,
-                location: formData.location,
-                type: formData.type,
-                status: formData.status,
-                description: formData.description,
-              }
-            : v
-        )
-      );
-      showToast(`Vacancy "${formData.title}" updated successfully.`);
-    } else {
-      // Create new
-      const newJob: JobVacancyItem = {
-        id: `vac-${Date.now()}`,
-        title: formData.title,
-        department: formData.department,
-        location: formData.location,
-        type: formData.type,
-        status: formData.status,
-        applicantsCount: 0,
-        aiMatchScore: 90,
-        postedDate: new Date().toISOString().split('T')[0],
-        description: formData.description,
-      };
-      setVacancies([newJob, ...vacancies]);
-      showToast(`New vacancy "${formData.title}" published successfully.`);
-    }
-
-    setIsFormModalOpen(false);
   };
 
   // Direct Physical Deletion Handler
@@ -258,14 +173,13 @@ export const JobVacancies = () => {
           </p>
         </div>
 
-        <button
-          type="button"
+        <Link
+          to="/dashboard/jobs/new"
           className="btn-primary vacancies-create-btn"
-          onClick={handleOpenCreateModal}
         >
           <PlusIcon />
           <span>Create New Job</span>
-        </button>
+        </Link>
       </div>
 
       {/* =========================================================
@@ -431,15 +345,14 @@ export const JobVacancies = () => {
                     {/* Actions Column: Edit & Direct Delete */}
                     <td style={{ textAlign: 'right' }}>
                       <div className="actions-cell-group">
-                        <button
-                          type="button"
+                        <Link
+                          to={`/dashboard/jobs/${job.id}/edit`}
                           className="action-icon-btn edit-btn"
                           title="Edit Job Vacancy"
-                          onClick={() => handleOpenEditModal(job)}
                           aria-label={`Edit ${job.title}`}
                         >
                           <EditIcon />
-                        </button>
+                        </Link>
                         <button
                           type="button"
                           className="action-icon-btn delete-btn"
@@ -486,160 +399,7 @@ export const JobVacancies = () => {
       </div>
 
       {/* =========================================================
-          4. CREATE / EDIT JOB MODAL
-          ========================================================= */}
-      {isFormModalOpen && (
-        <div className="vacancies-modal-backdrop">
-          <div className="vacancies-modal-card">
-            <div className="vacancies-modal-header">
-              <div className="modal-title-box">
-                <div className="modal-icon-badge">
-                  <BriefcaseIcon />
-                </div>
-                <div>
-                  <h3 className="modal-main-title">
-                    {editingVacancy ? 'Edit Job Vacancy' : 'Create New Job Vacancy'}
-                  </h3>
-                  <p className="modal-main-subtitle">
-                    {editingVacancy
-                      ? 'Update requisition details and candidate matching criteria.'
-                      : 'Publish a new opening to start receiving AI-matched talent.'}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="modal-close-icon-btn"
-                onClick={() => setIsFormModalOpen(false)}
-                aria-label="Close modal"
-              >
-                <XIcon />
-              </button>
-            </div>
-
-            <form onSubmit={handleFormSubmit} className="vacancies-modal-form">
-              {/* Job Title */}
-              <div className="form-group-field">
-                <label className="form-field-label">Job Title *</label>
-                <div className="vacancies-input-wrapper">
-                  <div className="vacancies-input-icon">
-                    <BriefcaseIcon />
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g., Senior Distributed Systems Engineer"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="vacancies-modal-input"
-                  />
-                </div>
-              </div>
-
-              {/* Department & Location Grid */}
-              <div className="modal-two-col-grid">
-                <div className="form-group-field">
-                  <label className="form-field-label">Department *</label>
-                  <div className="vacancies-input-wrapper">
-                    <div className="vacancies-input-icon">
-                      <BuildingIcon />
-                    </div>
-                    <select
-                      value={formData.department}
-                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                      className="vacancies-modal-select"
-                    >
-                      <option value="Engineering">Engineering</option>
-                      <option value="AI Research">AI Research</option>
-                      <option value="Product Design">Product Design</option>
-                      <option value="Product">Product</option>
-                      <option value="Infrastructure">Infrastructure</option>
-                      <option value="Data Science">Data Science</option>
-                      <option value="Security">Security</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-group-field">
-                  <label className="form-field-label">Location *</label>
-                  <div className="vacancies-input-wrapper">
-                    <div className="vacancies-input-icon">
-                      <MapPinIcon />
-                    </div>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g., Remote / Singapore"
-                      value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      className="vacancies-modal-input"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Employment Type & Status Grid */}
-              <div className="modal-two-col-grid">
-                <div className="form-group-field">
-                  <label className="form-field-label">Employment Type</label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                    className="vacancies-modal-select standalone"
-                  >
-                    <option value="Full-time">Full-time</option>
-                    <option value="Contract">Contract</option>
-                    <option value="Part-time">Part-time</option>
-                    <option value="Remote">Remote</option>
-                  </select>
-                </div>
-
-                <div className="form-group-field">
-                  <label className="form-field-label">Vacancy Status</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                    className="vacancies-modal-select standalone"
-                  >
-                    <option value="Active">Active (Publish Live)</option>
-                    <option value="Draft">Draft (Internal Only)</option>
-                    <option value="Closed">Closed</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Job Description */}
-              <div className="form-group-field">
-                <label className="form-field-label">Role Overview & Requirements</label>
-                <textarea
-                  rows={3}
-                  placeholder="Outline key responsibilities, required tech stack, and experience benchmarks..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="vacancies-modal-textarea"
-                />
-              </div>
-
-              {/* Modal Actions */}
-              <div className="vacancies-modal-footer">
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => setIsFormModalOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary">
-                  {editingVacancy ? 'Save Changes' : 'Publish Vacancy'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================
-          5. DIRECT PHYSICAL DELETE CONFIRMATION MODAL
+          4. DIRECT PHYSICAL DELETE CONFIRMATION MODAL
           ========================================================= */}
       {vacancyToDelete && (
         <div className="vacancies-modal-backdrop">

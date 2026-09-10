@@ -109,7 +109,7 @@ export const Register = () => {
 
       setSuccessMessage(`Enterprise account for "${response.user.companyName}" successfully created! Redirecting...`);
       setTimeout(() => {
-        navigate('/users');
+        navigate('/dashboard');
       }, 1000);
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to register company. Please check your information.');

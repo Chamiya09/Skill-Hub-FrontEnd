@@ -7,7 +7,6 @@ import { Contact } from "./pages/Contact";
 import { FindJobs } from "./pages/FindJobs";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
-import { UserManagement } from "./pages/UserManagement";
 import { Dashboard } from "./pages/Dashboard";
 import { JobVacancies } from "./pages/JobVacancies";
 import { JobDetails } from "./pages/JobDetails";
@@ -38,7 +37,6 @@ function AppContent() {
             <Route path="/company-register" element={<Register />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/users" element={<UserManagement />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/jobs/new" element={<CreateJob />} />
             <Route path="/dashboard/jobs/create" element={<CreateJob />} />

@@ -33,7 +33,7 @@ export const Login = () => {
 
       setSuccessMessage(`Welcome back, ${response.user.fullName}!`);
       setTimeout(() => {
-        navigate('/users');
+        navigate('/dashboard');
       }, 900);
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to authenticate company user. Please verify your credentials.');

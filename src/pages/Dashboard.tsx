@@ -46,7 +46,7 @@ export const Dashboard = () => {
   const navigate = useNavigate()
   const [currentUser, setCurrentUser] = useState<UserDto | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'vacancies' | 'pipelines' | 'candidates' | 'settings'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'vacancies' | 'pipelines' | 'settings'>('overview')
   const [selectedFilter, setSelectedFilter] = useState('All')
 
   // Real-time Date and Time state
@@ -220,13 +220,13 @@ export const Dashboard = () => {
           </button>
         </div>
 
-        {/* Company Context Pill */}
-        <div className="dashboard-company-pill">
-          <div className="company-avatar-box">
+        {/* Company Identity Profile Card in Sidebar */}
+        <div className="sidebar-company-card">
+          <div className="company-badge-avatar">
             <BuildingIcon />
           </div>
-          <div className="company-pill-details">
-            <span className="company-pill-name">{companyDisplayName}</span>
+          <div className="company-badge-info">
+            <span className="company-badge-name">{companyDisplayName}</span>
             <span className="company-pill-role">
               {currentUser?.role === 'HR_Admin' ? 'Administrator' : currentUser?.role || 'Company Portal'}
             </span>
@@ -274,29 +274,7 @@ export const Dashboard = () => {
             <span>Talent Pipeline</span>
           </button>
 
-          <button
-            type="button"
-            className={`dashboard-nav-item ${activeTab === 'candidates' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('candidates')
-              setSidebarOpen(false)
-            }}
-          >
-            <UsersIcon />
-            <span>Candidates</span>
-            <span className="nav-badge-pill">AI Calibrated</span>
-          </button>
-
-          <div className="nav-group-label" style={{ marginTop: '16px' }}>ORGANIZATION</div>
-
-          <Link
-            to="/users"
-            className="dashboard-nav-item"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <UsersIcon />
-            <span>Team Management</span>
-          </Link>
+          <div className="nav-group-label" style={{ marginTop: '16px' }}>SYSTEM</div>
 
           <button
             type="button"
@@ -362,7 +340,6 @@ export const Dashboard = () => {
                 {activeTab === 'overview' && 'Company Overview'}
                 {activeTab === 'vacancies' && 'Job Vacancies'}
                 {activeTab === 'pipelines' && 'Hiring Pipelines'}
-                {activeTab === 'candidates' && 'Candidates Pool'}
                 {activeTab === 'settings' && 'Settings'}
               </span>
             </div>
@@ -611,12 +588,17 @@ export const Dashboard = () => {
                   <div className="quick-shortcuts-box">
                     <h3 className="shortcuts-title">Quick Actions</h3>
                     <div className="shortcuts-grid">
-                      <Link to="/users" className="shortcut-btn">
-                        <UsersIcon />
-                        <span>Invite Team Member</span>
-                      </Link>
-                      <Link to="/jobs" className="shortcut-btn">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('vacancies')}
+                        className="shortcut-btn"
+                        style={{ border: 'none', font: 'inherit', textAlign: 'left', width: '100%', cursor: 'pointer' }}
+                      >
                         <BriefcaseIcon />
+                        <span>Manage Requisitions</span>
+                      </button>
+                      <Link to="/jobs" className="shortcut-btn">
+                        <SparkleIcon />
                         <span>Explore Talent Pool</span>
                       </Link>
                     </div>

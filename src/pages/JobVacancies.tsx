@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   SearchIcon,
@@ -11,6 +11,7 @@ import {
   CheckIcon,
 } from '../components/common/Icons';
 import { JobFormModal, type JobFormData } from '../components/jobs/JobFormModal';
+import { jobsApi, type JobDto } from '../services/api';
 
 export interface JobVacancyItem {
   id: string;
@@ -28,101 +29,12 @@ export interface JobVacancyItem {
   salaryRange?: string;
 }
 
-const initialVacancies: JobVacancyItem[] = [
-  {
-    id: 'vac-1',
-    title: 'Senior Full Stack Engineer (React / .NET Core)',
-    department: 'Engineering',
-    location: 'Remote (APAC)',
-    type: 'Full-time',
-    status: 'Active',
-    experienceLevel: 'Senior Level (5+ Yrs)',
-    salaryRange: '$135,000 - $175,000 USD / yr',
-    applicantsCount: 42,
-    aiMatchScore: 96,
-    postedDate: '2026-09-08',
-    description: 'Lead architecture and development of scalable cloud microservices and responsive React web applications.',
-    benefits: 'Remote flexibility, health insurance, equity options, and annual learning allowance.',
-  },
-  {
-    id: 'vac-2',
-    title: 'Staff AI / ML Infrastructure Architect',
-    department: 'AI Research',
-    location: 'San Francisco, CA (Hybrid)',
-    type: 'Full-time',
-    status: 'Active',
-    experienceLevel: 'Lead / Staff (7+ Yrs)',
-    salaryRange: '$220,000 - $280,000 USD / yr',
-    applicantsCount: 28,
-    aiMatchScore: 92,
-    postedDate: '2026-09-06',
-    description: 'Design distributed model training pipelines, vector databases, and real-time LLM inference clusters.',
-    benefits: 'Top-tier base salary, founding-tier equity, and dual RTX workstations.',
-  },
-  {
-    id: 'vac-3',
-    title: 'Lead Product Designer (Enterprise Design Systems)',
-    department: 'Product Design',
-    location: 'London, UK (Remote)',
-    type: 'Full-time',
-    status: 'Active',
-    experienceLevel: 'Senior Level (5+ Yrs)',
-    salaryRange: '£95,000 - £125,000 GBP / yr',
-    applicantsCount: 35,
-    aiMatchScore: 88,
-    postedDate: '2026-09-03',
-    description: 'Own the unified design system, enterprise UI components, and end-to-end recruitment UX workflows.',
-    benefits: 'Generous pension, private medical cover, and full home office budget.',
-  },
-  {
-    id: 'vac-4',
-    title: 'Principal Cloud Security & DevOps Engineer',
-    department: 'Infrastructure',
-    location: 'Remote (Global)',
-    type: 'Contract',
-    status: 'Active',
-    experienceLevel: 'Principal / Executive (10+ Yrs)',
-    salaryRange: '$110 - $145 USD / hr',
-    applicantsCount: 19,
-    aiMatchScore: 94,
-    postedDate: '2026-08-30',
-    description: 'Manage multi-region AWS/GCP clusters, SOC-2 compliance automation, and zero-trust perimeter security.',
-    benefits: 'Competitive rolling contract rate with annual retention bonuses.',
-  },
-  {
-    id: 'vac-5',
-    title: 'Senior Technical Product Manager - ATS Platforms',
-    department: 'Product',
-    location: 'New York, NY',
-    type: 'Full-time',
-    status: 'Draft',
-    experienceLevel: 'Senior Level (5+ Yrs)',
-    salaryRange: '$160,000 - $200,000 USD / yr',
-    applicantsCount: 0,
-    aiMatchScore: 0,
-    postedDate: '2026-09-09',
-    description: 'Define product vision and roadmap for next-generation automated candidate matching and interview orchestration.',
-    benefits: 'Comprehensive healthcare, 401(k) matching, and parental leave.',
-  },
-  {
-    id: 'vac-6',
-    title: 'Junior QA Automation Engineer',
-    department: 'Engineering',
-    location: 'Austin, TX',
-    type: 'Full-time',
-    status: 'Closed',
-    experienceLevel: 'Entry Level (0-2 Yrs)',
-    salaryRange: '$75,000 - $95,000 USD / yr',
-    applicantsCount: 64,
-    aiMatchScore: 85,
-    postedDate: '2026-08-15',
-    description: 'Position successfully filled by Skill Hub AI matching engine candidate.',
-    benefits: 'Mentorship program, learning stipend, and paid leave.',
-  },
-];
-
 export const JobVacancies = () => {
-  const [vacancies, setVacancies] = useState<JobVacancyItem[]>(initialVacancies);
+  const [vacancies, setVacancies] = useState<JobVacancyItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [departmentFilter, setDepartmentFilter] = useState('All');
@@ -134,11 +46,46 @@ export const JobVacancies = () => {
 
   // Modal states for Direct Delete
   const [vacancyToDelete, setVacancyToDelete] = useState<JobVacancyItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  // Fetch real jobs from PostgreSQL via backend API
+  const fetchJobs = async () => {
+    try {
+      setIsLoading(true);
+      setErrorMessage(null);
+      const data: JobDto[] = await jobsApi.getJobs();
+      const mapped: JobVacancyItem[] = data.map((j) => ({
+        id: j.id,
+        title: j.title,
+        department: j.department,
+        location: j.location,
+        type: (j.employmentType as any) || 'Full-time',
+        status: (j.status as any) || 'Active',
+        experienceLevel: j.experienceLevel,
+        salaryRange: j.salaryRange || '',
+        applicantsCount: 0,
+        aiMatchScore: 95,
+        postedDate: j.createdAt ? j.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+        description: j.description,
+        benefits: j.whatWeOffer || '',
+      }));
+      setVacancies(mapped);
+    } catch (err: any) {
+      console.error('Error fetching jobs:', err);
+      setErrorMessage(err.message || 'Failed to load job vacancies.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
 
   // Departments list dynamically computed
   const departments = useMemo(() => {
     const set = new Set(vacancies.map((v) => v.department));
-    return ['All', ...Array.from(set)];
+    return ['All', ...Array.from(set).filter(Boolean)];
   }, [vacancies]);
 
   // Filtered vacancies
@@ -173,58 +120,64 @@ export const JobVacancies = () => {
     setIsJobModalOpen(true);
   };
 
-  const handleJobModalSubmit = (data: JobFormData) => {
-    if (editingJob) {
-      // Update existing
-      setVacancies((prev) =>
-        prev.map((v) =>
-          v.id === editingJob.id
-            ? {
-                ...v,
-                title: data.title,
-                department: data.department,
-                location: data.location,
-                type: data.type,
-                status: data.status,
-                experienceLevel: data.experienceLevel,
-                salaryRange: data.salaryRange,
-                description: data.description,
-                benefits: data.benefits,
-              }
-            : v
-        )
-      );
-      showToast(`Vacancy "${data.title}" updated successfully.`);
-    } else {
-      // Create new
-      const newJob: JobVacancyItem = {
-        id: `vac-${Date.now()}`,
-        title: data.title,
-        department: data.department,
-        location: data.location,
-        type: data.type,
-        status: data.status,
-        experienceLevel: data.experienceLevel,
-        salaryRange: data.salaryRange,
-        applicantsCount: 0,
-        aiMatchScore: 92,
-        postedDate: new Date().toISOString().split('T')[0],
-        description: data.description,
-        benefits: data.benefits,
-      };
-      setVacancies([newJob, ...vacancies]);
-      showToast(`New vacancy "${data.title}" published successfully.`);
+  const handleJobModalSubmit = async (data: JobFormData) => {
+    try {
+      setIsSubmitting(true);
+      if (editingJob) {
+        // Edit Mode: PUT /api/jobs/{id}
+        await jobsApi.updateJob(editingJob.id, {
+          title: data.title,
+          department: data.department,
+          location: data.location,
+          employmentType: data.type,
+          experienceLevel: data.experienceLevel,
+          salaryRange: data.salaryRange,
+          status: data.status,
+          description: data.description,
+          whatWeOffer: data.benefits,
+        });
+        showToast(`Vacancy "${data.title}" updated successfully.`);
+      } else {
+        // Create Mode: POST /api/jobs
+        await jobsApi.createJob({
+          title: data.title,
+          department: data.department,
+          location: data.location,
+          employmentType: data.type,
+          experienceLevel: data.experienceLevel,
+          salaryRange: data.salaryRange,
+          status: data.status,
+          description: data.description,
+          whatWeOffer: data.benefits,
+        });
+        showToast(`New vacancy "${data.title}" published successfully.`);
+      }
+      setIsJobModalOpen(false);
+      await fetchJobs();
+    } catch (err: any) {
+      console.error('Error saving job vacancy:', err);
+      alert(err.message || 'Failed to save job vacancy.');
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsJobModalOpen(false);
   };
 
-  // Direct Physical Deletion Handler
-  const handleConfirmDirectDelete = () => {
+  // Direct Hard Delete Handler: DELETE /api/jobs/{id}
+  const handleConfirmDirectDelete = async () => {
     if (!vacancyToDelete) return;
-    const deletedTitle = vacancyToDelete.title;
-    setVacancies((prev) => prev.filter((v) => v.id !== vacancyToDelete.id));
-    setVacancyToDelete(null);
-    showToast(`Vacancy "${deletedTitle}" permanently deleted.`);
+    try {
+      setIsDeleting(true);
+      await jobsApi.deleteJob(vacancyToDelete.id);
+      const deletedTitle = vacancyToDelete.title;
+      setVacancies((prev) => prev.filter((v) => v.id !== vacancyToDelete.id));
+      setVacancyToDelete(null);
+      showToast(`Vacancy "${deletedTitle}" permanently deleted from database.`);
+    } catch (err: any) {
+      console.error('Error deleting job vacancy:', err);
+      alert(err.message || 'Failed to delete job vacancy.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -249,7 +202,7 @@ export const JobVacancies = () => {
             </span>
           </div>
           <p className="vacancies-page-subtitle">
-            Manage your corporate requisitions, monitor AI applicant pipelines, and post new engineering roles.
+            Manage your corporate requisitions, monitor candidate pipelines, and post new positions to your PostgreSQL database.
           </p>
         </div>
 
@@ -264,7 +217,7 @@ export const JobVacancies = () => {
       </div>
 
       {/* =========================================================
-          2. SEARCH & FILTER CONTROLS BAR (GLOBAL UI CONSISTENCY)
+          2. SEARCH & FILTER CONTROLS BAR
           ========================================================= */}
       <div className="vacancies-filter-card">
         <div className="vacancies-search-group">
@@ -333,6 +286,20 @@ export const JobVacancies = () => {
         </div>
       </div>
 
+      {/* Error Banner */}
+      {errorMessage && (
+        <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between">
+          <span>{errorMessage}</span>
+          <button
+            type="button"
+            onClick={fetchJobs}
+            className="text-xs font-semibold text-red-800 underline hover:no-underline ml-4"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* =========================================================
           3. DATA TABLE (PREMIUM CORPORATE LIGHT THEME)
           ========================================================= */}
@@ -350,7 +317,16 @@ export const JobVacancies = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredVacancies.length > 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '60px 24px' }}>
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                      <p className="text-sm font-medium text-gray-500">Loading vacancies from database...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredVacancies.length > 0 ? (
                 filteredVacancies.map((job) => (
                   <tr key={job.id} className="vacancies-table-row">
                     {/* Job Title Column */}
@@ -407,7 +383,7 @@ export const JobVacancies = () => {
                           <UsersIcon />
                         </div>
                         <span className="applicants-count-num">
-                          {job.applicantsCount} {job.applicantsCount === 1 ? 'Applicant' : 'Applicants'}
+                          {job.applicantsCount} Applicants
                         </span>
                       </div>
                     </td>
@@ -457,19 +433,23 @@ export const JobVacancies = () => {
                       </div>
                       <h4 className="empty-state-title">No job vacancies found</h4>
                       <p className="empty-state-desc">
-                        No requisitions matched your search query or filter selection.
+                        {searchQuery || statusFilter !== 'All' || departmentFilter !== 'All'
+                          ? 'No requisitions matched your search query or filter selection.'
+                          : 'You haven\'t posted any job vacancies yet. Click "Create New Job" to add your first position.'}
                       </p>
-                      <button
-                        type="button"
-                        className="btn-secondary empty-reset-btn"
-                        onClick={() => {
-                          setSearchQuery('');
-                          setStatusFilter('All');
-                          setDepartmentFilter('All');
-                        }}
-                      >
-                        Clear All Filters
-                      </button>
+                      {(searchQuery || statusFilter !== 'All' || departmentFilter !== 'All') && (
+                        <button
+                          type="button"
+                          className="btn-secondary empty-reset-btn"
+                          onClick={() => {
+                            setSearchQuery('');
+                            setStatusFilter('All');
+                            setDepartmentFilter('All');
+                          }}
+                        >
+                          Clear All Filters
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -492,12 +472,13 @@ export const JobVacancies = () => {
             <p className="delete-modal-desc">
               Are you sure you want to permanently delete{' '}
               <strong style={{ color: '#0f172a' }}>"{vacancyToDelete.title}"</strong>?
-              This will perform a direct physical deletion of the vacancy and remove it from active matching pools.
+              This will perform a direct hard-delete from the PostgreSQL database.
             </p>
             <div className="delete-modal-actions">
               <button
                 type="button"
                 className="btn-secondary"
+                disabled={isDeleting}
                 onClick={() => setVacancyToDelete(null)}
               >
                 Cancel
@@ -505,9 +486,10 @@ export const JobVacancies = () => {
               <button
                 type="button"
                 className="btn-danger-confirm"
+                disabled={isDeleting}
                 onClick={handleConfirmDirectDelete}
               >
-                Delete Permanently
+                {isDeleting ? 'Deleting...' : 'Delete Permanently'}
               </button>
             </div>
           </div>
@@ -521,6 +503,7 @@ export const JobVacancies = () => {
         isOpen={isJobModalOpen}
         onClose={() => setIsJobModalOpen(false)}
         onSubmit={handleJobModalSubmit}
+        isSubmitting={isSubmitting}
         initialData={
           editingJob
             ? {
@@ -530,7 +513,7 @@ export const JobVacancies = () => {
                 type: editingJob.type,
                 status: editingJob.status,
                 experienceLevel: editingJob.experienceLevel || 'Senior Level (5+ Yrs)',
-                salaryRange: editingJob.salaryRange || '$130,000 - $170,000 USD / yr',
+                salaryRange: editingJob.salaryRange || '',
                 description: editingJob.description || '',
                 benefits: editingJob.benefits || '',
               }

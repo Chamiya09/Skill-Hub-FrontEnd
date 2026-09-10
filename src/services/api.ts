@@ -142,6 +142,104 @@ export const companyAuthApi = {
 export const authApi = companyAuthApi;
 
 // ==========================================
+// JOB VACANCIES API METHODS
+// ==========================================
+export interface JobDto {
+  id: string;
+  companyId: string;
+  companyName: string;
+  title: string;
+  department: string;
+  location: string;
+  employmentType: string;
+  experienceLevel: string;
+  salaryRange?: string;
+  status: 'Active' | 'Draft' | 'Closed' | string;
+  description: string;
+  whatWeOffer?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateJobPayload {
+  title: string;
+  department: string;
+  location: string;
+  employmentType: string;
+  experienceLevel: string;
+  salaryRange?: string;
+  status: string;
+  description: string;
+  whatWeOffer?: string;
+}
+
+export interface UpdateJobPayload {
+  title: string;
+  department: string;
+  location: string;
+  employmentType: string;
+  experienceLevel: string;
+  salaryRange?: string;
+  status: string;
+  description: string;
+  whatWeOffer?: string;
+}
+
+export const jobsApi = {
+  /**
+   * Retrieves all job vacancies for the logged-in company.
+   * Calls: GET /api/jobs
+   */
+  async getJobs(): Promise<JobDto[]> {
+    return request<JobDto[]>('/jobs', {
+      method: 'GET',
+    });
+  },
+
+  /**
+   * Retrieves single job vacancy details by ID.
+   * Calls: GET /api/jobs/{id}
+   */
+  async getJobById(id: string): Promise<JobDto> {
+    return request<JobDto>(`/jobs/${id}`, {
+      method: 'GET',
+    });
+  },
+
+  /**
+   * Creates a new job vacancy linked to the logged-in company.
+   * Calls: POST /api/jobs
+   */
+  async createJob(payload: CreateJobPayload): Promise<JobDto> {
+    return request<JobDto>('/jobs', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  /**
+   * Updates an existing job vacancy.
+   * Calls: PUT /api/jobs/{id}
+   */
+  async updateJob(id: string, payload: UpdateJobPayload): Promise<JobDto> {
+    return request<JobDto>(`/jobs/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  /**
+   * Permanently hard-deletes a job vacancy from PostgreSQL.
+   * Calls: DELETE /api/jobs/{id}
+   */
+  async deleteJob(id: string): Promise<void> {
+    return request<void>(`/jobs/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// ==========================================
 // USER MANAGEMENT API METHODS
 // ==========================================
 export const usersApi = {
@@ -175,3 +273,5 @@ export const usersApi = {
     });
   }
 };
+
+

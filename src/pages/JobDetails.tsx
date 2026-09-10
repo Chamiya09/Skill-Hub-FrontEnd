@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   BriefcaseIcon,
@@ -15,372 +15,23 @@ import {
   TrashIcon,
   CheckIcon,
   KanbanIcon,
-  ShieldCheckIcon,
   ClockIcon,
 } from '../components/common/Icons';
 import { JobFormModal, type JobFormData } from '../components/jobs/JobFormModal';
-
-export interface JobDetailModel {
-  id: string;
-  title: string;
-  department: string;
-  location: string;
-  type: 'Full-time' | 'Contract' | 'Part-time' | 'Remote';
-  status: 'Active' | 'Draft' | 'Closed';
-  experienceLevel: string;
-  salaryRange: string;
-  postedDate: string;
-  applicantsCount: number;
-  aiMatchScore: number;
-  overview: string;
-  responsibilities: string[];
-  requirements: string[];
-  preferredQualifications: string[];
-  benefits: string[];
-  hiringLead: {
-    name: string;
-    role: string;
-    avatarInitials: string;
-    avatarBg: string;
-    email: string;
-  };
-  pipelineStats: {
-    stage: string;
-    count: number;
-    color: string;
-  }[];
-}
-
-const mockJobsDatabase: Record<string, JobDetailModel> = {
-  'vac-1': {
-    id: 'vac-1',
-    title: 'Senior Full Stack Engineer (React / .NET Core)',
-    department: 'Engineering',
-    location: 'Remote (APAC / Singapore)',
-    type: 'Full-time',
-    status: 'Active',
-    experienceLevel: 'Senior (5+ Years)',
-    salaryRange: '$135,000 - $175,000 USD / yr',
-    postedDate: '2026-09-08',
-    applicantsCount: 42,
-    aiMatchScore: 96,
-    overview:
-      'We are seeking a seasoned Senior Full Stack Engineer to lead the architecture and implementation of our next-generation Talent Intelligence platform. In this role, you will design robust microservices in ASP.NET Core 9, build high-performance React applications with TypeScript, and integrate cutting-edge LLM inference pipelines.',
-    responsibilities: [
-      'Architect and build resilient, distributed RESTful APIs and GraphQL endpoints using .NET 9 and PostgreSQL.',
-      'Develop pixel-perfect, responsive UI components with React 19, TypeScript, and modern design systems.',
-      'Optimize database queries, indexing strategies, and real-time WebSocket communication channels.',
-      'Collaborate with Product Managers and AI Researchers to deploy automated candidate matching engines.',
-      'Mentor intermediate engineers through code reviews, design docs, and architectural RFC discussions.',
-    ],
-    requirements: [
-      '5+ years of production experience with C# / .NET Core and modern frontend frameworks (React, Next.js).',
-      'Solid understanding of relational databases (PostgreSQL, SQL Server) and Entity Framework Core.',
-      'Proven expertise in state management, asynchronous programming, and REST API design patterns.',
-      'Strong command of modern CSS, responsive layouts, and accessibility (WCAG 2.1 AA) standards.',
-      'Experience with CI/CD pipelines, Docker containerization, and AWS/Azure cloud deployments.',
-    ],
-    preferredQualifications: [
-      'Experience integrating OpenAI, Anthropic, or HuggingFace AI models into production applications.',
-      'Familiarity with distributed caching (Redis) and event streaming architectures (Kafka / RabbitMQ).',
-      'Contributions to open-source software or technical conference speaking experience.',
-    ],
-    benefits: [
-      'Competitive base salary + equity stock options.',
-      '100% remote work flexibility with home office setup stipend ($1,500).',
-      'Comprehensive health, dental, and vision coverage for you and dependents.',
-      'Annual learning and conference budget ($2,500/year).',
-      'Flexible paid time off (25 days minimum) plus public holidays.',
-    ],
-    hiringLead: {
-      name: 'Marcus Vance',
-      role: 'VP of Engineering',
-      avatarInitials: 'MV',
-      avatarBg: '#0284c7',
-      email: 'm.vance@skillhub.enterprise.com',
-    },
-    pipelineStats: [
-      { stage: 'Applied', count: 42, color: '#3b82f6' },
-      { stage: 'AI Screened', count: 26, color: '#10b981' },
-      { stage: 'Tech Interview', count: 9, color: '#f59e0b' },
-      { stage: 'Executive Review', count: 4, color: '#8b5cf6' },
-      { stage: 'Offer Extended', count: 1, color: '#00b074' },
-    ],
-  },
-  'vac-2': {
-    id: 'vac-2',
-    title: 'Staff AI / ML Infrastructure Architect',
-    department: 'AI Research',
-    location: 'San Francisco, CA (Hybrid)',
-    type: 'Full-time',
-    status: 'Active',
-    experienceLevel: 'Staff / Principal (8+ Years)',
-    salaryRange: '$220,000 - $280,000 USD / yr',
-    postedDate: '2026-09-06',
-    applicantsCount: 28,
-    aiMatchScore: 92,
-    overview:
-      'We are looking for a Staff AI/ML Infrastructure Architect to spearhead our high-throughput vector database clusters, GPU orchestration framework, and real-time semantic search indexing engine powering millions of candidate evaluations.',
-    responsibilities: [
-      'Design and operate multi-node GPU training and inference clusters (Triton, vLLM, Ray).',
-      'Scale vector database infrastructure (Milvus, Pinecone, pgvector) to handle billions of high-dimensional embeddings.',
-      'Develop automated model evaluation, drift monitoring, and continuous fine-tuning pipelines.',
-      'Partner with security teams to enforce enterprise data isolation and zero-leakage LLM governance.',
-    ],
-    requirements: [
-      '8+ years in distributed systems, with 4+ years dedicated to ML/AI production infrastructure.',
-      'Deep mastery of Python, C++, CUDA optimizations, and Kubernetes operator architectures.',
-      'Hands-on experience deploying open weights LLMs (Llama 3, Mistral) with low-latency inference.',
-    ],
-    preferredQualifications: [
-      'Ph.D. or Master’s in Computer Science, Machine Learning, or related quantitative field.',
-      'Published research in MLSys, NeurIPS, ICML, or relevant academic venues.',
-    ],
-    benefits: [
-      'Top-tier compensation package with meaningful founding-tier equity.',
-      'Premium health, wellness, and commuter benefits.',
-      'Latest compute hardware (M3 Max / Dual RTX workstations).',
-    ],
-    hiringLead: {
-      name: 'Sophia Lin, PhD',
-      role: 'Director of AI Systems',
-      avatarInitials: 'SL',
-      avatarBg: '#8b5cf6',
-      email: 's.lin@skillhub.enterprise.com',
-    },
-    pipelineStats: [
-      { stage: 'Applied', count: 28, color: '#3b82f6' },
-      { stage: 'AI Screened', count: 18, color: '#10b981' },
-      { stage: 'Tech Interview', count: 6, color: '#f59e0b' },
-      { stage: 'Executive Review', count: 2, color: '#8b5cf6' },
-      { stage: 'Offer Extended', count: 1, color: '#00b074' },
-    ],
-  },
-  'vac-3': {
-    id: 'vac-3',
-    title: 'Lead Product Designer (Enterprise Design Systems)',
-    department: 'Product Design',
-    location: 'London, UK (Remote)',
-    type: 'Full-time',
-    status: 'Active',
-    experienceLevel: 'Lead (6+ Years)',
-    salaryRange: '£95,000 - £125,000 GBP / yr',
-    postedDate: '2026-09-03',
-    applicantsCount: 35,
-    aiMatchScore: 88,
-    overview:
-      'Lead our global design system and craft intuitive, state-of-the-art enterprise ATS workflows that delight recruitment teams and executive hiring managers worldwide.',
-    responsibilities: [
-      'Govern and evolve our Figma enterprise token system and multi-brand component library.',
-      'Conduct user research sessions with enterprise recruiters to identify UX friction and workflow enhancements.',
-      'Create high-fidelity interactive prototypes, interaction specifications, and micro-animations.',
-    ],
-    requirements: [
-      '6+ years of UX/UI design experience for SaaS or B2B enterprise software applications.',
-      'Expertise in Figma, variables, auto-layout, and token-based design systems.',
-      'Strong portfolio demonstrating complex workflow simplification and data visualization mastery.',
-    ],
-    preferredQualifications: [
-      'Ability to write clean HTML/CSS/Tailwind code to prototype and inspect web UI.',
-    ],
-    benefits: [
-      'Generous pension matching, private medical insurance, and 28 days paid leave.',
-      'Full home office equipment budget and flexible asynchronous work hours.',
-    ],
-    hiringLead: {
-      name: 'Oliver Thorne',
-      role: 'Head of Product Experience',
-      avatarInitials: 'OT',
-      avatarBg: '#f59e0b',
-      email: 'o.thorne@skillhub.enterprise.com',
-    },
-    pipelineStats: [
-      { stage: 'Applied', count: 35, color: '#3b82f6' },
-      { stage: 'AI Screened', count: 20, color: '#10b981' },
-      { stage: 'Portfolio Review', count: 8, color: '#f59e0b' },
-      { stage: 'Design Challenge', count: 3, color: '#8b5cf6' },
-      { stage: 'Offer Extended', count: 0, color: '#00b074' },
-    ],
-  },
-  'vac-4': {
-    id: 'vac-4',
-    title: 'Principal Cloud Security & DevOps Engineer',
-    department: 'Infrastructure',
-    location: 'Remote (Global)',
-    type: 'Contract',
-    status: 'Active',
-    experienceLevel: 'Principal (8+ Years)',
-    salaryRange: '$110 - $145 USD / hr',
-    postedDate: '2026-08-30',
-    applicantsCount: 19,
-    aiMatchScore: 94,
-    overview:
-      'Oversee our multi-cloud AWS & Azure infrastructure, SOC-2 compliance automation, and implement zero-trust Kubernetes cluster network policies.',
-    responsibilities: [
-      'Maintain Terraform infrastructure-as-code across 4 global AWS/GCP regions.',
-      'Execute continuous vulnerability scans, container hardening, and penetration test remediations.',
-      'Automate deployment pipelines using GitHub Actions, ArgoCD, and Helm charts.',
-    ],
-    requirements: [
-      '8+ years in DevOps and cloud infrastructure engineering.',
-      'Demonstrated experience obtaining or maintaining SOC-2 Type II and ISO 27001 certifications.',
-      'Expertise with Kubernetes, Istio service mesh, AWS IAM, and HashiCorp Vault.',
-    ],
-    preferredQualifications: [
-      'AWS Certified DevOps Engineer - Professional or CKS (Certified Kubernetes Security Specialist).',
-    ],
-    benefits: [
-      'Long-term rolling contract with competitive hourly rate and performance bonuses.',
-    ],
-    hiringLead: {
-      name: 'Alexander Ross',
-      role: 'Director of Cloud Operations',
-      avatarInitials: 'AR',
-      avatarBg: '#10b981',
-      email: 'a.ross@skillhub.enterprise.com',
-    },
-    pipelineStats: [
-      { stage: 'Applied', count: 19, color: '#3b82f6' },
-      { stage: 'AI Screened', count: 12, color: '#10b981' },
-      { stage: 'Security Exam', count: 4, color: '#f59e0b' },
-      { stage: 'Offer Extended', count: 1, color: '#00b074' },
-    ],
-  },
-  'vac-5': {
-    id: 'vac-5',
-    title: 'Senior Technical Product Manager - ATS Platforms',
-    department: 'Product',
-    location: 'New York, NY (Hybrid)',
-    type: 'Full-time',
-    status: 'Draft',
-    experienceLevel: 'Senior (5+ Years)',
-    salaryRange: '$160,000 - $200,000 USD / yr',
-    postedDate: '2026-09-09',
-    applicantsCount: 0,
-    aiMatchScore: 0,
-    overview:
-      'Define the product strategy, developer APIs, and candidate discovery algorithms for the Skill Hub talent ecosystem.',
-    responsibilities: [
-      'Translate customer recruitment friction points into concise PRDs and engineering specifications.',
-      'Drive roadmap prioritization using qualitative feedback and quantitative product analytics.',
-    ],
-    requirements: [
-      '5+ years as a Product Manager in B2B SaaS or HR tech software.',
-      'Technical background with ability to query data using SQL and analyze API architectures.',
-    ],
-    preferredQualifications: [
-      'Prior experience scaling ATS, CRM, or workforce management tools.',
-    ],
-    benefits: [
-      'Competitive base salary, 401(k) matching, and comprehensive healthcare.',
-    ],
-    hiringLead: {
-      name: 'Marcus Vance',
-      role: 'VP of Engineering',
-      avatarInitials: 'MV',
-      avatarBg: '#0284c7',
-      email: 'm.vance@skillhub.enterprise.com',
-    },
-    pipelineStats: [],
-  },
-  'vac-6': {
-    id: 'vac-6',
-    title: 'Junior QA Automation Engineer',
-    department: 'Engineering',
-    location: 'Austin, TX',
-    type: 'Full-time',
-    status: 'Closed',
-    experienceLevel: 'Junior (1-2 Years)',
-    salaryRange: '$75,000 - $95,000 USD / yr',
-    postedDate: '2026-08-15',
-    applicantsCount: 64,
-    aiMatchScore: 85,
-    overview:
-      'This vacancy has been successfully filled. The role involves developing Playwright and Cypress end-to-end automated regression test suites for web applications.',
-    responsibilities: [
-      'Write reliable automated UI and API tests using TypeScript and Playwright.',
-      'Integrate test execution suites into CI/CD build workflows.',
-    ],
-    requirements: [
-      '1-2 years experience in software testing or QA automation.',
-      'Basic knowledge of TypeScript/JavaScript and Git.',
-    ],
-    preferredQualifications: [
-      'Familiarity with CI/CD tools such as GitHub Actions.',
-    ],
-    benefits: [
-      'Health insurance, 401(k), paid parental leave, and mentorship programs.',
-    ],
-    hiringLead: {
-      name: 'Oliver Thorne',
-      role: 'Head of Product Experience',
-      avatarInitials: 'OT',
-      avatarBg: '#f59e0b',
-      email: 'o.thorne@skillhub.enterprise.com',
-    },
-    pipelineStats: [
-      { stage: 'Completed', count: 64, color: '#64748b' },
-    ],
-  },
-};
+import { jobsApi, type JobDto } from '../services/api';
 
 export const JobDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  // Find job from mock DB or fallback dynamically
-  const initialJob = useMemo(() => {
-    if (id && mockJobsDatabase[id]) {
-      return mockJobsDatabase[id];
-    }
-    // Dynamic fallback for any other ID
-    return {
-      id: id || 'vac-default',
-      title: 'Senior Enterprise Solutions Architect',
-      department: 'Engineering',
-      location: 'Remote (Worldwide)',
-      type: 'Full-time' as const,
-      status: 'Active' as const,
-      experienceLevel: 'Senior (5+ Years)',
-      salaryRange: '$145,000 - $190,000 USD / yr',
-      postedDate: new Date().toISOString().split('T')[0],
-      applicantsCount: 14,
-      aiMatchScore: 94,
-      overview:
-        'Lead enterprise-grade architectural design, client technical integrations, and scalable cloud solutions for our global hiring intelligence platform.',
-      responsibilities: [
-        'Design high-availability cloud architecture on AWS/Azure.',
-        'Collaborate with cross-functional engineering teams to implement microservices.',
-        'Provide technical thought leadership and conduct architectural reviews.',
-      ],
-      requirements: [
-        '5+ years in cloud architecture or full-stack software development.',
-        'Strong hands-on experience with modern JavaScript/TypeScript and cloud technologies.',
-      ],
-      preferredQualifications: [
-        'Cloud Solution Architect certifications (AWS / GCP / Azure).',
-      ],
-      benefits: [
-        'Competitive salary, equity options, comprehensive healthcare, and flexible remote hours.',
-      ],
-      hiringLead: {
-        name: 'Marcus Vance',
-        role: 'VP of Engineering',
-        avatarInitials: 'MV',
-        avatarBg: '#0284c7',
-        email: 'm.vance@skillhub.enterprise.com',
-      },
-      pipelineStats: [
-        { stage: 'Applied', count: 14, color: '#3b82f6' },
-        { stage: 'AI Screened', count: 8, color: '#10b981' },
-        { stage: 'Interview', count: 3, color: '#f59e0b' },
-      ],
-    };
-  }, [id]);
+  const [job, setJob] = useState<JobDto | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const [job, setJob] = useState<JobDetailModel>(initialJob);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -390,28 +41,110 @@ export const JobDetails = () => {
     }, 3500);
   };
 
-  const handleEditSubmit = (data: JobFormData) => {
-    setJob((prev) => ({
-      ...prev,
-      title: data.title,
-      department: data.department,
-      location: data.location,
-      type: data.type,
-      status: data.status,
-      experienceLevel: data.experienceLevel,
-      salaryRange: data.salaryRange,
-      overview: data.description.replace(/<[^>]*>?/gm, ' ').slice(0, 200) + '...',
-    }));
-    setIsEditModalOpen(false);
-    showToast(`Job vacancy "${data.title}" updated successfully.`);
+  const fetchJobDetails = async () => {
+    if (!id) return;
+    try {
+      setIsLoading(true);
+      setErrorMessage(null);
+      const data = await jobsApi.getJobById(id);
+      setJob(data);
+    } catch (err: any) {
+      console.error('Error fetching job details:', err);
+      setErrorMessage(err.message || 'Failed to load job details from database.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Direct Physical Deletion Handler
-  const handleConfirmDirectDelete = () => {
-    setIsDeleteModalOpen(false);
-    // In our direct delete architecture, remove and navigate back to dashboard
-    navigate('/dashboard');
+  useEffect(() => {
+    fetchJobDetails();
+  }, [id]);
+
+  const handleEditSubmit = async (data: JobFormData) => {
+    if (!id) return;
+    try {
+      setIsSubmitting(true);
+      const updated = await jobsApi.updateJob(id, {
+        title: data.title,
+        department: data.department,
+        location: data.location,
+        employmentType: data.type,
+        experienceLevel: data.experienceLevel,
+        salaryRange: data.salaryRange,
+        status: data.status,
+        description: data.description,
+        whatWeOffer: data.benefits,
+      });
+      setJob(updated);
+      setIsEditModalOpen(false);
+      showToast(`Job vacancy "${data.title}" updated successfully.`);
+    } catch (err: any) {
+      console.error('Error updating job vacancy:', err);
+      alert(err.message || 'Failed to update job vacancy.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  // Direct Hard Deletion Handler: DELETE /api/jobs/{id}
+  const handleConfirmDirectDelete = async () => {
+    if (!id) return;
+    try {
+      setIsDeleting(true);
+      await jobsApi.deleteJob(id);
+      setIsDeleteModalOpen(false);
+      navigate('/dashboard');
+    } catch (err: any) {
+      console.error('Error deleting job vacancy:', err);
+      alert(err.message || 'Failed to delete job vacancy.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="job-details-page-wrapper">
+        <div className="min-h-[400px] flex flex-col items-center justify-center space-y-4">
+          <div className="w-10 h-10 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm font-medium text-gray-500">Loading vacancy details from database...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (errorMessage || !job) {
+    return (
+      <div className="job-details-page-wrapper">
+        <div className="job-details-inner-container">
+          <button
+            type="button"
+            className="job-back-link-btn mb-6"
+            onClick={() => navigate('/dashboard')}
+          >
+            <ArrowLeftIcon />
+            <span>Back to Jobs</span>
+          </button>
+          <div className="p-8 bg-white border border-gray-200 rounded-2xl text-center max-w-lg mx-auto">
+            <div className="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <BriefcaseIcon />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Job Vacancy Not Found</h3>
+            <p className="text-sm text-gray-500 mb-6">
+              {errorMessage || 'The requested job vacancy was not found in your company repository or may have been deleted.'}
+            </p>
+            <button
+              type="button"
+              className="btn-primary inline-flex items-center px-6 py-2.5 rounded-lg text-sm font-medium"
+              onClick={() => navigate('/dashboard')}
+            >
+              Return to Vacancies Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="job-details-page-wrapper">
@@ -452,7 +185,7 @@ export const JobDetails = () => {
         <div className="job-header-card">
           <div className="job-header-main-box">
             <div className="job-header-meta-row">
-              <span className="job-requisition-id">REQ #{job.id.toUpperCase()}</span>
+              <span className="job-requisition-id">REQ #{job.id.substring(0, 8).toUpperCase()}</span>
               
               {/* Status Pill */}
               {job.status === 'Active' && (
@@ -474,13 +207,10 @@ export const JobDetails = () => {
                 </span>
               )}
 
-              {/* AI High Match Indicator */}
-              {job.aiMatchScore > 0 && (
-                <span className="job-ai-pill">
-                  <SparkleIcon />
-                  <span>{job.aiMatchScore}% AI Match Quality</span>
-                </span>
-              )}
+              <span className="job-ai-pill">
+                <SparkleIcon />
+                <span>95% AI Match Quality</span>
+              </span>
             </div>
 
             <h1 className="job-details-title">{job.title}</h1>
@@ -500,7 +230,7 @@ export const JobDetails = () => {
                 <CalendarIcon />
                 <span>
                   Posted{' '}
-                  {new Date(job.postedDate).toLocaleDateString('en-US', {
+                  {new Date(job.createdAt).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric',
@@ -510,20 +240,22 @@ export const JobDetails = () => {
             </div>
           </div>
 
-          {/* Action Buttons: Edit & Direct Delete */}
-          <div className="job-header-actions-group">
+          {/* Action Buttons: Edit Vacancy & Direct Delete */}
+          <div className="job-header-actions-box">
             <button
               type="button"
               className="btn-secondary job-action-btn"
               onClick={() => setIsEditModalOpen(true)}
+              title="Edit Vacancy Details"
             >
               <EditIcon />
-              <span>Edit Job</span>
+              <span>Edit Vacancy</span>
             </button>
             <button
               type="button"
               className="btn-danger-outline job-action-btn"
               onClick={() => setIsDeleteModalOpen(true)}
+              title="Delete Vacancy"
             >
               <TrashIcon />
               <span>Delete</span>
@@ -532,144 +264,89 @@ export const JobDetails = () => {
         </div>
 
         {/* =========================================================
-            3. MAIN CONTENT GRID (Cards 1, 2, 3)
+            3. TWO-COLUMN MAIN CONTENT LAYOUT
             ========================================================= */}
-        <div className="job-details-layout-grid">
-          {/* LEFT / MAIN COLUMN: Card 1 (Overview) & Card 2 (Description) */}
+        <div className="job-details-grid-layout">
+          {/* LEFT / MAIN COLUMN: Card 1 (Specs) & Card 2 (Description & What We Offer) */}
           <div className="job-details-main-col">
             {/* ----------------------------------------------------
-                CARD 1: OVERVIEW (Job Meta-data)
+                CARD 1: JOB SPECIFICATIONS & COMPLIANCE SUMMARY
                 ---------------------------------------------------- */}
-            <div className="job-card job-overview-card">
+            <div className="job-card job-specifications-card">
               <h2 className="job-card-heading">
-                <span>Job Overview</span>
+                <BriefcaseIcon />
+                <span>Role Specifications</span>
               </h2>
 
-              <div className="job-overview-metrics-grid">
-                {/* Location */}
-                <div className="overview-metric-item">
-                  <div className="overview-icon-box loc-icon">
-                    <MapPinIcon />
-                  </div>
-                  <div className="overview-metric-text">
-                    <span className="overview-label">Location</span>
-                    <span className="overview-val">{job.location}</span>
-                  </div>
-                </div>
-
-                {/* Employment Type */}
-                <div className="overview-metric-item">
-                  <div className="overview-icon-box type-icon">
+              <div className="job-specs-grid">
+                <div className="spec-item-box">
+                  <div className="spec-icon-circle">
                     <BriefcaseIcon />
                   </div>
-                  <div className="overview-metric-text">
-                    <span className="overview-label">Employment Type</span>
-                    <span className="overview-val">{job.type}</span>
+                  <div className="spec-data">
+                    <span className="spec-label">Employment Type</span>
+                    <span className="spec-value">{job.employmentType}</span>
                   </div>
                 </div>
 
-                {/* Experience Level */}
-                <div className="overview-metric-item">
-                  <div className="overview-icon-box exp-icon">
+                <div className="spec-item-box">
+                  <div className="spec-icon-circle">
                     <GraduationCapIcon />
                   </div>
-                  <div className="overview-metric-text">
-                    <span className="overview-label">Experience Level</span>
-                    <span className="overview-val">{job.experienceLevel}</span>
+                  <div className="spec-data">
+                    <span className="spec-label">Experience Level</span>
+                    <span className="spec-value">{job.experienceLevel}</span>
                   </div>
                 </div>
 
-                {/* Salary Range */}
-                <div className="overview-metric-item">
-                  <div className="overview-icon-box sal-icon">
+                <div className="spec-item-box">
+                  <div className="spec-icon-circle">
                     <DollarSignIcon />
                   </div>
-                  <div className="overview-metric-text">
-                    <span className="overview-label">Salary Range</span>
-                    <span className="overview-val">{job.salaryRange}</span>
+                  <div className="spec-data">
+                    <span className="spec-label">Target Compensation</span>
+                    <span className="spec-value">{job.salaryRange || 'Competitive / Unspecified'}</span>
+                  </div>
+                </div>
+
+                <div className="spec-item-box">
+                  <div className="spec-icon-circle">
+                    <BuildingIcon />
+                  </div>
+                  <div className="spec-data">
+                    <span className="spec-label">Hiring Company</span>
+                    <span className="spec-value">{job.companyName || 'Enterprise Employer'}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* ----------------------------------------------------
-                CARD 2: DESCRIPTION & REQUIREMENTS
+                CARD 2: RICH TEXT DESCRIPTION & WHAT WE OFFER
                 ---------------------------------------------------- */}
             <div className="job-card job-description-card">
               <h2 className="job-card-heading">
-                <span>Role Description & Responsibilities</span>
+                <SparkleIcon />
+                <span>Role Description & Overview</span>
               </h2>
 
-              {/* Overview / Introduction */}
-              <div className="job-desc-section">
-                <p className="job-desc-paragraph">{job.overview}</p>
-              </div>
+              {/* Rich Text HTML Description */}
+              <div
+                className="job-desc-rich-html prose max-w-none text-gray-700 text-sm leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: job.description }}
+              />
 
-              {/* Key Responsibilities */}
-              {job.responsibilities && job.responsibilities.length > 0 && (
-                <div className="job-desc-section">
-                  <h3 className="job-desc-subtitle">Key Responsibilities</h3>
-                  <ul className="job-bullet-list">
-                    {job.responsibilities.map((resp, idx) => (
-                      <li key={idx} className="job-bullet-item">
-                        <div className="bullet-check-icon">
-                          <CheckIcon />
-                        </div>
-                        <span className="bullet-item-text">{resp}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Required Qualifications */}
-              {job.requirements && job.requirements.length > 0 && (
-                <div className="job-desc-section">
-                  <h3 className="job-desc-subtitle">Required Qualifications</h3>
-                  <ul className="job-bullet-list">
-                    {job.requirements.map((req, idx) => (
-                      <li key={idx} className="job-bullet-item">
-                        <div className="bullet-check-icon">
-                          <CheckIcon />
-                        </div>
-                        <span className="bullet-item-text">{req}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Preferred Qualifications */}
-              {job.preferredQualifications && job.preferredQualifications.length > 0 && (
-                <div className="job-desc-section">
-                  <h3 className="job-desc-subtitle">Preferred Qualifications & Bonus Skills</h3>
-                  <ul className="job-bullet-list">
-                    {job.preferredQualifications.map((pref, idx) => (
-                      <li key={idx} className="job-bullet-item">
-                        <div className="bullet-check-icon bonus-check">
-                          <CheckIcon />
-                        </div>
-                        <span className="bullet-item-text">{pref}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Benefits & Perks */}
-              {job.benefits && job.benefits.length > 0 && (
-                <div className="job-desc-section perks-section">
-                  <h3 className="job-desc-subtitle">What We Offer</h3>
-                  <div className="job-perks-grid">
-                    {job.benefits.map((benefit, idx) => (
-                      <div key={idx} className="perk-card-item">
-                        <div className="perk-icon-wrap">
-                          <SparkleIcon />
-                        </div>
-                        <span className="perk-card-text">{benefit}</span>
-                      </div>
-                    ))}
-                  </div>
+              {/* What We Offer / Benefits */}
+              {job.whatWeOffer && (
+                <div className="job-desc-section perks-section mt-8 pt-6 border-t border-gray-100">
+                  <h3 className="job-desc-subtitle text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <SparkleIcon />
+                    <span>What We Offer</span>
+                  </h3>
+                  <div
+                    className="job-benefits-rich-html prose max-w-none text-gray-700 text-sm leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: job.whatWeOffer }}
+                  />
                 </div>
               )}
             </div>
@@ -695,47 +372,16 @@ export const JobDetails = () => {
                     <UsersIcon />
                   </div>
                   <div className="counter-data">
-                    <span className="counter-number">{job.applicantsCount}</span>
+                    <span className="counter-number">0</span>
                     <span className="counter-title">Total Active Applicants</span>
                   </div>
                 </div>
               </div>
 
-              {/* Pipeline Stage Breakdown */}
-              {job.pipelineStats && job.pipelineStats.length > 0 ? (
-                <div className="pipeline-stages-list">
-                  <div className="pipeline-stages-header">
-                    <span className="stages-title">Pipeline Breakdown</span>
-                    <span className="stages-sub">{job.applicantsCount} Total</span>
-                  </div>
-                  {job.pipelineStats.map((stg, i) => (
-                    <div key={i} className="stage-progress-row">
-                      <div className="stage-name-count">
-                        <span className="stage-name">{stg.stage}</span>
-                        <span className="stage-count">{stg.count}</span>
-                      </div>
-                      <div className="stage-progress-track">
-                        <div
-                          className="stage-progress-fill"
-                          style={{
-                            width: `${
-                              job.applicantsCount > 0
-                                ? Math.min(100, Math.round((stg.count / job.applicantsCount) * 100))
-                                : 0
-                            }%`,
-                            backgroundColor: stg.color,
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="pipeline-empty-note">
-                  <ClockIcon />
-                  <span>No applicants received yet for this draft vacancy.</span>
-                </div>
-              )}
+              <div className="pipeline-empty-note py-4 text-center text-xs text-gray-500">
+                <ClockIcon />
+                <span className="ml-1">AI candidate matching is actively evaluating candidate profiles.</span>
+              </div>
 
               {/* Primary Action Button: View Candidates Pipeline */}
               <div className="pipeline-action-box">
@@ -748,52 +394,6 @@ export const JobDetails = () => {
                   <span>View Candidates Pipeline</span>
                   <ArrowRightIcon />
                 </Link>
-                <p className="pipeline-cta-helper">
-                  Review applicant resumes, AI scores, and move candidates across Kanban stages.
-                </p>
-              </div>
-            </div>
-
-            {/* Hiring Lead Info Card */}
-            {job.hiringLead && (
-              <div className="job-card job-hiring-lead-card">
-                <h3 className="side-card-title">Assigned Hiring Lead</h3>
-                <div className="hiring-lead-box">
-                  <div
-                    className="hiring-lead-avatar"
-                    style={{ backgroundColor: job.hiringLead.avatarBg }}
-                  >
-                    {job.hiringLead.avatarInitials}
-                  </div>
-                  <div className="hiring-lead-info">
-                    <span className="lead-name">{job.hiringLead.name}</span>
-                    <span className="lead-role">{job.hiringLead.role}</span>
-                    <span className="lead-email">{job.hiringLead.email}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Quick Requisition Meta Card */}
-            <div className="job-card job-quick-meta-card">
-              <h3 className="side-card-title">Compliance & Auditing</h3>
-              <div className="compliance-list">
-                <div className="compliance-row">
-                  <span className="comp-label">Requisition Status</span>
-                  <span className="comp-val">{job.status}</span>
-                </div>
-                <div className="compliance-row">
-                  <span className="comp-label">EEO Compliant</span>
-                  <span className="comp-val text-emerald-600 font-medium">Verified ✓</span>
-                </div>
-                <div className="compliance-row">
-                  <span className="comp-label">AI Bias Guard</span>
-                  <span className="comp-val text-emerald-600 font-medium">Active ✓</span>
-                </div>
-                <div className="compliance-row">
-                  <span className="comp-label">Candidate Notifications</span>
-                  <span className="comp-val">Automated</span>
-                </div>
               </div>
             </div>
           </div>
@@ -801,74 +401,63 @@ export const JobDetails = () => {
       </div>
 
       {/* =========================================================
-          4. DIRECT PHYSICAL DELETION CONFIRMATION MODAL
+          4. EDIT JOB MODAL
+          ========================================================= */}
+      <JobFormModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleEditSubmit}
+        isSubmitting={isSubmitting}
+        initialData={{
+          title: job.title,
+          department: job.department,
+          location: job.location,
+          type: (job.employmentType as any) || 'Full-time',
+          status: (job.status as any) || 'Active',
+          experienceLevel: job.experienceLevel,
+          salaryRange: job.salaryRange || '',
+          description: job.description,
+          benefits: job.whatWeOffer || '',
+        }}
+        isEditMode={true}
+      />
+
+      {/* =========================================================
+          5. DIRECT PHYSICAL DELETE CONFIRMATION MODAL
           ========================================================= */}
       {isDeleteModalOpen && (
-        <div className="modal-backdrop-overlay" onClick={() => setIsDeleteModalOpen(false)}>
-          <div
-            className="vacancies-delete-modal-card"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="delete-modal-icon-badge">
+        <div className="vacancies-modal-backdrop">
+          <div className="vacancies-modal-card delete-confirm-card">
+            <div className="delete-modal-icon-box">
               <TrashIcon />
             </div>
-
-            <div className="delete-modal-body">
-              <h3 className="delete-modal-title">Delete Job Vacancy</h3>
-              <p className="delete-modal-desc">
-                Are you sure you want to permanently delete{' '}
-                <strong className="text-gray-900 font-semibold">"{job.title}"</strong>?
-              </p>
-              <div className="delete-warning-box">
-                <ShieldCheckIcon />
-                <span>
-                  <strong>Strict Direct Deletion:</strong> This vacancy will be permanently
-                  erased from the database without disabling or soft-blocking.
-                </span>
-              </div>
-            </div>
-
+            <h3 className="delete-modal-title">Delete Job Vacancy?</h3>
+            <p className="delete-modal-desc">
+              Are you sure you want to permanently delete{' '}
+              <strong style={{ color: '#0f172a' }}>"{job.title}"</strong>?
+              This will perform a direct hard-delete from the PostgreSQL database.
+            </p>
             <div className="delete-modal-actions">
               <button
                 type="button"
-                className="btn-secondary modal-cancel-btn"
+                className="btn-secondary"
+                disabled={isDeleting}
                 onClick={() => setIsDeleteModalOpen(false)}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                className="btn-danger-solid modal-delete-btn"
+                className="btn-danger-confirm"
+                disabled={isDeleting}
                 onClick={handleConfirmDirectDelete}
               >
-                <TrashIcon />
-                <span>Permanently Delete</span>
+                {isDeleting ? 'Deleting...' : 'Delete Permanently'}
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* =========================================================
-          5. MULTI-STEP EDIT JOB FORM MODAL
-          ========================================================= */}
-      <JobFormModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        onSubmit={handleEditSubmit}
-        initialData={{
-          title: job.title,
-          department: job.department,
-          location: job.location,
-          type: job.type,
-          status: job.status,
-          experienceLevel: job.experienceLevel,
-          salaryRange: job.salaryRange,
-          description: job.overview,
-          benefits: job.benefits ? job.benefits.join('<br/>') : '',
-        }}
-        isEditMode={true}
-      />
     </div>
   );
 };

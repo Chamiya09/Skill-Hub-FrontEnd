@@ -12,7 +12,11 @@ import "./App.css";
 
 function AppContent() {
   const location = useLocation();
-  const hideHeaderFooter = location.pathname === "/login" || location.pathname === "/register";
+  const hideHeaderFooter =
+    location.pathname === "/company-login" ||
+    location.pathname === "/company-register" ||
+    location.pathname === "/login" ||
+    location.pathname === "/register";
 
   return (
     <div className={`page-container ${hideHeaderFooter ? "auth-full-screen" : ""}`}>
@@ -24,6 +28,8 @@ function AppContent() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/jobs" element={<FindJobs />} />
+            <Route path="/company-login" element={<Login />} />
+            <Route path="/company-register" element={<Register />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/users" element={<UserManagement />} />

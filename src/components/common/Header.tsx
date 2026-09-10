@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { NavLink, Link, useNavigate } from 'react-router-dom'
-import { authStorage, authApi, type UserDto } from '../../services/api'
+import { authStorage, type UserDto } from '../../services/api'
 import { SparkleIcon, ChevronDownIcon, UsersIcon } from './Icons'
 
 export const Header = () => {
@@ -15,10 +15,10 @@ export const Header = () => {
   }, [])
 
   const handleLogout = () => {
-    authApi.logout()
+    authStorage.clearAuth()
     setCurrentUser(null)
     setDropdownOpen(false)
-    navigate('/login')
+    navigate('/company-login')
   }
 
   const initials = currentUser?.fullName
@@ -167,14 +167,14 @@ export const Header = () => {
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Link
-              to="/login"
+              to="/company-login"
               className="btn-secondary"
               style={{ padding: '8px 18px', fontSize: '13.5px' }}
             >
               Sign In
             </Link>
             <Link
-              to="/register"
+              to="/company-register"
               className="btn-primary"
               style={{ padding: '8px 18px', fontSize: '13.5px' }}
             >

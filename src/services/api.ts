@@ -1,5 +1,5 @@
-// API Base URL - Matches ASP.NET Core port from launchSettings.json (http://localhost:5155 or https://localhost:7231)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5155/api/v1';
+// API Base URL - Matches ASP.NET Core port from launchSettings.json (http://localhost:5155)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5155/api';
 
 export interface UserDto {
   id: string;
@@ -20,12 +20,10 @@ export interface AuthResponseDto {
 
 export interface RegisterCompanyPayload {
   companyName: string;
-  contactEmail: string;
+  companyEmail: string;
+  password: string;
   industry?: string;
   website?: string;
-  adminFullName: string;
-  adminEmail: string;
-  password: string;
 }
 
 export interface LoginPayload {
@@ -109,11 +107,15 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 }
 
 // ==========================================
-// AUTHENTICATION API METHODS
+// COMPANY / EMPLOYER AUTHENTICATION API
 // ==========================================
-export const authApi = {
+export const companyAuthApi = {
+  /**
+   * Registers a new Company and provisions the first HR Admin user account.
+   * Calls: POST /api/company/register
+   */
   async register(payload: RegisterCompanyPayload): Promise<AuthResponseDto> {
-    const data = await request<AuthResponseDto>('/auth/register', {
+    const data = await request<AuthResponseDto>('/company/register', {
       method: 'POST',
       body: JSON.stringify(payload)
     });
@@ -121,30 +123,41 @@ export const authApi = {
     return data;
   },
 
+  /**
+   * Authenticates a company user and returns JWT token + user details.
+   * Calls: POST /api/company/login
+   */
   async login(payload: LoginPayload): Promise<AuthResponseDto> {
-    const data = await request<AuthResponseDto>('/auth/login', {
+    const data = await request<AuthResponseDto>('/company/login', {
       method: 'POST',
       body: JSON.stringify(payload)
     });
     authStorage.setAuth(data);
     return data;
-  },
-
-  logout(): void {
-    authStorage.clearAuth();
   }
 };
+
+// Backward-compatible alias
+export const authApi = companyAuthApi;
 
 // ==========================================
 // USER MANAGEMENT API METHODS
 // ==========================================
 export const usersApi = {
+  /**
+   * Retrieves all users registered under a specific company.
+   * Calls: GET /api/users/company/{companyId}
+   */
   async getUsersByCompany(companyId: string): Promise<UserDto[]> {
     return request<UserDto[]>(`/users/company/${companyId}`, {
       method: 'GET'
     });
   },
 
+  /**
+   * Retrieves single user details by ID.
+   * Calls: GET /api/users/{id}
+   */
   async getUserById(userId: string): Promise<UserDto> {
     return request<UserDto>(`/users/${userId}`, {
       method: 'GET'
@@ -152,8 +165,8 @@ export const usersApi = {
   },
 
   /**
-   * Completely and directly deletes the user from the database.
-   * (No soft-disable or block flag is used).
+   * Directly and permanently deletes a user from the database.
+   * Calls: DELETE /api/users/{id}
    */
   async deleteUserDirectly(userId: string): Promise<void> {
     return request<void>(`/users/${userId}`, {

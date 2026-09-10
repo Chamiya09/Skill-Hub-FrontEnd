@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { authApi } from '../services/api';
+import { companyAuthApi } from '../services/api';
 import {
   SparkleIcon,
   ShieldCheckIcon,
@@ -8,24 +8,22 @@ import {
   ArrowRightIcon,
   ArrowLeftIcon,
   BuildingIcon,
-  UsersIcon,
   LockIcon,
   MailIcon,
   GlobeIcon,
+  BriefcaseIcon,
 } from '../components/common/Icons';
 
 export const Register = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
-  // Form State
+  // Strictly Company Registration Form State
   const [formData, setFormData] = useState({
     companyName: '',
-    contactEmail: '',
+    companyEmail: '',
     industry: 'Software & Technology',
     website: '',
-    adminFullName: '',
-    adminEmail: '',
     password: '',
     confirmPassword: '',
   });
@@ -36,33 +34,31 @@ export const Register = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Per-step Validation
+  // Step 1: Company Identity Validation
   const validateStep1 = () => {
     if (!formData.companyName.trim()) {
       setStepError('Please enter your Company Name.');
       return false;
     }
-    if (!formData.contactEmail.trim() || !formData.contactEmail.includes('@')) {
-      setStepError('Please enter a valid Company Contact Email address.');
+    if (!formData.companyEmail.trim() || !formData.companyEmail.includes('@')) {
+      setStepError('Please enter a valid Company / Business Email address.');
       return false;
     }
     setStepError(null);
     return true;
   };
 
+  // Step 2: Company Profile Validation
   const validateStep2 = () => {
-    if (!formData.adminFullName.trim()) {
-      setStepError('Please enter the Admin Full Name.');
-      return false;
-    }
-    if (!formData.adminEmail.trim() || !formData.adminEmail.includes('@')) {
-      setStepError('Please enter a valid Admin Corporate Email address.');
+    if (!formData.industry.trim()) {
+      setStepError('Please select a primary industry for your company.');
       return false;
     }
     setStepError(null);
     return true;
   };
 
+  // Step 3: Security & Password Validation
   const validateStep3 = () => {
     if (!formData.password || formData.password.length < 6) {
       setStepError('Password must be at least 6 characters long.');
@@ -103,22 +99,20 @@ export const Register = () => {
     setLoading(true);
 
     try {
-      const response = await authApi.register({
+      const response = await companyAuthApi.register({
         companyName: formData.companyName.trim(),
-        contactEmail: formData.contactEmail.trim(),
+        companyEmail: formData.companyEmail.trim(),
         industry: formData.industry,
         website: formData.website.trim(),
-        adminFullName: formData.adminFullName.trim(),
-        adminEmail: formData.adminEmail.trim(),
         password: formData.password,
       });
 
-      setSuccessMessage(`Enterprise account for "${response.user.companyName}" provisioned! Redirecting...`);
+      setSuccessMessage(`Enterprise account for "${response.user.companyName}" successfully created! Redirecting...`);
       setTimeout(() => {
         navigate('/users');
       }, 1000);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to register company. Please verify all details.');
+      setErrorMessage(err.message || 'Failed to register company. Please check your information.');
     } finally {
       setLoading(false);
     }
@@ -147,11 +141,11 @@ export const Register = () => {
         <div className="auth-header">
           <div className="badge-tag" style={{ display: 'inline-flex', marginBottom: '8px' }}>
             <SparkleIcon />
-            <span>ENTERPRISE ONBOARDING</span>
+            <span>EMPLOYER REGISTRATION</span>
           </div>
           <h1 className="auth-title">Register Your Company</h1>
           <p className="auth-subtitle">
-            Deploy Skill Hub's AI talent matching engine in 3 simple steps.
+            Deploy Skill Hub's AI talent pipeline and vacancy manager for your organization.
           </p>
         </div>
 
@@ -187,7 +181,7 @@ export const Register = () => {
             <div className="wizard-step-circle">
               {currentStep > 2 ? <CheckIcon /> : '2'}
             </div>
-            <span className="wizard-step-label">Admin</span>
+            <span className="wizard-step-label">Profile</span>
           </div>
 
           {/* Step 3 Node */}
@@ -213,9 +207,9 @@ export const Register = () => {
           </div>
         )}
 
-        {/* Form Form Container */}
+        {/* Form Container */}
         <form onSubmit={handleSubmit}>
-          {/* STEP 1: Company Profile */}
+          {/* STEP 1: Company Core Details */}
           {currentStep === 1 && (
             <div className="wizard-step-body" key="step1">
               <div className="wizard-step-header">
@@ -223,8 +217,8 @@ export const Register = () => {
                   <BuildingIcon />
                 </div>
                 <div>
-                  <h3 className="wizard-step-title">Company Profile</h3>
-                  <p className="wizard-step-desc">Enter your organization details</p>
+                  <h3 className="wizard-step-title">Company Identity</h3>
+                  <p className="wizard-step-desc">Enter your organization's legal name and business email</p>
                 </div>
               </div>
 
@@ -232,8 +226,8 @@ export const Register = () => {
                 <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
                   Company Name <span style={{ color: '#ef4444' }}>*</span>
                 </label>
-                <div className="auth-input-wrapper">
-                  <span className="auth-input-icon">
+                <div className="relative w-full auth-input-wrapper">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400 auth-input-icon">
                     <BuildingIcon />
                   </span>
                   <input
@@ -245,8 +239,7 @@ export const Register = () => {
                       setStepError(null);
                       setFormData({ ...formData, companyName: e.target.value });
                     }}
-                    className="input-field-standard"
-                    style={{ paddingLeft: '42px' }}
+                    className="input-field-standard pl-11 w-full"
                     autoFocus
                   />
                 </div>
@@ -254,63 +247,27 @@ export const Register = () => {
 
               <div className="form-group-item">
                 <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
-                  Company Contact Email <span style={{ color: '#ef4444' }}>*</span>
+                  Company / Business Email <span style={{ color: '#ef4444' }}>*</span>
                 </label>
-                <div className="auth-input-wrapper">
-                  <span className="auth-input-icon">
+                <div className="relative w-full auth-input-wrapper">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400 auth-input-icon">
                     <MailIcon />
                   </span>
                   <input
                     type="email"
                     required
                     placeholder="contact@acmetech.com"
-                    value={formData.contactEmail}
+                    value={formData.companyEmail}
                     onChange={(e) => {
                       setStepError(null);
-                      setFormData({ ...formData, contactEmail: e.target.value });
+                      setFormData({ ...formData, companyEmail: e.target.value });
                     }}
-                    className="input-field-standard"
-                    style={{ paddingLeft: '42px' }}
+                    className="input-field-standard pl-11 w-full"
                   />
                 </div>
-              </div>
-
-              <div className="form-field-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="form-group-item">
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
-                    Industry
-                  </label>
-                  <select
-                    value={formData.industry}
-                    onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                    className="input-field-standard"
-                    style={{ cursor: 'pointer', height: '42px' }}
-                  >
-                    <option value="Software & Technology">Software & Tech</option>
-                    <option value="Artificial Intelligence">AI & Data</option>
-                    <option value="Fintech & Banking">Fintech</option>
-                    <option value="Healthcare & Biotech">Healthcare</option>
-                    <option value="E-Commerce & Retail">E-Commerce</option>
-                  </select>
-                </div>
-                <div className="form-group-item">
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
-                    Website (Optional)
-                  </label>
-                  <div className="auth-input-wrapper">
-                    <span className="auth-input-icon">
-                      <GlobeIcon />
-                    </span>
-                    <input
-                      type="url"
-                      placeholder="https://acme.com"
-                      value={formData.website}
-                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                      className="input-field-standard"
-                      style={{ paddingLeft: '42px' }}
-                    />
-                  </div>
-                </div>
+                <span style={{ fontSize: '11.5px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                  This email will be used as the primary root login for your company portal.
+                </span>
               </div>
 
               <div className="wizard-action-row">
@@ -320,69 +277,65 @@ export const Register = () => {
                   onClick={handleNext}
                   className="btn-wizard-next"
                 >
-                  <span>Continue to Admin Details</span>
+                  <span>Continue to Company Profile</span>
                   <ArrowRightIcon />
                 </button>
               </div>
             </div>
           )}
 
-          {/* STEP 2: Admin User Details */}
+          {/* STEP 2: Company Profile & Industry */}
           {currentStep === 2 && (
             <div className="wizard-step-body" key="step2">
               <div className="wizard-step-header">
                 <div className="wizard-step-icon" style={{ background: '#e0f2fe', color: '#0284c7' }}>
-                  <UsersIcon />
+                  <BriefcaseIcon />
                 </div>
                 <div>
-                  <h3 className="wizard-step-title">HR Administrator</h3>
-                  <p className="wizard-step-desc">First administrator account for your company</p>
+                  <h3 className="wizard-step-title">Organization Profile</h3>
+                  <p className="wizard-step-desc">Configure your domain and hiring sector</p>
                 </div>
               </div>
 
               <div className="form-group-item">
                 <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
-                  Admin Full Name <span style={{ color: '#ef4444' }}>*</span>
+                  Primary Industry <span style={{ color: '#ef4444' }}>*</span>
                 </label>
-                <div className="auth-input-wrapper">
-                  <span className="auth-input-icon">
-                    <UsersIcon />
-                  </span>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Sarah Jenkins"
-                    value={formData.adminFullName}
-                    onChange={(e) => {
-                      setStepError(null);
-                      setFormData({ ...formData, adminFullName: e.target.value });
-                    }}
-                    className="input-field-standard"
-                    style={{ paddingLeft: '42px' }}
-                    autoFocus
-                  />
-                </div>
+                <select
+                  value={formData.industry}
+                  onChange={(e) => {
+                    setStepError(null);
+                    setFormData({ ...formData, industry: e.target.value });
+                  }}
+                  className="input-field-standard w-full"
+                  style={{ cursor: 'pointer', height: '42px' }}
+                  autoFocus
+                >
+                  <option value="Software & Technology">Software & Technology</option>
+                  <option value="Artificial Intelligence">Artificial Intelligence & Data</option>
+                  <option value="Fintech & Banking">Fintech & Banking</option>
+                  <option value="Healthcare & Biotech">Healthcare & Biotech</option>
+                  <option value="E-Commerce & Retail">E-Commerce & Retail</option>
+                  <option value="Cybersecurity">Cybersecurity & Cloud</option>
+                  <option value="Manufacturing & Hardware">Manufacturing & Hardware</option>
+                  <option value="Other">Other Enterprise Sector</option>
+                </select>
               </div>
 
               <div className="form-group-item">
                 <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
-                  Admin Corporate Email <span style={{ color: '#ef4444' }}>*</span>
+                  Company Website (Optional)
                 </label>
-                <div className="auth-input-wrapper">
-                  <span className="auth-input-icon">
-                    <MailIcon />
+                <div className="relative w-full auth-input-wrapper">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400 auth-input-icon">
+                    <GlobeIcon />
                   </span>
                   <input
-                    type="email"
-                    required
-                    placeholder="sarah@acmetech.com"
-                    value={formData.adminEmail}
-                    onChange={(e) => {
-                      setStepError(null);
-                      setFormData({ ...formData, adminEmail: e.target.value });
-                    }}
-                    className="input-field-standard"
-                    style={{ paddingLeft: '42px' }}
+                    type="url"
+                    placeholder="https://acmetech.com"
+                    value={formData.website}
+                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                    className="input-field-standard pl-11 w-full"
                   />
                 </div>
               </div>
@@ -401,7 +354,7 @@ export const Register = () => {
                 }}
               >
                 <ShieldCheckIcon />
-                <span>This user will be assigned the <strong>HR Admin</strong> role with full governance permissions.</span>
+                <span>Industry classification helps calibrate our AI candidate matching algorithms.</span>
               </div>
 
               <div className="wizard-action-row">
@@ -425,7 +378,7 @@ export const Register = () => {
             </div>
           )}
 
-          {/* STEP 3: Security & Submit */}
+          {/* STEP 3: Security & Password */}
           {currentStep === 3 && (
             <div className="wizard-step-body" key="step3">
               <div className="wizard-step-header">
@@ -433,8 +386,8 @@ export const Register = () => {
                   <LockIcon />
                 </div>
                 <div>
-                  <h3 className="wizard-step-title">Account Security</h3>
-                  <p className="wizard-step-desc">Set your master password to secure your portal</p>
+                  <h3 className="wizard-step-title">Master Credentials</h3>
+                  <p className="wizard-step-desc">Set your company portal master password</p>
                 </div>
               </div>
 
@@ -442,8 +395,8 @@ export const Register = () => {
                 <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
                   Create Password <span style={{ color: '#ef4444' }}>*</span>
                 </label>
-                <div className="auth-input-wrapper">
-                  <span className="auth-input-icon">
+                <div className="relative w-full auth-input-wrapper">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400 auth-input-icon">
                     <LockIcon />
                   </span>
                   <input
@@ -456,8 +409,7 @@ export const Register = () => {
                       setStepError(null);
                       setFormData({ ...formData, password: e.target.value });
                     }}
-                    className="input-field-standard"
-                    style={{ paddingLeft: '42px', paddingRight: '40px' }}
+                    className="input-field-standard pl-11 pr-12 w-full"
                     autoFocus
                   />
                   <button
@@ -466,6 +418,8 @@ export const Register = () => {
                     style={{
                       position: 'absolute',
                       right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
                       background: 'none',
                       border: 'none',
                       color: '#94a3b8',
@@ -473,6 +427,7 @@ export const Register = () => {
                       fontSize: '12px',
                       fontWeight: 600,
                       padding: '4px',
+                      zIndex: 3,
                     }}
                   >
                     {showPassword ? 'Hide' : 'Show'}
@@ -484,8 +439,8 @@ export const Register = () => {
                 <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
                   Confirm Password <span style={{ color: '#ef4444' }}>*</span>
                 </label>
-                <div className="auth-input-wrapper">
-                  <span className="auth-input-icon">
+                <div className="relative w-full auth-input-wrapper">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400 auth-input-icon">
                     <LockIcon />
                   </span>
                   <input
@@ -497,16 +452,15 @@ export const Register = () => {
                       setStepError(null);
                       setFormData({ ...formData, confirmPassword: e.target.value });
                     }}
-                    className="input-field-standard"
-                    style={{ paddingLeft: '42px' }}
+                    className="input-field-standard pl-11 w-full"
                   />
                 </div>
               </div>
 
-              {/* Password indicator */}
+              {/* Password Requirements */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: formData.password.length >= 6 ? '#00b074' : '#94a3b8' }}>
                 <CheckIcon />
-                <span>Minimum 6 characters required for enterprise security.</span>
+                <span>Minimum 6 characters required for corporate enterprise security.</span>
               </div>
 
               <div className="wizard-action-row">
@@ -525,10 +479,10 @@ export const Register = () => {
                   className="btn-wizard-next"
                 >
                   {loading ? (
-                    <span>Provisioning Enterprise Account...</span>
+                    <span>Registering Company...</span>
                   ) : (
                     <>
-                      <span>Complete Registration</span>
+                      <span>Complete Company Registration</span>
                       <ArrowRightIcon />
                     </>
                   )}
@@ -542,13 +496,13 @@ export const Register = () => {
         <div className="auth-card-footer">
           <p>
             Already have a corporate account?{' '}
-            <Link to="/login" className="auth-footer-link">
-              Sign In Here
+            <Link to="/company-login" className="auth-footer-link">
+              Company Login
             </Link>
           </p>
           <div className="auth-security-badge">
             <ShieldCheckIcon />
-            <span>SOC-2 Type II Certified • Automatic HR Admin Provisioning</span>
+            <span>SOC-2 Type II Certified • 256-Bit SSL Encryption</span>
           </div>
         </div>
       </div>

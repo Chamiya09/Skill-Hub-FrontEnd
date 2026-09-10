@@ -2209,26 +2209,34 @@
   cursor: not-allowed;
 }
 
-/* Input Wrappers with Icons */
+/* Input Wrappers with Icons - Standard Pattern */
 .auth-input-wrapper {
   position: relative;
-  display: flex;
-  align-items: center;
   width: 100%;
 }
 
 .auth-input-icon {
   position: absolute;
-  left: 14px;
-  color: #94a3b8;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  padding-left: 14px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  color: #94a3b8;
   pointer-events: none;
-  transition: color 0.2s ease;
+  transition: color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 2;
 }
 
 .auth-input-wrapper:focus-within .auth-input-icon {
   color: #00b074;
+}
+
+.auth-input-wrapper .input-field-standard {
+  padding-left: 44px !important;
+  width: 100%;
 }
 
 .auth-alert-error {

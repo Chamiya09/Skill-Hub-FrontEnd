@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { authApi } from '../services/api';
+import { companyAuthApi } from '../services/api';
 import {
   SparkleIcon,
   MailIcon,
@@ -26,7 +26,7 @@ export const Login = () => {
     setLoading(true);
 
     try {
-      const response = await authApi.login({
+      const response = await companyAuthApi.login({
         email: email.trim(),
         password: password,
       });
@@ -36,7 +36,7 @@ export const Login = () => {
         navigate('/users');
       }, 900);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to authenticate. Please check your corporate credentials.');
+      setErrorMessage(err.message || 'Failed to authenticate company user. Please verify your credentials.');
     } finally {
       setLoading(false);
     }
@@ -65,11 +65,11 @@ export const Login = () => {
         <div className="auth-header">
           <div className="badge-tag" style={{ display: 'inline-flex', marginBottom: '12px' }}>
             <SparkleIcon />
-            <span>ENTERPRISE PORTAL</span>
+            <span>EMPLOYER PORTAL</span>
           </div>
-          <h1 className="auth-title">Sign in to Skill Hub</h1>
+          <h1 className="auth-title">Company Login</h1>
           <p className="auth-subtitle">
-            Access your AI talent pipelines, candidate graphs, and vacancy manager.
+            Access your employer ATS portal, candidate pipelines, and vacancy manager.
           </p>
         </div>
 
@@ -92,21 +92,20 @@ export const Login = () => {
         <form onSubmit={handleSubmit} className="auth-form" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div className="form-group-item">
             <label htmlFor="loginEmail" style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
-              Corporate Email Address
+              Company / Business Email Address
             </label>
-            <div className="auth-input-wrapper">
-              <span className="auth-input-icon">
+            <div className="relative w-full auth-input-wrapper">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400 auth-input-icon">
                 <MailIcon />
               </span>
               <input
                 id="loginEmail"
                 type="email"
                 required
-                placeholder="name@company.com"
+                placeholder="contact@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="input-field-standard"
-                style={{ paddingLeft: '42px' }}
+                className="input-field-standard pl-11 w-full"
                 autoComplete="email"
               />
             </div>
@@ -121,15 +120,15 @@ export const Login = () => {
                 href="#forgot"
                 onClick={(e) => {
                   e.preventDefault();
-                  alert('Password reset link will be dispatched to your registered administrator email.');
+                  alert('Password reset instructions will be dispatched to your registered administrator email.');
                 }}
                 style={{ fontSize: '12px', color: '#00b074', fontWeight: 600, textDecoration: 'none' }}
               >
                 Forgot Password?
               </a>
             </div>
-            <div className="auth-input-wrapper">
-              <span className="auth-input-icon">
+            <div className="relative w-full auth-input-wrapper">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400 auth-input-icon">
                 <LockIcon />
               </span>
               <input
@@ -139,8 +138,7 @@ export const Login = () => {
                 placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="input-field-standard"
-                style={{ paddingLeft: '42px', paddingRight: '40px' }}
+                className="input-field-standard pl-11 pr-12 w-full"
                 autoComplete="current-password"
               />
               <button
@@ -149,6 +147,8 @@ export const Login = () => {
                 style={{
                   position: 'absolute',
                   right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
                   background: 'none',
                   border: 'none',
                   color: '#94a3b8',
@@ -156,6 +156,7 @@ export const Login = () => {
                   fontSize: '12px',
                   fontWeight: 600,
                   padding: '4px',
+                  zIndex: 3,
                 }}
               >
                 {showPassword ? 'Hide' : 'Show'}
@@ -181,10 +182,10 @@ export const Login = () => {
             }}
           >
             {loading ? (
-              <span>Authenticating...</span>
+              <span>Authenticating Company Account...</span>
             ) : (
               <>
-                <span>Sign In to Dashboard</span>
+                <span>Sign In to Company Portal</span>
                 <ArrowRightIcon />
               </>
             )}
@@ -194,14 +195,14 @@ export const Login = () => {
         {/* Card Footer */}
         <div className="auth-card-footer">
           <p>
-            Don't have an enterprise account?{' '}
-            <Link to="/register" className="auth-footer-link">
-              Register Company
+            Don't have a company account?{' '}
+            <Link to="/company-register" className="auth-footer-link">
+              Register Your Company
             </Link>
           </p>
           <div className="auth-security-badge">
             <ShieldCheckIcon />
-            <span>SOC-2 Type II Certified • 256-Bit SSL Encryption</span>
+            <span>SOC-2 Type II Certified • 256-Bit Enterprise SSL</span>
           </div>
         </div>
       </div>

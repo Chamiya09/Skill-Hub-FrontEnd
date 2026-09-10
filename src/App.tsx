@@ -10,6 +10,7 @@ import { Register } from "./pages/Register";
 import { UserManagement } from "./pages/UserManagement";
 import { Dashboard } from "./pages/Dashboard";
 import { JobVacancies } from "./pages/JobVacancies";
+import { JobDetails } from "./pages/JobDetails";
 import "./App.css";
 
 function AppContent() {
@@ -37,7 +38,10 @@ function AppContent() {
             <Route path="/register" element={<Register />} />
             <Route path="/users" element={<UserManagement />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/jobs/:id" element={<JobDetails />} />
             <Route path="/vacancies" element={<JobVacancies />} />
+            <Route path="/vacancies/:id" element={<JobDetails />} />
+            <Route path="/jobs/details/:id" element={<JobDetails />} />
           </Routes>
         </main>
       </div>

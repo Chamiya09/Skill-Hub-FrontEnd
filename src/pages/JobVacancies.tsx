@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   SearchIcon,
   UsersIcon,
@@ -360,7 +361,9 @@ export const JobVacancies = () => {
                     {/* Job Title Column */}
                     <td>
                       <div className="job-title-col">
-                        <span className="job-name-text">{job.title}</span>
+                        <Link to={`/dashboard/jobs/${job.id}`} className="job-name-link" title="View Job Details">
+                          <span className="job-name-text">{job.title}</span>
+                        </Link>
                         <div className="job-meta-subrow">
                           <span className="job-loc-tag">
                             <MapPinIcon />

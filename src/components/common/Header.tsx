@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { NavLink, Link, useNavigate } from 'react-router-dom'
 import { authStorage, type UserDto } from '../../services/api'
-import { SparkleIcon, ChevronDownIcon, UsersIcon } from './Icons'
+import { SparkleIcon, ChevronDownIcon } from './Icons'
 
 export const Header = () => {
   const navigate = useNavigate()
@@ -64,14 +64,6 @@ export const Header = () => {
         >
           Contact Us
         </NavLink>
-        {currentUser && (
-          <NavLink
-            to="/users"
-            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-          >
-            Team Users
-          </NavLink>
-        )}
       </nav>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}>
@@ -117,7 +109,7 @@ export const Header = () => {
                 </div>
 
                 <Link
-                  to="/users"
+                  to="/dashboard"
                   onClick={() => setDropdownOpen(false)}
                   style={{
                     display: 'flex',
@@ -133,8 +125,8 @@ export const Header = () => {
                   onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <UsersIcon />
-                  <span>User Management</span>
+                  <SparkleIcon />
+                  <span>Dashboard</span>
                 </Link>
 
                 <button

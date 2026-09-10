@@ -8,6 +8,7 @@ import { FindJobs } from "./pages/FindJobs";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import { UserManagement } from "./pages/UserManagement";
+import { Dashboard } from "./pages/Dashboard";
 import "./App.css";
 
 function AppContent() {
@@ -16,7 +17,8 @@ function AppContent() {
     location.pathname === "/company-login" ||
     location.pathname === "/company-register" ||
     location.pathname === "/login" ||
-    location.pathname === "/register";
+    location.pathname === "/register" ||
+    location.pathname.startsWith("/dashboard");
 
   return (
     <div className={`page-container ${hideHeaderFooter ? "auth-full-screen" : ""}`}>
@@ -33,6 +35,7 @@ function AppContent() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/users" element={<UserManagement />} />
+            <Route path="/dashboard" element={<Dashboard />} />
           </Routes>
         </main>
       </div>

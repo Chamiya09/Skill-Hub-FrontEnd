@@ -239,8 +239,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
               setSidebarOpen(false)
             }}
           >
-            <UsersIcon />
-            <span>Candidates</span>
+            <SparkleIcon />
+            <span>AI Screening</span>
           </button>
 
           <div className="nav-group-label" style={{ marginTop: '16px' }}>SYSTEM</div>
@@ -307,7 +307,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
               <span className="breadcrumb-current">
                 {activeTab === 'overview' && 'Company Overview'}
                 {activeTab === 'vacancies' && 'Job Vacancies'}
-                {activeTab === 'pipelines' && 'Candidates'}
+                {activeTab === 'pipelines' && 'AI Screening'}
                 {activeTab === 'settings' && 'Settings'}
               </span>
             </div>

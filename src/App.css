@@ -6130,26 +6130,104 @@ select.w-full {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, #00b074 0%, #008759 100%);
+  background: #00b074;
   color: #ffffff;
   font-size: 13.5px;
   font-weight: 700;
   padding: 10px 18px;
-  border-radius: 11px;
-  border: none;
+  border-radius: 10px;
+  border: 1px solid #009e67;
   cursor: pointer;
   box-shadow: none;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .btn-ai-screen:hover:not(:disabled) {
-  background: linear-gradient(135deg, #009e67 0%, #007a50 100%);
-  transform: translateY(-1px);
+  background: #009e67;
 }
 
 .btn-ai-screen:disabled {
-  opacity: 0.7;
+  opacity: 0.5;
+  background: #cbd5e1;
+  border-color: #94a3b8;
+  color: #64748b;
   cursor: not-allowed;
+}
+
+/* AI Screening Flat Info Banner (for Active jobs) */
+.ai-screening-info-banner {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  color: #1e40af;
+  margin-bottom: 24px;
+}
+
+.ai-screening-info-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: #2563eb;
+  margin-top: 1px;
+}
+
+.ai-screening-info-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e40af;
+  margin-bottom: 3px;
+}
+
+.ai-screening-info-desc {
+  font-size: 13px;
+  color: #1e3a8a;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Send to Hiring Pipeline Button */
+.btn-send-pipeline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #00b074;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid #009e67;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-send-pipeline:hover:not(:disabled) {
+  background: #009e67;
+}
+
+.btn-send-pipeline:disabled {
+  opacity: 0.7;
+  background: #059669;
+  border-color: #047857;
+  cursor: default;
+}
+
+/* Transferred Success Alert / Card */
+.ai-screening-transferred-card {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #065f46;
+  margin-bottom: 24px;
 }
 
 .ai-screening-progress-banner {

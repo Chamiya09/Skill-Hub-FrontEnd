@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jobsApi, type JobDto } from '../services/api';
-import { CandidatesListModal } from '../components/candidates/CandidatesListModal';
 import {
   SparkleIcon,
   SearchIcon,
@@ -12,6 +11,7 @@ import {
   ArrowRightIcon,
   PlusIcon,
   BuildingIcon,
+  InfoIcon,
 } from '../components/common/Icons';
 
 interface PipelineJobSelectorProps {
@@ -25,7 +25,7 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('All');
-  const [selectedJobForModal, setSelectedJobForModal] = useState<JobDto | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Closed'>('All');
 
   // Fetch company jobs
   const fetchJobs = async () => {
@@ -35,8 +35,8 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
       const data = await jobsApi.getJobs();
       setJobs(data);
     } catch (err: any) {
-      console.error('Error fetching jobs for pipeline selector:', err);
-      setErrorMessage(err.message || 'Failed to load active job vacancies.');
+      console.error('Error fetching jobs for AI screening selector:', err);
+      setErrorMessage(err.message || 'Failed to load company job requisitions.');
     } finally {
       setLoading(false);
     }
@@ -46,20 +46,20 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
     fetchJobs();
   }, []);
 
-  // Filter only Active jobs
-  const activeJobs = useMemo(() => {
-    return jobs.filter((j) => (j.status || 'Active').toLowerCase() === 'active');
+  // Filter out Draft jobs if desired, but keep Active and Closed
+  const publishedJobs = useMemo(() => {
+    return jobs.filter((j) => (j.status || 'Active').toLowerCase() !== 'draft');
   }, [jobs]);
 
-  // Extract unique departments from active jobs
+  // Extract unique departments from published jobs
   const departments = useMemo(() => {
-    const set = new Set(activeJobs.map((j) => j.department?.trim()).filter(Boolean));
+    const set = new Set(publishedJobs.map((j) => j.department?.trim()).filter(Boolean));
     return ['All', ...Array.from(set)];
-  }, [activeJobs]);
+  }, [publishedJobs]);
 
-  // Apply search and department filter
+  // Apply search, status, and department filter
   const filteredJobs = useMemo(() => {
-    return activeJobs.filter((job) => {
+    return publishedJobs.filter((job) => {
       const query = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !query ||
@@ -71,17 +71,31 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
         selectedDepartment === 'All' ||
         job.department.toLowerCase() === selectedDepartment.toLowerCase();
 
-      return matchesSearch && matchesDept;
+      const jobStatus = (job.status || 'Active').toLowerCase();
+      const matchesStatus =
+        statusFilter === 'All' ||
+        (statusFilter === 'Active' && jobStatus === 'active') ||
+        (statusFilter === 'Closed' && jobStatus === 'closed');
+
+      return matchesSearch && matchesDept && matchesStatus;
     });
-  }, [activeJobs, searchQuery, selectedDepartment]);
+  }, [publishedJobs, searchQuery, selectedDepartment, statusFilter]);
 
   const handleCardClick = (job: JobDto) => {
     if (onSelectJob) {
       onSelectJob(job.id);
     } else {
-      setSelectedJobForModal(job);
+      navigate(`/dashboard/pipelines/${job.id}`);
     }
   };
+
+  const closedCount = useMemo(() => {
+    return publishedJobs.filter((j) => (j.status || '').toLowerCase() === 'closed').length;
+  }, [publishedJobs]);
+
+  const activeCount = useMemo(() => {
+    return publishedJobs.filter((j) => (j.status || 'Active').toLowerCase() === 'active').length;
+  }, [publishedJobs]);
 
   return (
     <div className="pipeline-selector-container">
@@ -90,23 +104,29 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
         <div className="pipeline-header-title-box">
           <div className="badge-tag">
             <SparkleIcon />
-            <span>CANDIDATES & APPLICANT MANAGEMENT</span>
+            <span>AI BATCH SCREENING & CANDIDATE INTELLIGENCE</span>
           </div>
-          <h1 className="pipeline-page-title">Candidates by Job Vacancy</h1>
+          <h1 className="pipeline-page-title">AI Screening by Job Requisition</h1>
           <p className="pipeline-page-subtitle">
-            Choose an active job vacancy below to view its applicants, candidate profiles, AI match rankings, and hiring stages.
+            Select a job requisition to review applicants. Once applications close and a role is marked as <strong>Closed</strong>, run the comprehensive batch AI screening to shortlist candidates for interviews.
           </p>
         </div>
 
-        <div className="pipeline-header-stats-badge">
-          <span className="pipeline-stats-num">{activeJobs.length}</span>
-          <span className="pipeline-stats-label">Active Vacancies</span>
+        <div className="flex items-center gap-3">
+          <div className="pipeline-header-stats-badge" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+            <span className="pipeline-stats-num" style={{ color: '#00b074' }}>{activeCount}</span>
+            <span className="pipeline-stats-label">Open Roles</span>
+          </div>
+          <div className="pipeline-header-stats-badge" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+            <span className="pipeline-stats-num" style={{ color: '#6366f1' }}>{closedCount}</span>
+            <span className="pipeline-stats-label">Closed / Ready</span>
+          </div>
         </div>
       </div>
 
       {/* Filter & Search Bar */}
       <div className="filter-card-wrapper" style={{ marginBottom: '24px' }}>
-        <div className="filter-grid-bar" style={{ gridTemplateColumns: '2fr 1.2fr auto' }}>
+        <div className="filter-grid-bar" style={{ gridTemplateColumns: '2fr 1fr 1.2fr auto' }}>
           {/* Keyword Search */}
           <div className="filter-input-group">
             <span style={{ color: '#94a3b8' }}>
@@ -114,10 +134,22 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
             </span>
             <input
               type="text"
-              placeholder="Search active roles by title, department, or location..."
+              placeholder="Search requisitions by title, department, or location..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+          </div>
+
+          {/* Status Filter */}
+          <div className="filter-input-group">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'All' | 'Active' | 'Closed')}
+            >
+              <option value="All">All Statuses ({publishedJobs.length})</option>
+              <option value="Closed">Closed / Screening Ready ({closedCount})</option>
+              <option value="Active">Active / Applications Open ({activeCount})</option>
+            </select>
           </div>
 
           {/* Department Select */}
@@ -138,12 +170,13 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
           </div>
 
           {/* Reset Action */}
-          {(searchQuery || selectedDepartment !== 'All') && (
+          {(searchQuery || selectedDepartment !== 'All' || statusFilter !== 'All') && (
             <button
               type="button"
               onClick={() => {
                 setSearchQuery('');
                 setSelectedDepartment('All');
+                setStatusFilter('All');
               }}
               className="btn-secondary"
               style={{ padding: '10px 16px' }}
@@ -172,9 +205,9 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
       {loading ? (
         <div className="p-16 bg-white border border-slate-200 rounded-2xl text-center">
           <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-sm font-medium text-slate-500">Loading active company requisitions...</p>
+          <p className="text-sm font-medium text-slate-500">Loading company requisitions...</p>
         </div>
-      ) : activeJobs.length === 0 ? (
+      ) : publishedJobs.length === 0 ? (
         <div
           style={{
             background: '#ffffff',
@@ -184,7 +217,6 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
             textAlign: 'center',
             maxWidth: '540px',
             margin: '0 auto',
-            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
           }}
         >
           <div
@@ -211,7 +243,7 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
               marginBottom: '6px',
             }}
           >
-            No Active Requisitions Found
+            No Requisitions Found
           </h3>
           <p
             style={{
@@ -221,7 +253,7 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
               marginBottom: '20px',
             }}
           >
-            You do not have any active job vacancies to view candidate pipelines for. Publish a new job or activate an existing draft requisition.
+            You do not have any published job vacancies yet. Create a requisition to start collecting candidate applications for AI screening.
           </p>
           <button
             type="button"
@@ -246,10 +278,10 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
           }}
         >
           <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>
-            No Active Jobs Match Filter
+            No Jobs Match Filter
           </h3>
           <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px' }}>
-            Try clearing your search query or selecting a different department.
+            Try clearing your search query or selecting a different department or status.
           </p>
           <button
             type="button"
@@ -257,6 +289,7 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
             onClick={() => {
               setSearchQuery('');
               setSelectedDepartment('All');
+              setStatusFilter('All');
             }}
           >
             Clear Filters
@@ -264,85 +297,125 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
         </div>
       ) : (
         <div className="pipeline-jobs-grid">
-          {filteredJobs.map((job) => (
-            <div
-              key={job.id}
-              className="pipeline-job-card"
-              onClick={() => handleCardClick(job)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  handleCardClick(job);
-                }
-              }}
-            >
-              {/* Card Header: Dept & Status Pill */}
-              <div className="pipeline-card-topbar">
-                <span className="pipeline-dept-badge">{job.department}</span>
-                <span className="pipeline-status-pill">
-                  <span className="pipeline-status-dot"></span>
-                  Active
-                </span>
-              </div>
+          {filteredJobs.map((job) => {
+            const isClosed = (job.status || '').toLowerCase() === 'closed';
 
-              {/* Title */}
-              <h3 className="pipeline-card-title">{job.title}</h3>
-
-              {/* Location & Meta info */}
-              <div className="pipeline-card-meta">
-                <div className="pipeline-meta-item">
-                  <MapPinIcon />
-                  <span>{job.location}</span>
-                </div>
-                <div className="pipeline-meta-item">
-                  <ClockIcon />
-                  <span>{job.employmentType}</span>
-                </div>
-              </div>
-
-              {/* Metric & Info Row */}
-              <div className="pipeline-card-metrics">
-                <div className="pipeline-applicant-count">
-                  <UsersIcon />
-                  <span>6 Applicants</span>
-                </div>
-                <div className="pipeline-ai-badge">
-                  <SparkleIcon />
-                  <span>95% AI Match Engine</span>
-                </div>
-              </div>
-
-              {/* Card Footer Button */}
-              <div className="pipeline-card-footer">
-                <span className="pipeline-salary-text">
-                  {job.salaryRange || 'Competitive Compensation'}
-                </span>
-                <button
-                  type="button"
-                  className="pipeline-open-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
+            return (
+              <div
+                key={job.id}
+                className="pipeline-job-card"
+                onClick={() => handleCardClick(job)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
                     handleCardClick(job);
-                  }}
-                >
-                  <UsersIcon />
-                  <span>View Candidates</span>
-                  <ArrowRightIcon />
-                </button>
+                  }
+                }}
+              >
+                {/* Card Header: Dept & Status Pill */}
+                <div className="pipeline-card-topbar">
+                  <span className="pipeline-dept-badge">{job.department}</span>
+                  <span
+                    className={`pipeline-status-pill ${isClosed ? 'closed' : ''}`}
+                    style={
+                      isClosed
+                        ? {
+                            background: '#f1f5f9',
+                            color: '#475569',
+                            borderColor: '#cbd5e1',
+                          }
+                        : undefined
+                    }
+                  >
+                    <span
+                      className="pipeline-status-dot"
+                      style={isClosed ? { background: '#64748b' } : undefined}
+                    ></span>
+                    {isClosed ? 'Closed (Deadline Reached)' : 'Active (Open)'}
+                  </span>
+                </div>
+
+                {/* Title */}
+                <h3 className="pipeline-card-title">{job.title}</h3>
+
+                {/* Location & Meta info */}
+                <div className="pipeline-card-meta">
+                  <div className="pipeline-meta-item">
+                    <MapPinIcon />
+                    <span>{job.location}</span>
+                  </div>
+                  <div className="pipeline-meta-item">
+                    <ClockIcon />
+                    <span>{job.employmentType}</span>
+                  </div>
+                </div>
+
+                {/* Metric & Info Row */}
+                <div className="pipeline-card-metrics">
+                  <div className="pipeline-applicant-count">
+                    <UsersIcon />
+                    <span>6 Applicants</span>
+                  </div>
+                  {isClosed ? (
+                    <div
+                      className="pipeline-ai-badge"
+                      style={{
+                        background: '#ede9fe',
+                        color: '#6366f1',
+                        border: '1px solid #ddd6fe',
+                      }}
+                    >
+                      <SparkleIcon />
+                      <span>Ready for AI Screening</span>
+                    </div>
+                  ) : (
+                    <div
+                      className="pipeline-ai-badge"
+                      style={{
+                        background: '#eff6ff',
+                        color: '#2563eb',
+                        border: '1px solid #bfdbfe',
+                      }}
+                    >
+                      <InfoIcon />
+                      <span>Intake Phase</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Card Footer Button */}
+                <div className="pipeline-card-footer">
+                  <span className="pipeline-salary-text">
+                    {job.salaryRange || 'Competitive Compensation'}
+                  </span>
+                  <button
+                    type="button"
+                    className="pipeline-open-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCardClick(job);
+                    }}
+                    style={
+                      isClosed
+                        ? {
+                            background: '#00b074',
+                            color: '#ffffff',
+                            border: '1px solid #009e67',
+                          }
+                        : undefined
+                    }
+                  >
+                    {isClosed ? <SparkleIcon /> : <UsersIcon />}
+                    <span>{isClosed ? 'Open AI Screening' : 'View Applicants'}</span>
+                    <ArrowRightIcon />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
-
-      {/* Candidates List Modal Popup Over Job Selector */}
-      <CandidatesListModal
-        isOpen={!!selectedJobForModal}
-        onClose={() => setSelectedJobForModal(null)}
-        job={selectedJobForModal}
-      />
     </div>
   );
 };
-

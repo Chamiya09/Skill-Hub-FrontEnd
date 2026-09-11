@@ -8,16 +8,15 @@ import {
   BuildingIcon,
   MapPinIcon,
   DollarSignIcon,
-  UsersIcon,
   ClockIcon,
   CheckIcon,
   XIcon,
   GraduationCapIcon,
   MailIcon,
   PhoneIcon,
+  InfoIcon,
+  ArrowRightIcon,
 } from '../components/common/Icons';
-
-export type PipelineStage = 'Applied' | 'AI Shortlisted' | 'Interviewing' | 'Hired';
 
 export interface Candidate {
   id: string;
@@ -27,7 +26,7 @@ export interface Candidate {
   phone: string;
   location: string;
   appliedDate: string;
-  stage: PipelineStage;
+  isShortlisted?: boolean;
   aiMatchScore: number | null;
   aiSummary: string;
   keySkills: string[];
@@ -55,7 +54,7 @@ const INITIAL_CANDIDATES: Candidate[] = [
     phone: '+1 (555) 234-5678',
     location: 'San Francisco, CA (Remote)',
     appliedDate: 'Jan 12, 2026',
-    stage: 'Applied',
+    isShortlisted: false,
     aiMatchScore: null,
     aiSummary: 'Strong full-stack background with 6+ years in modern React, TypeScript, and enterprise ASP.NET Core microservices architecture. High alignment with job specifications.',
     keySkills: ['React', 'TypeScript', '.NET Core', 'PostgreSQL', 'Docker', 'AWS'],
@@ -88,7 +87,7 @@ const INITIAL_CANDIDATES: Candidate[] = [
     phone: '+1 (555) 890-1234',
     location: 'Austin, TX',
     appliedDate: 'Jan 13, 2026',
-    stage: 'Applied',
+    isShortlisted: false,
     aiMatchScore: null,
     aiSummary: 'Exceptional backend depth with distributed database optimization, Kubernetes infrastructure, and high-throughput transaction processing.',
     keySkills: ['C#', 'PostgreSQL', 'Kubernetes', 'Redis', 'System Design', 'Azure'],
@@ -121,7 +120,7 @@ const INITIAL_CANDIDATES: Candidate[] = [
     phone: '+1 (555) 456-7890',
     location: 'Seattle, WA',
     appliedDate: 'Jan 14, 2026',
-    stage: 'Applied',
+    isShortlisted: false,
     aiMatchScore: null,
     aiSummary: 'Top-tier frontend specialist with focus on performance optimization, design tokens, responsive corporate dashboards, and accessible component libraries.',
     keySkills: ['React', 'TypeScript', 'Tailwind CSS', 'Vite', 'Next.js', 'Figma'],
@@ -154,7 +153,7 @@ const INITIAL_CANDIDATES: Candidate[] = [
     phone: '+1 (555) 345-6789',
     location: 'Chicago, IL',
     appliedDate: 'Jan 14, 2026',
-    stage: 'Applied',
+    isShortlisted: false,
     aiMatchScore: null,
     aiSummary: 'Solid infrastructure background with automated CI/CD pipelines, Terraform infra-as-code, and Docker container orchestration.',
     keySkills: ['Docker', 'Kubernetes', 'CI/CD', 'AWS', 'Linux', 'Terraform'],
@@ -181,7 +180,7 @@ const INITIAL_CANDIDATES: Candidate[] = [
     phone: '+1 (555) 678-9012',
     location: 'New York, NY',
     appliedDate: 'Jan 15, 2026',
-    stage: 'Applied',
+    isShortlisted: false,
     aiMatchScore: null,
     aiSummary: 'Emerging developer with good foundational knowledge in React and REST APIs, eager to grow into senior architectural roles.',
     keySkills: ['JavaScript', 'React', 'Node.js', 'SQL', 'Git'],
@@ -198,123 +197,35 @@ const INITIAL_CANDIDATES: Candidate[] = [
     ],
     avatarColor: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
     aiStrengths: ['Quick Learner', 'Clean JavaScript Fundamentals'],
-    aiMissingSkills: ['5+ Years Seniority Requirement', '.NET Core Enterprise Patterns'],
+    aiMissingSkills: ['Senior System Design', 'High Load Optimization'],
   },
   {
     id: 'cand-6',
-    name: 'Liam O’Connor',
-    headline: 'Senior Staff Engineer & Platform Lead',
-    email: 'liam.oconnor@enterprise.io',
-    phone: '+1 (555) 901-2345',
-    location: 'Boston, MA',
-    appliedDate: 'Jan 10, 2026',
-    stage: 'AI Shortlisted',
-    aiMatchScore: 94,
-    aiSummary: 'Exceptional match with 7+ years in enterprise architectures, high security standards, and resilient distributed databases.',
-    keySkills: ['React', 'TypeScript', 'C#', '.NET Core', 'PostgreSQL', 'Microservices'],
-    experienceYears: 7,
-    education: 'B.S. in Computer Science - MIT',
-    currentCompany: 'Vanguard Tech',
-    experienceHistory: [
-      {
-        title: 'Senior Staff Engineer',
-        company: 'Vanguard Tech',
-        duration: '2020 - Present',
-        description: 'Led technical roadmap for enterprise core banking infrastructure with 99.999% uptime.',
-      },
-    ],
-    avatarColor: 'linear-gradient(135deg, #00b074 0%, #008759 100%)',
-    aiStrengths: ['94% Semantic Resume Match', '7+ Years Proven Leadership', 'Expert in Both Frontend & Backend'],
-    aiMissingSkills: [],
-  },
-  {
-    id: 'cand-7',
-    name: 'Maya Lin',
-    headline: 'Senior Application Architect & React Specialist',
-    email: 'maya.lin@innovatech.com',
+    name: 'Rachel Bennett',
+    headline: 'Cloud Backend Developer (Go & .NET)',
+    email: 'rachel.b@innovatetech.com',
     phone: '+1 (555) 789-0123',
-    location: 'San Jose, CA',
-    appliedDate: 'Jan 09, 2026',
-    stage: 'AI Shortlisted',
-    aiMatchScore: 96,
-    aiSummary: 'Top 1% candidate profile: deep expertise in high-concurrency architectures, enterprise state management, and modern Web APIs.',
-    keySkills: ['React', 'TypeScript', '.NET Core', 'Azure', 'System Design', 'Tailwind CSS'],
-    experienceYears: 8,
-    education: 'M.S. in Computer Science - Stanford University',
-    currentCompany: 'Synthetix Systems',
+    location: 'Boston, MA',
+    appliedDate: 'Jan 16, 2026',
+    isShortlisted: false,
+    aiMatchScore: null,
+    aiSummary: 'Specialized in asynchronous microservices, gRPC protocols, and enterprise backend persistence layers.',
+    keySkills: ['C#', 'Go', '.NET Core', 'Docker', 'RabbitMQ', 'PostgreSQL'],
+    experienceYears: 3,
+    education: 'B.S. in Software Engineering - Northeastern',
+    currentCompany: 'Apex Networks',
     experienceHistory: [
       {
-        title: 'Principal Engineer',
-        company: 'Synthetix Systems',
-        duration: '2019 - Present',
-        description: 'Directed engineering team of 14 developers building real-time analytics platforms.',
+        title: 'Backend Developer',
+        company: 'Apex Networks',
+        duration: '2023 - Present',
+        description: 'Maintained enterprise message routing queues and API integrations.',
       },
     ],
-    avatarColor: 'linear-gradient(135deg, #00b074 0%, #008759 100%)',
-    aiStrengths: ['96% Top AI Rating', 'Stanford MS in CS', 'Direct Domain Experience'],
-    aiMissingSkills: [],
+    avatarColor: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+    aiStrengths: ['Microservices Patterns', 'Strong .NET Basics'],
+    aiMissingSkills: ['Frontend React'],
   },
-  {
-    id: 'cand-8',
-    name: 'Daniel Taylor',
-    headline: 'Full Stack Engineer & Tech Lead',
-    email: 'daniel.taylor@devlink.co',
-    phone: '+1 (555) 567-8901',
-    location: 'Denver, CO',
-    appliedDate: 'Jan 07, 2026',
-    stage: 'Interviewing',
-    aiMatchScore: 91,
-    aiSummary: 'Candidate progressed through initial technical review and is actively interviewing with engineering leads.',
-    keySkills: ['React', 'C#', '.NET', 'PostgreSQL', 'Docker', 'REST APIs'],
-    experienceYears: 5,
-    education: 'B.S. in Software Engineering - Colorado State',
-    currentCompany: 'Summit Cloudworks',
-    experienceHistory: [
-      {
-        title: 'Full Stack Engineer',
-        company: 'Summit Cloudworks',
-        duration: '2021 - Present',
-        description: 'Engineered modular web services and refactored monolithic codebase to modern API gateways.',
-      },
-    ],
-    avatarColor: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',
-    aiStrengths: ['Passed Technical Code Assessment', 'Excellent Communication Skills'],
-    aiMissingSkills: [],
-  },
-  {
-    id: 'cand-9',
-    name: 'Sarah Jenkins',
-    headline: 'Principal Software Architect',
-    email: 'sarah.j@leadhire.com',
-    phone: '+1 (555) 123-4567',
-    location: 'San Francisco, CA',
-    appliedDate: 'Jan 02, 2026',
-    stage: 'Hired',
-    aiMatchScore: 98,
-    aiSummary: 'Offer finalized and signed! Joined company as Principal Architect to lead technical design.',
-    keySkills: ['React', 'TypeScript', 'C#', '.NET Core', 'Architecture', 'Kubernetes'],
-    experienceYears: 9,
-    education: 'M.S. in Computer Engineering - UC San Diego',
-    currentCompany: 'Skill Hub Enterprise',
-    experienceHistory: [
-      {
-        title: 'Principal Architect',
-        company: 'Skill Hub Enterprise',
-        duration: '2026 - Present',
-        description: 'Leading global architecture and engineering standards across the platform.',
-      },
-    ],
-    avatarColor: 'linear-gradient(135deg, #00b074 0%, #008759 100%)',
-    aiStrengths: ['Offer Accepted', '98% Prime Qualification Match'],
-    aiMissingSkills: [],
-  },
-];
-
-const STAGES: Array<{ id: PipelineStage; title: string; subtitle: string }> = [
-  { id: 'Applied', title: 'Applied', subtitle: 'New incoming candidate intake' },
-  { id: 'AI Shortlisted', title: 'AI Shortlisted', subtitle: 'Automated 85%+ candidate match' },
-  { id: 'Interviewing', title: 'Interviewing', subtitle: 'Technical & executive assessment' },
-  { id: 'Hired', title: 'Hired', subtitle: 'Final decision & contracting' },
 ];
 
 export const TalentPipelineBoard: React.FC = () => {
@@ -328,8 +239,11 @@ export const TalentPipelineBoard: React.FC = () => {
   const [candidates, setCandidates] = useState<Candidate[]>(INITIAL_CANDIDATES);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [isScreening, setIsScreening] = useState(false);
+  const [isAiAnalyzed, setIsAiAnalyzed] = useState(false);
   const [screeningText, setScreeningText] = useState('');
+  const [isTransferred, setIsTransferred] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -347,7 +261,7 @@ export const TalentPipelineBoard: React.FC = () => {
         const data = await jobsApi.getJobById(jobId);
         setJob(data);
       } catch (err: any) {
-        console.error('Error loading pipeline job:', err);
+        console.error('Error loading requisition for AI screening:', err);
         setErrorMessage(err.message || 'Job requisition was not found in your company database.');
       } finally {
         setLoading(false);
@@ -357,9 +271,41 @@ export const TalentPipelineBoard: React.FC = () => {
     fetchJob();
   }, [jobId]);
 
-  // AI Screening Simulation Handler
+  const isJobClosed = (job?.status || '').toLowerCase() === 'closed';
+  const isJobActive = (job?.status || 'Active').toLowerCase() === 'active';
+
+  // Toggle Job Status (e.g. Close Job so AI screening can run)
+  const handleToggleJobStatus = async () => {
+    if (!job) return;
+    const newStatus = isJobClosed ? 'Active' : 'Closed';
+    try {
+      setIsUpdatingStatus(true);
+      await jobsApi.updateJob(job.id, {
+        title: job.title,
+        department: job.department,
+        location: job.location,
+        employmentType: job.employmentType,
+        experienceLevel: job.experienceLevel,
+        salaryRange: job.salaryRange,
+        status: newStatus,
+        description: job.description,
+        whatWeOffer: job.whatWeOffer,
+      });
+      setJob((prev) => (prev ? { ...prev, status: newStatus } : null));
+      showToast(`Requisition status updated to "${newStatus}".`);
+    } catch (err: any) {
+      console.error('Failed to update job status:', err);
+      // Fallback local update
+      setJob((prev) => (prev ? { ...prev, status: newStatus } : null));
+      showToast(`Requisition status updated to "${newStatus}" (Local).`);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  // Run Batch AI Screening Handler (Only enabled when Closed)
   const handleRunAiScreening = () => {
-    if (isScreening) return;
+    if (!isJobClosed || isScreening) return;
     setIsScreening(true);
     setScreeningText('AI Agent scanning candidate CVs & parsing qualification profiles...');
 
@@ -368,53 +314,52 @@ export const TalentPipelineBoard: React.FC = () => {
     }, 800);
 
     setTimeout(() => {
-      // Update candidate scores and move top candidates (score >= 85) to 'AI Shortlisted'
+      setScreeningText('Calculating AI Match Scores and generating shortlisting ranks...');
+    }, 1500);
+
+    setTimeout(() => {
+      // Calculate AI scores for full batch
       setCandidates((prev) => {
         return prev.map((c) => {
-          if (c.stage === 'Applied') {
-            // Assign calculated AI match score based on candidate profile
-            let score = 72;
-            if (c.id === 'cand-1') score = 96; // Alex Morgan
-            else if (c.id === 'cand-2') score = 93; // Sophia Zhang
-            else if (c.id === 'cand-3') score = 89; // Marcus Vance
-            else if (c.id === 'cand-4') score = 86; // Elena Rostova
-            else if (c.id === 'cand-5') score = 68; // David Kim
+          let score = 72;
+          if (c.id === 'cand-1') score = 96; // Alex Morgan
+          else if (c.id === 'cand-2') score = 93; // Sophia Zhang
+          else if (c.id === 'cand-3') score = 89; // Marcus Vance
+          else if (c.id === 'cand-4') score = 86; // Elena Rostova
+          else if (c.id === 'cand-5') score = 68; // David Kim
+          else if (c.id === 'cand-6') score = 74; // Rachel Bennett
 
-            const isTopCandidate = score >= 85;
-            return {
-              ...c,
-              aiMatchScore: score,
-              stage: isTopCandidate ? 'AI Shortlisted' : 'Applied',
-              isRecentlyShortlisted: isTopCandidate,
-            };
-          }
-          return c;
+          const isTopCandidate = score >= 85;
+          return {
+            ...c,
+            aiMatchScore: score,
+            isShortlisted: isTopCandidate,
+            isRecentlyShortlisted: isTopCandidate,
+          };
         });
       });
 
       setIsScreening(false);
-      showToast('✨ AI Screening Complete! 4 top qualified candidates automatically moved to AI Shortlisted.');
-    }, 1800);
+      setIsAiAnalyzed(true);
+      showToast('✨ Batch AI Screening Complete! 4 top qualified candidates shortlisted.');
+    }, 2200);
   };
 
-  // Move candidate to specific stage
-  const handleMoveStage = (candidateId: string, newStage: PipelineStage, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setCandidates((prev) =>
-      prev.map((c) => (c.id === candidateId ? { ...c, stage: newStage, isRecentlyShortlisted: false } : c))
-    );
-    if (selectedCandidate && selectedCandidate.id === candidateId) {
-      setSelectedCandidate((prev) => (prev ? { ...prev, stage: newStage } : null));
-    }
-    showToast(`Candidate moved to "${newStage}" stage.`);
+  // Single Action: Send Shortlisted Candidates to Next Module (Hiring Pipeline)
+  const handleSendToHiringPipeline = () => {
+    setIsTransferred(true);
+    showToast('🚀 Shortlisted candidates successfully sent to Hiring Pipeline module!');
   };
+
+  const shortlistedCandidates = candidates.filter((c) => c.isShortlisted);
+  const otherCandidates = candidates.filter((c) => !c.isShortlisted);
 
   if (loading) {
     return (
       <div className="job-details-page-container flex items-center justify-center min-h-screen">
         <div className="text-center space-y-3">
           <div className="w-10 h-10 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-sm font-semibold text-slate-500">Loading candidate pipeline for requisition...</p>
+          <p className="text-sm font-semibold text-slate-500">Loading AI Screening data for requisition...</p>
         </div>
       </div>
     );
@@ -430,22 +375,22 @@ export const TalentPipelineBoard: React.FC = () => {
             onClick={() => navigate('/dashboard/pipelines')}
           >
             <ArrowLeftIcon />
-            <span>Back to Job Selector</span>
+            <span>Back to Requisitions</span>
           </button>
           <div className="job-details-card text-center max-w-lg mx-auto py-12">
             <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-rose-100">
               <BriefcaseIcon />
             </div>
-            <h3 className="text-lg font-bold text-slate-900 mb-2">Requisition Pipeline Not Found</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Requisition Not Found</h3>
             <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-              {errorMessage || 'Unable to find requisition candidate pipeline.'}
+              {errorMessage || 'Unable to find requisition candidate data.'}
             </p>
             <button
               type="button"
               className="btn-primary"
               onClick={() => navigate('/dashboard/pipelines')}
             >
-              Return to Pipeline Selector
+              Return to Requisitions List
             </button>
           </div>
         </div>
@@ -475,26 +420,38 @@ export const TalentPipelineBoard: React.FC = () => {
               onClick={() => navigate('/dashboard/pipelines')}
             >
               <ArrowLeftIcon />
-              <span>Back to Job Selector</span>
+              <span>Back to Requisitions</span>
             </button>
 
             <div className="job-details-breadcrumbs">
               <Link to="/dashboard" className="job-details-breadcrumb-link">Dashboard</Link>
               <span className="job-details-breadcrumb-sep">/</span>
-              <Link to="/dashboard/pipelines" className="job-details-breadcrumb-link">Candidates</Link>
+              <Link to="/dashboard/pipelines" className="job-details-breadcrumb-link">AI Screening</Link>
               <span className="job-details-breadcrumb-sep">/</span>
               <span className="job-details-breadcrumb-current">{job.title}</span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleToggleJobStatus}
+              disabled={isUpdatingStatus}
+              style={{ fontSize: '13px', padding: '8px 16px', borderRadius: '10px' }}
+              title={isJobClosed ? 'Re-open job applications' : 'Mark job closed to enable AI screening'}
+            >
+              <ClockIcon />
+              <span>{isJobClosed ? 'Re-open Applications' : 'Mark as Closed'}</span>
+            </button>
+
             <Link
               to={`/dashboard/jobs/${job.id}`}
               className="btn-secondary"
               style={{ fontSize: '13px', padding: '8px 16px', borderRadius: '10px' }}
             >
               <BriefcaseIcon />
-              <span>View Requisition</span>
+              <span>View Vacancy</span>
             </Link>
           </div>
         </div>
@@ -502,17 +459,31 @@ export const TalentPipelineBoard: React.FC = () => {
         {/* =========================================================
             2. HEADER BANNER CARD WITH AI SCREENING TRIGGER
             ========================================================= */}
-        <div className="job-details-hero-card">
+        <div className="job-details-hero-card" style={{ marginBottom: '20px' }}>
           <div className="job-details-hero-left">
             <div className="job-details-meta-tags">
-              <span className="job-details-status-badge active">
-                <span className="job-details-status-dot"></span>
-                {job.status} Pipeline
+              <span
+                className={`job-details-status-badge ${isJobActive ? 'active' : ''}`}
+                style={
+                  isJobClosed
+                    ? {
+                        background: '#f1f5f9',
+                        color: '#475569',
+                        borderColor: '#cbd5e1',
+                      }
+                    : undefined
+                }
+              >
+                <span
+                  className="job-details-status-dot"
+                  style={isJobClosed ? { background: '#64748b' } : undefined}
+                ></span>
+                {isJobClosed ? 'Closed (Intake Ended)' : 'Active (Applications Open)'}
               </span>
               <span className="job-details-dept-badge">{job.department}</span>
               <span className="job-details-ai-badge">
                 <SparkleIcon />
-                <span>AI Screening Pipeline</span>
+                <span>AI Batch Screening</span>
               </span>
             </div>
 
@@ -545,24 +516,33 @@ export const TalentPipelineBoard: React.FC = () => {
             </div>
           </div>
 
-          {/* AI Screening Primary Action Button */}
+          {/* AI Screening Primary Action Button (Enabled ONLY if Closed) */}
           <div className="job-details-hero-actions">
             <button
               type="button"
               className="btn-ai-screen"
               onClick={handleRunAiScreening}
-              disabled={isScreening}
-              title="Run AI Agent Screening across all applied candidate resumes"
+              disabled={!isJobClosed || isScreening}
+              title={
+                isJobActive
+                  ? 'Job is still Active. Close requisition to enable AI Screening.'
+                  : 'Run AI Batch Screening across all candidate CVs'
+              }
             >
               {isScreening ? (
                 <>
                   <div className="ai-screening-spinner"></div>
-                  <span>Analyzing Candidates...</span>
+                  <span>Analyzing All Applicants...</span>
+                </>
+              ) : isAiAnalyzed ? (
+                <>
+                  <SparkleIcon />
+                  <span>✨ Re-run AI Analysis</span>
                 </>
               ) : (
                 <>
                   <SparkleIcon />
-                  <span>✨ Run AI Screening</span>
+                  <span>✨ Run AI Analysis</span>
                 </>
               )}
             </button>
@@ -570,186 +550,467 @@ export const TalentPipelineBoard: React.FC = () => {
         </div>
 
         {/* =========================================================
-            3. AI SCREENING PROGRESS BANNER (WHEN ACTIVE)
+            3. STRICT ENFORCEMENT BANNER
+            ========================================================= */}
+        {isJobActive && (
+          <div className="ai-screening-info-banner">
+            <div className="ai-screening-info-icon">
+              <InfoIcon />
+            </div>
+            <div>
+              <div className="ai-screening-info-title">Applications Are Still Open</div>
+              <p className="ai-screening-info-desc">
+                Applications are still open. AI Screening can only be performed once the job is marked as Closed.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================
+            4. AI SCREENING PROGRESS BANNER (WHEN RUNNING)
             ========================================================= */}
         {isScreening && (
-          <div className="ai-screening-progress-banner">
+          <div className="ai-screening-progress-banner" style={{ marginBottom: '24px' }}>
             <div className="ai-screening-progress-left">
               <div className="ai-screening-spinner"></div>
               <span>{screeningText}</span>
             </div>
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/60 px-3 py-1 rounded-full border border-emerald-200">
-              Agent Active
+              AI Batch Processor Active
             </span>
           </div>
         )}
 
         {/* =========================================================
-            4. HORIZONTAL KANBAN BOARD
+            5. TRANSFERRED STATE BANNER / CONFIRMATION
             ========================================================= */}
-        <div className="overflow-x-auto pb-4">
-          <div className="kanban-board-grid" style={{ minWidth: '1060px' }}>
-            {STAGES.map((stage) => {
-              const stageCandidates = candidates.filter((c) => c.stage === stage.id);
-              const isShortlistedColumn = stage.id === 'AI Shortlisted';
-
-              return (
-                <div key={stage.id} className="kanban-column-card">
-                  {/* Column Header */}
-                  <div className="kanban-column-header">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="kanban-column-title">{stage.title}</h3>
-                        {isShortlistedColumn && (
-                          <span className="text-emerald-600"><SparkleIcon /></span>
-                        )}
-                      </div>
-                      <p className="kanban-column-desc">{stage.subtitle}</p>
-                    </div>
-                    <span className="kanban-count-pill">{stageCandidates.length}</span>
-                  </div>
-
-                  {/* Column Body & Cards */}
-                  <div className="kanban-column-body">
-                    {stageCandidates.length === 0 ? (
-                      <div className="kanban-empty-dropzone">
-                        <div className="kanban-dropzone-icon">
-                          <UsersIcon />
-                        </div>
-                        <span className="kanban-dropzone-title">No Candidates</span>
-                        <p className="kanban-dropzone-text">
-                          {stage.id === 'AI Shortlisted'
-                            ? 'Run AI Screening above to automatically filter top matches.'
-                            : `No candidates currently in ${stage.title.toLowerCase()} stage.`}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="kanban-cards-stack">
-                        {stageCandidates.map((candidate) => {
-                          const initials = candidate.name
-                            .split(' ')
-                            .map((n) => n[0])
-                            .join('')
-                            .substring(0, 2);
-
-                          return (
-                            <div
-                              key={candidate.id}
-                              className={`candidate-kanban-card ${candidate.isRecentlyShortlisted ? 'highlight-ai' : ''}`}
-                              onClick={() => setSelectedCandidate(candidate)}
-                              title="Click to view full Digital CV Profile"
-                            >
-                              {/* Card Header: Identity & AI Score */}
-                              <div className="candidate-card-top">
-                                <div className="candidate-card-identity">
-                                  <div
-                                    className="candidate-avatar"
-                                    style={{ background: candidate.avatarColor }}
-                                  >
-                                    {initials}
-                                  </div>
-                                  <div className="candidate-name-box">
-                                    <span className="candidate-card-name">{candidate.name}</span>
-                                    <span className="candidate-card-headline">{candidate.currentCompany}</span>
-                                  </div>
-                                </div>
-
-                                {/* AI Match Score Pill */}
-                                {candidate.aiMatchScore !== null ? (
-                                  <span
-                                    className={`ai-score-pill ${
-                                      candidate.aiMatchScore >= 90
-                                        ? 'high'
-                                        : candidate.aiMatchScore >= 80
-                                        ? 'medium'
-                                        : 'moderate'
-                                    }`}
-                                  >
-                                    <SparkleIcon />
-                                    <span>{candidate.aiMatchScore}%</span>
-                                  </span>
-                                ) : (
-                                  <span className="ai-score-pill pending">
-                                    <ClockIcon />
-                                    <span>Pending</span>
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Candidate Headline */}
-                              <p className="text-xs text-slate-600 line-clamp-1">
-                                {candidate.headline}
-                              </p>
-
-                              {/* Skills Badges */}
-                              <div className="candidate-card-skills">
-                                {candidate.keySkills.slice(0, 3).map((skill, idx) => (
-                                  <span key={idx} className="candidate-skill-tag">
-                                    {skill}
-                                  </span>
-                                ))}
-                                {candidate.keySkills.length > 3 && (
-                                  <span className="candidate-skill-tag">
-                                    +{candidate.keySkills.length - 3}
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Card Footer: Date & Quick Stage Mover */}
-                              <div className="candidate-card-footer">
-                                <div className="candidate-card-date">
-                                  <ClockIcon />
-                                  <span>{candidate.appliedDate}</span>
-                                </div>
-
-                                <div className="candidate-stage-nav-btns" onClick={(e) => e.stopPropagation()}>
-                                  {stage.id !== 'Applied' && (
-                                    <button
-                                      type="button"
-                                      className="candidate-stage-btn"
-                                      title="Move Left"
-                                      onClick={(e) => {
-                                        const stageIndex = STAGES.findIndex((s) => s.id === stage.id);
-                                        if (stageIndex > 0) {
-                                          handleMoveStage(candidate.id, STAGES[stageIndex - 1].id, e);
-                                        }
-                                      }}
-                                    >
-                                      ←
-                                    </button>
-                                  )}
-                                  {stage.id !== 'Hired' && (
-                                    <button
-                                      type="button"
-                                      className="candidate-stage-btn"
-                                      title="Advance to Next Stage"
-                                      onClick={(e) => {
-                                        const stageIndex = STAGES.findIndex((s) => s.id === stage.id);
-                                        if (stageIndex < STAGES.length - 1) {
-                                          handleMoveStage(candidate.id, STAGES[stageIndex + 1].id, e);
-                                        }
-                                      }}
-                                    >
-                                      →
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
+        {isTransferred && (
+          <div className="ai-screening-transferred-card">
+            <div className="flex items-center gap-3">
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: '#dcfce7',
+                  color: '#15803d',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                }}
+              >
+                ✓
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '13.5px', color: '#065f46' }}>
+                  Shortlisted Candidates Transferred to Hiring Pipeline
                 </div>
-              );
-            })}
+                <div style={{ fontSize: '12px', color: '#047857' }}>
+                  The 4 top AI-ranked candidates have been dispatched to the interview & evaluation pipeline.
+                </div>
+              </div>
+            </div>
+            <span
+              style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                background: '#ffffff',
+                color: '#059669',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                border: '1px solid #a7f3d0',
+              }}
+            >
+              Handoff Complete
+            </span>
           </div>
-        </div>
+        )}
+
+        {/* =========================================================
+            6. APPLICANTS & SCREENING RESULTS VIEW
+            ========================================================= */}
+        {isAiAnalyzed ? (
+          /* =========================================================
+             AFTER AI RUNS: SHORTLISTED VS OTHER APPLICANTS
+             ========================================================= */
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+            {/* Shortlisted Section with Transfer Button */}
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1px solid #bbf7d0',
+                borderRadius: '16px',
+                padding: '24px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '16px',
+                  marginBottom: '20px',
+                  paddingBottom: '16px',
+                  borderBottom: '1px solid #f1f5f9',
+                }}
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span style={{ color: '#00b074' }}><SparkleIcon /></span>
+                    <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                      AI Shortlisted Candidates ({shortlistedCandidates.length})
+                    </h2>
+                    <span
+                      style={{
+                        background: '#e6f9f2',
+                        color: '#008759',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: '9999px',
+                        border: '1px solid #bbf7d0',
+                      }}
+                    >
+                      Top Tier (85%+ Match)
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '12.5px', color: '#64748b', margin: '4px 0 0 0' }}>
+                    Ranked candidates meeting required technical competencies, experience depth, and qualification ontology.
+                  </p>
+                </div>
+
+                {/* Single Pipeline Move Button */}
+                <button
+                  type="button"
+                  className="btn-send-pipeline"
+                  onClick={handleSendToHiringPipeline}
+                  disabled={isTransferred}
+                  title="Transfer all shortlisted candidates to the next hiring pipeline module"
+                >
+                  <ArrowRightIcon />
+                  <span>
+                    {isTransferred
+                      ? '✓ Shortlisted Sent to Hiring Pipeline'
+                      : 'Send Shortlisted to Hiring Pipeline'}
+                  </span>
+                </button>
+              </div>
+
+              {/* Shortlisted Grid */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                  gap: '16px',
+                }}
+              >
+                {shortlistedCandidates.map((candidate) => {
+                  const initials = candidate.name
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .substring(0, 2);
+
+                  return (
+                    <div
+                      key={candidate.id}
+                      className="candidate-kanban-card highlight-ai"
+                      onClick={() => setSelectedCandidate(candidate)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="candidate-card-top">
+                        <div className="candidate-card-identity">
+                          <div
+                            className="candidate-avatar"
+                            style={{ background: candidate.avatarColor }}
+                          >
+                            {initials}
+                          </div>
+                          <div className="candidate-name-box">
+                            <span className="candidate-card-name">{candidate.name}</span>
+                            <span className="candidate-card-headline">{candidate.currentCompany}</span>
+                          </div>
+                        </div>
+
+                        <span className="ai-score-pill high">
+                          <SparkleIcon />
+                          <span>{candidate.aiMatchScore}%</span>
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-slate-600 line-clamp-1">
+                        {candidate.headline}
+                      </p>
+
+                      <div className="candidate-card-skills">
+                        {candidate.keySkills.slice(0, 4).map((skill, idx) => (
+                          <span key={idx} className="candidate-skill-tag">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="candidate-card-footer">
+                        <div className="candidate-card-date">
+                          <ClockIcon />
+                          <span>Applied {candidate.appliedDate}</span>
+                        </div>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            color: '#008759',
+                          }}
+                        >
+                          View CV Profile →
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Other Applicants Section */}
+            {otherCandidates.length > 0 && (
+              <div
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '16px',
+                  padding: '24px',
+                }}
+              >
+                <div style={{ marginBottom: '16px' }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#475569', margin: 0 }}>
+                    Other Applicants ({otherCandidates.length})
+                  </h3>
+                  <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0 0 0' }}>
+                    Applicants evaluated below the 85% shortlisting threshold for this role.
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                    gap: '16px',
+                  }}
+                >
+                  {otherCandidates.map((candidate) => {
+                    const initials = candidate.name
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')
+                      .substring(0, 2);
+
+                    return (
+                      <div
+                        key={candidate.id}
+                        className="candidate-kanban-card"
+                        onClick={() => setSelectedCandidate(candidate)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <div className="candidate-card-top">
+                          <div className="candidate-card-identity">
+                            <div
+                              className="candidate-avatar"
+                              style={{ background: candidate.avatarColor }}
+                            >
+                              {initials}
+                            </div>
+                            <div className="candidate-name-box">
+                              <span className="candidate-card-name">{candidate.name}</span>
+                              <span className="candidate-card-headline">{candidate.currentCompany}</span>
+                            </div>
+                          </div>
+
+                          <span className="ai-score-pill moderate">
+                            <SparkleIcon />
+                            <span>{candidate.aiMatchScore}%</span>
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-slate-600 line-clamp-1">
+                          {candidate.headline}
+                        </p>
+
+                        <div className="candidate-card-skills">
+                          {candidate.keySkills.slice(0, 3).map((skill, idx) => (
+                            <span key={idx} className="candidate-skill-tag">
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+
+                        <div className="candidate-card-footer">
+                          <div className="candidate-card-date">
+                            <ClockIcon />
+                            <span>Applied {candidate.appliedDate}</span>
+                          </div>
+                          <span style={{ fontSize: '11px', color: '#64748b' }}>
+                            View CV Profile →
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* =========================================================
+             BEFORE AI RUNS: CURRENT APPLICANTS LIST (PURELY VIEWING)
+             ========================================================= */
+          <div
+            style={{
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '16px',
+              padding: '24px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '20px',
+                paddingBottom: '16px',
+                borderBottom: '1px solid #f1f5f9',
+                flexWrap: 'wrap',
+                gap: '12px',
+              }}
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                    Received Candidate Applications ({candidates.length})
+                  </h2>
+                  <span
+                    style={{
+                      background: '#f1f5f9',
+                      color: '#475569',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '9999px',
+                    }}
+                  >
+                    Intake Repository
+                  </span>
+                </div>
+                <p style={{ fontSize: '12.5px', color: '#64748b', margin: '4px 0 0 0' }}>
+                  {isJobActive
+                    ? 'Candidates are gathered here while applications are open. Click any candidate to view their resume profile.'
+                    : 'Applications are closed. Click "✨ Run AI Analysis" above to process and shortlist candidates.'}
+                </p>
+              </div>
+
+              {isJobClosed && (
+                <button
+                  type="button"
+                  className="btn-ai-screen"
+                  onClick={handleRunAiScreening}
+                  disabled={isScreening}
+                  style={{ padding: '8px 16px', fontSize: '13px' }}
+                >
+                  <SparkleIcon />
+                  <span>✨ Run AI Analysis</span>
+                </button>
+              )}
+            </div>
+
+            {/* Candidate Cards Grid */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                gap: '16px',
+              }}
+            >
+              {candidates.map((candidate) => {
+                const initials = candidate.name
+                  .split(' ')
+                  .map((n) => n[0])
+                  .join('')
+                  .substring(0, 2);
+
+                return (
+                  <div
+                    key={candidate.id}
+                    className="candidate-kanban-card"
+                    onClick={() => setSelectedCandidate(candidate)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="candidate-card-top">
+                      <div className="candidate-card-identity">
+                        <div
+                          className="candidate-avatar"
+                          style={{ background: candidate.avatarColor }}
+                        >
+                          {initials}
+                        </div>
+                        <div className="candidate-name-box">
+                          <span className="candidate-card-name">{candidate.name}</span>
+                          <span className="candidate-card-headline">{candidate.currentCompany}</span>
+                        </div>
+                      </div>
+
+                      <span className="ai-score-pill pending">
+                        <ClockIcon />
+                        <span>Screening Pending</span>
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-600 line-clamp-1">
+                      {candidate.headline}
+                    </p>
+
+                    <div className="candidate-card-skills">
+                      {candidate.keySkills.slice(0, 3).map((skill, idx) => (
+                        <span key={idx} className="candidate-skill-tag">
+                          {skill}
+                        </span>
+                      ))}
+                      {candidate.keySkills.length > 3 && (
+                        <span className="candidate-skill-tag">
+                          +{candidate.keySkills.length - 3}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="candidate-card-footer">
+                      <div className="candidate-card-date">
+                        <ClockIcon />
+                        <span>Applied {candidate.appliedDate}</span>
+                      </div>
+
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          color: '#00b074',
+                          fontWeight: 600,
+                        }}
+                      >
+                        View CV Profile →
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* =========================================================
-          5. DIGITAL CV DRAWER (SLIDE-IN RIGHT PANEL)
+          7. DIGITAL CV DRAWER (SLIDE-IN RIGHT PANEL)
           ========================================================= */}
       {selectedCandidate && (
         <>
@@ -800,144 +1061,128 @@ export const TalentPipelineBoard: React.FC = () => {
                 type="button"
                 className="cv-drawer-close-btn"
                 onClick={() => setSelectedCandidate(null)}
-                title="Close CV Drawer"
+                aria-label="Close CV Drawer"
               >
                 <XIcon />
               </button>
             </div>
 
-            {/* Drawer Body */}
+            {/* Drawer Content */}
             <div className="cv-drawer-body">
-              {/* Card 1: Pipeline Stage & AI Match Breakdown */}
-              <div className="cv-drawer-card">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Current Stage:</span>
-                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                      {selectedCandidate.stage}
-                    </span>
-                  </div>
-
-                  {selectedCandidate.aiMatchScore !== null ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+              {/* AI Score & Analysis Box (if analyzed) */}
+              {selectedCandidate.aiMatchScore !== null ? (
+                <div className="candidate-cv-drawer-ai-box">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
                       <SparkleIcon />
-                      <span>{selectedCandidate.aiMatchScore}% AI Match</span>
-                    </span>
-                  ) : (
-                    <span className="text-xs font-medium text-slate-400">AI Screening Pending</span>
-                  )}
-                </div>
-
-                {/* AI Summary Breakdown */}
-                <div className="space-y-3">
-                  <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/80 rounded-xl space-y-2">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800">
-                      <SparkleIcon />
-                      <span>AI Agent Evaluation Summary</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                        AI Match Score & Role Alignment
+                      </span>
                     </div>
-                    <p className="text-xs text-slate-700 leading-relaxed">
-                      {selectedCandidate.aiSummary}
-                    </p>
+                    <span className="ai-score-pill high text-xs px-3 py-1 font-bold">
+                      {selectedCandidate.aiMatchScore}% Match
+                    </span>
                   </div>
+                  <p className="candidate-cv-drawer-ai-summary">
+                    {selectedCandidate.aiSummary}
+                  </p>
 
-                  {/* Strengths */}
-                  {selectedCandidate.aiStrengths.length > 0 && (
-                    <div className="space-y-1.5 pt-1">
-                      <span className="text-xs font-bold text-slate-700 block">Candidate Key Highlights:</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {selectedCandidate.aiStrengths.map((str, i) => (
-                          <span key={i} className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-md">
-                            <CheckIcon />
-                            <span>{str}</span>
-                          </span>
+                  <div className="mt-3.5 pt-3 border-t border-emerald-100 space-y-2 text-xs">
+                    <div>
+                      <span className="font-semibold text-emerald-900 block mb-1">Key AI Strengths:</span>
+                      <ul className="list-disc list-inside text-emerald-800 space-y-0.5">
+                        {selectedCandidate.aiStrengths.map((str, idx) => (
+                          <li key={idx}>{str}</li>
                         ))}
-                      </div>
+                      </ul>
                     </div>
-                  )}
+                    {selectedCandidate.aiMissingSkills.length > 0 && (
+                      <div className="pt-1">
+                        <span className="font-semibold text-slate-700 block mb-1">Potential Skill Gaps / Non-Core:</span>
+                        <ul className="list-disc list-inside text-slate-600 space-y-0.5">
+                          {selectedCandidate.aiMissingSkills.map((gap, idx) => (
+                            <li key={idx}>{gap}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div
+                  style={{
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '20px',
+                  }}
+                >
+                  <div className="flex items-center gap-2 text-slate-700 font-semibold text-xs mb-1">
+                    <ClockIcon />
+                    <span>AI Screening Pending</span>
+                  </div>
+                  <p className="text-xs text-slate-500 m-0">
+                    {isJobActive
+                      ? 'AI analysis runs automatically across all candidates once the job requisition is marked as Closed.'
+                      : 'Run the batch AI analysis to compute match rankings and candidate qualification insights.'}
+                  </p>
+                </div>
+              )}
 
-              {/* Card 2: Core Skills & Proficiencies */}
-              <div className="cv-drawer-card">
-                <h3 className="cv-drawer-card-title">
-                  <span className="text-emerald-600"><BriefcaseIcon /></span>
-                  <span>Core Skills & Technologies</span>
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {selectedCandidate.keySkills.map((skill, i) => (
-                    <span
-                      key={i}
-                      className="px-3 py-1 bg-slate-100 border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg"
-                    >
+              {/* Skills */}
+              <div className="candidate-cv-drawer-section">
+                <h3 className="candidate-cv-drawer-section-title">Verified Core Competencies</h3>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {selectedCandidate.keySkills.map((skill, idx) => (
+                    <span key={idx} className="candidate-skill-tag" style={{ fontSize: '11.5px', padding: '3px 9px' }}>
                       {skill}
                     </span>
                   ))}
                 </div>
               </div>
 
-              {/* Card 3: Experience Timeline */}
-              <div className="cv-drawer-card">
-                <h3 className="cv-drawer-card-title">
-                  <span className="text-emerald-600"><BuildingIcon /></span>
-                  <span>Experience History</span>
+              {/* Experience History */}
+              <div className="candidate-cv-drawer-section">
+                <h3 className="candidate-cv-drawer-section-title">
+                  Career Experience ({selectedCandidate.experienceYears} Years Total)
                 </h3>
-                <div className="space-y-4 pt-1">
-                  {selectedCandidate.experienceHistory.map((exp, i) => (
-                    <div key={i} className="cv-drawer-timeline-item">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-900">{exp.title}</span>
-                        <span className="text-xs font-medium text-slate-500">{exp.duration}</span>
+                <div className="candidate-cv-drawer-timeline">
+                  {selectedCandidate.experienceHistory.map((exp, idx) => (
+                    <div key={idx} className="candidate-cv-drawer-timeline-item">
+                      <div className="candidate-cv-drawer-timeline-dot" />
+                      <div className="candidate-cv-drawer-timeline-content">
+                        <div className="flex items-center justify-between">
+                          <h4 className="candidate-cv-drawer-timeline-title">{exp.title}</h4>
+                          <span className="candidate-cv-drawer-timeline-duration">{exp.duration}</span>
+                        </div>
+                        <span className="candidate-cv-drawer-timeline-company">{exp.company}</span>
+                        <p className="candidate-cv-drawer-timeline-desc">{exp.description}</p>
                       </div>
-                      <span className="text-xs font-semibold text-emerald-700">{exp.company}</span>
-                      <p className="text-xs text-slate-600 leading-relaxed mt-1">
-                        {exp.description}
-                      </p>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Card 4: Education */}
-              <div className="cv-drawer-card">
-                <h3 className="cv-drawer-card-title">
-                  <span className="text-emerald-600"><GraduationCapIcon /></span>
-                  <span>Education & Credentials</span>
-                </h3>
-                <div className="text-xs text-slate-800 font-medium">
-                  {selectedCandidate.education}
+              {/* Education */}
+              <div className="candidate-cv-drawer-section">
+                <h3 className="candidate-cv-drawer-section-title">Education & Credentials</h3>
+                <div className="flex items-center gap-2.5 mt-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <span className="text-slate-500"><GraduationCapIcon /></span>
+                  <p className="candidate-cv-drawer-education">{selectedCandidate.education}</p>
                 </div>
               </div>
             </div>
 
-            {/* Drawer Footer Actions */}
-            <div className="cv-drawer-footer">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
-                  onClick={() => setSelectedCandidate(null)}
-                >
-                  Close
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {selectedCandidate.stage !== 'Hired' && (
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    style={{ fontSize: '12.5px', padding: '8px 16px', borderRadius: '10px' }}
-                    onClick={() => {
-                      const stageIdx = STAGES.findIndex((s) => s.id === selectedCandidate.stage);
-                      if (stageIdx < STAGES.length - 1) {
-                        handleMoveStage(selectedCandidate.id, STAGES[stageIdx + 1].id);
-                      }
-                    }}
-                  >
-                    <span>Advance to {STAGES[Math.min(STAGES.findIndex((s) => s.id === selectedCandidate.stage) + 1, STAGES.length - 1)].title} →</span>
-                  </button>
-                )}
-              </div>
+            {/* Drawer Footer */}
+            <div className="candidate-cv-drawer-footer">
+              <button
+                type="button"
+                className="candidate-cv-drawer-btn-secondary"
+                onClick={() => setSelectedCandidate(null)}
+              >
+                Close Profile
+              </button>
             </div>
           </div>
         </>

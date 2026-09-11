@@ -14,7 +14,6 @@ import {
   EditIcon,
   TrashIcon,
   CheckIcon,
-  KanbanIcon,
   ClockIcon,
   CopyIcon,
   ExternalLinkIcon,
@@ -288,10 +287,10 @@ export const JobDetails = () => {
             <Link
               to={`/dashboard/pipelines/${job.id}`}
               className="btn-pipeline-primary"
-              title="Open Talent Pipeline Kanban for this job"
+              title="Open AI Screening for this job"
             >
-              <KanbanIcon />
-              <span>Talent Pipeline</span>
+              <SparkleIcon />
+              <span>AI Screening</span>
               <ArrowRightIcon />
             </Link>
 
@@ -454,13 +453,13 @@ export const JobDetails = () => {
 
           {/* Sidebar Column (1/3) */}
           <div className="job-details-sidebar-column">
-            {/* Sidebar Card 1: Candidate Pipeline CTA */}
+            {/* Sidebar Card 1: AI Screening CTA */}
             <div className="job-details-pipeline-card">
               <div className="job-details-pipeline-header">
-                <span className="job-details-pipeline-kicker">Candidate Pipeline</span>
+                <span className="job-details-pipeline-kicker">AI Screening</span>
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Live Board
+                  Batch Processor
                 </span>
               </div>
 
@@ -469,23 +468,23 @@ export const JobDetails = () => {
                   <UsersIcon />
                 </div>
                 <div>
-                  <span className="job-details-pipeline-count-val">0</span>
-                  <span className="job-details-pipeline-count-label block">Active Candidates</span>
+                  <span className="job-details-pipeline-count-val">6</span>
+                  <span className="job-details-pipeline-count-label block">Applicants Received</span>
                 </div>
               </div>
 
               <div className="job-details-ai-hint-box">
                 <ClockIcon />
-                <span>AI matching is continuously scanning qualified talent profiles for this position.</span>
+                <span>AI screening runs on the entire applicant batch once the requisition is marked as Closed.</span>
               </div>
 
               <Link
                 to={`/dashboard/pipelines/${job.id}`}
                 className="job-details-pipeline-cta-btn"
-                title="View applicants Kanban board"
+                title="View applicants & AI Screening"
               >
-                <KanbanIcon />
-                <span>Open Pipeline Kanban</span>
+                <SparkleIcon />
+                <span>Open AI Screening</span>
                 <ArrowRightIcon />
               </Link>
             </div>

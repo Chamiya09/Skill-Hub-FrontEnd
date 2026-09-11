@@ -330,7 +330,7 @@ export const JobVacancies = () => {
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(job)}
-                          className="job-name-link text-left bg-transparent border-0 p-0 cursor-pointer"
+                          className="job-title-clickable-btn"
                           title="Edit Job Vacancy"
                         >
                           <span className="job-name-text">{job.title}</span>

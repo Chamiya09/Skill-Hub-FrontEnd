@@ -3441,11 +3441,45 @@
   gap: 4px;
 }
 
+.job-title-clickable-btn,
+.job-name-link {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  text-align: left !important;
+  cursor: pointer;
+  display: inline-block;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.job-title-clickable-btn:focus,
+.job-title-clickable-btn:focus-visible,
+.job-name-link:focus,
+.job-name-link:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
 .job-name-text {
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 700;
   color: #0f172a;
   letter-spacing: -0.2px;
+  transition: color 0.15s ease;
+}
+
+.job-title-clickable-btn:hover .job-name-text,
+.job-name-link:hover .job-name-text,
+.job-name-text:hover {
+  color: #00b074;
 }
 
 .job-meta-subrow {

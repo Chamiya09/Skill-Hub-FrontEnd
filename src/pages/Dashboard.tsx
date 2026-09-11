@@ -177,16 +177,17 @@ export const Dashboard = () => {
         </div>
 
         {/* Company Identity Profile Card in Sidebar */}
-        <div className="mx-4 my-3 p-3 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
+        <div className="dashboard-company-pill">
+          <div className="company-avatar-box">
             <BuildingIcon />
           </div>
-          <div className="flex flex-col min-w-0">
-            <span className="text-sm font-semibold text-slate-900 truncate leading-tight">
+          <div className="company-pill-details">
+            <span className="company-pill-name" title={companyDisplayName}>
               {companyDisplayName}
             </span>
-            <span className="text-[11px] font-medium text-slate-500 mt-0.5 uppercase tracking-wider">
-              {currentUser?.role === 'Company' ? 'Enterprise Account' : currentUser?.role || 'Company Account'}
+            <span className="company-pill-role">
+              <span className="company-pill-role-dot"></span>
+              <span>{currentUser?.role === 'Company' ? 'Enterprise Account' : currentUser?.role || 'Company Account'}</span>
             </span>
           </div>
         </div>

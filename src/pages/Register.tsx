@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { companyAuthApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import {
   SparkleIcon,
   ShieldCheckIcon,
@@ -16,6 +16,7 @@ import {
 
 export const Register = () => {
   const navigate = useNavigate();
+  const { register, isAuthenticated, isLoading: authLoading } = useAuth();
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
   // Strictly Company Registration Form State
@@ -33,6 +34,13 @@ export const Register = () => {
   const [stepError, setStepError] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // If already authenticated, redirect to dashboard
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   // Step 1: Company Identity Validation
   const validateStep1 = () => {
@@ -99,7 +107,7 @@ export const Register = () => {
     setLoading(true);
 
     try {
-      const response = await companyAuthApi.register({
+      const user = await register({
         companyName: formData.companyName.trim(),
         companyEmail: formData.companyEmail.trim(),
         industry: formData.industry,
@@ -107,10 +115,10 @@ export const Register = () => {
         password: formData.password,
       });
 
-      setSuccessMessage(`Enterprise account for "${response.user.companyName}" successfully created! Redirecting...`);
+      setSuccessMessage(`Enterprise account for "${user.companyName}" successfully created! Redirecting...`);
       setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
+        navigate('/dashboard', { replace: true });
+      }, 400);
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to register company. Please check your information.');
     } finally {

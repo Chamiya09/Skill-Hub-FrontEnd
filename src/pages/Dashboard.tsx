@@ -151,6 +151,37 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
   const companyDisplayName = currentUser?.companyName || currentUser?.fullName || 'Enterprise Employer'
   const companyEmail = currentUser?.email || 'admin@enterprise.com'
 
+  if (authLoading) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#f8fafc',
+          color: '#64748b',
+        }}
+      >
+        <div
+          style={{
+            width: '36px',
+            height: '36px',
+            border: '3px solid #00b074',
+            borderTopColor: 'transparent',
+            borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+            marginBottom: '12px',
+          }}
+        ></div>
+        <p style={{ fontSize: '14px', fontWeight: 600, color: '#334155' }}>
+          Initializing employer workspace...
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-container">
       {/* Mobile Drawer Overlay */}

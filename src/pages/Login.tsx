@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { companyAuthApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import {
   SparkleIcon,
   MailIcon,
@@ -13,6 +13,7 @@ import {
 
 export const Login = () => {
   const navigate = useNavigate();
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -20,21 +21,24 @@ export const Login = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // If already authenticated, redirect to dashboard
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, authLoading, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
     setLoading(true);
 
     try {
-      const response = await companyAuthApi.login({
-        email: email.trim(),
-        password: password,
-      });
-
-      setSuccessMessage(`Welcome back, ${response.user.fullName}!`);
+      const user = await login(email.trim(), password);
+      setSuccessMessage(`Welcome back, ${user.fullName || user.companyName}!`);
       setTimeout(() => {
-        navigate('/dashboard');
-      }, 900);
+        navigate('/dashboard', { replace: true });
+      }, 400);
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to authenticate company user. Please verify your credentials.');
     } finally {

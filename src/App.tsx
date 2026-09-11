@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { Header } from "./components/common/Header";
 import { Footer } from "./components/common/Footer";
+import { ProtectedRoute } from "./components/common/ProtectedRoute";
+import { PublicRoute } from "./components/common/PublicRoute";
 import { Home } from "./pages/Home";
 import { About } from "./pages/About";
 import { Contact } from "./pages/Contact";
@@ -26,7 +28,9 @@ function AppContent() {
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/pipelines") ||
     location.pathname.startsWith("/hiring-pipeline") ||
-    location.pathname.startsWith("/vacancies");
+    location.pathname.startsWith("/vacancies") ||
+    location.pathname.startsWith("/users") ||
+    location.pathname.startsWith("/team");
 
   return (
     <div className={`page-container ${isDashboardOrAuth ? "dashboard-view-mode auth-full-screen" : ""}`}>
@@ -34,32 +38,177 @@ function AppContent() {
         {!isDashboardOrAuth && <Header />}
         <main className={`main-content ${isDashboardOrAuth ? "dashboard-main-full auth-main-full" : ""}`}>
           <Routes>
+            {/* Public General Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/jobs" element={<FindJobs />} />
             <Route path="/jobs/:id" element={<JobDetailsPublic />} />
             <Route path="/job/:id" element={<JobDetailsPublic />} />
-            <Route path="/company-login" element={<Login />} />
-            <Route path="/company-register" element={<Register />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dashboard/pipelines" element={<Dashboard defaultTab="pipelines" />} />
-            <Route path="/dashboard/hiring-pipeline" element={<Dashboard defaultTab="hiring-pipeline" />} />
-            <Route path="/hiring-pipeline" element={<Dashboard defaultTab="hiring-pipeline" />} />
-            <Route path="/dashboard/jobs/new" element={<CreateJob />} />
-            <Route path="/dashboard/jobs/create" element={<CreateJob />} />
-            <Route path="/dashboard/jobs/:id/edit" element={<EditJob />} />
-            <Route path="/vacancies" element={<JobVacancies />} />
-            <Route path="/vacancies/new" element={<CreateJob />} />
-            <Route path="/vacancies/create" element={<CreateJob />} />
-            <Route path="/vacancies/:id/edit" element={<EditJob />} />
-            <Route path="/pipelines" element={<Dashboard defaultTab="pipelines" />} />
-            <Route path="/jobs/create" element={<CreateJob />} />
-            <Route path="/jobs/details/:id/edit" element={<EditJob />} />
-            <Route path="/users" element={<UserManagement />} />
-            <Route path="/team" element={<UserManagement />} />
+
+            {/* Public Auth Routes (Redirect to dashboard if already logged in) */}
+            <Route
+              path="/company-login"
+              element={
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/company-register"
+              element={
+                <PublicRoute>
+                  <Register />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <PublicRoute>
+                  <Register />
+                </PublicRoute>
+              }
+            />
+
+            {/* Protected Enterprise ATS Routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/pipelines"
+              element={
+                <ProtectedRoute>
+                  <Dashboard defaultTab="pipelines" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/hiring-pipeline"
+              element={
+                <ProtectedRoute>
+                  <Dashboard defaultTab="hiring-pipeline" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/hiring-pipeline"
+              element={
+                <ProtectedRoute>
+                  <Dashboard defaultTab="hiring-pipeline" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pipelines"
+              element={
+                <ProtectedRoute>
+                  <Dashboard defaultTab="pipelines" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/jobs/new"
+              element={
+                <ProtectedRoute>
+                  <CreateJob />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/jobs/create"
+              element={
+                <ProtectedRoute>
+                  <CreateJob />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/jobs/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditJob />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vacancies"
+              element={
+                <ProtectedRoute>
+                  <JobVacancies />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vacancies/new"
+              element={
+                <ProtectedRoute>
+                  <CreateJob />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vacancies/create"
+              element={
+                <ProtectedRoute>
+                  <CreateJob />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vacancies/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditJob />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/jobs/create"
+              element={
+                <ProtectedRoute>
+                  <CreateJob />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/jobs/details/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditJob />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute>
+                  <UserManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/team"
+              element={
+                <ProtectedRoute>
+                  <UserManagement />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </main>
       </div>

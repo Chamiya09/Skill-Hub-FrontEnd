@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authStorage, companyAuthApi, type UserDto } from '../services/api';
+import { authStorage, companyAuthApi, type UserDto, type RegisterCompanyPayload } from '../services/api';
 
 interface AuthContextType {
   currentUser: UserDto | null;
@@ -7,6 +7,8 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<UserDto>;
+  register: (payload: RegisterCompanyPayload) => Promise<UserDto>;
+  setAuthData: (user: UserDto, token: string) => void;
   logout: () => void;
   refreshProfile: () => Promise<UserDto | null>;
 }
@@ -20,6 +22,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshProfile = useCallback(async (): Promise<UserDto | null> => {
     const currentToken = authStorage.getToken();
+    const cachedUser = authStorage.getUser();
+
     if (!currentToken) {
       setCurrentUser(null);
       setToken(null);
@@ -27,23 +31,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     }
 
+    // Immediately preserve cached credentials so routes are immediately authenticated
+    if (cachedUser) {
+      setCurrentUser(cachedUser);
+      setToken(currentToken);
+    }
+
     try {
       const userProfile = await companyAuthApi.getMe();
-      setCurrentUser(userProfile);
-      setToken(currentToken);
-      return userProfile;
+      if (userProfile) {
+        setCurrentUser(userProfile);
+        setToken(currentToken);
+        authStorage.setUser(userProfile);
+        return userProfile;
+      }
+      return cachedUser;
     } catch (error) {
-      console.warn('Could not refresh company profile from API:', error);
-      // If cached user exists, keep it
-      const cached = authStorage.getUser();
-      if (cached) {
-        setCurrentUser(cached);
+      console.warn('Could not refresh profile from server, using cached user if available:', error);
+      // Keep cached user if available to prevent unnecessary bounce
+      if (cachedUser) {
+        setCurrentUser(cachedUser);
+        setToken(currentToken);
+        return cachedUser;
       } else {
         authStorage.clearAuth();
         setCurrentUser(null);
         setToken(null);
+        return null;
       }
-      return cached;
     } finally {
       setIsLoading(false);
     }
@@ -57,12 +72,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const response = await companyAuthApi.login({ email, password });
+      authStorage.setAuth(response);
       setCurrentUser(response.user);
       setToken(response.token);
       return response.user;
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const register = async (payload: RegisterCompanyPayload): Promise<UserDto> => {
+    setIsLoading(true);
+    try {
+      const response = await companyAuthApi.register(payload);
+      authStorage.setAuth(response);
+      setCurrentUser(response.user);
+      setToken(response.token);
+      return response.user;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const setAuthData = (user: UserDto, jwtToken: string) => {
+    authStorage.setUser(user);
+    if (jwtToken) {
+      localStorage.setItem('skillhub_jwt_token', jwtToken);
+    }
+    setCurrentUser(user);
+    setToken(jwtToken);
+    setIsLoading(false);
   };
 
   const logout = () => {
@@ -79,6 +118,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         isAuthenticated: !!token && !!currentUser,
         login,
+        register,
+        setAuthData,
         logout,
         refreshProfile,
       }}

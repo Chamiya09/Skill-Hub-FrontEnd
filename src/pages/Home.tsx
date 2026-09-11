@@ -154,17 +154,54 @@ export const Home = () => {
             <p className="text-sm">Fetching verified job vacancies...</p>
           </div>
         ) : jobs.length === 0 ? (
-          <div className="p-12 bg-white border border-slate-200 rounded-2xl text-center max-w-lg mx-auto">
-            <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-400">
+          <div
+            style={{
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '16px',
+              padding: '48px 24px',
+              textAlign: 'center',
+              maxWidth: '520px',
+              margin: '0 auto',
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
+            }}
+          >
+            <div
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+                color: '#94a3b8',
+              }}
+            >
               <SearchIcon />
             </div>
-            <h3 className="text-base font-bold text-slate-900 mb-1">No Active Vacancies Currently Posted</h3>
-            <p className="text-xs text-slate-500 mb-4">
-              Employers are currently updating their requisitions. Check back shortly or explore registered companies.
+            <h3
+              style={{
+                fontSize: '17px',
+                fontWeight: 700,
+                color: '#0f172a',
+                marginBottom: '6px',
+              }}
+            >
+              No Active Vacancies Right Now
+            </h3>
+            <p
+              style={{
+                fontSize: '13.5px',
+                color: '#64748b',
+                lineHeight: 1.5,
+                margin: 0,
+              }}
+            >
+              We are currently updating our open positions. Please check back later for new opportunities.
             </p>
-            <Link to="/company-register" className="btn-primary" style={{ display: 'inline-flex', margin: '0 auto' }}>
-              <span>Post a Requisition as Employer</span>
-            </Link>
           </div>
         ) : (
           <div className="jobs-grid">

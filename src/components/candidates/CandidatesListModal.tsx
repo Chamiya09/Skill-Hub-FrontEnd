@@ -7,7 +7,6 @@ import {
   SearchIcon,
   UsersIcon,
   ClockIcon,
-  ArrowRightIcon,
   ArrowLeftIcon,
   MailIcon,
   MapPinIcon,
@@ -440,30 +439,15 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
             )}
           </div>
 
-          {/* Right Header Actions */}
-          <div className="flex items-center gap-3">
-            {currentStep === 2 && (
-              <button
-                type="button"
-                className="candidates-modal-run-ai-btn"
-                onClick={handleMoveToPipelineBoard}
-                title="Move shortlisted candidates to the interactive pipeline board"
-              >
-                <KanbanIcon />
-                <span>Move to Pipeline Board</span>
-                <ArrowRightIcon />
-              </button>
-            )}
-
-            <button
-              type="button"
-              className="candidates-modal-close-btn"
-              onClick={onClose}
-              title="Close Modal"
-            >
-              <XIcon />
-            </button>
-          </div>
+          {/* Close Button */}
+          <button
+            type="button"
+            className="candidates-modal-close-btn"
+            onClick={onClose}
+            title="Close Modal"
+          >
+            <XIcon />
+          </button>
         </div>
 
         {/* =========================================================
@@ -533,13 +517,6 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
                 AI screening agent ranked all applicants. Showing top {displayedCandidates.length} high-fit candidates ready for next pipeline steps.
               </span>
             </div>
-            <button
-              type="button"
-              className="text-xs font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-3 py-1 rounded transition-colors"
-              onClick={handleMoveToPipelineBoard}
-            >
-              Push to Kanban →
-            </button>
           </div>
         )}
 
@@ -697,23 +674,9 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
         </div>
 
         {/* =========================================================
-            MODAL FOOTER
+            MODAL FOOTER (SINGLE PRIMARY CTA)
             ========================================================= */}
         <div className="candidates-modal-footer">
-          <button
-            type="button"
-            className="candidates-modal-open-board-btn"
-            onClick={handleMoveToPipelineBoard}
-          >
-            <KanbanIcon />
-            <span>
-              {currentStep === 2
-                ? 'Move Shortlisted Candidates to Kanban Pipeline Board'
-                : 'Open Full Interactive Pipeline Kanban Board'}
-            </span>
-            <ArrowRightIcon />
-          </button>
-
           <button
             type="button"
             className="candidates-modal-dismiss-btn"
@@ -721,6 +684,16 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
           >
             Close
           </button>
+
+          {currentStep === 2 && (
+            <button
+              type="button"
+              className="bg-green-600 text-white font-medium px-6 py-2.5 rounded-lg hover:bg-green-700 transition-colors shadow-none text-sm inline-flex items-center gap-2 cursor-pointer"
+              onClick={handleMoveToPipelineBoard}
+            >
+              <span>Move to Pipeline Board →</span>
+            </button>
+          )}
         </div>
       </div>
 

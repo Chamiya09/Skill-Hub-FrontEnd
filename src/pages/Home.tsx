@@ -42,6 +42,14 @@ export const Home = () => {
     }
   }
 
+  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([])
+
+  const toggleBookmark = (id: string) => {
+    setBookmarkedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    )
+  }
+
   return (
     <>
       {/* Hero Section */}
@@ -208,6 +216,9 @@ export const Home = () => {
               <JobVacancyCard
                 key={job.id}
                 job={job}
+                isBookmarked={bookmarkedIds.includes(job.id)}
+                onToggleBookmark={toggleBookmark}
+                showBookmark={true}
                 matchPercentage={95}
               />
             ))}

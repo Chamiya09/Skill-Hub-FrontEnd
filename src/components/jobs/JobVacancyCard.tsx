@@ -5,6 +5,7 @@ import {
   SparkleIcon,
   MapPinIcon,
   ClockIcon,
+  BriefcaseIcon,
   ArrowRightIcon,
   BookmarkIcon,
 } from '../common/Icons'
@@ -25,7 +26,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
   job,
   isBookmarked = false,
   onToggleBookmark,
-  showBookmark = false,
+  showBookmark = true,
   showAiMatch = true,
   matchPercentage = 95,
   className = '',
@@ -39,20 +40,20 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
     .join('')
     .toUpperCase() || 'CO'
 
-  // Format creation date: e.g. "Sep 11"
+  // Format creation date: e.g. "Sep 11, 2026"
   const formattedDate = job.createdAt
     ? new Date(job.createdAt).toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
+        year: 'numeric',
       })
-    : 'Recent'
+    : 'Recently Posted'
 
   // Parse or format salary range display
   const formatSalary = (salary?: string) => {
     if (!salary || salary.toLowerCase() === 'competitive') {
       return { main: 'Competitive', sub: 'Based on experience' }
     }
-    // If format has /yr or /hr, parse cleanly
     if (salary.includes('/')) {
       const parts = salary.split('/')
       return { main: parts[0].trim(), sub: `/${parts[1].trim()}` }
@@ -64,7 +65,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
 
   return (
     <div
-      className={`job-card ${className}`}
+      className={`rich-job-card ${className}`}
       style={{
         background: '#ffffff',
         border: '1px solid #e2e8f0',
@@ -75,24 +76,25 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
         justifyContent: 'space-between',
         transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
         position: 'relative',
-        boxShadow: '0 2px 12px rgba(0, 0, 0, 0.03)',
+        boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.04)',
       }}
     >
       {/* Top Header Row */}
       <div
+        className="job-card-header"
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
-          marginBottom: '16px',
+          marginBottom: '18px',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {/* Company Avatar Badge */}
           <div
             style={{
-              width: '44px',
-              height: '44px',
+              width: '46px',
+              height: '46px',
               borderRadius: '12px',
               background: '#d1fae5',
               color: '#065f46',
@@ -123,7 +125,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
             </span>
             <span
               style={{
-                fontSize: '12.5px',
+                fontSize: '12px',
                 color: '#94a3b8',
                 marginTop: '3px',
                 fontWeight: 500,
@@ -164,7 +166,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
       >
         <h3
           style={{
-            fontSize: '17.5px',
+            fontSize: '18px',
             fontWeight: 700,
             color: '#0b1329',
             marginBottom: '12px',
@@ -179,7 +181,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
         </h3>
       </Link>
 
-      {/* Meta Location & Employment Type Row */}
+      {/* Meta Location, Employment Type & Experience Row */}
       <div
         style={{
           display: 'flex',
@@ -187,7 +189,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
           gap: '16px',
           color: '#94a3b8',
           fontSize: '13px',
-          marginBottom: '20px',
+          marginBottom: '16px',
           flexWrap: 'wrap',
         }}
       >
@@ -203,14 +205,41 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
             {job.employmentType || 'Full-time'}
           </span>
         </div>
+        {job.experienceLevel && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <BriefcaseIcon />
+            <span style={{ color: '#64748b', fontWeight: 500 }}>
+              {job.experienceLevel}
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* Footer Row: Salary & View Details Action */}
+      {/* Department / Category Pill Tag */}
+      {job.department && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
+          <span
+            style={{
+              background: '#eff6ff',
+              color: '#1e40af',
+              border: '1px solid #dbeafe',
+              padding: '3px 10px',
+              borderRadius: '8px',
+              fontSize: '12px',
+              fontWeight: 600,
+            }}
+          >
+            {job.department}
+          </span>
+        </div>
+      )}
+
+      {/* Footer Row: Salary & Action Buttons */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'flex-end',
+          alignItems: 'center',
           marginTop: 'auto',
           paddingTop: '16px',
           borderTop: '1px solid #f1f5f9',
@@ -220,7 +249,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <span
             style={{
-              fontSize: '15px',
+              fontSize: '15.5px',
               fontWeight: 700,
               color: '#0b1329',
               lineHeight: 1.2,
@@ -231,7 +260,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
           {salaryDisplay.sub && (
             <span
               style={{
-                fontSize: '12.5px',
+                fontSize: '12px',
                 color: '#64748b',
                 fontWeight: 600,
                 marginTop: '2px',
@@ -261,6 +290,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                transition: 'all 0.15s ease',
               }}
             >
               <BookmarkIcon filled={isBookmarked} />
@@ -275,7 +305,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
               alignItems: 'center',
               gap: '6px',
               color: '#00b074',
-              fontSize: '14px',
+              fontSize: '13.5px',
               fontWeight: 700,
               textDecoration: 'none',
               transition: 'all 0.2s ease',

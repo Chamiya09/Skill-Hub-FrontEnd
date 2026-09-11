@@ -24,14 +24,25 @@ import {
   PlusIcon,
   UsersIcon,
 } from '../components/common/Icons'
+import { PipelineJobSelector } from './PipelineJobSelector'
 import { JobVacancies } from './JobVacancies'
 
-export const Dashboard = () => {
+interface DashboardProps {
+  defaultTab?: 'overview' | 'vacancies' | 'pipelines' | 'settings'
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' }) => {
   const navigate = useNavigate()
   const { currentUser, logout, isAuthenticated, isLoading: authLoading } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'vacancies' | 'pipelines' | 'settings'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'vacancies' | 'pipelines' | 'settings'>(defaultTab)
   const [selectedFilter, setSelectedFilter] = useState('All')
+
+  useEffect(() => {
+    if (defaultTab) {
+      setActiveTab(defaultTab)
+    }
+  }, [defaultTab])
 
   // Data fetching state
   const [stats, setStats] = useState<DashboardStatsDto | null>(null)
@@ -318,46 +329,7 @@ export const Dashboard = () => {
           {activeTab === 'vacancies' ? (
             <JobVacancies />
           ) : activeTab === 'pipelines' ? (
-            <div className="p-8 bg-white border border-slate-200 rounded-2xl">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900">Talent Pipelines & Applications</h2>
-                  <p className="text-sm text-slate-500 mt-1">Live candidate pipeline across active company requisitions.</p>
-                </div>
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={() => setActiveTab('vacancies')}
-                >
-                  <PlusIcon />
-                  <span>Post Vacancy</span>
-                </button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {['AI Screened', 'Technical Assessment', 'Interview Stage', 'Offer Extended'].map((stage, idx) => (
-                  <div key={stage} className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-700">{stage}</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-semibold">{idx === 0 ? jobs.length : 0}</span>
-                    </div>
-                    <div className="space-y-2">
-                      {idx === 0 && jobs.length > 0 ? (
-                        jobs.slice(0, 3).map((job) => (
-                          <div key={job.id} className="p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
-                            <span className="text-xs font-bold text-slate-900 block truncate">{job.title}</span>
-                            <span className="text-[11px] text-slate-500 mt-1 block">{job.department} • {job.location}</span>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="p-6 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-lg">
-                          No candidates in this stage
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <PipelineJobSelector />
           ) : activeTab === 'settings' ? (
             <div className="p-8 bg-white border border-slate-200 rounded-2xl max-w-2xl">
               <h2 className="text-xl font-bold text-slate-900 mb-2">Company Account Information</h2>

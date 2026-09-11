@@ -14,6 +14,7 @@ import { JobDetails } from "./pages/JobDetails";
 import { EditJob } from "./pages/EditJob";
 import { CreateJob } from "./pages/CreateJob";
 import { UserManagement } from "./pages/UserManagement";
+import { JobPipelineKanban } from "./pages/JobPipelineKanban";
 import "./App.css";
 
 function AppContent() {
@@ -23,7 +24,8 @@ function AppContent() {
     location.pathname === "/company-register" ||
     location.pathname === "/login" ||
     location.pathname === "/register" ||
-    location.pathname.startsWith("/dashboard");
+    location.pathname.startsWith("/dashboard") ||
+    location.pathname.startsWith("/pipelines");
 
   return (
     <div className={`page-container ${hideHeaderFooter ? "auth-full-screen" : ""}`}>
@@ -40,6 +42,8 @@ function AppContent() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/pipelines" element={<Dashboard defaultTab="pipelines" />} />
+            <Route path="/dashboard/pipelines/:jobId" element={<JobPipelineKanban />} />
             <Route path="/dashboard/jobs/new" element={<CreateJob />} />
             <Route path="/dashboard/jobs/create" element={<CreateJob />} />
             <Route path="/dashboard/jobs/:id" element={<JobDetails />} />
@@ -49,6 +53,8 @@ function AppContent() {
             <Route path="/vacancies/create" element={<CreateJob />} />
             <Route path="/vacancies/:id" element={<JobDetails />} />
             <Route path="/vacancies/:id/edit" element={<EditJob />} />
+            <Route path="/pipelines" element={<Dashboard defaultTab="pipelines" />} />
+            <Route path="/pipelines/:jobId" element={<JobPipelineKanban />} />
             <Route path="/jobs/create" element={<CreateJob />} />
             <Route path="/jobs/details/:id" element={<JobDetails />} />
             <Route path="/jobs/details/:id/edit" element={<EditJob />} />

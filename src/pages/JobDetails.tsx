@@ -16,6 +16,9 @@ import {
   CheckIcon,
   KanbanIcon,
   ClockIcon,
+  CopyIcon,
+  ExternalLinkIcon,
+  ShareIcon,
 } from '../components/common/Icons';
 import { JobFormModal, type JobFormData } from '../components/jobs/JobFormModal';
 import { jobsApi, type JobDto } from '../services/api';
@@ -102,11 +105,18 @@ export const JobDetails = () => {
     }
   };
 
+  const handleCopyPublicLink = () => {
+    if (!job) return;
+    const url = `${window.location.origin}/jobs/${job.id}`;
+    navigator.clipboard.writeText(url);
+    showToast('Public job board URL copied to clipboard!');
+  };
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50/50 p-6 sm:p-10 flex flex-col items-center justify-center">
-        <div className="flex flex-col items-center justify-center space-y-4">
-          <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="job-details-page-container flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className="text-sm font-semibold text-slate-500">Loading vacancy details from database...</p>
         </div>
       </div>
@@ -115,18 +125,18 @@ export const JobDetails = () => {
 
   if (errorMessage || !job) {
     return (
-      <div className="min-h-screen bg-slate-50/50 p-6 sm:p-10">
-        <div className="max-w-5xl mx-auto">
+      <div className="job-details-page-container">
+        <div className="job-details-wrapper">
           <button
             type="button"
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors mb-6"
+            className="job-details-back-btn w-fit"
             onClick={() => navigate('/dashboard')}
           >
             <ArrowLeftIcon />
             <span>Back to Vacancies</span>
           </button>
-          <div className="p-10 bg-white border border-slate-200 rounded-2xl text-center max-w-lg mx-auto">
-            <div className="w-14 h-14 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-red-100">
+          <div className="job-details-card text-center max-w-lg mx-auto py-12">
+            <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-rose-100">
               <BriefcaseIcon />
             </div>
             <h3 className="text-lg font-bold text-slate-900 mb-2">Job Vacancy Not Found</h3>
@@ -135,7 +145,7 @@ export const JobDetails = () => {
             </p>
             <button
               type="button"
-              className="bg-blue-600 hover:bg-blue-700 text-white inline-flex items-center justify-center px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+              className="btn-primary"
               onClick={() => navigate('/dashboard')}
             >
               Return to Vacancies Dashboard
@@ -146,121 +156,158 @@ export const JobDetails = () => {
     );
   }
 
+  const formattedDate = new Date(job.createdAt).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
   return (
-    <div className="min-h-screen bg-slate-50/50 p-6 sm:p-10 text-slate-900">
+    <div className="job-details-page-container">
       {/* Toast Banner */}
       {toastMessage && (
-        <div className="fixed top-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-xl flex items-center gap-3 text-sm font-medium shadow-lg animate-bounce">
+        <div className="job-details-toast">
           <CheckIcon />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="job-details-wrapper">
         {/* =========================================================
-            1. NAVIGATION BAR (← Back to Jobs & Breadcrumbs)
+            1. NAVIGATION & BREADCRUMBS ROW
             ========================================================= */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors w-fit"
-            onClick={() => navigate('/dashboard')}
-          >
-            <ArrowLeftIcon />
-            <span>Back to Vacancies</span>
-          </button>
+        <div className="job-details-nav-row">
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              type="button"
+              className="job-details-back-btn"
+              onClick={() => navigate('/dashboard')}
+            >
+              <ArrowLeftIcon />
+              <span>Back to Vacancies</span>
+            </button>
 
-          <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 overflow-hidden">
-            <span className="hover:text-slate-700 cursor-pointer" onClick={() => navigate('/dashboard')}>Dashboard</span>
-            <span className="text-slate-300">/</span>
-            <span className="hover:text-slate-700 cursor-pointer" onClick={() => navigate('/dashboard')}>Vacancies</span>
-            <span className="text-slate-300">/</span>
-            <span className="font-semibold text-slate-900 truncate max-w-xs">{job.title}</span>
+            <div className="job-details-breadcrumbs">
+              <Link to="/dashboard" className="job-details-breadcrumb-link">Dashboard</Link>
+              <span className="job-details-breadcrumb-sep">/</span>
+              <Link to="/dashboard" className="job-details-breadcrumb-link">Vacancies</Link>
+              <span className="job-details-breadcrumb-sep">/</span>
+              <span className="job-details-breadcrumb-current">{job.title}</span>
+            </div>
+          </div>
+
+          <div className="job-details-nav-actions">
+            <button
+              type="button"
+              className="job-details-share-btn"
+              onClick={handleCopyPublicLink}
+              title="Copy public link to clipboard"
+            >
+              <ShareIcon />
+              <span>Share Link</span>
+            </button>
           </div>
         </div>
 
         {/* =========================================================
-            2. HEADER SECTION (Title, Dept, Status Pill, Edit & Delete)
+            2. HERO HEADER BANNER CARD
             ========================================================= */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-          <div className="space-y-4 max-w-3xl">
-            {/* Meta Tags Row */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="text-xs font-bold tracking-wider uppercase px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md border border-slate-200/60">
+        <div className="job-details-hero-card">
+          <div className="job-details-hero-left">
+            {/* Meta Badges */}
+            <div className="job-details-meta-tags">
+              <span className="job-details-req-code">
                 REQ #{job.id.substring(0, 8).toUpperCase()}
               </span>
 
-              {/* Status Pill */}
               {job.status === 'Active' && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span className="job-details-status-badge active">
+                  <span className="job-details-status-dot"></span>
                   Active Requisition
                 </span>
               )}
               {job.status === 'Draft' && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                <span className="job-details-status-badge draft">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                   Draft Mode
                 </span>
               )}
               {job.status === 'Closed' && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                <span className="job-details-status-badge closed">
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                   Closed
                 </span>
               )}
 
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="job-details-dept-badge">{job.department}</span>
+
+              <span className="job-details-ai-badge">
                 <SparkleIcon />
                 <span>95% AI Match Pipeline</span>
               </span>
             </div>
 
-            {/* Main Title */}
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
-              {job.title}
-            </h1>
+            {/* Main Requisition Title */}
+            <h1 className="job-details-title">{job.title}</h1>
 
-            {/* Department / Location / Date Sub-row */}
-            <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-xs sm:text-sm text-slate-600 pt-1">
-              <div className="flex items-center gap-1.5 font-medium text-slate-800">
+            {/* Sub-row Information */}
+            <div className="job-details-subrow">
+              <div className="job-details-subrow-item company-name">
                 <BuildingIcon />
-                <span>{job.department}</span>
+                <span>{job.companyName || 'Enterprise Employer'}</span>
               </div>
-              <span className="text-slate-300">•</span>
-              <div className="flex items-center gap-1.5">
+              <span className="job-details-subrow-sep">•</span>
+              <div className="job-details-subrow-item">
                 <MapPinIcon />
                 <span>{job.location}</span>
               </div>
-              <span className="text-slate-300">•</span>
-              <div className="flex items-center gap-1.5 text-slate-500">
+              <span className="job-details-subrow-sep">•</span>
+              <div className="job-details-subrow-item">
+                <ClockIcon />
+                <span>{job.employmentType}</span>
+              </div>
+              {job.salaryRange && (
+                <>
+                  <span className="job-details-subrow-sep">•</span>
+                  <div className="job-details-subrow-item font-semibold text-emerald-700">
+                    <DollarSignIcon />
+                    <span>{job.salaryRange}</span>
+                  </div>
+                </>
+              )}
+              <span className="job-details-subrow-sep">•</span>
+              <div className="job-details-subrow-item text-slate-500">
                 <CalendarIcon />
-                <span>
-                  Posted on{' '}
-                  {new Date(job.createdAt).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </span>
+                <span>Posted {formattedDate}</span>
               </div>
             </div>
           </div>
 
-          {/* Action Buttons: Edit Vacancy & Direct Delete */}
-          <div className="flex items-center gap-3 self-start pt-1">
+          {/* Action Buttons */}
+          <div className="job-details-hero-actions">
+            <Link
+              to={`/dashboard/pipelines/${job.id}`}
+              className="btn-pipeline-primary"
+              title="Open Talent Pipeline Kanban for this job"
+            >
+              <KanbanIcon />
+              <span>Talent Pipeline</span>
+              <ArrowRightIcon />
+            </Link>
+
             <button
               type="button"
-              className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 hover:border-slate-400 transition-colors"
+              className="btn-details-edit"
               onClick={() => setIsEditModalOpen(true)}
               title="Edit Vacancy Details"
             >
               <EditIcon />
-              <span>Edit Vacancy</span>
+              <span>Edit</span>
             </button>
+
             <button
               type="button"
-              className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 hover:border-red-300 transition-colors"
+              className="btn-details-delete"
               onClick={() => setIsDeleteModalOpen(true)}
               title="Delete Vacancy"
             >
@@ -271,136 +318,227 @@ export const JobDetails = () => {
         </div>
 
         {/* =========================================================
-            3. TWO-COLUMN MAIN CONTENT LAYOUT
+            3. STATS HIGHLIGHT STRIP
             ========================================================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* LEFT / MAIN COLUMN: Card 1 (Specs) & Card 2 (Description & What We Offer) */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* ----------------------------------------------------
-                CARD 1: JOB SPECIFICATIONS & COMPLIANCE SUMMARY
-                ---------------------------------------------------- */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-7 space-y-5">
-              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-100">
-                <BriefcaseIcon />
-                <span>Role Specifications</span>
-              </h2>
+        <div className="job-details-stats-grid">
+          <div className="job-details-stat-card">
+            <div className="job-details-stat-icon-wrap emerald">
+              <UsersIcon />
+            </div>
+            <div className="job-details-stat-info">
+              <span className="job-details-stat-value">0</span>
+              <span className="job-details-stat-label">Active Applicants</span>
+            </div>
+          </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 bg-slate-50/80 border border-slate-200/70 rounded-xl flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 border border-blue-100">
+          <div className="job-details-stat-card">
+            <div className="job-details-stat-icon-wrap blue">
+              <SparkleIcon />
+            </div>
+            <div className="job-details-stat-info">
+              <span className="job-details-stat-value">95%</span>
+              <span className="job-details-stat-label">Avg AI Match Fit</span>
+            </div>
+          </div>
+
+          <div className="job-details-stat-card">
+            <div className="job-details-stat-icon-wrap indigo">
+              <GraduationCapIcon />
+            </div>
+            <div className="job-details-stat-info">
+              <span className="job-details-stat-value">{job.experienceLevel || 'Mid-Senior'}</span>
+              <span className="job-details-stat-label">Experience Tier</span>
+            </div>
+          </div>
+
+          <div className="job-details-stat-card">
+            <div className="job-details-stat-icon-wrap amber">
+              <BuildingIcon />
+            </div>
+            <div className="job-details-stat-info">
+              <span className="job-details-stat-value">{job.department}</span>
+              <span className="job-details-stat-label">Division</span>
+            </div>
+          </div>
+        </div>
+
+        {/* =========================================================
+            4. TWO-COLUMN MAIN CONTENT GRID
+            ========================================================= */}
+        <div className="job-details-layout-grid">
+          {/* Main Column (2/3) */}
+          <div className="job-details-main-column">
+            {/* Card 1: Role Specifications */}
+            <div className="job-details-card">
+              <div className="job-details-card-header">
+                <h2 className="job-details-card-title">
+                  <span className="job-details-card-title-icon"><BriefcaseIcon /></span>
+                  <span>Role Specifications</span>
+                </h2>
+              </div>
+
+              <div className="job-details-specs-grid">
+                <div className="job-details-spec-tile">
+                  <div className="job-details-spec-icon-box">
                     <BriefcaseIcon />
                   </div>
-                  <div>
-                    <span className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Employment Type</span>
-                    <span className="block text-sm font-semibold text-slate-900 mt-0.5">{job.employmentType}</span>
+                  <div className="job-details-spec-meta">
+                    <span className="job-details-spec-label">Employment Type</span>
+                    <span className="job-details-spec-val">{job.employmentType}</span>
                   </div>
                 </div>
 
-                <div className="p-4 bg-slate-50/80 border border-slate-200/70 rounded-xl flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 border border-indigo-100">
+                <div className="job-details-spec-tile">
+                  <div className="job-details-spec-icon-box">
                     <GraduationCapIcon />
                   </div>
-                  <div>
-                    <span className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Experience Level</span>
-                    <span className="block text-sm font-semibold text-slate-900 mt-0.5">{job.experienceLevel}</span>
+                  <div className="job-details-spec-meta">
+                    <span className="job-details-spec-label">Experience Level</span>
+                    <span className="job-details-spec-val">{job.experienceLevel}</span>
                   </div>
                 </div>
 
-                <div className="p-4 bg-slate-50/80 border border-slate-200/70 rounded-xl flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 border border-emerald-100">
+                <div className="job-details-spec-tile">
+                  <div className="job-details-spec-icon-box">
                     <DollarSignIcon />
                   </div>
-                  <div>
-                    <span className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Target Compensation</span>
-                    <span className="block text-sm font-semibold text-slate-900 mt-0.5">{job.salaryRange || 'Competitive / Unspecified'}</span>
+                  <div className="job-details-spec-meta">
+                    <span className="job-details-spec-label">Target Compensation</span>
+                    <span className="job-details-spec-val">{job.salaryRange || 'Competitive / Unspecified'}</span>
                   </div>
                 </div>
 
-                <div className="p-4 bg-slate-50/80 border border-slate-200/70 rounded-xl flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0 border border-amber-100">
+                <div className="job-details-spec-tile">
+                  <div className="job-details-spec-icon-box">
                     <BuildingIcon />
                   </div>
-                  <div>
-                    <span className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Hiring Company</span>
-                    <span className="block text-sm font-semibold text-slate-900 mt-0.5">{job.companyName || 'Enterprise Employer'}</span>
+                  <div className="job-details-spec-meta">
+                    <span className="job-details-spec-label">Department</span>
+                    <span className="job-details-spec-val">{job.department}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* ----------------------------------------------------
-                CARD 2: RICH TEXT DESCRIPTION & WHAT WE OFFER
-                ---------------------------------------------------- */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 space-y-6">
-              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
-                <SparkleIcon />
-                <span>Job Description & Requirements</span>
-              </h2>
+            {/* Card 2: Description & Requirements */}
+            <div className="job-details-card">
+              <div className="job-details-card-header">
+                <h2 className="job-details-card-title">
+                  <span className="job-details-card-title-icon"><SparkleIcon /></span>
+                  <span>Job Description & Requirements</span>
+                </h2>
+              </div>
 
-              {/* Rich Text HTML Description */}
               <div
-                className="prose prose-slate max-w-none text-slate-700 text-sm leading-relaxed"
+                className="job-details-prose"
                 dangerouslySetInnerHTML={{ __html: job.description }}
               />
 
               {/* What We Offer / Benefits */}
               {job.whatWeOffer && (
-                <div className="pt-6 border-t border-slate-100 space-y-4">
-                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                    <SparkleIcon />
+                <div className="mt-8 pt-6 border-t border-slate-100">
+                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-4">
+                    <span className="text-emerald-600"><CheckIcon /></span>
                     <span>What We Offer (Perks & Benefits)</span>
                   </h3>
-                  <div
-                    className="prose prose-slate max-w-none text-slate-700 text-sm leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: job.whatWeOffer }}
-                  />
+                  <div className="job-details-benefits-box">
+                    <div
+                      className="job-details-prose"
+                      dangerouslySetInnerHTML={{ __html: job.whatWeOffer }}
+                    />
+                  </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* RIGHT / SIDEBAR COLUMN: Card 3 (Applicants Summary) & Quick Links */}
-          <div className="space-y-6">
-            {/* ----------------------------------------------------
-                CARD 3: APPLICANTS SUMMARY & CANDIDATE PIPELINE CTA
-                ---------------------------------------------------- */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-6">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">CANDIDATE INTELLIGENCE</span>
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+          {/* Sidebar Column (1/3) */}
+          <div className="job-details-sidebar-column">
+            {/* Sidebar Card 1: Candidate Pipeline CTA */}
+            <div className="job-details-pipeline-card">
+              <div className="job-details-pipeline-header">
+                <span className="job-details-pipeline-kicker">Candidate Pipeline</span>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Live Pipeline
+                  Live Board
                 </span>
               </div>
 
-              {/* Counter Display */}
-              <div className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-200/70 rounded-xl">
-                <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0">
+              <div className="job-details-pipeline-count-row">
+                <div className="job-details-pipeline-count-icon">
                   <UsersIcon />
                 </div>
                 <div>
-                  <span className="text-2xl font-black text-slate-900 block leading-tight">0</span>
-                  <span className="text-xs font-medium text-slate-500">Total Active Applicants</span>
+                  <span className="job-details-pipeline-count-val">0</span>
+                  <span className="job-details-pipeline-count-label block">Active Candidates</span>
                 </div>
               </div>
 
-              {/* Note */}
-              <div className="flex items-start gap-2.5 p-3.5 bg-blue-50/50 border border-blue-100 rounded-xl text-xs text-blue-900 leading-relaxed">
+              <div className="job-details-ai-hint-box">
                 <ClockIcon />
-                <span>AI candidate matching is actively parsing qualified talent profiles for this position.</span>
+                <span>AI matching is continuously scanning qualified talent profiles for this position.</span>
               </div>
 
-              {/* Primary Action Button: View Candidates Pipeline */}
-              <div>
-                <Link
-                  to="/dashboard"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-sm transition-colors"
-                  title="Open candidate pipeline Kanban board"
-                >
-                  <KanbanIcon />
-                  <span>View Candidates Pipeline</span>
-                  <ArrowRightIcon />
-                </Link>
+              <Link
+                to={`/dashboard/pipelines/${job.id}`}
+                className="job-details-pipeline-cta-btn"
+                title="View applicants Kanban board"
+              >
+                <KanbanIcon />
+                <span>Open Pipeline Kanban</span>
+                <ArrowRightIcon />
+              </Link>
+            </div>
+
+            {/* Sidebar Card 2: Requisition Governance */}
+            <div className="job-details-card">
+              <div className="job-details-card-header">
+                <h3 className="job-details-card-title">
+                  <span className="job-details-card-title-icon"><BuildingIcon /></span>
+                  <span>Governance & Links</span>
+                </h3>
+              </div>
+
+              <div className="job-details-info-table">
+                <div className="job-details-info-row">
+                  <span className="job-details-info-label">Requisition ID</span>
+                  <span className="job-details-info-value font-mono text-xs">{job.id.substring(0, 13)}...</span>
+                </div>
+                <div className="job-details-info-row">
+                  <span className="job-details-info-label">Created</span>
+                  <span className="job-details-info-value">{formattedDate}</span>
+                </div>
+                <div className="job-details-info-row">
+                  <span className="job-details-info-label">Status</span>
+                  <span className="job-details-info-value">{job.status}</span>
+                </div>
+                <div className="job-details-info-row">
+                  <span className="job-details-info-label">Hiring Company</span>
+                  <span className="job-details-info-value">{job.companyName || 'Enterprise'}</span>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-slate-100">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Public Candidate Link</span>
+                <div className="job-details-public-link-box">
+                  <Link
+                    to={`/jobs/${job.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="job-details-public-link-text"
+                  >
+                    <span>View Public Board</span>
+                    <ExternalLinkIcon />
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleCopyPublicLink}
+                    className="text-slate-400 hover:text-emerald-600 p-1 transition-colors"
+                    title="Copy Link"
+                  >
+                    <CopyIcon />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -408,7 +546,7 @@ export const JobDetails = () => {
       </div>
 
       {/* =========================================================
-          4. EDIT JOB MODAL
+          5. EDIT JOB MODAL
           ========================================================= */}
       <JobFormModal
         isOpen={isEditModalOpen}
@@ -430,12 +568,12 @@ export const JobDetails = () => {
       />
 
       {/* =========================================================
-          5. DIRECT PHYSICAL DELETE CONFIRMATION MODAL
+          6. DIRECT HARD DELETE CONFIRMATION MODAL
           ========================================================= */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 max-w-md w-full space-y-5 animate-scaleUp">
-            <div className="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center border border-red-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl animate-scaleUp">
+            <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
               <TrashIcon />
             </div>
             <div className="space-y-2">
@@ -443,13 +581,13 @@ export const JobDetails = () => {
               <p className="text-sm text-slate-600 leading-relaxed">
                 Are you sure you want to permanently delete{' '}
                 <strong className="text-slate-900">"{job.title}"</strong>?
-                This will perform a direct hard-delete from the PostgreSQL database.
+                This will permanently remove the requisition from the database.
               </p>
             </div>
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
-                className="px-4 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors"
+                className="px-4 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
                 disabled={isDeleting}
                 onClick={() => setIsDeleteModalOpen(false)}
               >
@@ -457,7 +595,7 @@ export const JobDetails = () => {
               </button>
               <button
                 type="button"
-                className="px-5 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-50"
+                className="px-5 py-2.5 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-colors disabled:opacity-50 shadow-sm"
                 disabled={isDeleting}
                 onClick={handleConfirmDirectDelete}
               >

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jobsApi, type JobDto } from '../services/api';
+import { AIScreeningModal } from '../components/candidates/AIScreeningModal';
 import {
   SparkleIcon,
   SearchIcon,
@@ -26,6 +27,7 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Closed'>('All');
+  const [selectedJobForModal, setSelectedJobForModal] = useState<JobDto | null>(null);
 
   // Fetch company jobs
   const fetchJobs = async () => {
@@ -85,8 +87,13 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
     if (onSelectJob) {
       onSelectJob(job.id);
     } else {
-      navigate(`/dashboard/pipelines/${job.id}`);
+      setSelectedJobForModal(job);
     }
+  };
+
+  const handleJobUpdated = (updatedJob: JobDto) => {
+    setJobs((prev) => prev.map((j) => (j.id === updatedJob.id ? updatedJob : j)));
+    setSelectedJobForModal(updatedJob);
   };
 
   const closedCount = useMemo(() => {
@@ -108,7 +115,7 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
           </div>
           <h1 className="pipeline-page-title">AI Screening by Job Requisition</h1>
           <p className="pipeline-page-subtitle">
-            Select a job requisition to review applicants. Once applications close and a role is marked as <strong>Closed</strong>, run the comprehensive batch AI screening to shortlist candidates for interviews.
+            Click any job requisition below to open the <strong>AI Screening Modal</strong>. Review applicants, and run batch AI screening once the requisition is marked as <strong>Closed</strong>.
           </p>
         </div>
 
@@ -416,6 +423,14 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
           })}
         </div>
       )}
+
+      {/* AIScreeningModal Popup Over Job Selector */}
+      <AIScreeningModal
+        isOpen={!!selectedJobForModal}
+        onClose={() => setSelectedJobForModal(null)}
+        job={selectedJobForModal}
+        onJobUpdated={handleJobUpdated}
+      />
     </div>
   );
 };

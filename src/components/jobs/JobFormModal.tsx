@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import {
@@ -82,9 +82,12 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
   const [formData, setFormData] = useState<JobFormData>(defaultJobData);
   const [stepError, setStepError] = useState<string | null>(null);
 
-  // Sync state whenever modal opens or initialData changes
+  // Track previous open state to prevent modal state resets on re-render
+  const prevIsOpenRef = useRef(false);
+
+  // Sync state ONLY when the modal transitions from closed to open
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !prevIsOpenRef.current) {
       setCurrentStep(1);
       setStepError(null);
       if (initialData) {
@@ -96,6 +99,7 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
         setFormData(defaultJobData);
       }
     }
+    prevIsOpenRef.current = isOpen;
   }, [isOpen, initialData]);
 
   if (!isOpen) return null;
@@ -116,7 +120,7 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
     setFormData((prev) => ({ ...prev, benefits: content }));
   };
 
-  // Step Validation & Navigation (identical flow to Company Reg Form)
+  // Step Validation & Navigation
   const validateStep1 = () => {
     if (!formData.title.trim()) {
       setStepError('Please enter a Job Title before proceeding.');
@@ -143,7 +147,10 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
     return true;
   };
 
-  const handleNext = () => {
+  const handleNext = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    setStepError(null);
+
     if (currentStep === 1) {
       if (validateStep1()) {
         setCurrentStep(2);
@@ -155,13 +162,24 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
     }
   };
 
-  const handleBack = () => {
+  const handleBack = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     setStepError(null);
     if (currentStep === 2) setCurrentStep(1);
     if (currentStep === 3) setCurrentStep(2);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title.trim()) {
+      setCurrentStep(1);
+      setStepError('Job title is required.');
+      return;
+    }
+    onSubmit(formData);
+  };
+
+  const handleQuickSave = (e: React.MouseEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) {
       setCurrentStep(1);
@@ -208,7 +226,7 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* =========================================================
-            1. TOP NAVIGATION & CLOSE BUTTON (COMPANY REG STYLE)
+            1. TOP NAVIGATION & CLOSE BUTTON
             ========================================================= */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -245,7 +263,7 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
         </div>
 
         {/* =========================================================
-            2. HEADER BRANDING (COMPANY REG STYLE)
+            2. HEADER BRANDING
             ========================================================= */}
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <div className="badge-tag" style={{ display: 'inline-flex', marginBottom: '8px', padding: '4px 12px', fontSize: '11px' }}>
@@ -257,13 +275,13 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
           </h1>
           <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: 1.45 }}>
             {isEditMode
-              ? 'Update your vacancy parameters and talent criteria across the 3 wizard steps.'
+              ? 'Update your vacancy status, specifications, and requirements.'
               : 'Deploy a new role to activate AI-matched candidate pipelines and candidate tracking.'}
           </p>
         </div>
 
         {/* =========================================================
-            3. EXACT MULTI-STEP STEPPER (FROM COMPANY REG FORM)
+            3. STEPPER TABS
             ========================================================= */}
         <div className="wizard-stepper" style={{ marginBottom: '20px' }}>
           <div className="wizard-progress-track">
@@ -276,36 +294,50 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
           </div>
 
           {/* Step 1 Node */}
-          <div
+          <button
+            type="button"
             className={`wizard-step-node ${currentStep === 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}
-            onClick={() => currentStep > 1 && setCurrentStep(1)}
-            style={{ cursor: currentStep > 1 ? 'pointer' : 'default' }}
+            onClick={(e) => {
+              e.preventDefault();
+              setCurrentStep(1);
+            }}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
           >
             <div className="wizard-step-circle">
               {currentStep > 1 ? <CheckIcon /> : '1'}
             </div>
-            <span className="wizard-step-label">Basic Info</span>
-          </div>
+            <span className="wizard-step-label">Basic & Status</span>
+          </button>
 
           {/* Step 2 Node */}
-          <div
+          <button
+            type="button"
             className={`wizard-step-node ${currentStep === 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}
-            onClick={() => {
-              if (currentStep === 3) setCurrentStep(2);
+            onClick={(e) => {
+              e.preventDefault();
+              if (validateStep1()) setCurrentStep(2);
             }}
-            style={{ cursor: currentStep === 3 ? 'pointer' : 'default' }}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
           >
             <div className="wizard-step-circle">
               {currentStep > 2 ? <CheckIcon /> : '2'}
             </div>
-            <span className="wizard-step-label">Specs</span>
-          </div>
+            <span className="wizard-step-label">Role Specs</span>
+          </button>
 
           {/* Step 3 Node */}
-          <div className={`wizard-step-node ${currentStep === 3 ? 'active' : ''}`}>
+          <button
+            type="button"
+            className={`wizard-step-node ${currentStep === 3 ? 'active' : ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              if (validateStep1() && validateStep2()) setCurrentStep(3);
+            }}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+          >
             <div className="wizard-step-circle">3</div>
             <span className="wizard-step-label">Details</span>
-          </div>
+          </button>
         </div>
 
         {/* Validation / Step Error Notice */}
@@ -320,8 +352,8 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
             4. ACTIVE STEP FORM BODY (SCROLLABLE)
             ========================================================= */}
         <div style={{ overflowY: 'auto', flex: 1, paddingRight: '4px' }}>
-          <form onSubmit={handleSubmit}>
-            {/* STEP 1: Basic Information */}
+          <form onSubmit={handleSubmit} noValidate>
+            {/* STEP 1: Basic Information & Prominent Vacancy Status */}
             {currentStep === 1 && (
               <div className="wizard-step-body" key="step1">
                 <div className="wizard-step-header">
@@ -329,8 +361,8 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                     <BuildingIcon />
                   </div>
                   <div>
-                    <h3 className="wizard-step-title">General Information</h3>
-                    <p className="wizard-step-desc">Specify role title, team department, and primary location</p>
+                    <h3 className="wizard-step-title">General Information & Status</h3>
+                    <p className="wizard-step-desc">Configure vacancy title, department, location, and recruitment status</p>
                   </div>
                 </div>
 
@@ -356,8 +388,9 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                   </div>
                 </div>
 
-                {/* Department & Location Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                {/* Department, Location & Prominent Status Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+                  {/* Department */}
                   <div className="form-group-item">
                     <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
                       Department <span style={{ color: '#ef4444' }}>*</span>
@@ -378,6 +411,7 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                     </div>
                   </div>
 
+                  {/* Location */}
                   <div className="form-group-item">
                     <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
                       Location <span style={{ color: '#ef4444' }}>*</span>
@@ -397,28 +431,63 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                       />
                     </div>
                   </div>
+
+                  {/* Prominent Vacancy Status (Directly accessible on Step 1) */}
+                  <div className="form-group-item">
+                    <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
+                      Vacancy Status <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      className="input-field-standard w-full"
+                      style={{
+                        cursor: 'pointer',
+                        height: '42px',
+                        fontWeight: 600,
+                        backgroundColor: formData.status === 'Closed' ? '#f8fafc' : formData.status === 'Active' ? '#f0fdf4' : '#fffbeb',
+                        borderColor: formData.status === 'Closed' ? '#cbd5e1' : formData.status === 'Active' ? '#86efac' : '#fde68a',
+                        color: formData.status === 'Closed' ? '#475569' : formData.status === 'Active' ? '#166534' : '#92400e',
+                      }}
+                    >
+                      <option value="Active">Active (Accepting Applications)</option>
+                      <option value="Closed">Closed (Intake Ended / AI Screening Ready)</option>
+                      <option value="Draft">Draft (Internal Requisition Review)</option>
+                    </select>
+                  </div>
                 </div>
 
-                {/* Company Reg Style Helper Box */}
+                {/* Status Explanation Helper Box */}
                 <div
                   style={{
-                    background: '#f8fafc',
-                    border: '1px solid #e2e8f0',
+                    background: formData.status === 'Closed' ? '#eff6ff' : '#f8fafc',
+                    border: `1px solid ${formData.status === 'Closed' ? '#bfdbfe' : '#e2e8f0'}`,
                     borderRadius: '12px',
-                    padding: '10px 14px',
+                    padding: '12px 16px',
                     display: 'flex',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     gap: '10px',
                     fontSize: '12.5px',
-                    color: '#475569',
+                    color: formData.status === 'Closed' ? '#1e40af' : '#475569',
                   }}
                 >
                   <ShieldCheckIcon />
-                  <span>Clear job titles and team locations improve candidate indexing across talent feeds.</span>
+                  <div>
+                    {formData.status === 'Closed' ? (
+                      <span>
+                        <strong>Closed Status:</strong> Applications are frozen. The batch AI Screening engine will be enabled to rank all applicants and shortlist candidates.
+                      </span>
+                    ) : (
+                      <span>
+                        <strong>Active Status:</strong> Candidates can actively submit applications. Marking as Closed once the deadline passes will unlock the AI Batch Screening.
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Action Row */}
-                <div className="wizard-action-row">
+                <div className="wizard-action-row" style={{ marginTop: '24px' }}>
                   <button
                     type="button"
                     onClick={onClose}
@@ -427,20 +496,37 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                   >
                     <span>Cancel</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleNext}
-                    className="btn-wizard-next"
-                    style={{ padding: '10px 22px', boxShadow: 'none' }}
-                  >
-                    <span>Continue to Role Specs</span>
-                    <ArrowRightIcon />
-                  </button>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {isEditMode && (
+                      <button
+                        type="button"
+                        onClick={handleQuickSave}
+                        disabled={isSubmitting}
+                        className="btn-secondary"
+                        style={{ padding: '10px 18px', borderRadius: '10px', fontSize: '13px' }}
+                        title="Save changes and close without stepping through remaining steps"
+                      >
+                        <CheckIcon />
+                        <span>{isSubmitting ? 'Saving...' : 'Quick Save'}</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="btn-wizard-next"
+                      style={{ padding: '10px 22px', boxShadow: 'none' }}
+                    >
+                      <span>Continue to Role Specs</span>
+                      <ArrowRightIcon />
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* STEP 2: Role Specifications & Status */}
+            {/* STEP 2: Role Specifications */}
             {currentStep === 2 && (
               <div className="wizard-step-body" key="step2">
                 <div className="wizard-step-header">
@@ -449,7 +535,7 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                   </div>
                   <div>
                     <h3 className="wizard-step-title">Role Specifications</h3>
-                    <p className="wizard-step-desc">Configure employment type, experience tier, and status</p>
+                    <p className="wizard-step-desc">Configure employment type, experience tier, and compensation</p>
                   </div>
                 </div>
 
@@ -496,24 +582,6 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
-                  {/* Vacancy Status */}
-                  <div className="form-group-item">
-                    <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
-                      Vacancy Status <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                      className="input-field-standard w-full"
-                      style={{ cursor: 'pointer', height: '42px' }}
-                    >
-                      <option value="Active">Active (Accepting Applicants)</option>
-                      <option value="Draft">Draft (Internal Review)</option>
-                      <option value="Closed">Closed (Position Filled)</option>
-                    </select>
-                  </div>
-
                   {/* Salary Range */}
                   <div className="form-group-item">
                     <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
@@ -533,6 +601,24 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                       />
                     </div>
                   </div>
+
+                  {/* Status Indicator on Step 2 */}
+                  <div className="form-group-item">
+                    <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
+                      Vacancy Status
+                    </label>
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      className="input-field-standard w-full"
+                      style={{ cursor: 'pointer', height: '42px' }}
+                    >
+                      <option value="Active">Active (Accepting Applications)</option>
+                      <option value="Closed">Closed (Intake Ended / AI Screening Ready)</option>
+                      <option value="Draft">Draft (Internal Requisition Review)</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* Helper Box */}
@@ -550,11 +636,11 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                   }}
                 >
                   <ShieldCheckIcon />
-                  <span>Salary transparency increases qualified applicant response rates by up to 45%.</span>
+                  <span>Clear compensation ranges and role tiers improve candidate match accuracy by 45%.</span>
                 </div>
 
                 {/* Action Row */}
-                <div className="wizard-action-row">
+                <div className="wizard-action-row" style={{ marginTop: '24px' }}>
                   <button
                     type="button"
                     onClick={handleBack}
@@ -564,15 +650,31 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                     <ArrowLeftIcon />
                     <span>Back</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleNext}
-                    className="btn-wizard-next"
-                    style={{ padding: '10px 22px', boxShadow: 'none' }}
-                  >
-                    <span>Continue to Details</span>
-                    <ArrowRightIcon />
-                  </button>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {isEditMode && (
+                      <button
+                        type="button"
+                        onClick={handleQuickSave}
+                        disabled={isSubmitting}
+                        className="btn-secondary"
+                        style={{ padding: '10px 18px', borderRadius: '10px', fontSize: '13px' }}
+                      >
+                        <CheckIcon />
+                        <span>{isSubmitting ? 'Saving...' : 'Quick Save'}</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="btn-wizard-next"
+                      style={{ padding: '10px 22px', boxShadow: 'none' }}
+                    >
+                      <span>Continue to Details</span>
+                      <ArrowRightIcon />
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -636,7 +738,7 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                 </div>
 
                 {/* Action Row */}
-                <div className="wizard-action-row">
+                <div className="wizard-action-row" style={{ marginTop: '24px' }}>
                   <button
                     type="button"
                     onClick={handleBack}
@@ -647,6 +749,7 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                     <ArrowLeftIcon />
                     <span>Back</span>
                   </button>
+
                   <button
                     type="submit"
                     disabled={isSubmitting}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { publicJobsApi, type JobDto } from '../services/api'
+import { JobVacancyCard } from '../components/jobs/JobVacancyCard'
 import {
   SparkleIcon,
   SearchIcon,
@@ -9,8 +10,6 @@ import {
   TargetIcon,
   LightningIcon,
   TrendUpIcon,
-  MapPinIcon,
-  ClockIcon,
 } from '../components/common/Icons'
 
 export const Home = () => {
@@ -205,59 +204,13 @@ export const Home = () => {
           </div>
         ) : (
           <div className="jobs-grid">
-            {jobs.map((job) => {
-              const companyInitials = (job.companyName || 'CO')
-                .split(' ')
-                .map((n) => n[0])
-                .slice(0, 2)
-                .join('')
-                .toUpperCase()
-
-              return (
-                <div className="job-card" key={job.id}>
-                  <div className="job-card-header">
-                    <div className="company-info">
-                      <div className="company-logo">{companyInitials}</div>
-                      <div className="company-details">
-                        <span className="company-name">{job.companyName}</span>
-                        <span className="post-time">
-                          {new Date(job.createdAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="match-badge">
-                      <SparkleIcon />
-                      <span>95% AI Match</span>
-                    </div>
-                  </div>
-
-                  <h3 className="job-title">{job.title}</h3>
-
-                  <div className="job-meta-row">
-                    <div className="meta-item">
-                      <MapPinIcon />
-                      <span>{job.location}</span>
-                    </div>
-                    <div className="meta-item">
-                      <ClockIcon />
-                      <span>{job.employmentType}</span>
-                    </div>
-                  </div>
-
-                  <div className="job-card-footer">
-                    <span className="salary">{job.salaryRange || 'Competitive'}</span>
-                    <Link to={`/jobs?search=${encodeURIComponent(job.title)}`} className="view-details-btn">
-                      View Details
-                      <ArrowRightIcon />
-                    </Link>
-                  </div>
-                </div>
-              )
-            })}
+            {jobs.map((job) => (
+              <JobVacancyCard
+                key={job.id}
+                job={job}
+                matchPercentage={95}
+              />
+            ))}
           </div>
         )}
       </section>

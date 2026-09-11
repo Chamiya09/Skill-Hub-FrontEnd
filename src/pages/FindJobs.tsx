@@ -1,14 +1,12 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { publicJobsApi, type JobDto } from '../services/api'
+import { JobVacancyCard } from '../components/jobs/JobVacancyCard'
 import {
   SparkleIcon,
   SearchIcon,
-  MapPinIcon,
   ClockIcon,
   BriefcaseIcon,
-  ArrowRightIcon,
-  BookmarkIcon,
   CheckIcon,
   FilterIcon,
 } from '../components/common/Icons'
@@ -359,96 +357,17 @@ export const FindJobs = () => {
         <div className="rich-jobs-grid">
           {filteredJobs.map((job) => {
             const isBookmarked = bookmarkedIds.includes(job.id)
-            const companyInitials = (job.companyName || 'CO')
-              .split(' ')
-              .map((n) => n[0])
-              .slice(0, 2)
-              .join('')
-              .toUpperCase()
 
             return (
-              <div
+              <JobVacancyCard
                 key={job.id}
-                className="rich-job-card"
-              >
-                {/* Job Card Header */}
-                <div className="job-card-header">
-                  <div className="company-info">
-                    <div
-                      className="company-logo"
-                      style={{ background: '#2563eb', color: '#ffffff' }}
-                    >
-                      {companyInitials}
-                    </div>
-                    <div className="company-details">
-                      <span className="company-name">{job.companyName}</span>
-                      <span className="post-time">
-                        {new Date(job.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="match-badge">
-                    <SparkleIcon />
-                    <span>95% Match</span>
-                  </div>
-                </div>
-
-                {/* Job Title */}
-                <h3 className="job-title">{job.title}</h3>
-
-                {/* Meta details */}
-                <div className="job-meta-row">
-                  <div className="meta-item">
-                    <MapPinIcon />
-                    <span>{job.location}</span>
-                  </div>
-                  <div className="meta-item">
-                    <ClockIcon />
-                    <span>{job.employmentType}</span>
-                  </div>
-                  <div className="meta-item">
-                    <BriefcaseIcon />
-                    <span>{job.experienceLevel}</span>
-                  </div>
-                </div>
-
-                {/* Department pill */}
-                <div className="job-skills-tags">
-                  <span className="skill-tag" style={{ background: '#eff6ff', color: '#1e40af', border: '1px solid #dbeafe' }}>
-                    {job.department}
-                  </span>
-                </div>
-
-                {/* Card Footer */}
-                <div className="job-card-footer">
-                  <div className="salary">{job.salaryRange || 'Competitive'}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <button
-                      type="button"
-                      className={`bookmark-btn ${isBookmarked ? 'saved' : ''}`}
-                      onClick={() => toggleBookmark(job.id)}
-                      title={isBookmarked ? 'Saved to bookmarks' : 'Save job'}
-                      aria-label="Bookmark job"
-                    >
-                      <BookmarkIcon filled={isBookmarked} />
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-primary"
-                      style={{ padding: '8px 18px', fontSize: '13.5px' }}
-                      onClick={() => handleApply(job.title)}
-                    >
-                      <span>Quick Apply</span>
-                      <ArrowRightIcon />
-                    </button>
-                  </div>
-                </div>
-              </div>
+                job={job}
+                isBookmarked={isBookmarked}
+                onToggleBookmark={toggleBookmark}
+                onQuickApply={handleApply}
+                showBookmark={true}
+                matchPercentage={95}
+              />
             )
           })}
         </div>

@@ -13,6 +13,7 @@ import { JobVacancies } from "./pages/JobVacancies";
 import { EditJob } from "./pages/EditJob";
 import { CreateJob } from "./pages/CreateJob";
 import { UserManagement } from "./pages/UserManagement";
+import { JobDetailsPublic } from "./pages/JobDetailsPublic";
 import "./App.css";
 
 function AppContent() {
@@ -37,6 +38,8 @@ function AppContent() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/jobs" element={<FindJobs />} />
+            <Route path="/jobs/:id" element={<JobDetailsPublic />} />
+            <Route path="/job/:id" element={<JobDetailsPublic />} />
             <Route path="/company-login" element={<Login />} />
             <Route path="/company-register" element={<Register />} />
             <Route path="/login" element={<Login />} />

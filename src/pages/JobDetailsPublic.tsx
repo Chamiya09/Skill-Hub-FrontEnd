@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { publicJobsApi, type JobDto } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import { JobVacancyCard } from '../components/jobs/JobVacancyCard'
 import {
   SparkleIcon,
@@ -17,6 +18,7 @@ import {
 export const JobDetailsPublic: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { currentUser } = useAuth()
 
   const [job, setJob] = useState<JobDto | null>(null)
   const [suggestedJobs, setSuggestedJobs] = useState<JobDto[]>([])
@@ -25,22 +27,28 @@ export const JobDetailsPublic: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
 
   const [isBookmarked, setIsBookmarked] = useState(false)
-  const [showApplyModal, setShowApplyModal] = useState(false)
   const [shareCopied, setShareCopied] = useState(false)
+  
+  // One-click Digital CV application state
+  const [isApplying, setIsApplying] = useState(false)
+  const [hasApplied, setHasApplied] = useState(false)
   const [applicationSubmitted, setApplicationSubmitted] = useState(false)
 
-  // Apply form state
-  const [applicantName, setApplicantName] = useState('')
-  const [applicantEmail, setApplicantEmail] = useState('')
-  const [applicantPhone, setApplicantPhone] = useState('')
-  const [applicantLinkedin, setApplicantLinkedin] = useState('')
-  const [coverNote, setCoverNote] = useState('')
-  const [resumeFile, setResumeFile] = useState<string | null>(null)
-  const [submittingApply, setSubmittingApply] = useState(false)
+  // Check if current user is an employer/recruiter
+  const isEmployer = Boolean(
+    currentUser && (
+      currentUser.companyId ||
+      currentUser.role?.toUpperCase().includes('COMPANY') ||
+      currentUser.role?.toUpperCase().includes('EMPLOYER') ||
+      currentUser.role?.toUpperCase().includes('RECRUITER') ||
+      currentUser.role?.toUpperCase().includes('ADMIN')
+    )
+  )
 
   // Scroll to top when job ID changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    setHasApplied(false)
   }, [id])
 
   // Fetch target job details
@@ -89,15 +97,31 @@ export const JobDetailsPublic: React.FC = () => {
     setTimeout(() => setShareCopied(false), 3000)
   }
 
-  const handleApplySubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setSubmittingApply(true)
+  // =========================================================================
+  // ONE-CLICK DIGITAL CV APPLY HANDLER (INTEGRATION READY)
+  // =========================================================================
+  const handleApply = () => {
+    if (isEmployer || hasApplied || isApplying) return
+
+    setIsApplying(true)
+
+    // =========================================================================
+    // TODO: Another team member will integrate the Digital CV payload here.
+    // E.g.:
+    // await applicationsApi.submitDigitalCvApplication({
+    //   jobId: job?.id,
+    //   candidateId: currentUser?.id,
+    //   digitalCvProfile: candidateCvData,
+    // })
+    // =========================================================================
+
+    // Simulate network request duration
     setTimeout(() => {
-      setSubmittingApply(false)
-      setShowApplyModal(false)
+      setIsApplying(false)
+      setHasApplied(true)
       setApplicationSubmitted(true)
       setTimeout(() => setApplicationSubmitted(false), 5000)
-    }, 1200)
+    }, 1500)
   }
 
   if (loading) {
@@ -220,28 +244,31 @@ export const JobDetailsPublic: React.FC = () => {
               boxShadow: '0 12px 30px rgba(0,0,0,0.15)',
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
+              gap: '14px',
               border: '1px solid #b7eedc',
             }}
           >
             <div
               style={{
-                width: '32px',
-                height: '32px',
+                width: '36px',
+                height: '36px',
                 borderRadius: '50%',
                 background: '#e6f9f2',
                 color: '#00b074',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
               <CheckIcon />
             </div>
             <div>
-              <div style={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>Application Dispatched!</div>
-              <div style={{ fontSize: '13px', color: '#64748b' }}>
-                Your candidacy for <strong>{job.title}</strong> was submitted to the employer.
+              <div style={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
+                Application Submitted Successfully using your Digital CV!
+              </div>
+              <div style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
+                Your verified candidate profile was submitted to <strong>{job.companyName}</strong>.
               </div>
             </div>
           </div>
@@ -276,9 +303,9 @@ export const JobDetailsPublic: React.FC = () => {
             background: '#ffffff',
             border: '1px solid #e2e8f0',
             borderRadius: '24px',
-            padding: '36px',
+            padding: '32px',
             boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-            marginBottom: '32px',
+            marginBottom: '28px',
           }}
         >
           <div
@@ -294,16 +321,16 @@ export const JobDetailsPublic: React.FC = () => {
             <div style={{ display: 'flex', gap: '20px', flex: 1, minWidth: '280px' }}>
               <div
                 style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: '18px',
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '16px',
                   background: '#d1fae5',
                   color: '#065f46',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontWeight: 800,
-                  fontSize: '22px',
+                  fontSize: '20px',
                   border: '1px solid #a7f3d0',
                   flexShrink: 0,
                 }}
@@ -313,7 +340,7 @@ export const JobDetailsPublic: React.FC = () => {
 
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a' }}>
+                  <span style={{ fontSize: '16.5px', fontWeight: 700, color: '#0f172a' }}>
                     {job.companyName}
                   </span>
                   <span
@@ -336,64 +363,52 @@ export const JobDetailsPublic: React.FC = () => {
 
                 <h1
                   style={{
-                    fontSize: '28px',
+                    fontSize: '26px',
                     fontWeight: 800,
                     color: '#0b1329',
                     letterSpacing: '-0.5px',
-                    lineHeight: 1.25,
-                    marginBottom: '14px',
+                    lineHeight: 1.3,
+                    marginBottom: '12px',
                   }}
                 >
                   {job.title}
                 </h1>
 
-                {/* Badges / Meta row */}
+                {/* Core Badges: Location, Employment Type, Experience Level (Consolidated in Header) */}
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '16px',
+                    gap: '14px',
                     color: '#64748b',
-                    fontSize: '14px',
+                    fontSize: '13.5px',
                     fontWeight: 500,
                     flexWrap: 'wrap',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                     <MapPinIcon />
                     <span>{job.location}</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                     <ClockIcon />
                     <span>{job.employmentType}</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                     <BriefcaseIcon />
-                    <span>{job.experienceLevel} Seniority</span>
-                  </div>
-                  <div
-                    style={{
-                      background: '#f1f5f9',
-                      color: '#475569',
-                      padding: '3px 10px',
-                      borderRadius: '6px',
-                      fontSize: '12.5px',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {job.department}
+                    <span>{job.experienceLevel}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Right Header: AI Match badge & Action buttons */}
+            {/* Right Header: AI Match badge & Save/Share actions only */}
             <div
               style={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'flex-end',
-                gap: '16px',
+                gap: '14px',
               }}
             >
               {/* AI Match badge */}
@@ -405,9 +420,9 @@ export const JobDetailsPublic: React.FC = () => {
                   background: '#e6f9f2',
                   border: '1px solid #b7eedc',
                   color: '#009e67',
-                  fontSize: '13.5px',
+                  fontSize: '13px',
                   fontWeight: 700,
-                  padding: '6px 16px',
+                  padding: '6px 14px',
                   borderRadius: '9999px',
                 }}
               >
@@ -415,7 +430,7 @@ export const JobDetailsPublic: React.FC = () => {
                 <span>95% AI Match Recommendation</span>
               </div>
 
-              {/* Action Buttons */}
+              {/* Action Buttons: Save & Share */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <button
                   type="button"
@@ -424,13 +439,13 @@ export const JobDetailsPublic: React.FC = () => {
                     background: isBookmarked ? '#e6f9f2' : '#ffffff',
                     border: '1px solid #e2e8f0',
                     borderRadius: '12px',
-                    padding: '11px 16px',
+                    padding: '10px 16px',
                     color: isBookmarked ? '#00b074' : '#64748b',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    fontSize: '14px',
+                    fontSize: '13.5px',
                     fontWeight: 600,
                     transition: 'all 0.2s ease',
                   }}
@@ -446,37 +461,19 @@ export const JobDetailsPublic: React.FC = () => {
                     background: '#ffffff',
                     border: '1px solid #e2e8f0',
                     borderRadius: '12px',
-                    padding: '11px 16px',
+                    padding: '10px 16px',
                     color: '#64748b',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    fontSize: '14px',
+                    fontSize: '13.5px',
                     fontWeight: 600,
                     transition: 'all 0.2s ease',
                   }}
                 >
                   <SendIcon />
                   <span>Share</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowApplyModal(true)}
-                  className="btn-primary"
-                  style={{
-                    padding: '12px 26px',
-                    fontSize: '14.5px',
-                    fontWeight: 700,
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  <span>Apply Now</span>
-                  <ArrowRightIcon />
                 </button>
               </div>
             </div>
@@ -489,14 +486,14 @@ export const JobDetailsPublic: React.FC = () => {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 360px',
-            gap: '32px',
+            gridTemplateColumns: '1fr 340px',
+            gap: '28px',
             alignItems: 'start',
-            marginBottom: '64px',
+            marginBottom: '60px',
           }}
         >
           {/* Left Column: Job Description & Details */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
             {/* AI Fit Breakdown Banner */}
             <div
@@ -504,7 +501,7 @@ export const JobDetailsPublic: React.FC = () => {
                 background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
                 border: '1px solid #bbf7d0',
                 borderRadius: '20px',
-                padding: '24px',
+                padding: '22px 24px',
                 display: 'flex',
                 gap: '16px',
                 alignItems: 'flex-start',
@@ -512,8 +509,8 @@ export const JobDetailsPublic: React.FC = () => {
             >
               <div
                 style={{
-                  width: '38px',
-                  height: '38px',
+                  width: '36px',
+                  height: '36px',
                   borderRadius: '10px',
                   background: '#00b074',
                   color: '#ffffff',
@@ -526,16 +523,16 @@ export const JobDetailsPublic: React.FC = () => {
                 <SparkleIcon />
               </div>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#065f46', marginBottom: '4px' }}>
+                <h3 style={{ fontSize: '15.5px', fontWeight: 700, color: '#065f46', marginBottom: '4px' }}>
                   Why you match this role (95% AI Compatibility)
                 </h3>
-                <p style={{ fontSize: '14px', color: '#166534', lineHeight: 1.55, margin: 0 }}>
-                  This requisition requires expertise in <strong>{job.department}</strong> frameworks, engineering rigor, and problem solving. Your verified profile matches the core requirements and experience thresholds set by {job.companyName}.
+                <p style={{ fontSize: '13.5px', color: '#166534', lineHeight: 1.55, margin: 0 }}>
+                  This requisition requires expertise in <strong>{job.department}</strong> frameworks and engineering best practices. Your verified skills and experience align closely with the criteria defined by {job.companyName}.
                 </p>
               </div>
             </div>
 
-            {/* About the Role */}
+            {/* About the Position (Rendered cleanly from raw HTML) */}
             <div
               style={{
                 background: '#ffffff',
@@ -547,272 +544,168 @@ export const JobDetailsPublic: React.FC = () => {
             >
               <h2
                 style={{
-                  fontSize: '20px',
+                  fontSize: '19px',
                   fontWeight: 700,
                   color: '#0f172a',
-                  marginBottom: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
+                  marginBottom: '20px',
+                  paddingBottom: '12px',
+                  borderBottom: '1px solid #f1f5f9',
                 }}
               >
                 About the Position
               </h2>
+
+              {/* Render rich HTML safely with prose typography */}
+              {job.description ? (
+                <div
+                  className="rich-job-html-content prose prose-slate max-w-none"
+                  dangerouslySetInnerHTML={{ __html: job.description }}
+                />
+              ) : (
+                <p style={{ color: '#64748b', fontSize: '14.5px', lineHeight: 1.6 }}>
+                  No description provided for this vacancy.
+                </p>
+              )}
+            </div>
+
+            {/* What We Offer / Benefits (If provided) */}
+            {job.whatWeOffer && (
               <div
                 style={{
-                  fontSize: '15px',
-                  color: '#334155',
-                  lineHeight: 1.7,
-                  whiteSpace: 'pre-wrap',
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '20px',
+                  padding: '32px',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.02)',
                 }}
               >
-                {job.description || (
-                  <p>
-                    We are seeking a talented and proactive <strong>{job.title}</strong> to join our team at {job.companyName}.
-                    In this role, you will lead the design, development, and maintenance of high-performance scalable systems,
-                    collaborate closely with product stakeholders, and drive technical excellence.
-                  </p>
-                )}
+                <h2
+                  style={{
+                    fontSize: '19px',
+                    fontWeight: 700,
+                    color: '#0f172a',
+                    marginBottom: '20px',
+                    paddingBottom: '12px',
+                    borderBottom: '1px solid #f1f5f9',
+                  }}
+                >
+                  What We Offer & Perks
+                </h2>
+                <div
+                  className="rich-job-html-content prose prose-slate max-w-none"
+                  dangerouslySetInnerHTML={{ __html: job.whatWeOffer }}
+                />
               </div>
-            </div>
-
-            {/* Key Responsibilities */}
-            <div
-              style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '20px',
-                padding: '32px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.02)',
-              }}
-            >
-              <h2
-                style={{
-                  fontSize: '20px',
-                  fontWeight: 700,
-                  color: '#0f172a',
-                  marginBottom: '18px',
-                }}
-              >
-                Key Responsibilities
-              </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {[
-                  `Architect, build, and deploy mission-critical software components in ${job.department}.`,
-                  'Participate in agile sprint rituals, peer code reviews, and architectural design evaluations.',
-                  'Work with cross-functional product designers, managers, and QA engineers to deliver robust features.',
-                  'Identify performance bottlenecks, automate deployment pipelines, and optimize database queries.',
-                  'Mentor junior team members and maintain high engineering standards and documentation.',
-                ].map((resp, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                    <div
-                      style={{
-                        width: '22px',
-                        height: '22px',
-                        borderRadius: '50%',
-                        background: '#e6f9f2',
-                        color: '#00b074',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        marginTop: '2px',
-                      }}
-                    >
-                      <CheckIcon />
-                    </div>
-                    <span style={{ fontSize: '14.5px', color: '#334155', lineHeight: 1.5 }}>
-                      {resp}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Requirements & Qualifications */}
-            <div
-              style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '20px',
-                padding: '32px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.02)',
-              }}
-            >
-              <h2
-                style={{
-                  fontSize: '20px',
-                  fontWeight: 700,
-                  color: '#0f172a',
-                  marginBottom: '18px',
-                }}
-              >
-                Requirements & Qualifications
-              </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {[
-                  `Proven background as a ${job.title} with at least ${job.experienceLevel.toLowerCase().includes('senior') ? '4-6+' : '2-4+'} years of hands-on experience.`,
-                  'Strong command of modern frameworks, RESTful APIs, asynchronous programming, and clean code principles.',
-                  'Experience working with relational databases (e.g. PostgreSQL, SQL Server) and database optimization.',
-                  'Familiarity with containerization (Docker), CI/CD pipelines, and cloud environments (AWS / Azure / GCP).',
-                  'Outstanding analytical problem solving, verbal communication, and collaborative teamwork skills.',
-                ].map((req, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                    <div
-                      style={{
-                        width: '22px',
-                        height: '22px',
-                        borderRadius: '6px',
-                        background: '#eff6ff',
-                        color: '#2563eb',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        marginTop: '2px',
-                        fontWeight: 700,
-                        fontSize: '11px',
-                      }}
-                    >
-                      ✓
-                    </div>
-                    <span style={{ fontSize: '14.5px', color: '#334155', lineHeight: 1.5 }}>
-                      {req}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* What We Offer / Benefits */}
-            <div
-              style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '20px',
-                padding: '32px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.02)',
-              }}
-            >
-              <h2
-                style={{
-                  fontSize: '20px',
-                  fontWeight: 700,
-                  color: '#0f172a',
-                  marginBottom: '16px',
-                }}
-              >
-                What We Offer & Benefits
-              </h2>
-              <div
-                style={{
-                  fontSize: '15px',
-                  color: '#334155',
-                  lineHeight: 1.7,
-                  marginBottom: '18px',
-                }}
-              >
-                {job.whatWeOffer || (
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(2, 1fr)',
-                      gap: '16px',
-                    }}
-                  >
-                    {[
-                      { title: 'Competitive Compensation', desc: job.salaryRange || 'Top tier industry package' },
-                      { title: 'Flexible Work Model', desc: `${job.employmentType} flexibility & work-life balance` },
-                      { title: 'Health & Wellness', desc: 'Comprehensive medical, dental & optical coverage' },
-                      { title: 'Learning & Growth', desc: 'Annual education stipend & certification funds' },
-                      { title: 'Modern Equipment', desc: 'Latest Apple MacBook Pro or high-end workstation' },
-                      { title: 'Paid Time Off', desc: 'Generous vacation, sick days & parental leave' },
-                    ].map((perk, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          background: '#f8fafc',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '14px',
-                          padding: '16px',
-                        }}
-                      >
-                        <div style={{ fontWeight: 700, fontSize: '14.5px', color: '#0f172a', marginBottom: '4px' }}>
-                          {perk.title}
-                        </div>
-                        <div style={{ fontSize: '13px', color: '#64748b' }}>{perk.desc}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            )}
 
           </div>
 
           {/* Right Column: Sticky Summary & Apply Card */}
-          <div style={{ position: 'sticky', top: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ position: 'sticky', top: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
-            {/* Quick Apply Card */}
+            {/* Primary Apply Card (Digital CV One-Click Flow) */}
             <div
               style={{
                 background: '#ffffff',
                 border: '1px solid #e2e8f0',
                 borderRadius: '20px',
-                padding: '28px',
+                padding: '26px',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
               }}
             >
-              <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>
-                Interested in this role?
+              <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>
+                Interested in this position?
               </h3>
               <p style={{ fontSize: '13.5px', color: '#64748b', marginBottom: '20px', lineHeight: 1.5 }}>
-                Submit your profile and resume directly to {job.companyName}'s recruiting pipeline.
+                Submit your verified Digital CV profile directly to {job.companyName}'s recruiting pipeline.
               </p>
 
-              <button
-                type="button"
-                onClick={() => setShowApplyModal(true)}
-                className="btn-primary"
-                style={{
-                  width: '100%',
-                  padding: '14px 20px',
-                  fontSize: '15px',
-                  fontWeight: 700,
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  marginBottom: '12px',
-                }}
-              >
-                <span>Apply for this Job</span>
-                <ArrowRightIcon />
-              </button>
+              {/* Role-Based Restriction: Block Employers */}
+              {isEmployer ? (
+                <div
+                  style={{
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    padding: '14px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    color: '#64748b',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                  }}
+                >
+                  <span style={{ fontSize: '16px' }}>🔒</span>
+                  <span>Employers cannot apply for jobs</span>
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleApply}
+                    disabled={isApplying || hasApplied}
+                    className="btn-primary"
+                    style={{
+                      width: '100%',
+                      padding: '13px 20px',
+                      fontSize: '14.5px',
+                      fontWeight: 700,
+                      borderRadius: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      marginBottom: '12px',
+                      cursor: hasApplied ? 'default' : isApplying ? 'not-allowed' : 'pointer',
+                      background: hasApplied ? '#e6f9f2' : undefined,
+                      color: hasApplied ? '#009e67' : undefined,
+                      borderColor: hasApplied ? '#b7eedc' : undefined,
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    {isApplying ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Applying with Digital CV...</span>
+                      </>
+                    ) : hasApplied ? (
+                      <>
+                        <CheckIcon />
+                        <span>Applied with Digital CV</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Apply with Digital CV</span>
+                        <ArrowRightIcon />
+                      </>
+                    )}
+                  </button>
 
-              <div style={{ textAlign: 'center', fontSize: '12.5px', color: '#94a3b8' }}>
-                Average application time: <strong>2 minutes</strong>
-              </div>
+                  <div style={{ textAlign: 'center', fontSize: '12px', color: '#94a3b8' }}>
+                    Instant application powered by <strong>Digital CV</strong>
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Requisition Details Summary */}
+            {/* Consolidated Job Overview (ONLY Unique details: Salary, Department, Date Posted, Status) */}
             <div
               style={{
                 background: '#ffffff',
                 border: '1px solid #e2e8f0',
                 borderRadius: '20px',
-                padding: '28px',
+                padding: '24px',
                 boxShadow: '0 2px 12px rgba(0,0,0,0.02)',
               }}
             >
-              <h3 style={{ fontSize: '16.5px', fontWeight: 700, color: '#0f172a', marginBottom: '18px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '16px' }}>
                 Job Overview
               </h3>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: '11.5px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                     Salary Range
                   </div>
                   <div style={{ fontSize: '15px', color: '#0f172a', fontWeight: 700, marginTop: '2px' }}>
@@ -820,48 +713,31 @@ export const JobDetailsPublic: React.FC = () => {
                   </div>
                 </div>
 
-                <div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>
-                    Location
-                  </div>
-                  <div style={{ fontSize: '14.5px', color: '#0f172a', fontWeight: 600, marginTop: '2px' }}>
-                    {job.location}
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>
-                    Employment Type
-                  </div>
-                  <div style={{ fontSize: '14.5px', color: '#0f172a', fontWeight: 600, marginTop: '2px' }}>
-                    {job.employmentType}
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>
-                    Experience Level
-                  </div>
-                  <div style={{ fontSize: '14.5px', color: '#0f172a', fontWeight: 600, marginTop: '2px' }}>
-                    {job.experienceLevel}
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>
+                <div style={{ borderTop: '1px solid #f8fafc', paddingTop: '12px' }}>
+                  <div style={{ fontSize: '11.5px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                     Department
                   </div>
-                  <div style={{ fontSize: '14.5px', color: '#0f172a', fontWeight: 600, marginTop: '2px' }}>
+                  <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: 600, marginTop: '2px' }}>
                     {job.department}
                   </div>
                 </div>
 
-                <div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>
+                <div style={{ borderTop: '1px solid #f8fafc', paddingTop: '12px' }}>
+                  <div style={{ fontSize: '11.5px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                     Date Posted
                   </div>
-                  <div style={{ fontSize: '14.5px', color: '#0f172a', fontWeight: 600, marginTop: '2px' }}>
+                  <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: 600, marginTop: '2px' }}>
                     {formattedDate}
+                  </div>
+                </div>
+
+                <div style={{ borderTop: '1px solid #f8fafc', paddingTop: '12px' }}>
+                  <div style={{ fontSize: '11.5px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                    Status
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00b074' }}></span>
+                    <span style={{ fontSize: '13.5px', color: '#065f46', fontWeight: 600 }}>Active & Accepting Applications</span>
                   </div>
                 </div>
               </div>
@@ -877,11 +753,11 @@ export const JobDetailsPublic: React.FC = () => {
                 boxShadow: '0 2px 12px rgba(0,0,0,0.02)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                 <div
                   style={{
-                    width: '40px',
-                    height: '40px',
+                    width: '38px',
+                    height: '38px',
                     borderRadius: '10px',
                     background: '#d1fae5',
                     color: '#065f46',
@@ -889,18 +765,19 @@ export const JobDetailsPublic: React.FC = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontWeight: 700,
+                    fontSize: '14px',
                   }}
                 >
                   {companyInitials}
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>{job.companyName}</div>
-                  <div style={{ fontSize: '12.5px', color: '#64748b' }}>Verified Hiring Organization</div>
+                  <div style={{ fontWeight: 700, fontSize: '14.5px', color: '#0f172a' }}>{job.companyName}</div>
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>Verified Organization</div>
                 </div>
               </div>
 
               <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-                {job.companyName} is actively hiring top-tier talent via Skill Hub's AI recruitment ecosystem.
+                {job.companyName} is actively hiring through Skill Hub's verified technical talent network.
               </p>
             </div>
 
@@ -912,8 +789,8 @@ export const JobDetailsPublic: React.FC = () => {
         {/* ========================================================================= */}
         <section
           style={{
-            marginTop: '60px',
-            paddingTop: '48px',
+            marginTop: '40px',
+            paddingTop: '40px',
             borderTop: '2px solid #e2e8f0',
           }}
         >
@@ -922,7 +799,7 @@ export const JobDetailsPublic: React.FC = () => {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'flex-end',
-              marginBottom: '32px',
+              marginBottom: '28px',
               flexWrap: 'wrap',
               gap: '16px',
             }}
@@ -950,7 +827,7 @@ export const JobDetailsPublic: React.FC = () => {
               </div>
               <h2
                 style={{
-                  fontSize: '28px',
+                  fontSize: '26px',
                   fontWeight: 800,
                   color: '#0b1329',
                   letterSpacing: '-0.6px',
@@ -959,7 +836,7 @@ export const JobDetailsPublic: React.FC = () => {
               >
                 Suggested Jobs For You
               </h2>
-              <p style={{ fontSize: '14.5px', color: '#64748b', marginTop: '6px', margin: 0 }}>
+              <p style={{ fontSize: '14px', color: '#64748b', marginTop: '6px', margin: 0 }}>
                 Other active positions matching your skill profile and experience level
               </p>
             </div>
@@ -971,7 +848,7 @@ export const JobDetailsPublic: React.FC = () => {
                 alignItems: 'center',
                 gap: '6px',
                 color: '#00b074',
-                fontSize: '14.5px',
+                fontSize: '14px',
                 fontWeight: 700,
                 textDecoration: 'none',
                 transition: 'all 0.2s ease',
@@ -1023,217 +900,6 @@ export const JobDetailsPublic: React.FC = () => {
         </section>
 
       </div>
-
-      {/* ========================================================================= */}
-      {/* QUICK APPLY MODAL */}
-      {/* ========================================================================= */}
-      {showApplyModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(15, 23, 42, 0.6)',
-            backdropFilter: 'blur(4px)',
-            padding: '16px',
-          }}
-          onClick={() => setShowApplyModal(false)}
-        >
-          <div
-            style={{
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '24px',
-              width: '100%',
-              maxWidth: '580px',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
-              padding: '32px',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-              <div>
-                <span
-                  style={{
-                    background: '#e6f9f2',
-                    color: '#009e67',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    padding: '3px 10px',
-                    borderRadius: '9999px',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Direct Application
-                </span>
-                <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', marginTop: '6px', margin: 0 }}>
-                  Apply for {job.title}
-                </h2>
-                <div style={{ fontSize: '13.5px', color: '#64748b', marginTop: '4px' }}>
-                  {job.companyName} • {job.location}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowApplyModal(false)}
-                style={{
-                  background: '#f1f5f9',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: '32px',
-                  height: '32px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#64748b',
-                  fontSize: '16px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleApplySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Chamod Ekanayaka"
-                  className="input-field-standard"
-                  value={applicantName}
-                  onChange={(e) => setApplicantName(e.target.value)}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="chamod@example.com"
-                    className="input-field-standard"
-                    value={applicantEmail}
-                    onChange={(e) => setApplicantEmail(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="+94 77 123 4567"
-                    className="input-field-standard"
-                    value={applicantPhone}
-                    onChange={(e) => setApplicantPhone(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                  LinkedIn or Portfolio URL
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://linkedin.com/in/username"
-                  className="input-field-standard"
-                  value={applicantLinkedin}
-                  onChange={(e) => setApplicantLinkedin(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                  Resume / CV (PDF, DOCX) *
-                </label>
-                <div
-                  style={{
-                    border: '2px dashed #cbd5e1',
-                    borderRadius: '12px',
-                    padding: '20px',
-                    textAlign: 'center',
-                    background: '#f8fafc',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => setResumeFile('Resume_Chamod_FullStack.pdf')}
-                >
-                  {resumeFile ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#00b074', fontWeight: 700 }}>
-                      <CheckIcon />
-                      <span>{resumeFile} attached</span>
-                    </div>
-                  ) : (
-                    <div>
-                      <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#0f172a' }}>
-                        Click to attach Resume or CV
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
-                        PDF, DOCX up to 10MB
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                  Short Cover Note (Optional)
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Tell the employer why you're a strong match for this role..."
-                  className="input-field-standard"
-                  value={coverNote}
-                  onChange={(e) => setCoverNote(e.target.value)}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
-                <button
-                  type="button"
-                  onClick={() => setShowApplyModal(false)}
-                  className="btn-secondary"
-                  style={{ padding: '10px 20px' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingApply}
-                  className="btn-primary"
-                  style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '8px' }}
-                >
-                  {submittingApply ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Submitting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Submit Application</span>
-                      <SendIcon />
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

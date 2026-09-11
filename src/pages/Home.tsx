@@ -157,7 +157,7 @@ export const Home = () => {
 
         {/* Job Cards */}
         {loading ? (
-          <SkeletonGrid count={3} variant="grid" />
+          <SkeletonGrid count={4} variant="rich-grid" />
         ) : jobs.length === 0 ? (
           <div
             style={{
@@ -209,7 +209,7 @@ export const Home = () => {
             </p>
           </div>
         ) : (
-          <div className="jobs-grid">
+          <div className="rich-jobs-grid">
             {jobs.map((job) => (
               <JobVacancyCard
                 key={job.id}

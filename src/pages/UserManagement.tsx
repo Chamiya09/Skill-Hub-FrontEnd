@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { usersApi, authStorage, type UserDto } from '../services/api';
+import { usersApi, type UserDto } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import {
   SparkleIcon,
   SearchIcon,
@@ -23,7 +24,7 @@ const TrashIcon = () => (
 
 export const UserManagement = () => {
   const navigate = useNavigate();
-  const currentUser = authStorage.getUser();
+  const { currentUser, isAuthenticated, isLoading: authLoading } = useAuth();
 
   const [users, setUsers] = useState<UserDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +38,7 @@ export const UserManagement = () => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch users for the current authenticated company
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     if (!currentUser || !currentUser.companyId) {
       setLoading(false);
       return;
@@ -49,51 +50,23 @@ export const UserManagement = () => {
       const data = await usersApi.getUsersByCompany(currentUser.companyId);
       setUsers(data);
     } catch (err: any) {
+      console.error('Error fetching users:', err);
       setErrorMessage(err.message || 'Failed to fetch company team members.');
-      // Demo fallback data if API is currently offline/booting
-      if (users.length === 0) {
-        setUsers([
-          {
-            id: currentUser.id || '1a2b3c-demo-admin',
-            companyId: currentUser.companyId,
-            companyName: currentUser.companyName || 'Neuralabs AI',
-            fullName: currentUser.fullName || 'Sarah Connor',
-            email: currentUser.email || 'sarah@neuralabs.ai',
-            role: 'HR_Admin',
-            createdAt: new Date().toISOString(),
-          },
-          {
-            id: '2b3c4d-demo-recruiter',
-            companyId: currentUser.companyId,
-            companyName: currentUser.companyName || 'Neuralabs AI',
-            fullName: 'David Vance',
-            email: 'david.vance@neuralabs.ai',
-            role: 'Recruiter',
-            createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-          },
-          {
-            id: '3c4d5e-demo-lead',
-            companyId: currentUser.companyId,
-            companyName: currentUser.companyName || 'Neuralabs AI',
-            fullName: 'Elena Chen',
-            email: 'elena.chen@neuralabs.ai',
-            role: 'Hiring_Manager',
-            createdAt: new Date(Date.now() - 86400000 * 12).toISOString(),
-          },
-        ]);
-      }
+      setUsers([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
 
   useEffect(() => {
-    if (!authStorage.isAuthenticated()) {
+    if (!authLoading && !isAuthenticated) {
       navigate('/login');
       return;
     }
-    loadUsers();
-  }, []);
+    if (isAuthenticated) {
+      loadUsers();
+    }
+  }, [authLoading, isAuthenticated, loadUsers, navigate]);
 
   // Direct physical deletion handler
   const handleConfirmDirectDelete = async () => {
@@ -113,10 +86,6 @@ export const UserManagement = () => {
       }, 4000);
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to delete user.');
-      // Local fallback removal for testing/demo
-      setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
-      setActionSuccess(`User "${userToDelete.fullName}" removed from active pool.`);
-      setUserToDelete(null);
     } finally {
       setIsDeleting(false);
     }
@@ -240,7 +209,11 @@ export const UserManagement = () => {
                     <div style={{ fontWeight: 600, fontSize: '16px', color: '#0f172a', marginBottom: '4px' }}>
                       No team members found
                     </div>
-                    <p style={{ fontSize: '13.5px' }}>Try adjusting your search query or role filter.</p>
+                    <p style={{ fontSize: '13.5px' }}>
+                      {searchTerm || selectedRole !== 'All'
+                        ? 'Try adjusting your search query or role filter.'
+                        : 'No team members are currently registered under this enterprise company account.'}
+                    </p>
                   </td>
                 </tr>
               ) : (

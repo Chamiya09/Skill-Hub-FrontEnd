@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { publicJobsApi, type JobDto } from '../services/api'
 import {
   SparkleIcon,
   SearchIcon,
@@ -11,58 +13,35 @@ import {
   ClockIcon,
 } from '../components/common/Icons'
 
-interface Job {
-  id: string
-  company: string
-  companyShort: string
-  postedTime: string
-  matchPercent: number
-  isMultilineMatch?: boolean
-  title: string
-  location: string
-  workType: string
-  salary: string
-}
-
-const jobOpportunities: Job[] = [
-  {
-    id: '1',
-    company: 'Neuralabs AI',
-    companyShort: 'NL',
-    postedTime: '2d ago',
-    matchPercent: 96,
-    title: 'Senior Frontend Engineer',
-    location: 'San Francisco, CA',
-    workType: 'Remote',
-    salary: '$160k - $210k',
-  },
-  {
-    id: '2',
-    company: 'Vector Compute',
-    companyShort: 'VC',
-    postedTime: '1d ago',
-    matchPercent: 92,
-    isMultilineMatch: true,
-    title: 'ML Platform Engineer',
-    location: 'New York, NY',
-    workType: 'Hybrid',
-    salary: '$180k - $230k',
-  },
-  {
-    id: '3',
-    company: 'Flowstate',
-    companyShort: 'FS',
-    postedTime: '4d ago',
-    matchPercent: 88,
-    title: 'Product Designer, AI Tools',
-    location: 'Remote',
-    workType: 'Remote',
-    salary: '$140k - $175k',
-  },
-]
-
 export const Home = () => {
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [jobs, setJobs] = useState<JobDto[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadFeaturedJobs = async () => {
+      try {
+        setLoading(true)
+        const data = await publicJobsApi.getJobs({ limit: 6 })
+        setJobs(data)
+      } catch (err) {
+        console.error('Error loading public jobs for home page:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadFeaturedJobs()
+  }, [])
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      navigate(`/jobs?search=${encodeURIComponent(searchQuery.trim())}`)
+    } else {
+      navigate('/jobs')
+    }
+  }
 
   return (
     <>
@@ -78,13 +57,12 @@ export const Home = () => {
         </h1>
 
         <p className="hero-subtext">
-          Skill Hub matches you to the best AI and tech roles based on your skills,
-          experience, and career goals. Smart matching, real-time updates, and a
-          seamless application experience.
+          Skill Hub matches you to verified technical and AI roles directly from registered employers.
+          Smart matching, real-time updates, and a seamless application experience.
         </p>
 
         {/* Search Bar */}
-        <div className="search-bar-container">
+        <form onSubmit={handleSearchSubmit} className="search-bar-container">
           <div className="search-input-wrap">
             <span className="search-icon">
               <SearchIcon />
@@ -97,17 +75,17 @@ export const Home = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button className="search-button" type="button">
+          <button className="search-button" type="submit">
             Search
             <ArrowRightIcon />
           </button>
-        </div>
+        </form>
 
         {/* Metric Highlights */}
         <div className="metrics-row">
           <div className="metric-item">
             <CheckIcon />
-            <span>2,840+ active roles</span>
+            <span>{loading ? '...' : `${jobs.length}+`} active verified roles</span>
           </div>
           <div className="metric-item">
             <CheckIcon />
@@ -115,7 +93,7 @@ export const Home = () => {
           </div>
           <div className="metric-item">
             <CheckIcon />
-            <span>Free for candidates</span>
+            <span>Direct employer requisitions</span>
           </div>
         </div>
       </section>
@@ -128,8 +106,7 @@ export const Home = () => {
           </div>
           <h3 className="feature-title">AI Match Scoring</h3>
           <p className="feature-description">
-            Our engine analyzes your profile against every role and surfaces only
-            the best fits.
+            Our engine analyzes candidate technical profiles against live requisitions to surface top matches.
           </p>
         </div>
 
@@ -139,8 +116,7 @@ export const Home = () => {
           </div>
           <h3 className="feature-title">Instant Applications</h3>
           <p className="feature-description">
-            Apply with one click. Your profile is automatically tailored for each
-            submission.
+            Apply with one click directly to verified employer databases with zero middleman noise.
           </p>
         </div>
 
@@ -150,8 +126,7 @@ export const Home = () => {
           </div>
           <h3 className="feature-title">Real-time Tracking</h3>
           <p className="feature-description">
-            Track every application from submission to interview in one unified
-            dashboard.
+            Track requisition status, employer feedback, and interview schedules in real time.
           </p>
         </div>
       </section>
@@ -164,66 +139,90 @@ export const Home = () => {
               <SparkleIcon />
               <span>FEATURED ROLES</span>
             </div>
-            <h2 className="section-title">Top AI-matched opportunities</h2>
+            <h2 className="section-title">Top live opportunities</h2>
           </div>
-          <a href="#all-jobs" className="view-all-link">
+          <Link to="/jobs" className="view-all-link">
             View all jobs
             <ArrowRightIcon />
-          </a>
+          </Link>
         </div>
 
         {/* Job Cards */}
-        <div className="jobs-grid">
-          {jobOpportunities.map((job) => (
-            <div className="job-card" key={job.id}>
-              <div className="job-card-header">
-                <div className="company-info">
-                  <div className="company-logo">{job.companyShort}</div>
-                  <div className="company-details">
-                    <span className="company-name">{job.company}</span>
-                    <span className="post-time">{job.postedTime}</span>
-                  </div>
-                </div>
+        {loading ? (
+          <div className="p-12 text-center text-slate-400">
+            <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+            <p className="text-sm">Fetching verified job vacancies...</p>
+          </div>
+        ) : jobs.length === 0 ? (
+          <div className="p-12 bg-white border border-slate-200 rounded-2xl text-center max-w-lg mx-auto">
+            <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-400">
+              <SearchIcon />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 mb-1">No Active Vacancies Currently Posted</h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Employers are currently updating their requisitions. Check back shortly or explore registered companies.
+            </p>
+            <Link to="/company-register" className="btn-primary" style={{ display: 'inline-flex', margin: '0 auto' }}>
+              <span>Post a Requisition as Employer</span>
+            </Link>
+          </div>
+        ) : (
+          <div className="jobs-grid">
+            {jobs.map((job) => {
+              const companyInitials = (job.companyName || 'CO')
+                .split(' ')
+                .map((n) => n[0])
+                .slice(0, 2)
+                .join('')
+                .toUpperCase()
 
-                {job.isMultilineMatch ? (
-                  <div className="match-badge multiline">
-                    <SparkleIcon />
-                    <div className="match-badge-text-stack">
-                      <span>{job.matchPercent}% AI</span>
-                      <span>Match</span>
+              return (
+                <div className="job-card" key={job.id}>
+                  <div className="job-card-header">
+                    <div className="company-info">
+                      <div className="company-logo">{companyInitials}</div>
+                      <div className="company-details">
+                        <span className="company-name">{job.companyName}</span>
+                        <span className="post-time">
+                          {new Date(job.createdAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="match-badge">
+                      <SparkleIcon />
+                      <span>95% AI Match</span>
                     </div>
                   </div>
-                ) : (
-                  <div className="match-badge">
-                    <SparkleIcon />
-                    <span>{job.matchPercent}% AI Match</span>
+
+                  <h3 className="job-title">{job.title}</h3>
+
+                  <div className="job-meta-row">
+                    <div className="meta-item">
+                      <MapPinIcon />
+                      <span>{job.location}</span>
+                    </div>
+                    <div className="meta-item">
+                      <ClockIcon />
+                      <span>{job.employmentType}</span>
+                    </div>
                   </div>
-                )}
-              </div>
 
-              <h3 className="job-title">{job.title}</h3>
-
-              <div className="job-meta-row">
-                <div className="meta-item">
-                  <MapPinIcon />
-                  <span>{job.location}</span>
+                  <div className="job-card-footer">
+                    <span className="salary">{job.salaryRange || 'Competitive'}</span>
+                    <Link to={`/jobs?search=${encodeURIComponent(job.title)}`} className="view-details-btn">
+                      View Details
+                      <ArrowRightIcon />
+                    </Link>
+                  </div>
                 </div>
-                <div className="meta-item">
-                  <ClockIcon />
-                  <span>{job.workType}</span>
-                </div>
-              </div>
-
-              <div className="job-card-footer">
-                <span className="salary">{job.salary}</span>
-                <button className="view-details-btn" type="button">
-                  View Details
-                  <ArrowRightIcon />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </section>
     </>
   )

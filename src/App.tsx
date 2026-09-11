@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 import { Header } from "./components/common/Header";
 import { Footer } from "./components/common/Footer";
 import { Home } from "./pages/Home";
@@ -12,6 +13,7 @@ import { JobVacancies } from "./pages/JobVacancies";
 import { JobDetails } from "./pages/JobDetails";
 import { EditJob } from "./pages/EditJob";
 import { CreateJob } from "./pages/CreateJob";
+import { UserManagement } from "./pages/UserManagement";
 import "./App.css";
 
 function AppContent() {
@@ -50,6 +52,8 @@ function AppContent() {
             <Route path="/jobs/create" element={<CreateJob />} />
             <Route path="/jobs/details/:id" element={<JobDetails />} />
             <Route path="/jobs/details/:id/edit" element={<EditJob />} />
+            <Route path="/users" element={<UserManagement />} />
+            <Route path="/team" element={<UserManagement />} />
           </Routes>
         </main>
       </div>
@@ -61,8 +65,9 @@ function AppContent() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </BrowserRouter>
   );
 }
-

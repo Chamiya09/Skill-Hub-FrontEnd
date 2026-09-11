@@ -1,33 +1,34 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { NavLink, Link, useNavigate } from 'react-router-dom'
-import { authStorage, type UserDto } from '../../services/api'
+import { useAuth } from '../../context/AuthContext'
 import { SparkleIcon, ChevronDownIcon } from './Icons'
 
 export const Header = () => {
   const navigate = useNavigate()
-  const [currentUser, setCurrentUser] = useState<UserDto | null>(null)
+  const { currentUser, logout } = useAuth()
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
-  useEffect(() => {
-    // Check local storage for authenticated user
-    const user = authStorage.getUser()
-    setCurrentUser(user)
-  }, [])
-
   const handleLogout = () => {
-    authStorage.clearAuth()
-    setCurrentUser(null)
+    logout()
     setDropdownOpen(false)
     navigate('/company-login')
   }
 
-  const initials = currentUser?.fullName
+  const initials = currentUser?.companyName
+    ? currentUser.companyName
+        .split(' ')
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    : currentUser?.fullName
     ? currentUser.fullName
         .split(' ')
         .map((n) => n[0])
         .slice(0, 2)
         .join('')
-    : 'HR'
+        .toUpperCase()
+    : 'CO'
 
   return (
     <header className="navbar">
@@ -75,7 +76,7 @@ export const Header = () => {
               onClick={() => setDropdownOpen(!dropdownOpen)}
             >
               <div className="avatar-circle">{initials}</div>
-              <span className="user-name">{currentUser.fullName}</span>
+              <span className="user-name">{currentUser.companyName || currentUser.fullName}</span>
               <span className="chevron-icon">
                 <ChevronDownIcon />
               </span>
@@ -104,7 +105,7 @@ export const Header = () => {
                     {currentUser.companyName || 'Corporate Portal'}
                   </div>
                   <div style={{ fontSize: '11.5px', color: '#64748b' }}>
-                    {currentUser.role === 'HR_Admin' ? 'HR Administrator' : currentUser.role}
+                    {currentUser.email}
                   </div>
                 </div>
 

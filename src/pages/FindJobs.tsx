@@ -1,4 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { publicJobsApi, type JobDto } from '../services/api'
 import {
   SparkleIcon,
   SearchIcon,
@@ -11,135 +13,54 @@ import {
   FilterIcon,
 } from '../components/common/Icons'
 
-interface JobItem {
-  id: string
-  title: string
-  company: string
-  companyShort: string
-  companyBg: string
-  location: string
-  workType: 'Remote' | 'Hybrid' | 'On-site'
-  experience: 'Entry' | 'Mid' | 'Senior' | 'Lead / Staff'
-  category: 'Engineering' | 'AI & ML' | 'Product & Design' | 'Data Science'
-  salary: string
-  matchPercent: number
-  postedTime: string
-  skills: string[]
-  isFeatured?: boolean
-}
-
-const allJobsList: JobItem[] = [
-  {
-    id: '1',
-    title: 'Senior Frontend Engineer (Design Systems)',
-    company: 'Neuralabs AI',
-    companyShort: 'NL',
-    companyBg: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)',
-    location: 'San Francisco, CA',
-    workType: 'Remote',
-    experience: 'Senior',
-    category: 'Engineering',
-    salary: '$165,000 - $210,000',
-    matchPercent: 98,
-    postedTime: 'Just now',
-    skills: ['React 19', 'TypeScript', 'Tailwind', 'Next.js', 'WebGL'],
-    isFeatured: true,
-  },
-  {
-    id: '2',
-    title: 'Staff Machine Learning Platform Engineer',
-    company: 'Vector Compute',
-    companyShort: 'VC',
-    companyBg: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-    location: 'New York, NY',
-    workType: 'Hybrid',
-    experience: 'Lead / Staff',
-    category: 'AI & ML',
-    salary: '$210,000 - $265,000',
-    matchPercent: 95,
-    postedTime: '2 hours ago',
-    skills: ['PyTorch', 'Kubernetes', 'Distributed Systems', 'CUDA', 'Python'],
-    isFeatured: true,
-  },
-  {
-    id: '3',
-    title: 'Lead Product Designer, AI Tools',
-    company: 'Flowstate Design',
-    companyShort: 'FS',
-    companyBg: 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
-    location: 'Austin, TX',
-    workType: 'Remote',
-    experience: 'Senior',
-    category: 'Product & Design',
-    salary: '$150,000 - $185,000',
-    matchPercent: 92,
-    postedTime: '5 hours ago',
-    skills: ['Figma', 'Design Systems', 'User Research', 'Prototyping'],
-  },
-  {
-    id: '4',
-    title: 'Senior Full Stack Engineer (Core Platform)',
-    company: 'HyperScale Data',
-    companyShort: 'HD',
-    companyBg: 'linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%)',
-    location: 'Seattle, WA',
-    workType: 'Remote',
-    experience: 'Senior',
-    category: 'Engineering',
-    salary: '$170,000 - $220,000',
-    matchPercent: 94,
-    postedTime: '1 day ago',
-    skills: ['Node.js', 'React', 'PostgreSQL', 'Go', 'GraphQL'],
-  },
-  {
-    id: '5',
-    title: 'AI Research Scientist (Reasoning Models)',
-    company: 'Cognition Lab',
-    companyShort: 'CL',
-    companyBg: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)',
-    location: 'San Francisco, CA',
-    workType: 'Hybrid',
-    experience: 'Lead / Staff',
-    category: 'AI & ML',
-    salary: '$240,000 - $310,000',
-    matchPercent: 96,
-    postedTime: '1 day ago',
-    skills: ['LLM Fine-Tuning', 'RLHF', 'Transformers', 'JAX', 'NLP'],
-    isFeatured: true,
-  },
-  {
-    id: '6',
-    title: 'Principal Data Architect & Analytics Lead',
-    company: 'OmniMetrics Enterprise',
-    companyShort: 'OM',
-    companyBg: 'linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%)',
-    location: 'Boston, MA',
-    workType: 'On-site',
-    experience: 'Lead / Staff',
-    category: 'Data Science',
-    salary: '$190,000 - $240,000',
-    matchPercent: 89,
-    postedTime: '2 days ago',
-    skills: ['Snowflake', 'dbt', 'Databricks', 'Apache Spark', 'Python'],
-  },
-]
-
-const categories = [
-  'All Roles',
-  'Engineering',
-  'AI & ML',
-  'Product & Design',
-  'Data Science',
-]
-
 export const FindJobs = () => {
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialSearch = searchParams.get('search') || ''
+
+  const [jobs, setJobs] = useState<JobDto[]>([])
+  const [loading, setLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const [searchTerm, setSearchTerm] = useState(initialSearch)
   const [selectedCategory, setSelectedCategory] = useState('All Roles')
   const [selectedWorkType, setSelectedWorkType] = useState('All')
   const [selectedExperience, setSelectedExperience] = useState('All')
-  const [sortBy, setSortBy] = useState<'match' | 'salary' | 'recent'>('match')
+  const [sortBy, setSortBy] = useState<'match' | 'recent'>('match')
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([])
   const [appliedJobTitle, setAppliedJobTitle] = useState<string | null>(null)
+
+  // Fetch real public jobs from backend
+  const fetchPublicJobs = async () => {
+    try {
+      setLoading(true)
+      setErrorMessage(null)
+      const data = await publicJobsApi.getJobs()
+      setJobs(data)
+    } catch (err: any) {
+      console.error('Error fetching public jobs:', err)
+      setErrorMessage(err.message || 'Failed to fetch active vacancies.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchPublicJobs()
+  }, [])
+
+  // Sync search input if query param changes
+  useEffect(() => {
+    const q = searchParams.get('search')
+    if (q !== null && q !== searchTerm) {
+      setSearchTerm(q)
+    }
+  }, [searchParams])
+
+  // Extract dynamic categories from live jobs
+  const categories = useMemo(() => {
+    const depts = new Set(jobs.map((j) => j.department?.trim()).filter(Boolean))
+    return ['All Roles', ...Array.from(depts)]
+  }, [jobs])
 
   const toggleBookmark = (id: string) => {
     setBookmarkedIds((prev) =>
@@ -155,29 +76,45 @@ export const FindJobs = () => {
   }
 
   const filteredJobs = useMemo(() => {
-    return allJobsList
+    return jobs
       .filter((job) => {
+        const term = searchTerm.toLowerCase()
         const matchesSearch =
-          job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          job.skills.some((skill) =>
-            skill.toLowerCase().includes(searchTerm.toLowerCase())
-          )
+          !term ||
+          job.title.toLowerCase().includes(term) ||
+          job.companyName.toLowerCase().includes(term) ||
+          job.department.toLowerCase().includes(term) ||
+          job.location.toLowerCase().includes(term)
+
         const matchesCategory =
-          selectedCategory === 'All Roles' || job.category === selectedCategory
+          selectedCategory === 'All Roles' ||
+          job.department.toLowerCase() === selectedCategory.toLowerCase()
+
         const matchesWorkType =
-          selectedWorkType === 'All' || job.workType === selectedWorkType
+          selectedWorkType === 'All' ||
+          job.employmentType.toLowerCase().includes(selectedWorkType.toLowerCase())
+
         const matchesExp =
-          selectedExperience === 'All' || job.experience === selectedExperience
+          selectedExperience === 'All' ||
+          job.experienceLevel.toLowerCase().includes(selectedExperience.toLowerCase())
 
         return matchesSearch && matchesCategory && matchesWorkType && matchesExp
       })
       .sort((a, b) => {
-        if (sortBy === 'match') return b.matchPercent - a.matchPercent
-        if (sortBy === 'recent') return a.id.localeCompare(b.id)
+        if (sortBy === 'recent') {
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        }
         return 0
       })
-  }, [searchTerm, selectedCategory, selectedWorkType, selectedExperience, sortBy])
+  }, [jobs, searchTerm, selectedCategory, selectedWorkType, selectedExperience, sortBy])
+
+  const clearAllFilters = () => {
+    setSearchTerm('')
+    setSelectedCategory('All Roles')
+    setSelectedWorkType('All')
+    setSelectedExperience('All')
+    setSearchParams({})
+  }
 
   return (
     <div className="findjobs-container">
@@ -227,14 +164,14 @@ export const FindJobs = () => {
       <div className="findjobs-hero">
         <div className="badge-tag">
           <SparkleIcon />
-          <span>AI TALENT ENGINE & DISCOVERY</span>
+          <span>LIVE VACANCY DIRECTORY</span>
         </div>
         <h1 className="hero-heading">
           Discover high-impact roles <br />
           <span className="ai-text">matched to your skills</span>
         </h1>
         <p className="hero-subtext">
-          Browse verified technical and AI positions with transparent compensation and zero-noise matching.
+          Browse verified technical and AI positions directly from employer applicant tracking systems.
         </p>
       </div>
 
@@ -248,7 +185,7 @@ export const FindJobs = () => {
             </span>
             <input
               type="text"
-              placeholder="Search by job title, tech stack, or company..."
+              placeholder="Search by job title, department, or company..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -264,9 +201,10 @@ export const FindJobs = () => {
               onChange={(e) => setSelectedWorkType(e.target.value)}
             >
               <option value="All">All Work Types</option>
+              <option value="Full-time">Full-time</option>
               <option value="Remote">Remote</option>
-              <option value="Hybrid">Hybrid</option>
-              <option value="On-site">On-site</option>
+              <option value="Contract">Contract</option>
+              <option value="Part-time">Part-time</option>
             </select>
           </div>
 
@@ -283,7 +221,7 @@ export const FindJobs = () => {
               <option value="Entry">Entry Level</option>
               <option value="Mid">Mid-Level</option>
               <option value="Senior">Senior Level</option>
-              <option value="Lead / Staff">Staff / Principal</option>
+              <option value="Lead">Lead / Staff</option>
             </select>
           </div>
 
@@ -296,7 +234,7 @@ export const FindJobs = () => {
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
             >
-              <option value="match">Highest Match</option>
+              <option value="match">Highest AI Match</option>
               <option value="recent">Most Recent</option>
             </select>
           </div>
@@ -308,12 +246,7 @@ export const FindJobs = () => {
             selectedExperience !== 'All') && (
             <button
               type="button"
-              onClick={() => {
-                setSearchTerm('')
-                setSelectedCategory('All Roles')
-                setSelectedWorkType('All')
-                setSelectedExperience('All')
-              }}
+              onClick={clearAllFilters}
               className="btn-secondary"
               style={{ padding: '10px 16px' }}
             >
@@ -324,42 +257,63 @@ export const FindJobs = () => {
       </div>
 
       {/* Standardized Category Tabs */}
-      <div className="category-pills-row">
-        <div className="unified-tab-bar">
-          {categories.map((cat) => {
-            const count =
-              cat === 'All Roles'
-                ? allJobsList.length
-                : allJobsList.filter((j) => j.category === cat).length
+      {categories.length > 1 && (
+        <div className="category-pills-row">
+          <div className="unified-tab-bar">
+            {categories.map((cat) => {
+              const count =
+                cat === 'All Roles'
+                  ? jobs.length
+                  : jobs.filter((j) => j.department?.toLowerCase() === cat.toLowerCase()).length
 
-            return (
-              <button
-                key={cat}
-                type="button"
-                className={`unified-tab-btn ${selectedCategory === cat ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(cat)}
-              >
-                <span>{cat}</span>
-                <span className="unified-tab-count">{count}</span>
-              </button>
-            )
-          })}
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  className={`unified-tab-btn ${selectedCategory === cat ? 'active' : ''}`}
+                  onClick={() => setSelectedCategory(cat)}
+                >
+                  <span>{cat}</span>
+                  <span className="unified-tab-count">{count}</span>
+                </button>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Error Banner */}
+      {errorMessage && (
+        <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between">
+          <span>{errorMessage}</span>
+          <button
+            type="button"
+            onClick={fetchPublicJobs}
+            className="text-xs font-semibold text-red-800 underline hover:no-underline ml-4"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Results Meta Header */}
       <div className="jobs-results-header">
         <div className="jobs-count-text">
-          Showing <span className="jobs-count-number">{filteredJobs.length}</span> curated roles
+          Showing <span className="jobs-count-number">{filteredJobs.length}</span> live verified roles
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: '#64748b', fontWeight: 500 }}>
-          <span>AI Relevance Engine: Active</span>
+          <span>PostgreSQL Active Sync</span>
           <span style={{ color: '#00b074' }}>●</span>
         </div>
       </div>
 
       {/* Job Cards Grid */}
-      {filteredJobs.length === 0 ? (
+      {loading ? (
+        <div className="p-16 text-center text-slate-400 bg-white border border-slate-200 rounded-2xl">
+          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-sm font-medium">Loading active job vacancies from database...</p>
+        </div>
+      ) : filteredJobs.length === 0 ? (
         <div
           style={{
             background: '#ffffff',
@@ -394,12 +348,7 @@ export const FindJobs = () => {
           </p>
           <button
             type="button"
-            onClick={() => {
-              setSearchTerm('')
-              setSelectedCategory('All Roles')
-              setSelectedWorkType('All')
-              setSelectedExperience('All')
-            }}
+            onClick={clearAllFilters}
             className="btn-primary"
             style={{ margin: '0 auto' }}
           >
@@ -410,34 +359,42 @@ export const FindJobs = () => {
         <div className="rich-jobs-grid">
           {filteredJobs.map((job) => {
             const isBookmarked = bookmarkedIds.includes(job.id)
+            const companyInitials = (job.companyName || 'CO')
+              .split(' ')
+              .map((n) => n[0])
+              .slice(0, 2)
+              .join('')
+              .toUpperCase()
 
             return (
               <div
                 key={job.id}
-                className={`rich-job-card ${job.isFeatured ? 'featured-card' : ''}`}
+                className="rich-job-card"
               >
-                {job.isFeatured && (
-                  <div className="featured-corner-tag">Featured Role</div>
-                )}
-
                 {/* Job Card Header */}
                 <div className="job-card-header">
                   <div className="company-info">
                     <div
                       className="company-logo"
-                      style={{ background: job.companyBg }}
+                      style={{ background: '#2563eb', color: '#ffffff' }}
                     >
-                      {job.companyShort}
+                      {companyInitials}
                     </div>
                     <div className="company-details">
-                      <span className="company-name">{job.company}</span>
-                      <span className="post-time">{job.postedTime}</span>
+                      <span className="company-name">{job.companyName}</span>
+                      <span className="post-time">
+                        {new Date(job.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </span>
                     </div>
                   </div>
 
                   <div className="match-badge">
                     <SparkleIcon />
-                    <span>{job.matchPercent}% Match</span>
+                    <span>95% Match</span>
                   </div>
                 </div>
 
@@ -452,26 +409,24 @@ export const FindJobs = () => {
                   </div>
                   <div className="meta-item">
                     <ClockIcon />
-                    <span>{job.workType}</span>
+                    <span>{job.employmentType}</span>
                   </div>
                   <div className="meta-item">
                     <BriefcaseIcon />
-                    <span>{job.experience}</span>
+                    <span>{job.experienceLevel}</span>
                   </div>
                 </div>
 
-                {/* Skills tags */}
+                {/* Department pill */}
                 <div className="job-skills-tags">
-                  {job.skills.map((skill) => (
-                    <span key={skill} className="skill-tag">
-                      {skill}
-                    </span>
-                  ))}
+                  <span className="skill-tag" style={{ background: '#eff6ff', color: '#1e40af', border: '1px solid #dbeafe' }}>
+                    {job.department}
+                  </span>
                 </div>
 
                 {/* Card Footer */}
                 <div className="job-card-footer">
-                  <div className="salary">{job.salary}</div>
+                  <div className="salary">{job.salaryRange || 'Competitive'}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <button
                       type="button"

@@ -51,6 +51,9 @@ export const authStorage = {
     localStorage.setItem('skillhub_jwt_token', data.token);
     localStorage.setItem('skillhub_user', JSON.stringify(data.user));
   },
+  setUser(user: UserDto): void {
+    localStorage.setItem('skillhub_user', JSON.stringify(user));
+  },
   clearAuth(): void {
     localStorage.removeItem('skillhub_jwt_token');
     localStorage.removeItem('skillhub_user');
@@ -134,6 +137,18 @@ export const companyAuthApi = {
       body: JSON.stringify(payload)
     });
     authStorage.setAuth(data);
+    return data;
+  },
+
+  /**
+   * Fetches the current logged in company profile.
+   * Calls: GET /api/company/me
+   */
+  async getMe(): Promise<UserDto> {
+    const data = await request<UserDto>('/company/me', {
+      method: 'GET'
+    });
+    authStorage.setUser(data);
     return data;
   }
 };
@@ -240,6 +255,78 @@ export const jobsApi = {
 };
 
 // ==========================================
+// PUBLIC JOBS API (UNAUTHENTICATED)
+// ==========================================
+export interface PublicJobsFilterParams {
+  search?: string;
+  department?: string;
+  employmentType?: string;
+  experienceLevel?: string;
+  limit?: number;
+}
+
+export const publicJobsApi = {
+  /**
+   * Retrieves active jobs publicly without requiring authentication.
+   * Calls: GET /api/public/jobs
+   */
+  async getJobs(params: PublicJobsFilterParams = {}): Promise<JobDto[]> {
+    const query = new URLSearchParams();
+    if (params.search) query.append('search', params.search);
+    if (params.department && params.department !== 'All' && params.department !== 'All Roles') {
+      query.append('department', params.department);
+    }
+    if (params.employmentType && params.employmentType !== 'All') {
+      query.append('employmentType', params.employmentType);
+    }
+    if (params.experienceLevel && params.experienceLevel !== 'All') {
+      query.append('experienceLevel', params.experienceLevel);
+    }
+    if (params.limit) query.append('limit', params.limit.toString());
+
+    const qs = query.toString();
+    const endpoint = `/public/jobs${qs ? `?${qs}` : ''}`;
+    return request<JobDto[]>(endpoint, {
+      method: 'GET'
+    });
+  },
+
+  /**
+   * Retrieves a single active job publicly.
+   * Calls: GET /api/public/jobs/{id}
+   */
+  async getJobById(id: string): Promise<JobDto> {
+    return request<JobDto>(`/public/jobs/${id}`, {
+      method: 'GET'
+    });
+  }
+};
+
+// ==========================================
+// DASHBOARD METRICS API
+// ==========================================
+export interface DashboardStatsDto {
+  activeVacanciesCount: number;
+  draftVacanciesCount: number;
+  closedVacanciesCount: number;
+  totalVacanciesCount: number;
+  totalDepartmentsCount: number;
+  recentVacancies: JobDto[];
+}
+
+export const dashboardApi = {
+  /**
+   * Retrieves real-time aggregated metrics for the authenticated company.
+   * Calls: GET /api/dashboard/stats
+   */
+  async getStats(): Promise<DashboardStatsDto> {
+    return request<DashboardStatsDto>('/dashboard/stats', {
+      method: 'GET'
+    });
+  }
+};
+
+// ==========================================
 // USER MANAGEMENT API METHODS
 // ==========================================
 export const usersApi = {
@@ -273,5 +360,3 @@ export const usersApi = {
     });
   }
 };
-
-

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { JobForm, type JobFormData } from '../components/jobs/JobForm';
 import { CheckIcon } from '../components/common/Icons';
+import { jobsApi } from '../services/api';
 
 export const CreateJob = () => {
   const navigate = useNavigate();
@@ -20,19 +21,32 @@ export const CreateJob = () => {
     benefits: `<h3>What We Offer</h3><ul><li>Competitive base salary + equity stock options.</li><li>100% remote work flexibility with home office stipend.</li><li>Comprehensive health, dental, and vision coverage.</li><li>Annual learning and conference allowance ($2,000/yr).</li></ul>`,
   };
 
-  const handleCreateSubmit = (data: JobFormData) => {
-    setIsSubmitting(true);
+  const handleCreateSubmit = async (data: JobFormData) => {
+    try {
+      setIsSubmitting(true);
+      const createdJob = await jobsApi.createJob({
+        title: data.title,
+        department: data.department,
+        location: data.location,
+        employmentType: data.type,
+        experienceLevel: data.experienceLevel,
+        salaryRange: data.salaryRange,
+        status: data.status,
+        description: data.description,
+        whatWeOffer: data.benefits,
+      });
 
-    // Simulate API job creation
-    setTimeout(() => {
-      setIsSubmitting(false);
-      const newJobId = `vac-${Date.now()}`;
       setToastMessage(`Job vacancy "${data.title}" published successfully!`);
 
       setTimeout(() => {
-        navigate(`/dashboard/jobs/${newJobId}`);
+        navigate(`/dashboard/jobs/${createdJob.id}`);
       }, 1000);
-    }, 500);
+    } catch (err: any) {
+      console.error('Error creating job vacancy:', err);
+      alert(err.message || 'Failed to create job vacancy in database.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

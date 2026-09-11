@@ -24,7 +24,7 @@ export const CreateJob = () => {
   const handleCreateSubmit = async (data: JobFormData) => {
     try {
       setIsSubmitting(true);
-      const createdJob = await jobsApi.createJob({
+      await jobsApi.createJob({
         title: data.title,
         department: data.department,
         location: data.location,
@@ -39,7 +39,7 @@ export const CreateJob = () => {
       setToastMessage(`Job vacancy "${data.title}" published successfully!`);
 
       setTimeout(() => {
-        navigate(`/dashboard/jobs/${createdJob.id}`);
+        navigate('/vacancies');
       }, 1000);
     } catch (err: any) {
       console.error('Error creating job vacancy:', err);

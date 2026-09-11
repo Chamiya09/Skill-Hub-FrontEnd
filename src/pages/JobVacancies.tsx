@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import {
   SearchIcon,
   UsersIcon,
@@ -332,9 +331,14 @@ export const JobVacancies = () => {
                     {/* Job Title Column */}
                     <td>
                       <div className="job-title-col">
-                        <Link to={`/dashboard/jobs/${job.id}`} className="job-name-link" title="View Job Details">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(job)}
+                          className="job-name-link text-left bg-transparent border-0 p-0 cursor-pointer"
+                          title="Edit Job Vacancy"
+                        >
                           <span className="job-name-text">{job.title}</span>
-                        </Link>
+                        </button>
                         <div className="job-meta-subrow">
                           <span className="job-loc-tag">
                             <MapPinIcon />

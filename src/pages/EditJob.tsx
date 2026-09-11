@@ -62,7 +62,7 @@ export const EditJob = () => {
 
       setToastMessage(`Job vacancy "${data.title}" updated successfully!`);
       setTimeout(() => {
-        navigate(`/dashboard/jobs/${id}`);
+        navigate('/vacancies');
       }, 1000);
     } catch (err: any) {
       console.error('Error updating job:', err);
@@ -97,7 +97,7 @@ export const EditJob = () => {
             <button
               type="button"
               className="btn-primary"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/vacancies')}
             >
               Return to Vacancies Dashboard
             </button>
@@ -124,8 +124,8 @@ export const EditJob = () => {
         isSubmitting={isSubmitting}
         formTitle="Edit Job Vacancy"
         formSubtitle="Modify the role requirements, hiring criteria, compensation range, and candidate matching parameters."
-        backLinkUrl={`/dashboard/jobs/${id}`}
-        backLinkLabel="Back to Job Details"
+        backLinkUrl="/vacancies"
+        backLinkLabel="Back to Vacancies"
         badgeText="REQUISITION MANAGEMENT"
       />
     </div>

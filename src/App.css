@@ -8888,7 +8888,7 @@ select.w-full {
   right: 0;
   bottom: 0;
   width: 100%;
-  max-width: 480px;
+  max-width: 490px;
   background: #ffffff;
   border-left: 1px solid #e2e8f0;
   z-index: 99999;
@@ -8905,5 +8905,272 @@ select.w-full {
   to {
     transform: translateX(0);
   }
+}
+
+/* CV Drawer Header */
+.cv-drawer-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #ffffff;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.cv-drawer-user-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.cv-drawer-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.cv-drawer-user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.cv-drawer-name {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 2px 0;
+  line-height: 1.25;
+}
+
+.cv-drawer-headline {
+  font-size: 12.5px;
+  color: #64748b;
+  margin: 0 0 6px 0;
+  line-height: 1.35;
+}
+
+.cv-drawer-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+
+.cv-drawer-contact-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cv-drawer-contact-divider {
+  color: #cbd5e1;
+}
+
+/* CV Drawer Scrollable Body */
+.cv-drawer-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #f8fafc;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.cv-drawer-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cv-drawer-body::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 9999px;
+}
+
+/* CV Drawer Card */
+.cv-drawer-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.cv-drawer-card.ai-aligned {
+  background: #e6f9f2;
+  border-color: #b7eedc;
+}
+
+.cv-drawer-card.ai-pending {
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+
+.cv-drawer-card-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.cv-drawer-ai-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #064e3b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.cv-drawer-bio {
+  font-size: 12.5px;
+  color: #065f46;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.cv-drawer-highlights-list {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cv-drawer-highlights-item {
+  font-size: 12px;
+  color: #065f46;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.4;
+}
+
+/* Core Competencies Skill Chips */
+.cv-drawer-skills-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cv-drawer-skill-chip {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #334155;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  line-height: 1.2;
+}
+
+/* Career Timeline in Drawer */
+.cv-drawer-timeline {
+  border-left: 2px solid #e2e8f0;
+  margin-left: 6px;
+  padding-left: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cv-drawer-timeline-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cv-drawer-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -19px;
+  top: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00b074;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px #00b074;
+}
+
+.cv-drawer-timeline-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.cv-drawer-timeline-company {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #009e67;
+}
+
+.cv-drawer-timeline-desc {
+  font-size: 12px;
+  color: #475569;
+  line-height: 1.45;
+  margin: 2px 0 0 0;
+}
+
+/* Education Box */
+.cv-drawer-edu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.cv-drawer-edu-icon {
+  color: #00b074;
+  display: flex;
+  align-items: center;
+}
+
+/* CV Drawer Footer */
+.cv-drawer-footer {
+  padding: 14px 24px;
+  border-top: 1px solid #f1f5f9;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
 }
 

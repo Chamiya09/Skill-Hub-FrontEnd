@@ -809,10 +809,10 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
 
           <div className="cv-drawer-container">
             {/* Drawer Header */}
-            <div className="p-5 border-b border-slate-100 flex items-start justify-between gap-3 bg-white flex-shrink-0">
-              <div className="flex items-start gap-3">
+            <div className="cv-drawer-header">
+              <div className="cv-drawer-user-section">
                 <div
-                  className="w-11 h-11 rounded-full text-white flex items-center justify-center font-bold text-sm flex-shrink-0"
+                  className="cv-drawer-avatar"
                   style={{ background: selectedCandidate.avatarBg }}
                 >
                   {selectedCandidate.name
@@ -821,13 +821,17 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                     .join('')
                     .substring(0, 2)}
                 </div>
-                <div>
-                  <h3 className="font-bold text-base text-slate-900 leading-snug">{selectedCandidate.name}</h3>
-                  <p className="text-xs text-slate-500 m-0">{selectedCandidate.headline}</p>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 flex-wrap">
-                    <span className="flex items-center gap-1"><MapPinIcon /> {selectedCandidate.location}</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1"><MailIcon /> {selectedCandidate.email}</span>
+                <div className="cv-drawer-user-info">
+                  <h3 className="cv-drawer-name">{selectedCandidate.name}</h3>
+                  <p className="cv-drawer-headline">{selectedCandidate.headline}</p>
+                  <div className="cv-drawer-contact-row">
+                    <span className="cv-drawer-contact-item">
+                      <MapPinIcon /> {selectedCandidate.location}
+                    </span>
+                    <span className="cv-drawer-contact-divider">•</span>
+                    <span className="cv-drawer-contact-item">
+                      <MailIcon /> {selectedCandidate.email}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -836,56 +840,65 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                 type="button"
                 onClick={() => setSelectedCandidate(null)}
                 className="popup-close-btn"
+                aria-label="Close CV profile"
               >
                 <XIcon />
               </button>
             </div>
 
             {/* Drawer Body */}
-            <div className="p-5 overflow-y-auto flex-1 space-y-5 text-sm">
-              {/* AI Score Box (if analyzed) */}
+            <div className="cv-drawer-body">
+              {/* AI Score / Status Box */}
               {selectedCandidate.aiScore !== null ? (
-                <div className="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-1">
+                <div className="cv-drawer-card ai-aligned">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div className="cv-drawer-ai-title">
                       <SparkleIcon />
                       <span>AI Role Alignment</span>
-                    </span>
-                    <span className="ai-score-pill high text-xs px-2.5 py-0.5">
+                    </div>
+                    <span className="popup-status-score high">
                       {selectedCandidate.aiScore}% Match
                     </span>
                   </div>
-                  <p className="text-xs text-emerald-900 leading-relaxed m-0">{selectedCandidate.bio}</p>
+                  <p className="cv-drawer-bio">{selectedCandidate.bio}</p>
 
-                  <div className="pt-2 border-t border-emerald-100 space-y-1.5 text-xs">
-                    <span className="font-bold text-emerald-950 block">AI Match Strengths:</span>
-                    <ul className="list-disc list-inside text-emerald-800 space-y-0.5">
+                  <div style={{ borderTop: '1px solid #b7eedc', paddingTop: '8px' }}>
+                    <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#064e3b', display: 'block', marginBottom: '4px' }}>
+                      AI Match Highlights:
+                    </span>
+                    <ul className="cv-drawer-highlights-list">
                       {selectedCandidate.keyHighlights.map((h, idx) => (
-                        <li key={idx}>{h}</li>
+                        <li key={idx} className="cv-drawer-highlights-item">
+                          <CheckIcon />
+                          <span>{h}</span>
+                        </li>
                       ))}
                     </ul>
                   </div>
                 </div>
               ) : (
-                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-                  <div className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                <div className="cv-drawer-card ai-pending">
+                  <div className="cv-drawer-card-title">
                     <ClockIcon />
                     <span>AI Screening Pending</span>
                   </div>
-                  <p className="text-xs text-slate-500 m-0">
+                  <p style={{ fontSize: '12px', color: '#64748b', margin: 0, lineHeight: 1.45 }}>
                     {isJobActive
-                      ? 'AI analysis will run across all applicants once this job is marked as Closed.'
-                      : 'Run batch AI analysis to calculate match rankings and insights.'}
+                      ? 'AI analysis will run across all applicants once this requisition is marked as Closed.'
+                      : 'Run batch AI analysis to calculate candidate match rankings and qualification insights.'}
                   </p>
                 </div>
               )}
 
               {/* Skills */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Core Competencies</h4>
-                <div className="flex flex-wrap gap-1.5">
+              <div className="cv-drawer-card">
+                <h4 className="cv-drawer-card-title">
+                  <SparkleIcon />
+                  <span>Core Competencies</span>
+                </h4>
+                <div className="cv-drawer-skills-wrap">
                   {selectedCandidate.skills.map((s, idx) => (
-                    <span key={idx} className="text-xs font-medium text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md">
+                    <span key={idx} className="cv-drawer-skill-chip">
                       {s}
                     </span>
                   ))}
@@ -893,37 +906,43 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
               </div>
 
               {/* Experience Timeline */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Career Experience ({selectedCandidate.experienceYears} Years)
+              <div className="cv-drawer-card">
+                <h4 className="cv-drawer-card-title">
+                  <ClockIcon />
+                  <span>Career Experience ({selectedCandidate.experienceYears} Years)</span>
                 </h4>
-                <div className="space-y-3 border-l-2 border-slate-200 pl-3 ml-1">
+                <div className="cv-drawer-timeline">
                   {selectedCandidate.experienceHistory.map((exp, idx) => (
-                    <div key={idx} className="space-y-0.5">
-                      <div className="font-bold text-xs text-slate-900">{exp.title}</div>
-                      <div className="text-xs text-emerald-700 font-semibold">{exp.company} • {exp.duration}</div>
-                      <p className="text-xs text-slate-600 leading-relaxed m-0">{exp.description}</p>
+                    <div key={idx} className="cv-drawer-timeline-item">
+                      <div className="cv-drawer-timeline-title">{exp.title}</div>
+                      <div className="cv-drawer-timeline-company">{exp.company} • {exp.duration}</div>
+                      <p className="cv-drawer-timeline-desc">{exp.description}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Education */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Education & Credentials</h4>
-                <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-700">
+              <div className="cv-drawer-card">
+                <h4 className="cv-drawer-card-title">
                   <GraduationCapIcon />
+                  <span>Education & Credentials</span>
+                </h4>
+                <div className="cv-drawer-edu-item">
+                  <div className="cv-drawer-edu-icon">
+                    <GraduationCapIcon />
+                  </div>
                   <span>{selectedCandidate.education}</span>
                 </div>
               </div>
             </div>
 
             {/* Drawer Footer */}
-            <div className="p-4 border-t border-slate-100 bg-white flex justify-end">
+            <div className="cv-drawer-footer">
               <button
                 type="button"
                 onClick={() => setSelectedCandidate(null)}
-                className="text-xs font-semibold px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                className="popup-footer-btn-secondary"
               >
                 Close Profile
               </button>

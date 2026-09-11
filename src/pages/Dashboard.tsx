@@ -19,22 +19,23 @@ import {
   LogOutIcon,
   BuildingIcon,
   ClockIcon,
-  ArrowRightIcon,
   PlusIcon,
   UsersIcon,
+  FunnelIcon,
 } from '../components/common/Icons'
 import { PipelineJobSelector } from './PipelineJobSelector'
+import { HiringPipeline } from './HiringPipeline'
 import { JobVacancies } from './JobVacancies'
 
 interface DashboardProps {
-  defaultTab?: 'overview' | 'vacancies' | 'pipelines' | 'settings'
+  defaultTab?: 'overview' | 'vacancies' | 'pipelines' | 'hiring-pipeline' | 'settings'
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' }) => {
   const navigate = useNavigate()
   const { currentUser, logout, isAuthenticated, isLoading: authLoading } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'vacancies' | 'pipelines' | 'settings'>(defaultTab)
+  const [activeTab, setActiveTab] = useState<'overview' | 'vacancies' | 'pipelines' | 'hiring-pipeline' | 'settings'>(defaultTab)
   const [selectedFilter, setSelectedFilter] = useState('All')
 
   useEffect(() => {
@@ -243,6 +244,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             <span>AI Screening</span>
           </button>
 
+          <button
+            type="button"
+            className={`dashboard-nav-item ${activeTab === 'hiring-pipeline' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('hiring-pipeline')
+              setSidebarOpen(false)
+            }}
+          >
+            <FunnelIcon />
+            <span>Hiring Pipeline</span>
+            <span className="nav-badge-count" style={{ background: '#e6f9f2', color: '#009e67' }}>Ready</span>
+          </button>
+
           <div className="nav-group-label" style={{ marginTop: '16px' }}>SYSTEM</div>
 
           <button
@@ -308,6 +322,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
                 {activeTab === 'overview' && 'Company Overview'}
                 {activeTab === 'vacancies' && 'Job Vacancies'}
                 {activeTab === 'pipelines' && 'AI Screening'}
+                {activeTab === 'hiring-pipeline' && 'Hiring Pipeline'}
                 {activeTab === 'settings' && 'Settings'}
               </span>
             </div>
@@ -329,6 +344,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             <JobVacancies />
           ) : activeTab === 'pipelines' ? (
             <PipelineJobSelector />
+          ) : activeTab === 'hiring-pipeline' ? (
+            <HiringPipeline />
           ) : activeTab === 'settings' ? (
             <div className="p-8 bg-white border border-slate-200 rounded-2xl max-w-2xl">
               <h2 className="text-xl font-bold text-slate-900 mb-2">Company Account Information</h2>
@@ -526,8 +543,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
                             <th>ROLE & DEPARTMENT</th>
                             <th>LOCATION / TYPE</th>
                             <th>SALARY / EXPERIENCE</th>
-                            <th>STATUS</th>
-                            <th style={{ textAlign: 'right' }}>ACTION</th>
+                            <th style={{ textAlign: 'right' }}>STATUS</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -535,9 +551,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
                             <tr key={job.id} className="vacancy-table-row">
                               <td>
                                 <div className="vacancy-title-cell">
-                                  <Link to={`/dashboard/jobs/${job.id}`} className="job-row-title hover:text-blue-600 transition-colors">
+                                  <span className="job-row-title font-bold text-slate-900">
                                     {job.title}
-                                  </Link>
+                                  </span>
                                   <span className="job-row-dept">{job.department}</span>
                                 </div>
                               </td>
@@ -553,17 +569,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
                                   <span className="text-[11px] text-slate-500">{job.experienceLevel}</span>
                                 </div>
                               </td>
-                              <td>
-                                <span className="status-pill active-pill">Active</span>
-                              </td>
                               <td style={{ textAlign: 'right' }}>
-                                <Link
-                                  to={`/dashboard/jobs/${job.id}`}
-                                  className="btn-table-action inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
-                                >
-                                  <span>Manage</span>
-                                  <ArrowRightIcon />
-                                </Link>
+                                <span className="status-pill active-pill">Active</span>
                               </td>
                             </tr>
                           ))}

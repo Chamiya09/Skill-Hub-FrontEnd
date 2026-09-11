@@ -8,9 +8,12 @@ import {
   UsersIcon,
   ClockIcon,
   ArrowRightIcon,
+  ArrowLeftIcon,
   MailIcon,
   MapPinIcon,
   KanbanIcon,
+  CheckIcon,
+  FileTextIcon,
 } from '../common/Icons';
 
 export interface ModalCandidate {
@@ -135,28 +138,36 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
   job,
 }) => {
   const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [topCount, setTopCount] = useState<number>(5);
   const [candidates, setCandidates] = useState<ModalCandidate[]>(BASE_JOB_CANDIDATES);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzingStageText, setAnalyzingStageText] = useState('');
-  const [aiAnalyzed, setAiAnalyzed] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3500);
+  };
 
   // Reset state when a new job opens
   useEffect(() => {
     if (isOpen) {
       setCandidates(BASE_JOB_CANDIDATES);
+      setCurrentStep(1);
       setSearchQuery('');
-      setAiAnalyzed(false);
       setIsAnalyzing(false);
     }
   }, [isOpen, job?.id]);
 
-  // AI Agent Simulation Handler
+  // AI Agent Simulation Handler -> Transitions directly to Step 2
   const handleRunAiAnalysis = () => {
     if (isAnalyzing) return;
     setIsAnalyzing(true);
-    setAnalyzingStageText('AI Agent analyzing candidate resumes & parsing skill competencies...');
+    setAnalyzingStageText('AI Agent scanning candidate CVs & parsing skill competencies...');
 
     setTimeout(() => {
       setAnalyzingStageText('Evaluating qualification alignment, experience tier & role relevance...');
@@ -196,12 +207,31 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
 
       setCandidates(updated);
       setIsAnalyzing(false);
-      setAiAnalyzed(true);
+      // Automatically transition to Step 2: Shortlisted View
+      setCurrentStep(2);
+      showToast(`✨ AI Analysis Complete! Showing Top ${topCount} Shortlisted Candidates.`);
     }, 1500);
   };
 
+  // Placeholders for another developer to connect later
+  const handleScheduleInterview = (candidate: ModalCandidate) => {
+    showToast(`📅 Schedule Interview placeholder triggered for ${candidate.name}.`);
+  };
+
+  const handleSendAssessment = (candidate: ModalCandidate) => {
+    showToast(`📝 Technical Assessment placeholder dispatched to ${candidate.name}.`);
+  };
+
+  // List of candidates for current view
+  const displayedCandidates = useMemo(() => {
+    if (currentStep === 2) {
+      return candidates.filter((c) => c.isTopMatch);
+    }
+    return candidates;
+  }, [candidates, currentStep]);
+
   const filteredCandidates = useMemo(() => {
-    return candidates.filter((c) => {
+    return displayedCandidates.filter((c) => {
       const q = searchQuery.toLowerCase().trim();
       return (
         !q ||
@@ -210,50 +240,98 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
         c.skills.some((s) => s.toLowerCase().includes(q))
       );
     });
-  }, [candidates, searchQuery]);
+  }, [displayedCandidates, searchQuery]);
 
   if (!isOpen || !job) return null;
 
   return (
     <div className="candidates-modal-backdrop" onClick={onClose}>
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="job-details-toast" style={{ bottom: '20px', right: '20px', zIndex: 1100 }}>
+          <CheckIcon />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* Modal Card */}
       <div className="candidates-modal-card" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
+        {/* =========================================================
+            HEADER (ADAPTS FOR STEP 1 VS STEP 2)
+            ========================================================= */}
         <div className="candidates-modal-header">
           <div className="candidates-modal-header-left">
-            <div className="candidates-modal-badges">
-              <span className="candidates-modal-req-tag">
-                REQ #{job.id.substring(0, 8).toUpperCase()}
-              </span>
-              <span className="candidates-modal-dept-badge">
-                {job.department}
-              </span>
-              <span className="candidates-modal-ai-badge">
-                <SparkleIcon />
-                <span>AI Agent Ready</span>
-              </span>
-            </div>
+            {currentStep === 1 ? (
+              <>
+                <div className="candidates-modal-badges">
+                  <span className="candidates-modal-req-tag">
+                    REQ #{job.id.substring(0, 8).toUpperCase()}
+                  </span>
+                  <span className="candidates-modal-dept-badge">
+                    {job.department}
+                  </span>
+                  <span className="candidates-modal-ai-badge">
+                    <SparkleIcon />
+                    <span>Step 1: All Applicants</span>
+                  </span>
+                </div>
 
-            <h2 className="candidates-modal-title">
-              {job.title}
-            </h2>
+                <h2 className="candidates-modal-title">
+                  {job.title}
+                </h2>
 
-            <div className="candidates-modal-meta-row">
-              <span className="candidates-modal-meta-item highlight">
-                <UsersIcon />
-                <span>{candidates.length} Total Applicants</span>
-              </span>
-              <span>•</span>
-              <span className="candidates-modal-meta-item">
-                <MapPinIcon />
-                <span>{job.location}</span>
-              </span>
-              <span>•</span>
-              <span className="candidates-modal-meta-item">
-                <ClockIcon />
-                <span>{job.employmentType}</span>
-              </span>
-            </div>
+                <div className="candidates-modal-meta-row">
+                  <span className="candidates-modal-meta-item highlight">
+                    <UsersIcon />
+                    <span>{candidates.length} Total Applicants</span>
+                  </span>
+                  <span>•</span>
+                  <span className="candidates-modal-meta-item">
+                    <MapPinIcon />
+                    <span>{job.location}</span>
+                  </span>
+                  <span>•</span>
+                  <span className="candidates-modal-meta-item">
+                    <ClockIcon />
+                    <span>{job.employmentType}</span>
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 mb-1">
+                  <button
+                    type="button"
+                    className="candidates-modal-back-step-btn"
+                    onClick={() => setCurrentStep(1)}
+                    title="Return to all applicants intake view"
+                  >
+                    <ArrowLeftIcon />
+                    <span>Back to All Applicants</span>
+                  </button>
+
+                  <span className="candidates-modal-ai-badge">
+                    <SparkleIcon />
+                    <span>Step 2: AI Shortlisted Candidates</span>
+                  </span>
+                </div>
+
+                <h2 className="candidates-modal-title">
+                  {job.title} — Shortlisted Top {displayedCandidates.length}
+                </h2>
+
+                <div className="candidates-modal-meta-row">
+                  <span className="candidates-modal-meta-item highlight text-emerald-700">
+                    <CheckIcon />
+                    <span>{displayedCandidates.length} Candidates Qualified</span>
+                  </span>
+                  <span>•</span>
+                  <span className="text-xs text-slate-500">
+                    Ready for Interview Scheduling & Skill Assessments
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Close Button */}
@@ -267,64 +345,55 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
           </button>
         </div>
 
-        {/* AI Action Bar */}
-        <div className="candidates-modal-ai-bar">
-          <div className="candidates-modal-ai-controls">
-            <label className="candidates-modal-input-label" htmlFor="topCandidatesInput">
-              <SparkleIcon />
-              <span>Top Candidates to Shortlist:</span>
-            </label>
-            <input
-              id="topCandidatesInput"
-              type="number"
-              min={1}
-              max={candidates.length}
-              value={topCount}
-              onChange={(e) => {
-                const val = Math.max(1, Math.min(candidates.length, parseInt(e.target.value) || 1));
-                setTopCount(val);
-                // If AI already ran, re-apply Top N highlighting
-                if (aiAnalyzed) {
-                  setCandidates((prev) =>
-                    prev.map((c, index) => {
-                      const isTopN = index < val;
-                      return {
-                        ...c,
-                        isTopMatch: isTopN,
-                        stage: isTopN ? 'AI Shortlisted' : 'Applied',
-                      };
-                    })
-                  );
-                }
-              }}
-              className="candidates-modal-number-input"
-              disabled={isAnalyzing}
-            />
-            <span className="text-xs text-slate-500 hidden sm:inline">
-              (out of {candidates.length} applicants)
-            </span>
-          </div>
-
-          <button
-            type="button"
-            className="candidates-modal-run-ai-btn"
-            onClick={handleRunAiAnalysis}
-            disabled={isAnalyzing}
-            title="Analyze candidate qualifications and rank top matches"
-          >
-            {isAnalyzing ? (
-              <>
-                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>AI Analyzing...</span>
-              </>
-            ) : (
-              <>
+        {/* =========================================================
+            STEP 1 ONLY: AI ACTION BAR
+            ========================================================= */}
+        {currentStep === 1 && (
+          <div className="candidates-modal-ai-bar">
+            <div className="candidates-modal-ai-controls">
+              <label className="candidates-modal-input-label" htmlFor="topCandidatesInput">
                 <SparkleIcon />
-                <span>✨ Run AI Analysis</span>
-              </>
-            )}
-          </button>
-        </div>
+                <span>Top Candidates to Shortlist:</span>
+              </label>
+              <input
+                id="topCandidatesInput"
+                type="number"
+                min={1}
+                max={candidates.length}
+                value={topCount}
+                onChange={(e) => {
+                  const val = Math.max(1, Math.min(candidates.length, parseInt(e.target.value) || 1));
+                  setTopCount(val);
+                }}
+                className="candidates-modal-number-input"
+                disabled={isAnalyzing}
+              />
+              <span className="text-xs text-slate-500 hidden sm:inline">
+                (out of {candidates.length} applicants)
+              </span>
+            </div>
+
+            <button
+              type="button"
+              className="candidates-modal-run-ai-btn"
+              onClick={handleRunAiAnalysis}
+              disabled={isAnalyzing}
+              title="Run AI Agent Analysis to score and shortlist top candidates"
+            >
+              {isAnalyzing ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>AI Agent Analyzing...</span>
+                </>
+              ) : (
+                <>
+                  <SparkleIcon />
+                  <span>✨ Run AI Analysis</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* AI Progress Banner */}
         {isAnalyzing && (
@@ -334,7 +403,24 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
           </div>
         )}
 
-        {/* Filter & Search Bar */}
+        {/* STEP 2 ONLY: SHORTLIST NOTICE BANNER */}
+        {currentStep === 2 && (
+          <div className="shortlist-banner-notice">
+            <div className="flex items-center gap-2">
+              <SparkleIcon />
+              <span>
+                AI screening agent successfully ranked all applicants. Displaying top {displayedCandidates.length} high-fit candidates.
+              </span>
+            </div>
+            <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">
+              85%+ Match Rating
+            </span>
+          </div>
+        )}
+
+        {/* =========================================================
+            SEARCH & STATS BAR
+            ========================================================= */}
         <div className="candidates-modal-filter-bar">
           <div className="candidates-modal-search-box">
             <span className="candidates-modal-search-icon">
@@ -342,7 +428,11 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
             </span>
             <input
               type="text"
-              placeholder="Search candidate name, role, or skill..."
+              placeholder={
+                currentStep === 1
+                  ? "Search applicant name, role, or skill..."
+                  : "Search shortlisted candidates..."
+              }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="candidates-modal-search-input"
@@ -350,17 +440,13 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
           </div>
 
           <div className="text-xs font-semibold text-slate-500">
-            {aiAnalyzed ? (
-              <span className="text-emerald-700 font-bold">
-                ✓ AI Analysis Complete • Top {topCount} Shortlisted
-              </span>
-            ) : (
-              <span>Showing {filteredCandidates.length} of {candidates.length} applicants</span>
-            )}
+            Showing <strong className="text-slate-800">{filteredCandidates.length}</strong> of {displayedCandidates.length} {currentStep === 2 ? 'shortlisted candidates' : 'applicants'}
           </div>
         </div>
 
-        {/* Modal Body: Candidates List */}
+        {/* =========================================================
+            MODAL BODY: CANDIDATE LIST (STEP 1 VS STEP 2)
+            ========================================================= */}
         <div className="candidates-modal-body">
           {filteredCandidates.length === 0 ? (
             <div className="py-12 text-center text-slate-500">
@@ -380,12 +466,10 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
                 .join('')
                 .substring(0, 2);
 
-              const isTop = candidate.isTopMatch;
-
               return (
                 <div
                   key={candidate.id}
-                  className={`candidates-modal-row ${isTop ? 'highlight-top-match' : ''}`}
+                  className={`candidates-modal-row ${currentStep === 2 ? 'highlight-top-match' : ''}`}
                 >
                   {/* Candidate Identity */}
                   <div className="candidates-modal-row-left">
@@ -398,7 +482,7 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
                     <div className="candidates-modal-candidate-info">
                       <h4 className="candidates-modal-candidate-name">
                         <span>{candidate.name}</span>
-                        {isTop && candidate.rank && (
+                        {currentStep === 2 && candidate.rank && (
                           <span className="candidates-modal-top-rank-badge">
                             #{candidate.rank} Top Match
                           </span>
@@ -416,16 +500,20 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
                         </span>
                         <span>•</span>
                         <span className="flex items-center gap-1">
+                          <MapPinIcon /> {candidate.location}
+                        </span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1">
                           <ClockIcon /> Applied {candidate.appliedDate}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Right Meta: Status Badge & AI Score */}
+                  {/* Right Meta: Status, AI Score & Action Buttons */}
                   <div className="candidates-modal-row-right">
-                    {/* Skills Snippet */}
-                    <div className="candidates-modal-skills">
+                    {/* Skills Snippet (in Step 1 or Step 2) */}
+                    <div className="hidden lg:flex items-center gap-1">
                       {candidate.skills.slice(0, 2).map((skill, idx) => (
                         <span key={idx} className="candidates-modal-skill-tag">
                           {skill}
@@ -433,36 +521,60 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
                       ))}
                     </div>
 
-                    {/* Dynamic Status Badge */}
-                    {isTop ? (
-                      <span className="candidates-modal-stage-badge ai-shortlisted">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                        AI Shortlisted
-                      </span>
-                    ) : (
-                      <span className="candidates-modal-stage-badge applied">
-                        <span className="candidates-modal-stage-dot"></span>
-                        Applied
-                      </span>
+                    {/* Step 1 Status Badge & Score Placeholder */}
+                    {currentStep === 1 && (
+                      <>
+                        <span className="candidates-modal-stage-badge applied">
+                          <span className="candidates-modal-stage-dot"></span>
+                          Applied
+                        </span>
+
+                        <div
+                          className="flex items-center"
+                          title="AI Match Score will be calculated when running AI Analysis"
+                        >
+                          <span className="candidates-modal-score-placeholder">—</span>
+                        </div>
+                      </>
                     )}
 
-                    {/* AI Match Score Badge / Placeholder */}
-                    {candidate.aiScore !== null ? (
-                      <span
-                        className={`candidates-modal-score-badge ${
-                          candidate.aiScore >= 90 ? '' : 'pending'
-                        }`}
-                      >
-                        <SparkleIcon />
-                        <span>{candidate.aiScore}% Match</span>
-                      </span>
-                    ) : (
-                      <div
-                        className="flex items-center"
-                        title="AI Match Score will be calculated when running AI Analysis"
-                      >
-                        <span className="candidates-modal-score-placeholder">—</span>
-                      </div>
+                    {/* Step 2 Shortlisted View: Score, Shortlisted Badge & Action Placeholders */}
+                    {currentStep === 2 && (
+                      <>
+                        {/* AI Match Score Badge */}
+                        <span className="candidates-modal-score-badge">
+                          <SparkleIcon />
+                          <span>{candidate.aiScore}% Match</span>
+                        </span>
+
+                        {/* Shortlisted Status Badge */}
+                        <span className="candidates-modal-stage-badge shortlisted">
+                          Shortlisted
+                        </span>
+
+                        {/* Developer Action Placeholders */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            className="candidates-modal-action-btn schedule-btn"
+                            onClick={() => handleScheduleInterview(candidate)}
+                            title="Schedule an interview round with this candidate"
+                          >
+                            <ClockIcon />
+                            <span>Schedule Interview</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="candidates-modal-action-btn assessment-btn"
+                            onClick={() => handleSendAssessment(candidate)}
+                            title="Send technical or skills evaluation assessment"
+                          >
+                            <FileTextIcon />
+                            <span>Send Assessment</span>
+                          </button>
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
@@ -471,7 +583,9 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
           )}
         </div>
 
-        {/* Modal Footer */}
+        {/* =========================================================
+            MODAL FOOTER
+            ========================================================= */}
         <div className="candidates-modal-footer">
           <button
             type="button"

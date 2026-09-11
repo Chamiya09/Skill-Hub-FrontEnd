@@ -11,7 +11,6 @@ import {
   SparkleIcon,
   LayoutDashboardIcon,
   BriefcaseIcon,
-  KanbanIcon,
   LightningIcon,
   TrendUpIcon,
   SettingsIcon,
@@ -240,8 +239,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
               setSidebarOpen(false)
             }}
           >
-            <KanbanIcon />
-            <span>Talent Pipeline</span>
+            <UsersIcon />
+            <span>Candidates</span>
           </button>
 
           <div className="nav-group-label" style={{ marginTop: '16px' }}>SYSTEM</div>
@@ -308,7 +307,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
               <span className="breadcrumb-current">
                 {activeTab === 'overview' && 'Company Overview'}
                 {activeTab === 'vacancies' && 'Job Vacancies'}
-                {activeTab === 'pipelines' && 'Hiring Pipelines'}
+                {activeTab === 'pipelines' && 'Candidates'}
                 {activeTab === 'settings' && 'Settings'}
               </span>
             </div>

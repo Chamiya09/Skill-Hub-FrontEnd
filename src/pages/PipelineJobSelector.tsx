@@ -90,17 +90,17 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
         <div className="pipeline-header-title-box">
           <div className="badge-tag">
             <SparkleIcon />
-            <span>TALENT PIPELINE INTELLIGENCE</span>
+            <span>CANDIDATES & APPLICANT MANAGEMENT</span>
           </div>
-          <h1 className="pipeline-page-title">Select Requisition Pipeline</h1>
+          <h1 className="pipeline-page-title">Candidates by Job Vacancy</h1>
           <p className="pipeline-page-subtitle">
-            Choose an active job vacancy below to view its dedicated candidate pipeline, AI match rankings, and Kanban hiring stages.
+            Choose an active job vacancy below to view its applicants, candidate profiles, AI match rankings, and hiring stages.
           </p>
         </div>
 
         <div className="pipeline-header-stats-badge">
           <span className="pipeline-stats-num">{activeJobs.length}</span>
-          <span className="pipeline-stats-label">Active Pipelines</span>
+          <span className="pipeline-stats-label">Active Vacancies</span>
         </div>
       </div>
 

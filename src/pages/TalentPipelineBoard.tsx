@@ -481,7 +481,7 @@ export const TalentPipelineBoard: React.FC = () => {
             <div className="job-details-breadcrumbs">
               <Link to="/dashboard" className="job-details-breadcrumb-link">Dashboard</Link>
               <span className="job-details-breadcrumb-sep">/</span>
-              <Link to="/dashboard/pipelines" className="job-details-breadcrumb-link">Pipelines</Link>
+              <Link to="/dashboard/pipelines" className="job-details-breadcrumb-link">Candidates</Link>
               <span className="job-details-breadcrumb-sep">/</span>
               <span className="job-details-breadcrumb-current">{job.title}</span>
             </div>

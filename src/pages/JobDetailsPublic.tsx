@@ -402,7 +402,7 @@ export const JobDetailsPublic: React.FC = () => {
               </div>
             </div>
 
-            {/* Right Header: AI Match badge & Save/Share actions only */}
+            {/* Right Header: AI Match badge (Hidden for Employers) & Save/Share actions */}
             <div
               style={{
                 display: 'flex',
@@ -411,24 +411,26 @@ export const JobDetailsPublic: React.FC = () => {
                 gap: '14px',
               }}
             >
-              {/* AI Match badge */}
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: '#e6f9f2',
-                  border: '1px solid #b7eedc',
-                  color: '#009e67',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  padding: '6px 14px',
-                  borderRadius: '9999px',
-                }}
-              >
-                <SparkleIcon />
-                <span>95% AI Match Recommendation</span>
-              </div>
+              {/* AI Match badge - Render only for Candidates / Public applicants, HIDE for Employers */}
+              {!isEmployer && (
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: '#e6f9f2',
+                    border: '1px solid #b7eedc',
+                    color: '#009e67',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    padding: '6px 14px',
+                    borderRadius: '9999px',
+                  }}
+                >
+                  <SparkleIcon />
+                  <span>95% AI Match Recommendation</span>
+                </div>
+              )}
 
               {/* Action Buttons: Save & Share */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -495,42 +497,44 @@ export const JobDetailsPublic: React.FC = () => {
           {/* Left Column: Job Description & Details */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
-            {/* AI Fit Breakdown Banner */}
-            <div
-              style={{
-                background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
-                border: '1px solid #bbf7d0',
-                borderRadius: '20px',
-                padding: '22px 24px',
-                display: 'flex',
-                gap: '16px',
-                alignItems: 'flex-start',
-              }}
-            >
+            {/* AI Fit Breakdown Banner - Render only for Candidates / Public applicants, HIDE for Employers */}
+            {!isEmployer && (
               <div
                 style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '10px',
-                  background: '#00b074',
-                  color: '#ffffff',
+                  background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
+                  border: '1px solid #bbf7d0',
+                  borderRadius: '20px',
+                  padding: '22px 24px',
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
+                  gap: '16px',
+                  alignItems: 'flex-start',
                 }}
               >
-                <SparkleIcon />
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: '#00b074',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <SparkleIcon />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '15.5px', fontWeight: 700, color: '#065f46', marginBottom: '4px' }}>
+                    Why you match this role (95% AI Compatibility)
+                  </h3>
+                  <p style={{ fontSize: '13.5px', color: '#166534', lineHeight: 1.55, margin: 0 }}>
+                    This requisition requires expertise in <strong>{job.department}</strong> frameworks and engineering best practices. Your verified skills and experience align closely with the criteria defined by {job.companyName}.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 style={{ fontSize: '15.5px', fontWeight: 700, color: '#065f46', marginBottom: '4px' }}>
-                  Why you match this role (95% AI Compatibility)
-                </h3>
-                <p style={{ fontSize: '13.5px', color: '#166534', lineHeight: 1.55, margin: 0 }}>
-                  This requisition requires expertise in <strong>{job.department}</strong> frameworks and engineering best practices. Your verified skills and experience align closely with the criteria defined by {job.companyName}.
-                </p>
-              </div>
-            </div>
+            )}
 
             {/* About the Position (Rendered cleanly from raw HTML) */}
             <div
@@ -892,6 +896,7 @@ export const JobDetailsPublic: React.FC = () => {
                 <JobVacancyCard
                   key={sJob.id}
                   job={sJob}
+                  showAiMatch={!isEmployer}
                   matchPercentage={92}
                 />
               ))}

@@ -16,6 +16,7 @@ interface JobVacancyCardProps {
   onQuickApply?: (jobTitle: string) => void
   showBookmark?: boolean
   showApplyButton?: boolean
+  showAiMatch?: boolean
   matchPercentage?: number
   className?: string
 }
@@ -25,6 +26,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
   isBookmarked = false,
   onToggleBookmark,
   showBookmark = false,
+  showAiMatch = true,
   matchPercentage = 95,
   className = '',
 }) => {
@@ -133,24 +135,26 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
         </div>
 
         {/* AI Match Pill Badge */}
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '5px',
-            background: '#e6f9f2',
-            border: '1px solid #b7eedc',
-            color: '#009e67',
-            fontSize: '12px',
-            fontWeight: 700,
-            padding: '4px 11px',
-            borderRadius: '9999px',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          <SparkleIcon />
-          <span>{matchPercentage}% AI Match</span>
-        </div>
+        {showAiMatch && (
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              background: '#e6f9f2',
+              border: '1px solid #b7eedc',
+              color: '#009e67',
+              fontSize: '12px',
+              fontWeight: 700,
+              padding: '4px 11px',
+              borderRadius: '9999px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <SparkleIcon />
+            <span>{matchPercentage}% AI Match</span>
+          </div>
+        )}
       </div>
 
       {/* Job Title */}

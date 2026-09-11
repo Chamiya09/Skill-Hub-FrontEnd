@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { publicJobsApi, type JobDto } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { JobVacancyCard } from '../components/jobs/JobVacancyCard'
+import { SleekSpinner, JobCardSkeleton } from '../components/common/SkeletonCard'
 import {
   SparkleIcon,
   MapPinIcon,
@@ -127,12 +128,7 @@ export const JobDetailsPublic: React.FC = () => {
   if (loading) {
     return (
       <div className="findjobs-container" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div className="w-10 h-10 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p style={{ color: '#64748b', fontSize: '15px', fontWeight: 500 }}>
-            Loading job requisition details...
-          </p>
-        </div>
+        <SleekSpinner size="lg" />
       </div>
     )
   }
@@ -866,9 +862,16 @@ export const JobDetailsPublic: React.FC = () => {
           </div>
 
           {suggestedLoading ? (
-            <div className="p-12 text-center text-slate-400 bg-white border border-slate-200 rounded-2xl">
-              <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-              <p className="text-sm font-medium">Fetching suggested matching jobs...</p>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '24px',
+              }}
+            >
+              {Array.from({ length: 3 }).map((_, i) => (
+                <JobCardSkeleton key={i} />
+              ))}
             </div>
           ) : suggestedJobs.length === 0 ? (
             <div

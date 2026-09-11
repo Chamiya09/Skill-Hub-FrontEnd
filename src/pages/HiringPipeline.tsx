@@ -11,6 +11,7 @@ import {
   UserCheckIcon,
   ArrowRightIcon,
 } from '../components/common/Icons';
+import { SkeletonGrid } from '../components/common/SkeletonCard';
 
 export interface HiringPipelineProps {
   onSelectJob?: (jobId: string) => void;
@@ -215,10 +216,7 @@ export const HiringPipeline: React.FC<HiringPipelineProps> = ({ onSelectJob }) =
 
       {/* Requisitions Grid */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-200 rounded-2xl">
-          <div className="ai-screening-spinner" style={{ width: '36px', height: '36px', borderWidth: '3px', marginBottom: '16px' }} />
-          <span className="text-sm font-semibold text-slate-600">Loading company hiring pipelines...</span>
-        </div>
+        <SkeletonGrid count={6} variant="grid" />
       ) : errorMessage ? (
         <div className="p-8 bg-red-50 border border-red-200 rounded-2xl text-center">
           <p className="text-sm font-semibold text-red-800 mb-3">{errorMessage}</p>

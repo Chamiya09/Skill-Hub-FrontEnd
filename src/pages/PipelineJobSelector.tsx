@@ -10,10 +10,11 @@ import {
   MapPinIcon,
   ClockIcon,
   ArrowRightIcon,
-  PlusIcon,
   BuildingIcon,
+  PlusIcon,
   InfoIcon,
 } from '../components/common/Icons';
+import { SkeletonGrid } from '../components/common/SkeletonCard';
 
 interface PipelineJobSelectorProps {
   onSelectJob?: (jobId: string) => void;
@@ -210,10 +211,7 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
 
       {/* Content Area */}
       {loading ? (
-        <div className="p-16 bg-white border border-slate-200 rounded-2xl text-center">
-          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-sm font-medium text-slate-500">Loading company requisitions...</p>
-        </div>
+        <SkeletonGrid count={4} variant="rich-grid" />
       ) : publishedJobs.length === 0 ? (
         <div
           style={{

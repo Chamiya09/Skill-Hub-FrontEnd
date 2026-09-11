@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { publicJobsApi, type JobDto } from '../services/api'
 import { JobVacancyCard } from '../components/jobs/JobVacancyCard'
+import { SkeletonGrid } from '../components/common/SkeletonCard'
 import {
   SparkleIcon,
   SearchIcon,
@@ -156,10 +157,7 @@ export const Home = () => {
 
         {/* Job Cards */}
         {loading ? (
-          <div className="p-12 text-center text-slate-400">
-            <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-            <p className="text-sm">Fetching verified job vacancies...</p>
-          </div>
+          <SkeletonGrid count={3} variant="grid" />
         ) : jobs.length === 0 ? (
           <div
             style={{

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { SleekSpinner } from './SkeletonCard';
 
 interface PublicRouteProps {
   children: React.ReactNode;
@@ -20,16 +21,7 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
           background: '#f8fafc',
         }}
       >
-        <div
-          style={{
-            width: '36px',
-            height: '36px',
-            border: '3px solid #00b074',
-            borderTopColor: 'transparent',
-            borderRadius: '50%',
-            animation: 'spin 0.8s linear infinite',
-          }}
-        ></div>
+        <SleekSpinner size="lg" />
       </div>
     );
   }

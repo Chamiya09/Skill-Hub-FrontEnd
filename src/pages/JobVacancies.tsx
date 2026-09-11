@@ -11,6 +11,7 @@ import {
 } from '../components/common/Icons';
 import { JobFormModal, type JobFormData } from '../components/jobs/JobFormModal';
 import { jobsApi, type JobDto } from '../services/api';
+import { TableRowSkeleton } from '../components/common/SkeletonCard';
 
 export interface JobVacancyItem {
   id: string;
@@ -317,14 +318,9 @@ export const JobVacancies = () => {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '60px 24px' }}>
-                    <div className="flex flex-col items-center justify-center space-y-3">
-                      <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                      <p className="text-sm font-medium text-gray-500">Loading vacancies from database...</p>
-                    </div>
-                  </td>
-                </tr>
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRowSkeleton key={i} cols={6} />
+                ))
               ) : filteredVacancies.length > 0 ? (
                 filteredVacancies.map((job) => (
                   <tr key={job.id} className="vacancies-table-row">

@@ -26,6 +26,7 @@ import {
 import { PipelineJobSelector } from './PipelineJobSelector'
 import { HiringPipeline } from './HiringPipeline'
 import { JobVacancies } from './JobVacancies'
+import { MetricCardSkeleton, TableRowSkeleton } from '../components/common/SkeletonCard'
 
 interface DashboardProps {
   defaultTab?: 'overview' | 'vacancies' | 'pipelines' | 'hiring-pipeline' | 'settings'
@@ -438,81 +439,89 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
                   3. STAT CARDS (REAL DATABASE METRICS)
                   ========================================================= */}
               <section className="stats-grid-row">
-                {/* Card 1: Active Vacancies */}
-                <div className="dashboard-stat-card">
-                  <div className="stat-card-header">
-                    <span className="stat-label">Active Vacancies</span>
-                    <div className="stat-icon-wrapper stat-icon-blue">
-                      <BriefcaseIcon />
+                {dataLoading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <MetricCardSkeleton key={i} />
+                  ))
+                ) : (
+                  <>
+                    {/* Card 1: Active Vacancies */}
+                    <div className="dashboard-stat-card">
+                      <div className="stat-card-header">
+                        <span className="stat-label">Active Vacancies</span>
+                        <div className="stat-icon-wrapper stat-icon-blue">
+                          <BriefcaseIcon />
+                        </div>
+                      </div>
+                      <div className="stat-value-box">
+                        <span className="stat-number">
+                          {stats?.activeVacanciesCount ?? activeJobs.length}
+                        </span>
+                        <span className="stat-trend positive">
+                          <TrendUpIcon />
+                          <span>Live Requisitions</span>
+                        </span>
+                      </div>
+                      <p className="stat-footer-text">Published on public job board & accepting candidates</p>
                     </div>
-                  </div>
-                  <div className="stat-value-box">
-                    <span className="stat-number">
-                      {dataLoading ? '...' : stats?.activeVacanciesCount ?? activeJobs.length}
-                    </span>
-                    <span className="stat-trend positive">
-                      <TrendUpIcon />
-                      <span>Live Requisitions</span>
-                    </span>
-                  </div>
-                  <p className="stat-footer-text">Published on public job board & accepting candidates</p>
-                </div>
 
-                {/* Card 2: Total Positions */}
-                <div className="dashboard-stat-card">
-                  <div className="stat-card-header">
-                    <span className="stat-label">Total Vacancies</span>
-                    <div className="stat-icon-wrapper stat-icon-green">
-                      <UsersIcon />
+                    {/* Card 2: Total Positions */}
+                    <div className="dashboard-stat-card">
+                      <div className="stat-card-header">
+                        <span className="stat-label">Total Vacancies</span>
+                        <div className="stat-icon-wrapper stat-icon-green">
+                          <UsersIcon />
+                        </div>
+                      </div>
+                      <div className="stat-value-box">
+                        <span className="stat-number">
+                          {stats?.totalVacanciesCount ?? jobs.length}
+                        </span>
+                        <span className="stat-trend neutral">
+                          <span>{stats?.draftVacanciesCount ?? 0} in Draft</span>
+                        </span>
+                      </div>
+                      <p className="stat-footer-text">Across all status tiers (Active, Draft, Closed)</p>
                     </div>
-                  </div>
-                  <div className="stat-value-box">
-                    <span className="stat-number">
-                      {dataLoading ? '...' : stats?.totalVacanciesCount ?? jobs.length}
-                    </span>
-                    <span className="stat-trend neutral">
-                      <span>{stats?.draftVacanciesCount ?? 0} in Draft</span>
-                    </span>
-                  </div>
-                  <p className="stat-footer-text">Across all status tiers (Active, Draft, Closed)</p>
-                </div>
 
-                {/* Card 3: Active Departments */}
-                <div className="dashboard-stat-card">
-                  <div className="stat-card-header">
-                    <span className="stat-label">Departments</span>
-                    <div className="stat-icon-wrapper stat-icon-purple">
-                      <BuildingIcon />
+                    {/* Card 3: Active Departments */}
+                    <div className="dashboard-stat-card">
+                      <div className="stat-card-header">
+                        <span className="stat-label">Departments</span>
+                        <div className="stat-icon-wrapper stat-icon-purple">
+                          <BuildingIcon />
+                        </div>
+                      </div>
+                      <div className="stat-value-box">
+                        <span className="stat-number">
+                          {stats?.totalDepartmentsCount ?? (departments.length - 1)}
+                        </span>
+                        <span className="stat-trend positive">
+                          <SparkleIcon />
+                          <span>Hiring Units</span>
+                        </span>
+                      </div>
+                      <p className="stat-footer-text">Engineering, AI Research, Design, Product & Ops</p>
                     </div>
-                  </div>
-                  <div className="stat-value-box">
-                    <span className="stat-number">
-                      {dataLoading ? '...' : stats?.totalDepartmentsCount ?? (departments.length - 1)}
-                    </span>
-                    <span className="stat-trend positive">
-                      <SparkleIcon />
-                      <span>Hiring Units</span>
-                    </span>
-                  </div>
-                  <p className="stat-footer-text">Engineering, AI Research, Design, Product & Ops</p>
-                </div>
 
-                {/* Card 4: AI Matching Precision */}
-                <div className="dashboard-stat-card">
-                  <div className="stat-card-header">
-                    <span className="stat-label">AI Match Status</span>
-                    <div className="stat-icon-wrapper stat-icon-orange">
-                      <LightningIcon />
+                    {/* Card 4: AI Matching Precision */}
+                    <div className="dashboard-stat-card">
+                      <div className="stat-card-header">
+                        <span className="stat-label">AI Match Status</span>
+                        <div className="stat-icon-wrapper stat-icon-orange">
+                          <LightningIcon />
+                        </div>
+                      </div>
+                      <div className="stat-value-box">
+                        <span className="stat-number">Active</span>
+                        <span className="stat-trend positive">
+                          <span>95% Fit Benchmark</span>
+                        </span>
+                      </div>
+                      <p className="stat-footer-text">Real-time candidate indexing enabled</p>
                     </div>
-                  </div>
-                  <div className="stat-value-box">
-                    <span className="stat-number">Active</span>
-                    <span className="stat-trend positive">
-                      <span>95% Fit Benchmark</span>
-                    </span>
-                  </div>
-                  <p className="stat-footer-text">Real-time candidate indexing enabled</p>
-                </div>
+                  </>
+                )}
               </section>
 
               {/* =========================================================
@@ -542,10 +551,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
 
                   <div className="vacancies-table-wrapper">
                     {dataLoading ? (
-                      <div className="p-12 text-center text-slate-400">
-                        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                        <p className="text-sm">Loading company job vacancies...</p>
-                      </div>
+                      <table className="vacancies-table">
+                        <thead>
+                          <tr>
+                            <th>ROLE & DEPARTMENT</th>
+                            <th>LOCATION / TYPE</th>
+                            <th>SALARY / EXPERIENCE</th>
+                            <th style={{ textAlign: 'right' }}>STATUS</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Array.from({ length: 4 }).map((_, i) => (
+                            <TableRowSkeleton key={i} cols={4} />
+                          ))}
+                        </tbody>
+                      </table>
                     ) : filteredVacancies.length === 0 ? (
                       <div className="p-12 text-center text-slate-500">
                         <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-400">
@@ -623,8 +643,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
 
                   <div className="candidates-activity-list">
                     {dataLoading ? (
-                      <div className="p-8 text-center text-slate-400 text-xs">
-                        Loading recent requisitions...
+                      <div className="p-4 space-y-3">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div key={i} className="flex items-center gap-3 p-3 bg-slate-50/70 rounded-xl animate-pulse">
+                            <div className="w-9 h-9 rounded-full bg-slate-200 shrink-0" />
+                            <div className="flex-1 space-y-2">
+                              <div className="h-3.5 bg-slate-200 rounded w-3/4" />
+                              <div className="h-2.5 bg-slate-200 rounded w-1/3" />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     ) : jobs.length === 0 ? (
                       <div className="p-8 text-center text-slate-400 text-xs">

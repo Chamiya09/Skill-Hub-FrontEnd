@@ -10,6 +10,7 @@ import {
   BuildingIcon,
   ShieldCheckIcon,
 } from '../components/common/Icons';
+import { TableRowSkeleton } from '../components/common/SkeletonCard';
 
 // Trash / Direct Delete Icon
 const TrashIcon = () => (
@@ -198,11 +199,9 @@ export const UserManagement = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                    Loading corporate user directory...
-                  </td>
-                </tr>
+                Array.from({ length: 4 }).map((_, i) => (
+                  <TableRowSkeleton key={i} cols={5} />
+                ))
               ) : filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={5} style={{ textAlign: 'center', padding: '48px 20px', color: '#64748b' }}>

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { JobForm, type JobFormData } from '../components/jobs/JobForm';
-import { CheckIcon, ClockIcon } from '../components/common/Icons';
+import { CheckIcon } from '../components/common/Icons';
+import { SleekSpinner } from '../components/common/SkeletonCard';
 import { jobsApi } from '../services/api';
 
 export const EditJob = () => {
@@ -76,11 +77,8 @@ export const EditJob = () => {
     return (
       <div className="job-form-wrapper">
         <div className="job-form-inner-container">
-          <div className="job-form-card-container">
-            <div className="job-edit-loading-state">
-              <ClockIcon />
-              <span>Loading job vacancy details from database...</span>
-            </div>
+          <div className="job-form-card-container py-24 flex items-center justify-center">
+            <SleekSpinner size="lg" text="Loading vacancy details..." />
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jobsApi, type JobDto } from '../services/api';
+import { CandidatesListModal } from '../components/candidates/CandidatesListModal';
 import {
   SparkleIcon,
   SearchIcon,
@@ -9,7 +10,6 @@ import {
   MapPinIcon,
   ClockIcon,
   ArrowRightIcon,
-  KanbanIcon,
   PlusIcon,
   BuildingIcon,
 } from '../components/common/Icons';
@@ -25,6 +25,7 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('All');
+  const [selectedJobForModal, setSelectedJobForModal] = useState<JobDto | null>(null);
 
   // Fetch company jobs
   const fetchJobs = async () => {
@@ -74,11 +75,11 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
     });
   }, [activeJobs, searchQuery, selectedDepartment]);
 
-  const handleCardClick = (jobId: string) => {
+  const handleCardClick = (job: JobDto) => {
     if (onSelectJob) {
-      onSelectJob(jobId);
+      onSelectJob(job.id);
     } else {
-      navigate(`/dashboard/pipelines/${jobId}`);
+      setSelectedJobForModal(job);
     }
   };
 
@@ -267,12 +268,12 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
             <div
               key={job.id}
               className="pipeline-job-card"
-              onClick={() => handleCardClick(job.id)}
+              onClick={() => handleCardClick(job)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
-                  handleCardClick(job.id);
+                  handleCardClick(job);
                 }
               }}
             >
@@ -304,7 +305,7 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
               <div className="pipeline-card-metrics">
                 <div className="pipeline-applicant-count">
                   <UsersIcon />
-                  <span>0 Applicants</span>
+                  <span>6 Applicants</span>
                 </div>
                 <div className="pipeline-ai-badge">
                   <SparkleIcon />
@@ -322,11 +323,11 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
                   className="pipeline-open-btn"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleCardClick(job.id);
+                    handleCardClick(job);
                   }}
                 >
-                  <KanbanIcon />
-                  <span>Open Pipeline</span>
+                  <UsersIcon />
+                  <span>View Candidates</span>
                   <ArrowRightIcon />
                 </button>
               </div>
@@ -334,6 +335,14 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
           ))}
         </div>
       )}
+
+      {/* Candidates List Modal Popup Over Job Selector */}
+      <CandidatesListModal
+        isOpen={!!selectedJobForModal}
+        onClose={() => setSelectedJobForModal(null)}
+        job={selectedJobForModal}
+      />
     </div>
   );
 };
+

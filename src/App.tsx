@@ -14,24 +14,25 @@ import { JobDetails } from "./pages/JobDetails";
 import { EditJob } from "./pages/EditJob";
 import { CreateJob } from "./pages/CreateJob";
 import { UserManagement } from "./pages/UserManagement";
-import { JobPipelineKanban } from "./pages/JobPipelineKanban";
+import { TalentPipelineBoard } from "./pages/TalentPipelineBoard";
 import "./App.css";
 
 function AppContent() {
   const location = useLocation();
-  const hideHeaderFooter =
+  const isDashboardOrAuth =
     location.pathname === "/company-login" ||
     location.pathname === "/company-register" ||
     location.pathname === "/login" ||
     location.pathname === "/register" ||
     location.pathname.startsWith("/dashboard") ||
-    location.pathname.startsWith("/pipelines");
+    location.pathname.startsWith("/pipelines") ||
+    location.pathname.startsWith("/vacancies");
 
   return (
-    <div className={`page-container ${hideHeaderFooter ? "auth-full-screen" : ""}`}>
-      <div className={`content-wrapper ${hideHeaderFooter ? "auth-wrapper-full" : ""}`}>
-        {!hideHeaderFooter && <Header />}
-        <main className={`main-content ${hideHeaderFooter ? "auth-main-full" : ""}`}>
+    <div className={`page-container ${isDashboardOrAuth ? "dashboard-view-mode auth-full-screen" : ""}`}>
+      <div className={`content-wrapper ${isDashboardOrAuth ? "dashboard-wrapper-full auth-wrapper-full" : ""}`}>
+        {!isDashboardOrAuth && <Header />}
+        <main className={`main-content ${isDashboardOrAuth ? "dashboard-main-full auth-main-full" : ""}`}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
@@ -43,7 +44,7 @@ function AppContent() {
             <Route path="/register" element={<Register />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/pipelines" element={<Dashboard defaultTab="pipelines" />} />
-            <Route path="/dashboard/pipelines/:jobId" element={<JobPipelineKanban />} />
+            <Route path="/dashboard/pipelines/:jobId" element={<TalentPipelineBoard />} />
             <Route path="/dashboard/jobs/new" element={<CreateJob />} />
             <Route path="/dashboard/jobs/create" element={<CreateJob />} />
             <Route path="/dashboard/jobs/:id" element={<JobDetails />} />
@@ -54,7 +55,7 @@ function AppContent() {
             <Route path="/vacancies/:id" element={<JobDetails />} />
             <Route path="/vacancies/:id/edit" element={<EditJob />} />
             <Route path="/pipelines" element={<Dashboard defaultTab="pipelines" />} />
-            <Route path="/pipelines/:jobId" element={<JobPipelineKanban />} />
+            <Route path="/pipelines/:jobId" element={<TalentPipelineBoard />} />
             <Route path="/jobs/create" element={<CreateJob />} />
             <Route path="/jobs/details/:id" element={<JobDetails />} />
             <Route path="/jobs/details/:id/edit" element={<EditJob />} />
@@ -63,7 +64,7 @@ function AppContent() {
           </Routes>
         </main>
       </div>
-      {!hideHeaderFooter && <Footer />}
+      {!isDashboardOrAuth && <Footer />}
     </div>
   );
 }

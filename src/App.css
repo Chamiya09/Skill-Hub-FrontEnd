@@ -7637,6 +7637,112 @@ select.w-full {
   justify-content: center;
 }
 
+/* AI Action Bar & Controls */
+.candidates-modal-ai-bar {
+  padding: 14px 28px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.candidates-modal-ai-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.candidates-modal-input-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.candidates-modal-number-input {
+  width: 60px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  text-align: center;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.candidates-modal-number-input:focus {
+  border-color: #00b074;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(0, 176, 116, 0.15);
+}
+
+.candidates-modal-run-ai-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #00b074 0%, #008759 100%);
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: none;
+}
+
+.candidates-modal-run-ai-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #009e67 0%, #00764e 100%);
+  transform: translateY(-1px);
+}
+
+.candidates-modal-run-ai-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.candidates-modal-ai-progress {
+  background: #ecfdf5;
+  border-bottom: 1px solid #a7f3d0;
+  padding: 10px 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #065f46;
+  animation: fadeIn 0.2s ease;
+}
+
+/* Highlighted Top N Match Row */
+.candidates-modal-row.highlight-top-match {
+  background: #f0fdf4;
+  border-color: #a7f3d0;
+}
+
+.candidates-modal-row.highlight-top-match:hover {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+}
+
+.candidates-modal-top-rank-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #008759;
+  background: #e6f9f2;
+  border: 1px solid #bbf7d0;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
 
 .candidates-modal-footer {
   padding: 16px 28px;

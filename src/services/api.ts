@@ -14,6 +14,14 @@ export interface UserDto {
   location?: string;
   industry?: string;
   about?: string;
+  companySize?: string;
+  foundedYear?: string;
+  phone?: string;
+  adminName?: string;
+  contactEmail?: string;
+  linkedinUrl?: string;
+  twitterUrl?: string;
+  githubUrl?: string;
 }
 
 export interface AuthResponseDto {
@@ -21,6 +29,12 @@ export interface AuthResponseDto {
   tokenType: string;
   expiresAt: string;
   user: UserDto;
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
 }
 
 export interface RegisterCompanyPayload {
@@ -173,6 +187,17 @@ export const companyAuthApi = {
     });
     authStorage.setUser(data);
     return data;
+  },
+
+  /**
+   * Updates the authenticated company account password.
+   * Calls: PUT /api/company/change-password
+   */
+  async changePassword(payload: ChangePasswordPayload): Promise<{ message: string }> {
+    return request<{ message: string }>('/company/change-password', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
   }
 };
 
@@ -185,9 +210,16 @@ export const authApi = companyAuthApi;
 export interface CompanyProfileDto {
   id: string;
   companyName: string;
+  adminName?: string;
   contactEmail?: string;
+  phone?: string;
+  companySize?: string;
+  foundedYear?: string;
   logoUrl?: string;
   website?: string;
+  linkedinUrl?: string;
+  twitterUrl?: string;
+  githubUrl?: string;
   location?: string;
   industry?: string;
   about?: string;
@@ -197,8 +229,16 @@ export interface CompanyProfileDto {
 
 export interface UpdateCompanyProfilePayload {
   companyName?: string;
+  adminName?: string;
+  contactEmail?: string;
+  phone?: string;
+  companySize?: string;
+  foundedYear?: string;
   logoUrl?: string;
   website?: string;
+  linkedinUrl?: string;
+  twitterUrl?: string;
+  githubUrl?: string;
   location?: string;
   industry?: string;
   about?: string;
@@ -239,12 +279,19 @@ export const companyProfileApi = {
       const combined: CompanyProfileDto = {
         id: me.companyId || me.id || companyId,
         companyName: me.companyName || user?.companyName || localProfile.companyName || '',
-        contactEmail: me.email || user?.email || '',
-        logoUrl: localProfile.logoUrl || '',
+        adminName: (user as any)?.adminName || localProfile.adminName || user?.fullName || '',
+        contactEmail: me.email || user?.contactEmail || user?.email || localProfile.contactEmail || '',
+        phone: (user as any)?.phone || localProfile.phone || '',
+        companySize: (user as any)?.companySize || localProfile.companySize || '51-200 Employees',
+        foundedYear: (user as any)?.foundedYear || localProfile.foundedYear || '2020',
+        logoUrl: localProfile.logoUrl || (user as any)?.logoUrl || '',
         website: (me as any)?.website || localProfile.website || (user as any)?.website || '',
-        location: localProfile.location || discoveredLocation || '',
-        industry: (me as any)?.industry || localProfile.industry || (user as any)?.industry || '',
-        about: localProfile.about || '',
+        linkedinUrl: (user as any)?.linkedinUrl || localProfile.linkedinUrl || '',
+        twitterUrl: (user as any)?.twitterUrl || localProfile.twitterUrl || '',
+        githubUrl: (user as any)?.githubUrl || localProfile.githubUrl || '',
+        location: localProfile.location || (user as any)?.location || discoveredLocation || '',
+        industry: (me as any)?.industry || localProfile.industry || (user as any)?.industry || 'Technology & Software',
+        about: localProfile.about || (user as any)?.about || '',
         createdAt: me.createdAt || user?.createdAt || new Date().toISOString(),
         updatedAt: localProfile.updatedAt || new Date().toISOString(),
       };
@@ -254,12 +301,19 @@ export const companyProfileApi = {
       return {
         id: companyId,
         companyName: user?.companyName || localProfile.companyName || '',
-        contactEmail: user?.email || '',
-        logoUrl: localProfile.logoUrl || '',
+        adminName: (user as any)?.adminName || localProfile.adminName || user?.fullName || '',
+        contactEmail: user?.contactEmail || user?.email || localProfile.contactEmail || '',
+        phone: (user as any)?.phone || localProfile.phone || '',
+        companySize: (user as any)?.companySize || localProfile.companySize || '51-200 Employees',
+        foundedYear: (user as any)?.foundedYear || localProfile.foundedYear || '2020',
+        logoUrl: localProfile.logoUrl || (user as any)?.logoUrl || '',
         website: (user as any)?.website || localProfile.website || '',
-        location: localProfile.location || discoveredLocation || '',
-        industry: (user as any)?.industry || localProfile.industry || '',
-        about: localProfile.about || '',
+        linkedinUrl: (user as any)?.linkedinUrl || localProfile.linkedinUrl || '',
+        twitterUrl: (user as any)?.twitterUrl || localProfile.twitterUrl || '',
+        githubUrl: (user as any)?.githubUrl || localProfile.githubUrl || '',
+        location: localProfile.location || (user as any)?.location || discoveredLocation || '',
+        industry: (user as any)?.industry || localProfile.industry || 'Technology & Software',
+        about: localProfile.about || (user as any)?.about || '',
         createdAt: user?.createdAt || new Date().toISOString(),
         updatedAt: localProfile.updatedAt || new Date().toISOString(),
       };
@@ -282,6 +336,7 @@ export const companyProfileApi = {
           companyName: payload.companyName,
           industry: payload.industry,
           website: payload.website,
+          contactEmail: payload.contactEmail,
         }),
       });
     } catch (e) {
@@ -302,8 +357,18 @@ export const companyProfileApi = {
       const updatedUser: UserDto = {
         ...user,
         companyName: payload.companyName || user.companyName,
+        adminName: payload.adminName !== undefined ? payload.adminName : (user.adminName || user.fullName),
+        fullName: payload.adminName !== undefined ? payload.adminName : user.fullName,
+        email: payload.contactEmail || user.email,
+        contactEmail: payload.contactEmail !== undefined ? payload.contactEmail : user.contactEmail,
+        phone: payload.phone !== undefined ? payload.phone : user.phone,
+        companySize: payload.companySize !== undefined ? payload.companySize : user.companySize,
+        foundedYear: payload.foundedYear !== undefined ? payload.foundedYear : user.foundedYear,
         logoUrl: payload.logoUrl !== undefined ? payload.logoUrl : user.logoUrl,
         website: payload.website !== undefined ? payload.website : user.website,
+        linkedinUrl: payload.linkedinUrl !== undefined ? payload.linkedinUrl : user.linkedinUrl,
+        twitterUrl: payload.twitterUrl !== undefined ? payload.twitterUrl : user.twitterUrl,
+        githubUrl: payload.githubUrl !== undefined ? payload.githubUrl : user.githubUrl,
         location: payload.location !== undefined ? payload.location : user.location,
         industry: payload.industry !== undefined ? payload.industry : user.industry,
         about: payload.about !== undefined ? payload.about : user.about,
@@ -357,9 +422,16 @@ export const companyProfileApi = {
     const company: CompanyProfileDto = {
       id: idOrName || sampleJob?.companyId || '',
       companyName,
+      adminName: profileData.adminName || '',
       contactEmail: profileData.contactEmail || '',
+      phone: profileData.phone || '',
+      companySize: profileData.companySize || '',
+      foundedYear: profileData.foundedYear || '',
       logoUrl: profileData.logoUrl || '',
       website: profileData.website || '',
+      linkedinUrl: profileData.linkedinUrl || '',
+      twitterUrl: profileData.twitterUrl || '',
+      githubUrl: profileData.githubUrl || '',
       location,
       industry: profileData.industry || '',
       about: profileData.about || '',

@@ -33,7 +33,10 @@ function AppContent() {
     location.pathname.startsWith("/users") ||
     location.pathname.startsWith("/team") ||
     location.pathname === "/company-settings" ||
-    location.pathname.startsWith("/company/settings");
+    location.pathname.startsWith("/company/settings") ||
+    location.pathname === "/company-security" ||
+    location.pathname.startsWith("/company/security") ||
+    location.pathname === "/security";
 
   return (
     <div className={`page-container ${isDashboardOrAuth ? "dashboard-view-mode auth-full-screen" : ""}`}>
@@ -236,6 +239,38 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <Dashboard defaultTab="settings" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/security"
+              element={
+                <ProtectedRoute>
+                  <Dashboard defaultTab="security" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/company-security"
+              element={
+                <ProtectedRoute>
+                  <Dashboard defaultTab="security" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/company/security"
+              element={
+                <ProtectedRoute>
+                  <Dashboard defaultTab="security" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/security"
+              element={
+                <ProtectedRoute>
+                  <Dashboard defaultTab="security" />
                 </ProtectedRoute>
               }
             />

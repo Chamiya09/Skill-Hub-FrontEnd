@@ -17,6 +17,13 @@ import {
   ArrowRightIcon,
   ExternalLinkIcon,
   SearchIcon,
+  UsersIcon,
+  CalendarIcon,
+  MailIcon,
+  PhoneIcon,
+  LinkedInIcon,
+  TwitterIcon,
+  GitHubIcon,
 } from '../components/common/Icons';
 
 export const PublicCompanyProfile: React.FC = () => {
@@ -147,7 +154,7 @@ export const PublicCompanyProfile: React.FC = () => {
   return (
     <div className="public-company-container">
       {/* =========================================================
-          1. HEADER SECTION (Logo, Name, Location badge, Website)
+          1. HEADER HERO SECTION (Logo, Identity, Meta Badges & Social Links)
           ========================================================= */}
       <header className="public-company-hero">
         <div className="public-company-identity-stack">
@@ -174,8 +181,8 @@ export const PublicCompanyProfile: React.FC = () => {
               </span>
             </div>
 
-            {/* Meta details row: Location, Website, Industry */}
-            <div className="public-company-meta-row">
+            {/* Meta details row: Location, Website, Industry, Company Size, Founded */}
+            <div className="public-company-meta-row" style={{ flexWrap: 'wrap', gap: '10px' }}>
               {/* Location Badge */}
               {(company.location || (jobs.length > 0 && jobs[0].location)) && (
                 <div className="public-meta-pill">
@@ -184,7 +191,34 @@ export const PublicCompanyProfile: React.FC = () => {
                 </div>
               )}
 
-              {/* Clickable Website Link */}
+              {/* Industry Meta */}
+              {company.industry && (
+                <div className="public-meta-pill">
+                  <BuildingIcon />
+                  <span>{company.industry}</span>
+                </div>
+              )}
+
+              {/* Company Size */}
+              {company.companySize && (
+                <div className="public-meta-pill">
+                  <UsersIcon />
+                  <span>{company.companySize}</span>
+                </div>
+              )}
+
+              {/* Founded Year */}
+              {company.foundedYear && (
+                <div className="public-meta-pill">
+                  <CalendarIcon />
+                  <span>Founded {company.foundedYear}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Social Channels & Contact Links Row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
+              {/* Website */}
               {websiteHref && (
                 <a
                   href={websiteHref}
@@ -199,11 +233,72 @@ export const PublicCompanyProfile: React.FC = () => {
                 </a>
               )}
 
-              {/* Industry Meta */}
-              {company.industry && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', fontWeight: 500 }}>
-                  <BuildingIcon />
-                  <span>{company.industry}</span>
+              {/* LinkedIn */}
+              {company.linkedinUrl && (
+                <a
+                  href={company.linkedinUrl.startsWith('http') ? company.linkedinUrl : `https://${company.linkedinUrl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="public-meta-pill"
+                  style={{ textDecoration: 'none', color: '#0a66c2', fontWeight: 600 }}
+                  title="LinkedIn Page"
+                >
+                  <LinkedInIcon />
+                  <span>LinkedIn</span>
+                  <ExternalLinkIcon />
+                </a>
+              )}
+
+              {/* Twitter / X */}
+              {company.twitterUrl && (
+                <a
+                  href={company.twitterUrl.startsWith('http') ? company.twitterUrl : `https://${company.twitterUrl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="public-meta-pill"
+                  style={{ textDecoration: 'none', color: '#0f172a', fontWeight: 600 }}
+                  title="Twitter / X Profile"
+                >
+                  <TwitterIcon />
+                  <span>Twitter / X</span>
+                  <ExternalLinkIcon />
+                </a>
+              )}
+
+              {/* GitHub */}
+              {company.githubUrl && (
+                <a
+                  href={company.githubUrl.startsWith('http') ? company.githubUrl : `https://${company.githubUrl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="public-meta-pill"
+                  style={{ textDecoration: 'none', color: '#24292f', fontWeight: 600 }}
+                  title="GitHub Organization"
+                >
+                  <GitHubIcon />
+                  <span>GitHub</span>
+                  <ExternalLinkIcon />
+                </a>
+              )}
+
+              {/* Contact Email */}
+              {company.contactEmail && (
+                <a
+                  href={`mailto:${company.contactEmail}`}
+                  className="public-meta-pill"
+                  style={{ textDecoration: 'none', color: '#475569', fontWeight: 600 }}
+                  title="Contact Company Email"
+                >
+                  <MailIcon />
+                  <span>{company.contactEmail}</span>
+                </a>
+              )}
+
+              {/* Phone */}
+              {company.phone && (
+                <div className="public-meta-pill" style={{ color: '#475569', fontWeight: 600 }}>
+                  <PhoneIcon />
+                  <span>{company.phone}</span>
                 </div>
               )}
             </div>

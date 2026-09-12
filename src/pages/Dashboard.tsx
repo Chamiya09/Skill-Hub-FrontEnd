@@ -22,22 +22,24 @@ import {
   PlusIcon,
   UsersIcon,
   FunnelIcon,
+  ShieldCheckIcon,
 } from '../components/common/Icons'
 import { PipelineJobSelector } from './PipelineJobSelector'
 import { HiringPipeline } from './HiringPipeline'
 import { JobVacancies } from './JobVacancies'
 import { CompanySettings } from './CompanySettings'
+import { SecuritySettings } from './SecuritySettings'
 import { MetricCardSkeleton, TableRowSkeleton } from '../components/common/SkeletonCard'
 
 interface DashboardProps {
-  defaultTab?: 'overview' | 'vacancies' | 'pipelines' | 'hiring-pipeline' | 'settings'
+  defaultTab?: 'overview' | 'vacancies' | 'pipelines' | 'hiring-pipeline' | 'settings' | 'security'
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' }) => {
   const navigate = useNavigate()
   const { currentUser, logout, isAuthenticated, isLoading: authLoading } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'vacancies' | 'pipelines' | 'hiring-pipeline' | 'settings'>(defaultTab)
+  const [activeTab, setActiveTab] = useState<'overview' | 'vacancies' | 'pipelines' | 'hiring-pipeline' | 'settings' | 'security'>(defaultTab)
   const [selectedFilter, setSelectedFilter] = useState('All')
 
   useEffect(() => {
@@ -313,6 +315,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             <SettingsIcon />
             <span>Company Settings</span>
           </button>
+
+          <button
+            type="button"
+            className={`dashboard-nav-item ${activeTab === 'security' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('security')
+              setSidebarOpen(false)
+            }}
+          >
+            <ShieldCheckIcon />
+            <span>Security</span>
+          </button>
         </nav>
 
         {/* Sidebar Footer User Info & Signout */}
@@ -402,6 +416,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             <HiringPipeline />
           ) : activeTab === 'settings' ? (
             <CompanySettings />
+          ) : activeTab === 'security' ? (
+            <SecuritySettings />
           ) : (
             <>
               {/* Error Banner */}

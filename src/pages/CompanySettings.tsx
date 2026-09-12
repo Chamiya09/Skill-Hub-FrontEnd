@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   companyProfileApi,
+  authStorage,
+  type CompanyProfileDto,
   type UpdateCompanyProfilePayload,
 } from '../services/api';
 import {
@@ -17,44 +19,58 @@ import {
 export const CompanySettings: React.FC = () => {
   const { currentUser, setUser, updateUser, refreshProfile } = useAuth();
 
-  const [formData, setFormData] = useState<UpdateCompanyProfilePayload>({
-    companyName: '',
-    logoUrl: '',
-    website: '',
-    location: '',
-    industry: '',
-    about: '',
+  // Initialize immediately from cached user & local storage so page renders with ZERO blink
+  const [formData, setFormData] = useState<UpdateCompanyProfilePayload>(() => {
+    const cached = authStorage.getUser();
+    let localProfile: Partial<CompanyProfileDto> = {};
+    if (typeof window !== 'undefined') {
+      try {
+        const companyId = cached?.companyId || cached?.id || 'current';
+        const stored =
+          localStorage.getItem(`skillhub_company_profile_${companyId}`) ||
+          localStorage.getItem(`skillhub_company_profile_current`);
+        if (stored) localProfile = JSON.parse(stored);
+      } catch {}
+    }
+
+    return {
+      companyName: localProfile.companyName || cached?.companyName || '',
+      logoUrl: localProfile.logoUrl || cached?.logoUrl || '',
+      website: localProfile.website || cached?.website || '',
+      location: localProfile.location || cached?.location || '',
+      industry: localProfile.industry || cached?.industry || '',
+      about: localProfile.about || cached?.about || '',
+    };
   });
 
-  const [loading, setLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
 
-  // Fetch company profile on load
+  // Smooth background profile fetch once on component mount
   useEffect(() => {
+    if (hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
+
     const loadProfile = async () => {
       try {
-        setLoading(true);
         const profile = await companyProfileApi.getProfile();
-        setFormData({
-          companyName: profile.companyName || currentUser?.companyName || '',
-          logoUrl: profile.logoUrl || currentUser?.logoUrl || '',
-          website: profile.website || currentUser?.website || '',
-          location: profile.location || currentUser?.location || '',
-          industry: profile.industry || currentUser?.industry || '',
-          about: profile.about || currentUser?.about || '',
-        });
+        setFormData((prev) => ({
+          companyName: profile.companyName || prev.companyName || '',
+          logoUrl: profile.logoUrl || prev.logoUrl || '',
+          website: profile.website || prev.website || '',
+          location: profile.location || prev.location || '',
+          industry: profile.industry || prev.industry || '',
+          about: profile.about || prev.about || '',
+        }));
       } catch (err: any) {
-        console.error('Failed to load profile:', err);
-        setErrorMessage('Unable to load company profile. Please check your connection.');
-      } finally {
-        setLoading(false);
+        console.error('Failed to load company profile:', err);
       }
     };
 
     loadProfile();
-  }, [currentUser]);
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -124,17 +140,6 @@ export const CompanySettings: React.FC = () => {
       .slice(0, 2)
       .join('')
       .toUpperCase() || 'CO';
-
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 0', minHeight: '380px' }}>
-        <div style={{ width: '32px', height: '32px', border: '3px solid #00b074', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '14px' }} />
-        <p style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          Loading Employer Profile...
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="company-settings-container">

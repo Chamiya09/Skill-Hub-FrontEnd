@@ -27,8 +27,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const handleAuthChange = () => {
       const u = authStorage.getUser();
       const t = authStorage.getToken();
-      setCurrentUser(u);
-      setToken(t);
+      setCurrentUser((prev) => (JSON.stringify(prev) === JSON.stringify(u) ? prev : u));
+      setToken((prev) => (prev === t ? prev : t));
     };
 
     window.addEventListener('skillhub_auth_change', handleAuthChange);
@@ -52,11 +52,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Immediately preserve cached credentials so routes are immediately authenticated
     if (cachedUser) {
-      setCurrentUser(cachedUser);
+      setCurrentUser((prev) => (JSON.stringify(prev) === JSON.stringify(cachedUser) ? prev : cachedUser));
       setToken(currentToken);
     }
 
-    setIsLoading(true);
     try {
       const userProfile = await companyAuthApi.getMe();
       if (userProfile) {
@@ -69,9 +68,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           industry: userProfile.industry || cachedUser?.industry,
           about: cachedUser?.about || userProfile.about,
         };
-        setCurrentUser(merged);
-        setToken(currentToken);
         authStorage.setUser(merged);
+        setCurrentUser((prev) => (JSON.stringify(prev) === JSON.stringify(merged) ? prev : merged));
+        setToken(currentToken);
         return merged;
       }
       return cachedUser;

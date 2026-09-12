@@ -315,7 +315,8 @@ export const JobDetailsPublic: React.FC = () => {
           >
             {/* Left Header info */}
             <div style={{ display: 'flex', gap: '20px', flex: 1, minWidth: '280px' }}>
-              <div
+              <Link
+                to={`/company/${job.companyId || encodeURIComponent(job.companyName)}`}
                 style={{
                   width: '60px',
                   height: '60px',
@@ -329,16 +330,27 @@ export const JobDetailsPublic: React.FC = () => {
                   fontSize: '20px',
                   border: '1px solid #a7f3d0',
                   flexShrink: 0,
+                  textDecoration: 'none',
                 }}
+                title={`View ${job.companyName} profile`}
               >
                 {companyInitials}
-              </div>
+              </Link>
 
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '16.5px', fontWeight: 700, color: '#0f172a' }}>
+                  <Link
+                    to={`/company/${job.companyId || encodeURIComponent(job.companyName)}`}
+                    style={{
+                      fontSize: '16.5px',
+                      fontWeight: 700,
+                      color: '#0f172a',
+                      textDecoration: 'none',
+                    }}
+                    className="hover:text-emerald-700 transition-colors"
+                  >
                     {job.companyName}
-                  </span>
+                  </Link>
                   <span
                     style={{
                       display: 'inline-flex',

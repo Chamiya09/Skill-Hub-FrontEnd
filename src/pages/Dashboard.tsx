@@ -26,6 +26,7 @@ import {
 import { PipelineJobSelector } from './PipelineJobSelector'
 import { HiringPipeline } from './HiringPipeline'
 import { JobVacancies } from './JobVacancies'
+import { CompanySettings } from './CompanySettings'
 import { MetricCardSkeleton, TableRowSkeleton } from '../components/common/SkeletonCard'
 
 interface DashboardProps {
@@ -379,24 +380,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
           ) : activeTab === 'hiring-pipeline' ? (
             <HiringPipeline />
           ) : activeTab === 'settings' ? (
-            <div className="p-8 bg-white border border-slate-200 rounded-2xl max-w-2xl">
-              <h2 className="text-xl font-bold text-slate-900 mb-2">Company Account Information</h2>
-              <p className="text-sm text-slate-500 mb-6">Verified employer identity details stored in PostgreSQL.</p>
-              <div className="space-y-4 text-sm">
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                  <span className="block text-xs font-semibold text-slate-400 uppercase">Registered Company Name</span>
-                  <span className="text-base font-bold text-slate-900 mt-1 block">{companyDisplayName}</span>
-                </div>
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                  <span className="block text-xs font-semibold text-slate-400 uppercase">Contact / Administrator Email</span>
-                  <span className="text-base font-bold text-slate-900 mt-1 block">{companyEmail}</span>
-                </div>
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                  <span className="block text-xs font-semibold text-slate-400 uppercase">Account Identifier</span>
-                  <span className="text-xs font-mono text-slate-700 mt-1 block">{currentUser?.id || currentUser?.companyId}</span>
-                </div>
-              </div>
-            </div>
+            <CompanySettings />
           ) : (
             <>
               {/* Error Banner */}

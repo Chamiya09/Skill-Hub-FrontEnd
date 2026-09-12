@@ -16,6 +16,7 @@ import { EditJob } from "./pages/EditJob";
 import { CreateJob } from "./pages/CreateJob";
 import { UserManagement } from "./pages/UserManagement";
 import { JobDetailsPublic } from "./pages/JobDetailsPublic";
+import { PublicCompanyProfile } from "./pages/PublicCompanyProfile";
 import "./App.css";
 
 function AppContent() {
@@ -30,7 +31,9 @@ function AppContent() {
     location.pathname.startsWith("/hiring-pipeline") ||
     location.pathname.startsWith("/vacancies") ||
     location.pathname.startsWith("/users") ||
-    location.pathname.startsWith("/team");
+    location.pathname.startsWith("/team") ||
+    location.pathname === "/company-settings" ||
+    location.pathname.startsWith("/company/settings");
 
   return (
     <div className={`page-container ${isDashboardOrAuth ? "dashboard-view-mode auth-full-screen" : ""}`}>
@@ -45,6 +48,9 @@ function AppContent() {
             <Route path="/jobs" element={<FindJobs />} />
             <Route path="/jobs/:id" element={<JobDetailsPublic />} />
             <Route path="/job/:id" element={<JobDetailsPublic />} />
+            <Route path="/company/:id" element={<PublicCompanyProfile />} />
+            <Route path="/company/profile/:id" element={<PublicCompanyProfile />} />
+            <Route path="/companies/:id" element={<PublicCompanyProfile />} />
 
             {/* Public Auth Routes (Redirect to dashboard if already logged in) */}
             <Route
@@ -206,6 +212,30 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <UserManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/settings"
+              element={
+                <ProtectedRoute>
+                  <Dashboard defaultTab="settings" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/company-settings"
+              element={
+                <ProtectedRoute>
+                  <Dashboard defaultTab="settings" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/company/settings"
+              element={
+                <ProtectedRoute>
+                  <Dashboard defaultTab="settings" />
                 </ProtectedRoute>
               }
             />

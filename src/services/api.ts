@@ -166,6 +166,184 @@ export const companyAuthApi = {
 export const authApi = companyAuthApi;
 
 // ==========================================
+// COMPANY PROFILE API METHODS
+// ==========================================
+export interface CompanyProfileDto {
+  id: string;
+  companyName: string;
+  contactEmail?: string;
+  logoUrl?: string;
+  website?: string;
+  location?: string;
+  industry?: string;
+  about?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UpdateCompanyProfilePayload {
+  companyName?: string;
+  logoUrl?: string;
+  website?: string;
+  location?: string;
+  industry?: string;
+  about?: string;
+}
+
+export const companyProfileApi = {
+  getProfileKey(companyId?: string): string {
+    return `skillhub_company_profile_${companyId || 'current'}`;
+  },
+
+  async getProfile(): Promise<CompanyProfileDto> {
+    const user = authStorage.getUser();
+    const companyId = user?.companyId || user?.id || '';
+    
+    // Check local storage profile
+    let localProfile: Partial<CompanyProfileDto> = {};
+    try {
+      const stored = localStorage.getItem(this.getProfileKey(companyId)) || localStorage.getItem(this.getProfileKey('current'));
+      if (stored) localProfile = JSON.parse(stored);
+    } catch (e) {
+      console.warn('Error reading local profile', e);
+    }
+
+    // Discover location from real posted company jobs if not set
+    let discoveredLocation = '';
+    try {
+      const myJobs = await jobsApi.getJobs();
+      if (myJobs && myJobs.length > 0) {
+        discoveredLocation = myJobs[0].location || '';
+      }
+    } catch {
+      // Ignore
+    }
+
+    // Attempt backend sync
+    try {
+      const me = await companyAuthApi.getMe();
+      const combined: CompanyProfileDto = {
+        id: me.companyId || me.id || companyId,
+        companyName: me.companyName || user?.companyName || localProfile.companyName || '',
+        contactEmail: me.email || user?.email || '',
+        logoUrl: localProfile.logoUrl || '',
+        website: (me as any)?.website || localProfile.website || (user as any)?.website || '',
+        location: localProfile.location || discoveredLocation || '',
+        industry: (me as any)?.industry || localProfile.industry || (user as any)?.industry || '',
+        about: localProfile.about || '',
+        createdAt: me.createdAt || user?.createdAt || new Date().toISOString(),
+        updatedAt: localProfile.updatedAt || new Date().toISOString(),
+      };
+      return combined;
+    } catch {
+      // Fallback from cached user
+      return {
+        id: companyId,
+        companyName: user?.companyName || localProfile.companyName || '',
+        contactEmail: user?.email || '',
+        logoUrl: localProfile.logoUrl || '',
+        website: (user as any)?.website || localProfile.website || '',
+        location: localProfile.location || discoveredLocation || '',
+        industry: (user as any)?.industry || localProfile.industry || '',
+        about: localProfile.about || '',
+        createdAt: user?.createdAt || new Date().toISOString(),
+        updatedAt: localProfile.updatedAt || new Date().toISOString(),
+      };
+    }
+  },
+
+  async updateProfile(payload: UpdateCompanyProfilePayload): Promise<CompanyProfileDto> {
+    const current = await this.getProfile();
+    const updated: CompanyProfileDto = {
+      ...current,
+      ...payload,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Attempt backend update
+    try {
+      await request('/company/profile', {
+        method: 'PUT',
+        body: JSON.stringify({
+          companyName: payload.companyName,
+          industry: payload.industry,
+          website: payload.website,
+        }),
+      });
+    } catch (e) {
+      console.warn('Backend profile update notice:', e);
+    }
+
+    // Save to local storage for persistence
+    const companyId = updated.id || 'current';
+    localStorage.setItem(this.getProfileKey(companyId), JSON.stringify(updated));
+    localStorage.setItem(this.getProfileKey('current'), JSON.stringify(updated));
+
+    // Also update auth user if companyName changed
+    const user = authStorage.getUser();
+    if (user && payload.companyName) {
+      user.companyName = payload.companyName;
+      authStorage.setUser(user);
+    }
+
+    return updated;
+  },
+
+  async getPublicProfile(idOrName: string): Promise<{ company: CompanyProfileDto; jobs: JobDto[] }> {
+    // Fetch all public jobs from PostgreSQL
+    let allJobs: JobDto[] = [];
+    try {
+      allJobs = await publicJobsApi.getJobs();
+    } catch {
+      allJobs = [];
+    }
+
+    const decoded = decodeURIComponent(idOrName || '').toLowerCase().trim();
+
+    // Match company jobs
+    const matchedJobs = allJobs.filter((j) => {
+      if (!decoded) return true;
+      const jCompanyId = (j.companyId || '').toLowerCase();
+      const jCompanyName = (j.companyName || '').toLowerCase();
+      const jSlug = jCompanyName.replace(/\s+/g, '-');
+      return jCompanyId === decoded || jCompanyName === decoded || jSlug === decoded || jCompanyName.includes(decoded);
+    });
+
+    // Check if we have local stored profile
+    let profileData: Partial<CompanyProfileDto> = {};
+    try {
+      const stored =
+        localStorage.getItem(this.getProfileKey(idOrName)) ||
+        localStorage.getItem(this.getProfileKey('current'));
+      if (stored) profileData = JSON.parse(stored);
+    } catch {
+      profileData = {};
+    }
+
+    const sampleJob = matchedJobs[0] || (allJobs.length > 0 ? allJobs[0] : null);
+    const companyName = profileData.companyName || sampleJob?.companyName || decodeURIComponent(idOrName) || 'Company';
+    const location = profileData.location || sampleJob?.location || '';
+
+    const company: CompanyProfileDto = {
+      id: idOrName || sampleJob?.companyId || '',
+      companyName,
+      contactEmail: profileData.contactEmail || '',
+      logoUrl: profileData.logoUrl || '',
+      website: profileData.website || '',
+      location,
+      industry: profileData.industry || '',
+      about: profileData.about || '',
+      createdAt: profileData.createdAt || sampleJob?.createdAt || new Date().toISOString(),
+    };
+
+    return {
+      company,
+      jobs: matchedJobs,
+    };
+  }
+};
+
+// ==========================================
 // JOB VACANCIES API METHODS
 // ==========================================
 export interface JobDto {

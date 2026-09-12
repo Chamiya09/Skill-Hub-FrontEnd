@@ -79,7 +79,11 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
     <div className={`rich-job-card ${className}`}>
       {/* Top Header Row: Company Info + AI Match Badge */}
       <div className="job-card-header">
-        <div className="job-company-identity">
+        <Link
+          to={`/company/${job.companyId || encodeURIComponent(job.companyName || 'company')}`}
+          className="job-company-identity hover:opacity-85 transition-opacity"
+          style={{ textDecoration: 'none' }}
+        >
           {/* Company Avatar Badge */}
           <div className="company-avatar-badge">
             {companyInitials}
@@ -92,7 +96,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
             </span>
             <span className="job-post-date">{formattedDate}</span>
           </div>
-        </div>
+        </Link>
 
         {/* AI Match Pill Badge (Strictly visible only to Candidates) */}
         {shouldShowAiMatch && (

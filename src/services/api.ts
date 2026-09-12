@@ -9,6 +9,11 @@ export interface UserDto {
   email: string;
   role: string;
   createdAt: string;
+  logoUrl?: string;
+  website?: string;
+  location?: string;
+  industry?: string;
+  about?: string;
 }
 
 export interface AuthResponseDto {
@@ -50,13 +55,22 @@ export const authStorage = {
   setAuth(data: AuthResponseDto): void {
     localStorage.setItem('skillhub_jwt_token', data.token);
     localStorage.setItem('skillhub_user', JSON.stringify(data.user));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('skillhub_auth_change', { detail: data.user }));
+    }
   },
   setUser(user: UserDto): void {
     localStorage.setItem('skillhub_user', JSON.stringify(user));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('skillhub_auth_change', { detail: user }));
+    }
   },
   clearAuth(): void {
     localStorage.removeItem('skillhub_jwt_token');
     localStorage.removeItem('skillhub_user');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('skillhub_auth_change', { detail: null }));
+    }
   },
   isAuthenticated(): boolean {
     return !!this.getToken();
@@ -274,16 +288,32 @@ export const companyProfileApi = {
       console.warn('Backend profile update notice:', e);
     }
 
-    // Save to local storage for persistence
+    // Save to local storage for persistence under both ID and name
     const companyId = updated.id || 'current';
     localStorage.setItem(this.getProfileKey(companyId), JSON.stringify(updated));
     localStorage.setItem(this.getProfileKey('current'), JSON.stringify(updated));
+    if (payload.companyName) {
+      localStorage.setItem(this.getProfileKey(encodeURIComponent(payload.companyName)), JSON.stringify(updated));
+    }
 
-    // Also update auth user if companyName changed
+    // Overwrite and sync user object in auth storage
     const user = authStorage.getUser();
-    if (user && payload.companyName) {
-      user.companyName = payload.companyName;
-      authStorage.setUser(user);
+    if (user) {
+      const updatedUser: UserDto = {
+        ...user,
+        companyName: payload.companyName || user.companyName,
+        logoUrl: payload.logoUrl !== undefined ? payload.logoUrl : user.logoUrl,
+        website: payload.website !== undefined ? payload.website : user.website,
+        location: payload.location !== undefined ? payload.location : user.location,
+        industry: payload.industry !== undefined ? payload.industry : user.industry,
+        about: payload.about !== undefined ? payload.about : user.about,
+      };
+      authStorage.setUser(updatedUser);
+    }
+
+    // Dispatch global event so all components/queries immediately re-render/refetch
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('skillhub_company_profile_updated', { detail: updated }));
     }
 
     return updated;
@@ -350,6 +380,7 @@ export interface JobDto {
   id: string;
   companyId: string;
   companyName: string;
+  logoUrl?: string;
   title: string;
   department: string;
   location: string;

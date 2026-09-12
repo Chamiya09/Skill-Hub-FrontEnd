@@ -54,6 +54,15 @@ export const PublicCompanyProfile: React.FC = () => {
     };
 
     fetchCompanyData();
+
+    const handleProfileUpdate = () => {
+      fetchCompanyData();
+    };
+
+    window.addEventListener('skillhub_company_profile_updated', handleProfileUpdate);
+    return () => {
+      window.removeEventListener('skillhub_company_profile_updated', handleProfileUpdate);
+    };
   }, [id]);
 
   const toggleBookmark = (jobId: string) => {

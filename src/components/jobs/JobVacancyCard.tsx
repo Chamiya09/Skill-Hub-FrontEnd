@@ -42,9 +42,42 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
 
   const shouldShowAiMatch = showAiMatch && !isEmployer
 
-  // Generate 2-letter company initials for avatar badge
+  // Check if current user is the employer/company owner of this job
+  const isOwner =
+    currentUser &&
+    (currentUser.companyId === job.companyId ||
+      currentUser.id === job.companyId ||
+      (isEmployer && (!job.companyId || job.companyName === currentUser.companyName)));
+
+  // Try to read any locally updated profile cache for this company
+  let cachedCompany: { companyName?: string; logoUrl?: string } | null = null;
+  if (!isOwner && typeof window !== 'undefined') {
+    try {
+      const stored =
+        localStorage.getItem(`skillhub_company_profile_${job.companyId}`) ||
+        localStorage.getItem(`skillhub_company_profile_${encodeURIComponent(job.companyName || '')}`);
+      if (stored) cachedCompany = JSON.parse(stored);
+    } catch {
+      // Ignore
+    }
+  }
+
+  // Dynamically resolve live company name and logo
+  const dynamicCompanyName =
+    (isOwner && currentUser?.companyName) ||
+    cachedCompany?.companyName ||
+    job.companyName ||
+    'Company';
+
+  const dynamicLogoUrl =
+    (isOwner && currentUser?.logoUrl) ||
+    cachedCompany?.logoUrl ||
+    job.logoUrl ||
+    '';
+
+  // Generate 2-letter company initials for avatar badge fallback
   const companyInitials =
-    (job.companyName || 'CO')
+    dynamicCompanyName
       .split(' ')
       .filter(Boolean)
       .map((n) => n[0])
@@ -80,19 +113,29 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
       {/* Top Header Row: Company Info + AI Match Badge */}
       <div className="job-card-header">
         <Link
-          to={`/company/${job.companyId || encodeURIComponent(job.companyName || 'company')}`}
+          to={`/company/${job.companyId || encodeURIComponent(dynamicCompanyName)}`}
           className="job-company-identity hover:opacity-85 transition-opacity"
           style={{ textDecoration: 'none' }}
         >
           {/* Company Avatar Badge */}
-          <div className="company-avatar-badge">
-            {companyInitials}
+          <div className="company-avatar-badge" style={{ overflow: 'hidden', padding: 0 }}>
+            {dynamicLogoUrl ? (
+              <img
+                src={dynamicLogoUrl}
+                alt={dynamicCompanyName}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = 'none';
+                }}
+              />
+            ) : null}
+            {!dynamicLogoUrl && companyInitials}
           </div>
 
           {/* Company Name & Date */}
           <div className="company-text-meta">
             <span className="company-name-text">
-              {job.companyName || 'Company'}
+              {dynamicCompanyName}
             </span>
             <span className="job-post-date">{formattedDate}</span>
           </div>

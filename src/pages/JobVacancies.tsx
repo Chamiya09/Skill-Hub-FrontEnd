@@ -80,6 +80,15 @@ export const JobVacancies = () => {
 
   useEffect(() => {
     fetchJobs();
+
+    const handleProfileUpdate = () => {
+      fetchJobs();
+    };
+
+    window.addEventListener('skillhub_company_profile_updated', handleProfileUpdate);
+    return () => {
+      window.removeEventListener('skillhub_company_profile_updated', handleProfileUpdate);
+    };
   }, []);
 
   // Departments list dynamically computed

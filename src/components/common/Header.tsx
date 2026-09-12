@@ -75,7 +75,19 @@ export const Header = () => {
               type="button"
               onClick={() => setDropdownOpen(!dropdownOpen)}
             >
-              <div className="avatar-circle">{initials}</div>
+              <div className="avatar-circle" style={{ overflow: 'hidden', padding: 0 }}>
+                {currentUser.logoUrl ? (
+                  <img
+                    src={currentUser.logoUrl}
+                    alt={currentUser.companyName || 'Company'}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : null}
+                {!currentUser.logoUrl && initials}
+              </div>
               <span className="user-name">{currentUser.companyName || currentUser.fullName}</span>
               <span className="chevron-icon">
                 <ChevronDownIcon />

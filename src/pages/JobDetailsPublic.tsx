@@ -181,7 +181,39 @@ export const JobDetailsPublic: React.FC = () => {
     )
   }
 
-  const companyInitials = (job.companyName || 'CO')
+  // Check if viewing user is the employer or if company details are cached in local storage for this company
+  const isOwner =
+    currentUser &&
+    (currentUser.companyId === job.companyId ||
+      currentUser.id === job.companyId ||
+      (currentUser.role?.toUpperCase().includes('COMPANY') && (!job.companyId || job.companyName === currentUser.companyName)));
+
+  // Try to read any locally updated profile cache for this company
+  let cachedCompany: { companyName?: string; logoUrl?: string } | null = null;
+  if (!isOwner && typeof window !== 'undefined') {
+    try {
+      const stored =
+        localStorage.getItem(`skillhub_company_profile_${job.companyId}`) ||
+        localStorage.getItem(`skillhub_company_profile_${encodeURIComponent(job.companyName || '')}`);
+      if (stored) cachedCompany = JSON.parse(stored);
+    } catch {
+      // Ignore
+    }
+  }
+
+  const dynamicCompanyName =
+    (isOwner && currentUser?.companyName) ||
+    cachedCompany?.companyName ||
+    job.companyName ||
+    'Company';
+
+  const dynamicLogoUrl =
+    (isOwner && currentUser?.logoUrl) ||
+    cachedCompany?.logoUrl ||
+    job.logoUrl ||
+    '';
+
+  const companyInitials = (dynamicCompanyName || 'CO')
     .split(' ')
     .filter(Boolean)
     .map((n) => n[0])
@@ -316,7 +348,7 @@ export const JobDetailsPublic: React.FC = () => {
             {/* Left Header info */}
             <div style={{ display: 'flex', gap: '20px', flex: 1, minWidth: '280px' }}>
               <Link
-                to={`/company/${job.companyId || encodeURIComponent(job.companyName)}`}
+                to={`/company/${job.companyId || encodeURIComponent(dynamicCompanyName)}`}
                 style={{
                   width: '60px',
                   height: '60px',
@@ -331,16 +363,27 @@ export const JobDetailsPublic: React.FC = () => {
                   border: '1px solid #a7f3d0',
                   flexShrink: 0,
                   textDecoration: 'none',
+                  overflow: 'hidden',
                 }}
-                title={`View ${job.companyName} profile`}
+                title={`View ${dynamicCompanyName} profile`}
               >
-                {companyInitials}
+                {dynamicLogoUrl ? (
+                  <img
+                    src={dynamicLogoUrl}
+                    alt={dynamicCompanyName}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : null}
+                {!dynamicLogoUrl && companyInitials}
               </Link>
 
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
                   <Link
-                    to={`/company/${job.companyId || encodeURIComponent(job.companyName)}`}
+                    to={`/company/${job.companyId || encodeURIComponent(dynamicCompanyName)}`}
                     style={{
                       fontSize: '16.5px',
                       fontWeight: 700,
@@ -349,7 +392,7 @@ export const JobDetailsPublic: React.FC = () => {
                     }}
                     className="hover:text-emerald-700 transition-colors"
                   >
-                    {job.companyName}
+                    {dynamicCompanyName}
                   </Link>
                   <span
                     style={{
@@ -778,18 +821,29 @@ export const JobDetailsPublic: React.FC = () => {
                     justifyContent: 'center',
                     fontWeight: 700,
                     fontSize: '14px',
+                    overflow: 'hidden',
                   }}
                 >
-                  {companyInitials}
+                  {dynamicLogoUrl ? (
+                    <img
+                      src={dynamicLogoUrl}
+                      alt={dynamicCompanyName}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  ) : null}
+                  {!dynamicLogoUrl && companyInitials}
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '14.5px', color: '#0f172a' }}>{job.companyName}</div>
+                  <div style={{ fontWeight: 700, fontSize: '14.5px', color: '#0f172a' }}>{dynamicCompanyName}</div>
                   <div style={{ fontSize: '12px', color: '#64748b' }}>Verified Organization</div>
                 </div>
               </div>
 
               <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-                {job.companyName} is actively hiring through Skill Hub's verified technical talent network.
+                {dynamicCompanyName} is actively hiring through Skill Hub's verified technical talent network.
               </p>
             </div>
 

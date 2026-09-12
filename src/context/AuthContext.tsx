@@ -9,6 +9,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<UserDto>;
   register: (payload: RegisterCompanyPayload) => Promise<UserDto>;
   setAuthData: (user: UserDto, token: string) => void;
+  setUser: (user: UserDto) => void;
+  updateUser: (updatedData: Partial<UserDto>) => void;
   logout: () => void;
   refreshProfile: () => Promise<UserDto | null>;
 }
@@ -19,6 +21,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<UserDto | null>(() => authStorage.getUser());
   const [token, setToken] = useState<string | null>(() => authStorage.getToken());
   const [isLoading, setIsLoading] = useState<boolean>(() => !!authStorage.getToken());
+
+  // Listen to global auth & profile update events for immediate multi-component synchronization
+  useEffect(() => {
+    const handleAuthChange = () => {
+      const u = authStorage.getUser();
+      const t = authStorage.getToken();
+      setCurrentUser(u);
+      setToken(t);
+    };
+
+    window.addEventListener('skillhub_auth_change', handleAuthChange);
+    window.addEventListener('storage', handleAuthChange);
+    return () => {
+      window.removeEventListener('skillhub_auth_change', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+    };
+  }, []);
 
   const refreshProfile = useCallback(async (): Promise<UserDto | null> => {
     const currentToken = authStorage.getToken();
@@ -41,10 +60,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const userProfile = await companyAuthApi.getMe();
       if (userProfile) {
-        setCurrentUser(userProfile);
+        const merged: UserDto = {
+          ...cachedUser,
+          ...userProfile,
+          logoUrl: cachedUser?.logoUrl || userProfile.logoUrl,
+          website: userProfile.website || cachedUser?.website,
+          location: cachedUser?.location || userProfile.location,
+          industry: userProfile.industry || cachedUser?.industry,
+          about: cachedUser?.about || userProfile.about,
+        };
+        setCurrentUser(merged);
         setToken(currentToken);
-        authStorage.setUser(userProfile);
-        return userProfile;
+        authStorage.setUser(merged);
+        return merged;
       }
       return cachedUser;
     } catch (error) {
@@ -99,6 +127,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   };
 
+  const setUser = useCallback((user: UserDto) => {
+    authStorage.setUser(user);
+    setCurrentUser(user);
+  }, []);
+
+  const updateUser = useCallback((updatedData: Partial<UserDto>) => {
+    setCurrentUser((prev) => {
+      if (!prev) return null;
+      const updated = { ...prev, ...updatedData };
+      authStorage.setUser(updated);
+      return updated;
+    });
+  }, []);
+
   const logout = useCallback(() => {
     authStorage.clearAuth();
     setCurrentUser(null);
@@ -116,6 +158,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         register,
         setAuthData,
+        setUser,
+        updateUser,
         logout,
         refreshProfile,
       }}
@@ -132,3 +176,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+

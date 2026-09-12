@@ -222,8 +222,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
 
         {/* Company Identity Profile Card in Sidebar */}
         <div className="dashboard-company-pill">
-          <div className="company-avatar-box">
-            <BuildingIcon />
+          <div className="company-avatar-box" style={{ overflow: 'hidden', padding: 0 }}>
+            {currentUser?.logoUrl ? (
+              <img
+                src={currentUser.logoUrl}
+                alt={companyDisplayName}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = 'none';
+                }}
+              />
+            ) : null}
+            {!currentUser?.logoUrl && <BuildingIcon />}
           </div>
           <div className="company-pill-details">
             <span className="company-pill-name" title={companyDisplayName}>
@@ -308,13 +318,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
         {/* Sidebar Footer User Info & Signout */}
         <div className="dashboard-sidebar-footer">
           <div className="sidebar-user-card">
-            <div className="user-avatar-initials">
-              {companyDisplayName
-                .split(' ')
-                .map((n) => n[0])
-                .slice(0, 2)
-                .join('')
-                .toUpperCase()}
+            <div className="user-avatar-initials" style={{ overflow: 'hidden', padding: 0 }}>
+              {currentUser?.logoUrl ? (
+                <img
+                  src={currentUser.logoUrl}
+                  alt={companyDisplayName}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLElement).style.display = 'none';
+                  }}
+                />
+              ) : null}
+              {!currentUser?.logoUrl &&
+                companyDisplayName
+                  .split(' ')
+                  .map((n) => n[0])
+                  .slice(0, 2)
+                  .join('')
+                  .toUpperCase()}
             </div>
             <div className="sidebar-user-info">
               <span className="sidebar-user-name">{companyDisplayName}</span>

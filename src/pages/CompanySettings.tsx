@@ -15,7 +15,7 @@ import {
 } from '../components/common/Icons';
 
 export const CompanySettings: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, setUser, updateUser, refreshProfile } = useAuth();
 
   const [formData, setFormData] = useState<UpdateCompanyProfilePayload>({
     companyName: '',
@@ -39,11 +39,11 @@ export const CompanySettings: React.FC = () => {
         const profile = await companyProfileApi.getProfile();
         setFormData({
           companyName: profile.companyName || currentUser?.companyName || '',
-          logoUrl: profile.logoUrl || '',
-          website: profile.website || '',
-          location: profile.location || '',
-          industry: profile.industry || '',
-          about: profile.about || '',
+          logoUrl: profile.logoUrl || currentUser?.logoUrl || '',
+          website: profile.website || currentUser?.website || '',
+          location: profile.location || currentUser?.location || '',
+          industry: profile.industry || currentUser?.industry || '',
+          about: profile.about || currentUser?.about || '',
         });
       } catch (err: any) {
         console.error('Failed to load profile:', err);
@@ -73,7 +73,35 @@ export const CompanySettings: React.FC = () => {
       setErrorMessage(null);
       setSuccessMessage(null);
 
-      await companyProfileApi.updateProfile(formData);
+      // 1. Submit update to backend API & persist to company profile storage
+      const updatedProfile = await companyProfileApi.updateProfile(formData);
+
+      // 2. Overwrite and update Global Auth Context & LocalStorage / Session state
+      if (currentUser) {
+        const updatedUser = {
+          ...currentUser,
+          companyName: formData.companyName?.trim() || currentUser.companyName,
+          logoUrl: formData.logoUrl?.trim() || '',
+          website: formData.website?.trim() || '',
+          location: formData.location?.trim() || '',
+          industry: formData.industry?.trim() || '',
+          about: formData.about?.trim() || '',
+        };
+        setUser(updatedUser);
+        updateUser(updatedUser);
+      }
+
+      // 3. Trigger profile refresh and emit custom event for real-time reactivity across all components
+      await refreshProfile().catch(() => {});
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('skillhub_company_profile_updated', {
+            detail: { ...updatedProfile, ...formData },
+          })
+        );
+      }
+
       setSuccessMessage('Company profile successfully updated.');
 
       setTimeout(() => {

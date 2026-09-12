@@ -45,6 +45,17 @@ export const FindJobs = () => {
 
   useEffect(() => {
     fetchPublicJobs()
+
+    const handleProfileUpdate = () => {
+      fetchPublicJobs()
+    }
+
+    window.addEventListener('skillhub_company_profile_updated', handleProfileUpdate)
+    window.addEventListener('skillhub_auth_change', handleProfileUpdate)
+    return () => {
+      window.removeEventListener('skillhub_company_profile_updated', handleProfileUpdate)
+      window.removeEventListener('skillhub_auth_change', handleProfileUpdate)
+    }
   }, [])
 
   // Sync search input if query param changes

@@ -36,9 +36,7 @@ export const Login = () => {
     try {
       const user = await login(email.trim(), password);
       setSuccessMessage(`Welcome back, ${user.fullName || user.companyName}!`);
-      setTimeout(() => {
-        navigate('/dashboard', { replace: true });
-      }, 400);
+      navigate('/dashboard', { replace: true });
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to authenticate company user. Please verify your credentials.');
     } finally {

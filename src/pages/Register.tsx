@@ -116,9 +116,7 @@ export const Register = () => {
       });
 
       setSuccessMessage(`Enterprise account for "${user.companyName}" successfully created! Redirecting...`);
-      setTimeout(() => {
-        navigate('/dashboard', { replace: true });
-      }, 400);
+      navigate('/dashboard', { replace: true });
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to register company. Please check your information.');
     } finally {

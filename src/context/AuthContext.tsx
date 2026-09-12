@@ -18,7 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<UserDto | null>(() => authStorage.getUser());
   const [token, setToken] = useState<string | null>(() => authStorage.getToken());
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(() => !!authStorage.getToken());
 
   const refreshProfile = useCallback(async (): Promise<UserDto | null> => {
     const currentToken = authStorage.getToken();
@@ -37,6 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(currentToken);
     }
 
+    setIsLoading(true);
     try {
       const userProfile = await companyAuthApi.getMe();
       if (userProfile) {
@@ -47,18 +48,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return cachedUser;
     } catch (error) {
-      console.warn('Could not refresh profile from server, using cached user if available:', error);
-      // Keep cached user if available to prevent unnecessary bounce
-      if (cachedUser) {
-        setCurrentUser(cachedUser);
-        setToken(currentToken);
-        return cachedUser;
-      } else {
-        authStorage.clearAuth();
-        setCurrentUser(null);
-        setToken(null);
-        return null;
-      }
+      console.warn('Could not refresh profile from server:', error);
+      // If token verification fails (e.g. invalid or expired), clear auth state completely
+      authStorage.clearAuth();
+      setCurrentUser(null);
+      setToken(null);
+      return null;
     } finally {
       setIsLoading(false);
     }
@@ -104,11 +99,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     authStorage.clearAuth();
     setCurrentUser(null);
     setToken(null);
-  };
+    setIsLoading(false);
+  }, []);
 
   return (
     <AuthContext.Provider

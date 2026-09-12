@@ -79,35 +79,44 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  // Create an AbortController for 10-second timeout if none provided
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
   const config: RequestInit = {
     ...options,
-    headers
+    headers,
+    signal: options.signal || controller.signal
   };
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
 
-  if (!response.ok) {
-    let errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
-    try {
-      const errorData = await response.json();
-      console.error('Server Error Data:', errorData);
-      if (errorData && errorData.message) {
-        errorMessage = errorData.message;
-      } else if (errorData && errorData.errors) {
-        errorMessage = Object.values(errorData.errors).flat().join(' ');
+    if (!response.ok) {
+      let errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        console.error('Server Error Data:', errorData);
+        if (errorData && errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData && errorData.errors) {
+          errorMessage = Object.values(errorData.errors).flat().join(' ');
+        }
+      } catch {
+        // Fallback to text status
       }
-    } catch {
-      // Fallback to text status
+      throw new Error(errorMessage);
     }
-    throw new Error(errorMessage);
-  }
 
-  // If 204 No Content, return null
-  if (response.status === 204) {
-    return null as T;
-  }
+    // If 204 No Content, return null
+    if (response.status === 204) {
+      return null as T;
+    }
 
-  return response.json();
+    return response.json();
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 // ==========================================

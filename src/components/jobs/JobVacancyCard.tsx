@@ -173,12 +173,54 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
         )}
       </div>
 
-      {/* Department / Category Pill Tag */}
-      {job.department && (
-        <div className="job-department-row">
-          <span className="job-dept-pill">
-            {job.department}
-          </span>
+      {/* Department & Skill Tags Row */}
+      {((job.tags && job.tags.length > 0) || job.department) && (
+        <div className="job-department-row" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px', marginTop: '10px' }}>
+          {job.department && (
+            <span className="job-dept-pill">
+              {job.department}
+            </span>
+          )}
+          {job.tags &&
+            job.tags.slice(0, 3).map((tag, idx) => (
+              <span
+                key={idx}
+                className="job-skill-tag"
+                style={{
+                  backgroundColor: '#f1f5f9',
+                  color: '#334155',
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  padding: '2.5px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid #e2e8f0',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  lineHeight: 1.3,
+                }}
+              >
+                {tag}
+              </span>
+            ))}
+          {job.tags && job.tags.length > 3 && (
+            <span
+              className="job-skill-tag-more"
+              style={{
+                backgroundColor: '#f8fafc',
+                color: '#64748b',
+                fontSize: '11px',
+                fontWeight: 700,
+                padding: '2.5px 6px',
+                borderRadius: '6px',
+                border: '1px solid #e2e8f0',
+                display: 'inline-flex',
+                alignItems: 'center',
+              }}
+              title={job.tags.slice(3).join(', ')}
+            >
+              +{job.tags.length - 3}
+            </span>
+          )}
         </div>
       )}
 

@@ -88,13 +88,18 @@ export const FindJobs = () => {
   const filteredJobs = useMemo(() => {
     return jobs
       .filter((job) => {
-        const term = searchTerm.toLowerCase()
+        const term = searchTerm.toLowerCase().trim()
+        const matchesTags = (job.tags || []).some((tag) =>
+          tag.toLowerCase().includes(term)
+        )
+
         const matchesSearch =
           !term ||
           job.title.toLowerCase().includes(term) ||
           job.companyName.toLowerCase().includes(term) ||
           job.department.toLowerCase().includes(term) ||
-          job.location.toLowerCase().includes(term)
+          job.location.toLowerCase().includes(term) ||
+          matchesTags
 
         const matchesCategory =
           selectedCategory === 'All Roles' ||

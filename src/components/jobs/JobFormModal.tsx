@@ -25,6 +25,7 @@ export interface JobFormData {
   salaryRange: string;
   description: string;
   benefits: string;
+  tags?: string[];
 }
 
 export interface JobFormModalProps {
@@ -46,6 +47,7 @@ const defaultJobData: JobFormData = {
   salaryRange: '',
   description: `<h2>Role Overview</h2><p>Provide a comprehensive overview of the role, team mission, and impact...</p><h3>Key Responsibilities</h3><ul><li>Architect and build scalable web microservices.</li><li>Collaborate with cross-functional engineering teams.</li></ul><h3>Required Qualifications</h3><ul><li>3+ years of production experience in relevant tech stack.</li><li>Strong problem-solving and communication abilities.</li></ul>`,
   benefits: `<h3>What We Offer</h3><ul><li>Competitive base compensation + equity options.</li><li>100% remote flexibility with home office stipend.</li><li>Comprehensive health, dental, and vision insurance.</li></ul>`,
+  tags: ['React', 'TypeScript', '.NET Core', 'PostgreSQL'],
 };
 
 // Rich Text Editor Toolbar Modules
@@ -81,6 +83,7 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [formData, setFormData] = useState<JobFormData>(defaultJobData);
   const [stepError, setStepError] = useState<string | null>(null);
+  const [tagInput, setTagInput] = useState<string>('');
 
   // Track previous open state to prevent modal state resets on re-render
   const prevIsOpenRef = useRef(false);
@@ -90,10 +93,12 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
     if (isOpen && !prevIsOpenRef.current) {
       setCurrentStep(1);
       setStepError(null);
+      setTagInput('');
       if (initialData) {
         setFormData({
           ...defaultJobData,
           ...initialData,
+          tags: initialData.tags || defaultJobData.tags || [],
         });
       } else {
         setFormData(defaultJobData);
@@ -101,6 +106,39 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
     }
     prevIsOpenRef.current = isOpen;
   }, [isOpen, initialData]);
+
+  const handleAddTag = (rawTag: string) => {
+    const trimmed = rawTag.trim().replace(/^,+|,+$/g, '');
+    if (!trimmed) return;
+    const currentTags = formData.tags || [];
+    if (!currentTags.some((t) => t.toLowerCase() === trimmed.toLowerCase())) {
+      setFormData((prev) => ({
+        ...prev,
+        tags: [...(prev.tags || []), trimmed],
+      }));
+    }
+    setTagInput('');
+  };
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      handleAddTag(tagInput);
+    } else if (e.key === 'Backspace' && !tagInput && (formData.tags || []).length > 0) {
+      const currentTags = formData.tags || [];
+      setFormData((prev) => ({
+        ...prev,
+        tags: currentTags.slice(0, currentTags.length - 1),
+      }));
+    }
+  };
+
+  const handleRemoveTag = (indexToRemove: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      tags: (prev.tags || []).filter((_, idx) => idx !== indexToRemove),
+    }));
+  };
 
   if (!isOpen) return null;
 
@@ -621,6 +659,128 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                   </div>
                 </div>
 
+                {/* Tags / Required Skills Input Section */}
+                <div className="form-group-item" style={{ marginTop: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                      <SparkleIcon />
+                      <span>Tags / Required Skills</span>
+                    </label>
+                    <span style={{ fontSize: '11.5px', color: '#64748b' }}>
+                      Press <strong>Enter</strong> or <strong>Comma</strong> to add
+                    </span>
+                  </div>
+
+                  {/* Tag Input Box */}
+                  <div
+                    style={{
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '12px',
+                      padding: '8px 12px',
+                      background: '#ffffff',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      gap: '8px',
+                      minHeight: '44px',
+                    }}
+                  >
+                    {/* Rendered Tag Badges */}
+                    {(formData.tags || []).map((tag, idx) => (
+                      <span
+                        key={idx}
+                        style={{
+                          backgroundColor: '#f1f5f9',
+                          color: '#0f172a',
+                          border: '1px solid #e2e8f0',
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          fontSize: '12.5px',
+                          fontWeight: 600,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <span>{tag}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(idx)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#64748b',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontWeight: 700,
+                            padding: '0 2px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            lineHeight: 1,
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = '#64748b')}
+                          aria-label={`Remove tag ${tag}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+
+                    <input
+                      type="text"
+                      placeholder={(formData.tags || []).length === 0 ? "Type a skill (e.g. React, Spring Boot, MongoDB) & press Enter..." : "Add more skills..."}
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={handleTagKeyDown}
+                      onBlur={() => {
+                        if (tagInput.trim()) {
+                          handleAddTag(tagInput);
+                        }
+                      }}
+                      style={{
+                        flex: 1,
+                        minWidth: '180px',
+                        border: 'none',
+                        outline: 'none',
+                        fontSize: '13.5px',
+                        color: '#0f172a',
+                        background: 'transparent',
+                        padding: '4px 0',
+                      }}
+                    />
+                  </div>
+
+                  {/* Quick Suggestions */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+                    <span style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 600 }}>Suggested:</span>
+                    {['React', 'TypeScript', '.NET Core', 'Node.js', 'Python', 'AWS', 'Docker', 'PostgreSQL', 'GraphQL', 'Tailwind CSS'].map((sug) => {
+                      const isAdded = (formData.tags || []).some((t) => t.toLowerCase() === sug.toLowerCase());
+                      return (
+                        <button
+                          key={sug}
+                          type="button"
+                          onClick={() => handleAddTag(sug)}
+                          disabled={isAdded}
+                          style={{
+                            fontSize: '11.5px',
+                            fontWeight: 600,
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                            border: `1px solid ${isAdded ? '#e2e8f0' : '#cbd5e1'}`,
+                            background: isAdded ? '#f8fafc' : '#ffffff',
+                            color: isAdded ? '#94a3b8' : '#334155',
+                            cursor: isAdded ? 'default' : 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          {isAdded ? `✓ ${sug}` : `+ ${sug}`}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Helper Box */}
                 <div
                   style={{
@@ -633,10 +793,11 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                     gap: '10px',
                     fontSize: '12.5px',
                     color: '#475569',
+                    marginTop: '10px',
                   }}
                 >
                   <ShieldCheckIcon />
-                  <span>Clear compensation ranges and role tiers improve candidate match accuracy by 45%.</span>
+                  <span>Tags and clear compensation ranges improve candidate search relevance and match accuracy by 45%.</span>
                 </div>
 
                 {/* Action Row */}

@@ -450,6 +450,30 @@ export const JobDetailsPublic: React.FC = () => {
                     <span>{job.experienceLevel}</span>
                   </div>
                 </div>
+
+                {/* Tags / Required Skills Badges */}
+                {job.tags && job.tags.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '14px' }}>
+                    {job.tags.map((tag, idx) => (
+                      <span
+                        key={idx}
+                        style={{
+                          backgroundColor: '#f1f5f9',
+                          color: '#334155',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          padding: '3px 10px',
+                          borderRadius: '6px',
+                          border: '1px solid #e2e8f0',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

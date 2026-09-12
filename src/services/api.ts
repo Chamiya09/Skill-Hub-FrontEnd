@@ -390,6 +390,7 @@ export interface JobDto {
   status: 'Active' | 'Draft' | 'Closed' | string;
   description: string;
   whatWeOffer?: string;
+  tags?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -404,6 +405,7 @@ export interface CreateJobPayload {
   status: string;
   description: string;
   whatWeOffer?: string;
+  tags?: string[];
 }
 
 export interface UpdateJobPayload {
@@ -416,7 +418,43 @@ export interface UpdateJobPayload {
   status: string;
   description: string;
   whatWeOffer?: string;
+  tags?: string[];
 }
+
+export const extractJobTags = (job: Partial<JobDto>): string[] => {
+  if (job.tags && Array.isArray(job.tags) && job.tags.length > 0) {
+    return job.tags;
+  }
+  if (job.id && typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem(`skillhub_job_tags_${job.id}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+  }
+  // Dynamic inference from title and department for backward compatibility
+  const inferred: string[] = [];
+  const text = `${job.title || ''} ${job.department || ''}`.toLowerCase();
+  if (text.includes('react')) inferred.push('React');
+  if (text.includes('net') || text.includes('.net') || text.includes('c#')) inferred.push('.NET Core');
+  if (text.includes('node')) inferred.push('Node.js');
+  if (text.includes('python')) inferred.push('Python');
+  if (text.includes('java') && !text.includes('javascript')) inferred.push('Java');
+  if (text.includes('spring')) inferred.push('Spring Boot');
+  if (text.includes('type') || text.includes('ts')) inferred.push('TypeScript');
+  if (text.includes('sql') || text.includes('postgres')) inferred.push('PostgreSQL');
+  if (text.includes('aws') || text.includes('cloud')) inferred.push('AWS');
+  if (text.includes('full stack') || text.includes('fullstack')) inferred.push('Full Stack');
+  if (text.includes('frontend') || text.includes('front-end')) inferred.push('Frontend');
+  if (text.includes('backend') || text.includes('back-end')) inferred.push('Backend');
+  if (text.includes('ai') || text.includes('ml')) inferred.push('Machine Learning');
+  if (inferred.length === 0) {
+    inferred.push(job.department || 'Engineering');
+  }
+  return inferred;
+};
 
 export const jobsApi = {
   /**
@@ -424,9 +462,13 @@ export const jobsApi = {
    * Calls: GET /api/jobs
    */
   async getJobs(): Promise<JobDto[]> {
-    return request<JobDto[]>('/jobs', {
+    const rawJobs = await request<JobDto[]>('/jobs', {
       method: 'GET',
     });
+    return (rawJobs || []).map((j) => ({
+      ...j,
+      tags: extractJobTags(j),
+    }));
   },
 
   /**
@@ -434,9 +476,13 @@ export const jobsApi = {
    * Calls: GET /api/jobs/{id}
    */
   async getJobById(id: string): Promise<JobDto> {
-    return request<JobDto>(`/jobs/${id}`, {
+    const j = await request<JobDto>(`/jobs/${id}`, {
       method: 'GET',
     });
+    return {
+      ...j,
+      tags: extractJobTags(j),
+    };
   },
 
   /**
@@ -444,10 +490,19 @@ export const jobsApi = {
    * Calls: POST /api/jobs
    */
   async createJob(payload: CreateJobPayload): Promise<JobDto> {
-    return request<JobDto>('/jobs', {
+    const created = await request<JobDto>('/jobs', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+    if (payload.tags && created?.id && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`skillhub_job_tags_${created.id}`, JSON.stringify(payload.tags));
+      } catch {}
+    }
+    return {
+      ...created,
+      tags: payload.tags || extractJobTags(created),
+    };
   },
 
   /**
@@ -455,10 +510,19 @@ export const jobsApi = {
    * Calls: PUT /api/jobs/{id}
    */
   async updateJob(id: string, payload: UpdateJobPayload): Promise<JobDto> {
-    return request<JobDto>(`/jobs/${id}`, {
+    const updated = await request<JobDto>(`/jobs/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
     });
+    if (payload.tags && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`skillhub_job_tags_${id}`, JSON.stringify(payload.tags));
+      } catch {}
+    }
+    return {
+      ...updated,
+      tags: payload.tags || extractJobTags(updated),
+    };
   },
 
   /**
@@ -466,6 +530,11 @@ export const jobsApi = {
    * Calls: DELETE /api/jobs/{id}
    */
   async deleteJob(id: string): Promise<void> {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(`skillhub_job_tags_${id}`);
+      } catch {}
+    }
     return request<void>(`/jobs/${id}`, {
       method: 'DELETE',
     });
@@ -504,19 +573,27 @@ export const publicJobsApi = {
 
     const qs = query.toString();
     const endpoint = `/public/jobs${qs ? `?${qs}` : ''}`;
-    return request<JobDto[]>(endpoint, {
+    const rawJobs = await request<JobDto[]>(endpoint, {
       method: 'GET'
     });
+    return (rawJobs || []).map((j) => ({
+      ...j,
+      tags: extractJobTags(j),
+    }));
   },
 
   /**
-   * Retrieves a single active job publicly.
+   * Retrieves single public job by ID.
    * Calls: GET /api/public/jobs/{id}
    */
   async getJobById(id: string): Promise<JobDto> {
-    return request<JobDto>(`/public/jobs/${id}`, {
+    const j = await request<JobDto>(`/public/jobs/${id}`, {
       method: 'GET'
     });
+    return {
+      ...j,
+      tags: extractJobTags(j),
+    };
   }
 };
 

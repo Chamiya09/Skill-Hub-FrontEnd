@@ -27,6 +27,7 @@ export interface JobVacancyItem {
   benefits?: string;
   experienceLevel?: string;
   salaryRange?: string;
+  tags?: string[];
 }
 
 export const JobVacancies = () => {
@@ -68,6 +69,7 @@ export const JobVacancies = () => {
         postedDate: j.createdAt ? j.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
         description: j.description,
         benefits: j.whatWeOffer || '',
+        tags: j.tags || [],
       }));
       setVacancies(mapped);
     } catch (err: any) {
@@ -100,10 +102,14 @@ export const JobVacancies = () => {
   // Filtered vacancies
   const filteredVacancies = useMemo(() => {
     return vacancies.filter((job) => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesTags = (job.tags || []).some((t) => t.toLowerCase().includes(q));
       const matchesSearch =
-        job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        job.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        job.location.toLowerCase().includes(searchQuery.toLowerCase());
+        !q ||
+        job.title.toLowerCase().includes(q) ||
+        job.department.toLowerCase().includes(q) ||
+        job.location.toLowerCase().includes(q) ||
+        matchesTags;
 
       const matchesStatus = statusFilter === 'All' || job.status === statusFilter;
       const matchesDept = departmentFilter === 'All' || job.department === departmentFilter;
@@ -144,6 +150,7 @@ export const JobVacancies = () => {
           status: data.status,
           description: data.description,
           whatWeOffer: data.benefits,
+          tags: data.tags,
         });
         showToast(`Vacancy "${data.title}" updated successfully.`);
       } else {
@@ -158,6 +165,7 @@ export const JobVacancies = () => {
           status: data.status,
           description: data.description,
           whatWeOffer: data.benefits,
+          tags: data.tags,
         });
         showToast(`New vacancy "${data.title}" published successfully.`);
       }

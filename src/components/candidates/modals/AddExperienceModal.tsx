@@ -1,12 +1,30 @@
 import React, { useState } from 'react';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 import { candidateCvApi, type ExperienceDto } from '../../../services/api';
-import { BriefcaseIcon, XIcon, CheckIcon } from '../../common/Icons';
+import { BriefcaseIcon, XIcon, CheckIcon, SparkleIcon } from '../../common/Icons';
 
 interface AddExperienceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (experience: ExperienceDto) => void;
 }
+
+const quillModules = {
+  toolbar: [
+    ['bold', 'italic', 'underline'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['clean'],
+  ],
+};
+
+const quillFormats = [
+  'bold',
+  'italic',
+  'underline',
+  'list',
+  'bullet',
+];
 
 export const AddExperienceModal: React.FC<AddExperienceModalProps> = ({
   isOpen,
@@ -67,7 +85,7 @@ export const AddExperienceModal: React.FC<AddExperienceModalProps> = ({
 
   return (
     <div className="candidate-modal-backdrop" onClick={onClose}>
-      <div className="candidate-modal-card" onClick={(e) => e.stopPropagation()}>
+      <div className="candidate-modal-card" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="candidate-modal-header">
           <div className="candidate-modal-title-box">
@@ -172,12 +190,16 @@ export const AddExperienceModal: React.FC<AddExperienceModalProps> = ({
               <div className="settings-input-wrapper">
                 <input
                   type="text"
-                  placeholder={isCurrent ? 'Present' : 'e.g. Present or Dec 2024'}
+                  placeholder={isCurrent ? 'Present (Current Role)' : 'e.g. Present or Dec 2024'}
                   disabled={isCurrent}
                   value={isCurrent ? 'Present' : endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   className="settings-input-field"
-                  style={{ paddingLeft: '16px' }}
+                  style={{
+                    paddingLeft: '16px',
+                    backgroundColor: isCurrent ? '#f8fafc' : '#ffffff',
+                    color: isCurrent ? '#94a3b8' : '#0f172a',
+                  }}
                 />
               </div>
             </div>
@@ -191,20 +213,32 @@ export const AddExperienceModal: React.FC<AddExperienceModalProps> = ({
               onChange={(e) => setIsCurrent(e.target.checked)}
               style={{ width: '16px', height: '16px', accentColor: '#00b074', cursor: 'pointer' }}
             />
-            <label htmlFor="isCurrentExp" style={{ fontSize: '13px', color: '#475569', fontWeight: 600, cursor: 'pointer' }}>
-              I am currently working in this role
+            <label htmlFor="isCurrentExp" style={{ fontSize: '13px', color: '#334155', fontWeight: 600, cursor: 'pointer' }}>
+              I am currently working in this role (disables End Date)
             </label>
           </div>
 
+          {/* Rich Text Editor for Responsibilities & Deliveries */}
           <div className="settings-form-group" style={{ marginBottom: 0 }}>
-            <label className="settings-label">Key Responsibilities & Deliveries</label>
-            <textarea
-              rows={3}
-              placeholder="• Architected distributed cloud infrastructure...&#10;• Led sprint planning and performance optimizations..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="settings-textarea-field"
-            />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <label className="settings-label" style={{ margin: 0 }}>
+                Key Responsibilities & Deliveries
+              </label>
+              <span style={{ fontSize: '11px', color: '#009e67', fontWeight: 700, background: '#e6f9f2', padding: '2px 8px', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <SparkleIcon />
+                <span>Rich Text</span>
+              </span>
+            </div>
+            <div className="candidate-quill-wrapper">
+              <ReactQuill
+                theme="snow"
+                value={description}
+                onChange={setDescription}
+                modules={quillModules}
+                formats={quillFormats}
+                placeholder="• Architected distributed systems handling 100k+ concurrent users...&#10;• Led sprint planning, architectural code reviews, and AWS migration..."
+              />
+            </div>
           </div>
 
           {/* Footer Actions */}

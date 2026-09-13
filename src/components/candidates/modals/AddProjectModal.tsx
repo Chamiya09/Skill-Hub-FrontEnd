@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 import { candidateCvApi, type ProjectDto } from '../../../services/api';
-import { XIcon, CheckIcon } from '../../common/Icons';
+import { XIcon, CheckIcon, SparkleIcon } from '../../common/Icons';
 
 interface AddProjectModalProps {
   isOpen: boolean;
@@ -16,6 +18,22 @@ const CodeFolderIcon: React.FC = () => (
   </svg>
 );
 
+const quillModules = {
+  toolbar: [
+    ['bold', 'italic', 'underline'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['clean'],
+  ],
+};
+
+const quillFormats = [
+  'bold',
+  'italic',
+  'underline',
+  'list',
+  'bullet',
+];
+
 export const AddProjectModal: React.FC<AddProjectModalProps> = ({
   isOpen,
   onClose,
@@ -23,6 +41,8 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
 }) => {
   const [projectName, setProjectName] = useState('');
   const [role, setRole] = useState('');
+  const [techTags, setTechTags] = useState<string[]>(['React', 'TypeScript', 'Node.js']);
+  const [tagInput, setTagInput] = useState('');
   const [link, setLink] = useState('');
   const [description, setDescription] = useState('');
 
@@ -30,6 +50,28 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const handleAddTag = (tagStr: string) => {
+    const clean = tagStr.trim().replace(/^,+|,+$/g, '');
+    if (!clean) return;
+    if (!techTags.some((t) => t.toLowerCase() === clean.toLowerCase())) {
+      setTechTags((prev) => [...prev, clean]);
+    }
+    setTagInput('');
+  };
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      handleAddTag(tagInput);
+    } else if (e.key === 'Backspace' && !tagInput && techTags.length > 0) {
+      setTechTags((prev) => prev.slice(0, prev.length - 1));
+    }
+  };
+
+  const handleRemoveTag = (indexToRemove: number) => {
+    setTechTags((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,9 +84,17 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
 
     setLoading(true);
     try {
+      const combinedRole = role.trim()
+        ? techTags.length > 0
+          ? `${role.trim()} • ${techTags.join(', ')}`
+          : role.trim()
+        : techTags.length > 0
+        ? techTags.join(', ')
+        : undefined;
+
       const created = await candidateCvApi.addProject({
         projectName: projectName.trim(),
-        role: role.trim() || undefined,
+        role: combinedRole,
         link: link.trim() || undefined,
         description: description.trim() || undefined,
       });
@@ -54,6 +104,8 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
       // Reset form
       setProjectName('');
       setRole('');
+      setTechTags(['React', 'TypeScript', 'Node.js']);
+      setTagInput('');
       setLink('');
       setDescription('');
     } catch (err: any) {
@@ -66,7 +118,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
 
   return (
     <div className="candidate-modal-backdrop" onClick={onClose}>
-      <div className="candidate-modal-card" onClick={(e) => e.stopPropagation()}>
+      <div className="candidate-modal-card" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="candidate-modal-header">
           <div className="candidate-modal-title-box">
@@ -118,12 +170,12 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
           <div className="settings-form-grid">
             <div className="settings-form-group" style={{ marginBottom: 0 }}>
               <label className="settings-label">
-                Your Role / Tech Stack
+                Your Role / Position
               </label>
               <div className="settings-input-wrapper">
                 <input
                   type="text"
-                  placeholder="e.g. Lead Architect / C# & Redis"
+                  placeholder="e.g. Lead Architect / Creator"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                   className="settings-input-field"
@@ -149,17 +201,105 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
             </div>
           </div>
 
+          {/* Tech Stack Tag Chips Input */}
           <div className="settings-form-group" style={{ marginBottom: 0 }}>
-            <label className="settings-label">
-              Project Description & Key Accomplishments
-            </label>
-            <textarea
-              rows={3}
-              placeholder="Describe the architecture, performance gains, technologies used, and outcomes..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="settings-textarea-field"
-            />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+              <label className="settings-label" style={{ margin: 0 }}>
+                Technologies & Tech Stack
+              </label>
+              <span style={{ fontSize: '11.5px', color: '#64748b' }}>
+                Press <strong>Enter</strong> or <strong>Comma</strong> to add
+              </span>
+            </div>
+
+            <div
+              style={{
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                padding: '8px 12px',
+                background: '#ffffff',
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                gap: '8px',
+                minHeight: '44px',
+              }}
+            >
+              {techTags.map((tag, idx) => (
+                <span
+                  key={idx}
+                  style={{
+                    backgroundColor: '#e6f9f2',
+                    color: '#008759',
+                    border: '1px solid #b7eedc',
+                    padding: '4px 10px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <span>{tag}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTag(idx)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#008759',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      padding: 0,
+                      lineHeight: 1,
+                    }}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+
+              <input
+                type="text"
+                placeholder={techTags.length === 0 ? 'Type tech and press Enter (e.g. C#, Redis, Docker)...' : 'Add tag...'}
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                style={{
+                  border: 'none',
+                  outline: 'none',
+                  flex: 1,
+                  minWidth: '130px',
+                  fontSize: '13.5px',
+                  color: '#0f172a',
+                  background: 'transparent',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Rich Text Editor for Project Description */}
+          <div className="settings-form-group" style={{ marginBottom: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <label className="settings-label" style={{ margin: 0 }}>
+                Project Highlights & Outcomes
+              </label>
+              <span style={{ fontSize: '11px', color: '#009e67', fontWeight: 700, background: '#e6f9f2', padding: '2px 8px', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <SparkleIcon />
+                <span>Rich Text</span>
+              </span>
+            </div>
+            <div className="candidate-quill-wrapper">
+              <ReactQuill
+                theme="snow"
+                value={description}
+                onChange={setDescription}
+                modules={quillModules}
+                formats={quillFormats}
+                placeholder="• Engineered asynchronous concurrency layer with sub-millisecond latency...&#10;• Implemented automated CI/CD pipeline and integration test suite..."
+              />
+            </div>
           </div>
 
           {/* Footer Actions */}

@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import DOMPurify from 'dompurify';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 import { useAuth } from '../context/AuthContext';
 import {
   candidateAuthApi,
@@ -26,6 +29,26 @@ import { AddExperienceModal } from '../components/candidates/modals/AddExperienc
 import { AddEducationModal } from '../components/candidates/modals/AddEducationModal';
 import { AddProjectModal } from '../components/candidates/modals/AddProjectModal';
 import { AddSkillModal } from '../components/candidates/modals/AddSkillModal';
+
+const quillModules = {
+  toolbar: [
+    ['bold', 'italic', 'underline'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['clean'],
+  ],
+};
+
+const quillFormats = [
+  'bold',
+  'italic',
+  'underline',
+  'list',
+  'bullet',
+];
+
+const sanitizeHtml = (htmlContent: string) => {
+  return { __html: DOMPurify.sanitize(htmlContent || '') };
+};
 
 // Lucide-style extra icons
 const GlobeLinkIcon: React.FC = () => (
@@ -84,7 +107,7 @@ const defaultExperiences: ExperienceDto[] = [
     startDate: '2023',
     endDate: 'Present',
     isCurrent: true,
-    description: 'Architected and deployed high-throughput distributed event streaming pipelines reducing cross-region data latency by 42%. Spearheaded the migration of legacy monolith to containerized microservices running on AWS EKS.',
+    description: '<p>Architected and deployed high-throughput distributed event streaming pipelines reducing cross-region data latency by <strong>42%</strong>.</p><ul><li>Spearheaded the migration of legacy monoliths to containerized microservices running on <strong>AWS EKS</strong>.</li><li>Established automated CI/CD pipelines, integration test suites, and strict SLA monitoring.</li></ul>',
     createdAt: new Date().toISOString(),
   },
   {
@@ -95,7 +118,7 @@ const defaultExperiences: ExperienceDto[] = [
     startDate: '2020',
     endDate: '2023',
     isCurrent: false,
-    description: 'Built real-time transaction reconciliation dashboard using React, TypeScript, and .NET Core Web API handling $40M+ daily volume. Designed high-performance caching layer with Redis.',
+    description: '<p>Built real-time transaction reconciliation dashboard using <strong>React</strong>, <strong>TypeScript</strong>, and <strong>.NET Core Web API</strong> handling $40M+ daily volume.</p><ul><li>Designed high-performance multi-level caching layer with <strong>Redis</strong>.</li><li>Reduced API response times from 340ms to 45ms.</li></ul>',
     createdAt: new Date().toISOString(),
   },
 ];
@@ -108,7 +131,7 @@ const defaultEducations: EducationDto[] = [
     fieldOfStudy: 'Distributed Systems & Software Architecture',
     startYear: '2014',
     endYear: '2018',
-    description: 'Focus in Distributed Systems, Algorithms, and Software Architecture. Graduated with Honors.',
+    description: 'Focus in Distributed Systems, Algorithms, and Software Architecture. Graduated with Honors (First Class distinction).',
     createdAt: new Date().toISOString(),
   },
 ];
@@ -118,7 +141,7 @@ const defaultProjects: ProjectDto[] = [
     id: 'proj-mock-1',
     projectName: 'High-Throughput Distributed Cache & In-Memory Key-Value Store',
     role: 'Lead Architect / C# & Redis',
-    description: 'Engineered an asynchronous high-concurrency memory cache supporting LRU eviction and replication with sub-millisecond read/write latency.',
+    description: '<p>Engineered an asynchronous high-concurrency memory cache supporting LRU eviction and replication with sub-millisecond read/write latency.</p><ul><li>Zero-allocation serialization engine with <strong>99.999% uptime</strong>.</li><li>Benchmark throughput surpassing 1.2M operations per second.</li></ul>',
     link: 'https://github.com/example/distributed-cache',
     createdAt: new Date().toISOString(),
   },
@@ -154,7 +177,7 @@ export const CandidateProfile: React.FC = () => {
   const [phone, setPhone] = useState(currentUser?.phone || '+1 (555) 749-2041');
   const [location, setLocation] = useState(currentUser?.location || 'San Francisco, CA (Open to Remote)');
   const [bio, setBio] = useState(
-    'Passionate Senior Full-Stack Engineer with 8+ years of experience designing and scaling fault-tolerant cloud services, modern web applications, and enterprise microservices. Proven track record of leading cross-functional engineering teams, optimizing application performance, and deploying high-impact products from inception to millions of daily active users.'
+    '<p>Passionate <strong>Senior Full-Stack Engineer</strong> with <strong>8+ years of experience</strong> designing and scaling fault-tolerant cloud services, modern web applications, and enterprise microservices.</p><p>Proven track record of leading cross-functional engineering teams, optimizing application performance, and deploying high-impact products from inception to millions of daily active users.</p>'
   );
 
   // Modal Control States
@@ -511,14 +534,27 @@ export const CandidateProfile: React.FC = () => {
               </div>
             </div>
 
+            {/* Rich Text Editor for Bio */}
             <div className="settings-form-group" style={{ marginBottom: 0 }}>
-              <label className="settings-label">Professional Bio Summary</label>
-              <textarea
-                rows={4}
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                className="settings-textarea-field"
-              />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <label className="settings-label" style={{ margin: 0 }}>
+                  Professional Bio & Summary
+                </label>
+                <span style={{ fontSize: '11px', color: '#009e67', fontWeight: 700, background: '#e6f9f2', padding: '2px 8px', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <SparkleIcon />
+                  <span>Rich Text Enabled</span>
+                </span>
+              </div>
+              <div className="candidate-quill-wrapper">
+                <ReactQuill
+                  theme="snow"
+                  value={bio}
+                  onChange={setBio}
+                  modules={quillModules}
+                  formats={quillFormats}
+                  placeholder="Share an executive summary of your background, key achievements, and technical passions..."
+                />
+              </div>
             </div>
 
             <div className="settings-actions-footer">
@@ -557,9 +593,11 @@ export const CandidateProfile: React.FC = () => {
           </div>
         </div>
 
-        <p style={{ fontSize: '14.5px', color: '#334155', lineHeight: '1.7', margin: 0 }}>
-          {bio}
-        </p>
+        {/* Safely Rendered HTML Bio */}
+        <div
+          className="candidate-rich-text"
+          dangerouslySetInnerHTML={sanitizeHtml(bio)}
+        />
 
         {/* Quick Highlights Metrics Bar */}
         <div className="candidate-metrics-grid">
@@ -681,9 +719,10 @@ export const CandidateProfile: React.FC = () => {
                 </div>
 
                 {job.description && (
-                  <p className="candidate-timeline-desc">
-                    {job.description}
-                  </p>
+                  <div
+                    className="candidate-rich-text"
+                    dangerouslySetInnerHTML={sanitizeHtml(job.description)}
+                  />
                 )}
               </div>
             </div>
@@ -733,7 +772,10 @@ export const CandidateProfile: React.FC = () => {
                 </div>
                 <h3 className="candidate-item-title">{proj.projectName}</h3>
                 {proj.description && (
-                  <p className="candidate-item-desc">{proj.description}</p>
+                  <div
+                    className="candidate-rich-text"
+                    dangerouslySetInnerHTML={sanitizeHtml(proj.description)}
+                  />
                 )}
               </div>
 

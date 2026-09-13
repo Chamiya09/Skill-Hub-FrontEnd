@@ -10,6 +10,9 @@ import { Contact } from "./pages/Contact";
 import { FindJobs } from "./pages/FindJobs";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
+import { CandidateLogin } from "./pages/CandidateLogin";
+import { CandidateRegister } from "./pages/CandidateRegister";
+import { CandidateProfile } from "./pages/CandidateProfile";
 import { Dashboard } from "./pages/Dashboard";
 import { JobVacancies } from "./pages/JobVacancies";
 import { EditJob } from "./pages/EditJob";
@@ -26,6 +29,10 @@ function AppContent() {
     location.pathname === "/company-register" ||
     location.pathname === "/login" ||
     location.pathname === "/register" ||
+    location.pathname === "/candidate-login" ||
+    location.pathname === "/candidate/login" ||
+    location.pathname === "/candidate-register" ||
+    location.pathname === "/candidate/register" ||
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/pipelines") ||
     location.pathname.startsWith("/hiring-pipeline") ||
@@ -55,7 +62,57 @@ function AppContent() {
             <Route path="/company/profile/:id" element={<PublicCompanyProfile />} />
             <Route path="/companies/:id" element={<PublicCompanyProfile />} />
 
-            {/* Public Auth Routes (Redirect to dashboard if already logged in) */}
+            {/* Candidate Portal Routes */}
+            <Route
+              path="/candidate-login"
+              element={
+                <PublicRoute>
+                  <CandidateLogin />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/candidate/login"
+              element={
+                <PublicRoute>
+                  <CandidateLogin />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/candidate-register"
+              element={
+                <PublicRoute>
+                  <CandidateRegister />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/candidate/register"
+              element={
+                <PublicRoute>
+                  <CandidateRegister />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/candidate/profile"
+              element={
+                <ProtectedRoute>
+                  <CandidateProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/candidate-profile"
+              element={
+                <ProtectedRoute>
+                  <CandidateProfile />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Employer / Company Auth Routes */}
             <Route
               path="/company-login"
               element={

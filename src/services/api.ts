@@ -3,12 +3,16 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5155
 
 export interface UserDto {
   id: string;
-  companyId: string;
-  companyName: string;
+  companyId?: string | null;
+  companyName?: string;
+  firstName?: string;
+  lastName?: string;
   fullName: string;
   email: string;
   role: string;
   createdAt: string;
+  headline?: string;
+  avatarUrl?: string;
   logoUrl?: string;
   website?: string;
   location?: string;
@@ -44,6 +48,13 @@ export interface RegisterCompanyPayload {
   password: string;
   industry?: string;
   website?: string;
+}
+
+export interface RegisterCandidatePayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
 }
 
 export interface LoginPayload {
@@ -204,6 +215,62 @@ export const companyAuthApi = {
 
 // Backward-compatible alias
 export const authApi = companyAuthApi;
+
+// ==========================================
+// CANDIDATE AUTHENTICATION API
+// ==========================================
+export const candidateAuthApi = {
+  /**
+   * Registers a new Candidate (Job Seeker) user with role CANDIDATE.
+   * Calls: POST /api/auth/candidate/register
+   */
+  async register(payload: RegisterCandidatePayload): Promise<AuthResponseDto> {
+    const data = await request<AuthResponseDto>('/auth/candidate/register', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    authStorage.setAuth(data);
+    return data;
+  },
+
+  /**
+   * Authenticates a Candidate.
+   * Calls: POST /api/auth/candidate/login
+   */
+  async login(payload: LoginPayload): Promise<AuthResponseDto> {
+    const data = await request<AuthResponseDto>('/auth/candidate/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    authStorage.setAuth(data);
+    return data;
+  },
+
+  /**
+   * Fetches the current logged in candidate profile.
+   * Calls: GET /api/candidate/me
+   */
+  async getMe(): Promise<UserDto> {
+    const data = await request<UserDto>('/candidate/me', {
+      method: 'GET',
+    });
+    authStorage.setUser(data);
+    return data;
+  },
+
+  /**
+   * Updates candidate profile information.
+   * Calls: PUT /api/candidate/profile
+   */
+  async updateProfile(payload: Partial<UserDto>): Promise<UserDto> {
+    const data = await request<UserDto>('/candidate/profile', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+    authStorage.setUser(data);
+    return data;
+  },
+};
 
 // ==========================================
 // COMPANY PROFILE API METHODS

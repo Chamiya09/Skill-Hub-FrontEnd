@@ -121,26 +121,49 @@ export const Header = () => {
                   </div>
                 </div>
 
-                <Link
-                  to="/dashboard"
-                  onClick={() => setDropdownOpen(false)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    color: '#334155',
-                    fontSize: '13.5px',
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <SparkleIcon />
-                  <span>Dashboard</span>
-                </Link>
+                {currentUser.role?.toUpperCase() === 'CANDIDATE' ? (
+                  <Link
+                    to="/candidate/profile"
+                    onClick={() => setDropdownOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      color: '#334155',
+                      fontSize: '13.5px',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <SparkleIcon />
+                    <span>Candidate Profile</span>
+                  </Link>
+                ) : (
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setDropdownOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      color: '#334155',
+                      fontSize: '13.5px',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <SparkleIcon />
+                    <span>Employer ATS</span>
+                  </Link>
+                )}
 
                 <button
                   type="button"
@@ -172,18 +195,18 @@ export const Header = () => {
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Link
-              to="/company-login"
+              to="/candidate-login"
               className="btn-secondary"
-              style={{ padding: '8px 18px', fontSize: '13.5px' }}
+              style={{ padding: '8px 16px', fontSize: '13.5px' }}
             >
               Sign In
             </Link>
             <Link
-              to="/company-register"
+              to="/candidate-register"
               className="btn-primary"
-              style={{ padding: '8px 18px', fontSize: '13.5px' }}
+              style={{ padding: '8px 16px', fontSize: '13.5px' }}
             >
-              Register Company
+              Job Seeker Sign Up
             </Link>
           </div>
         )}

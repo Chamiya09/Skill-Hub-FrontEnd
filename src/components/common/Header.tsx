@@ -196,17 +196,36 @@ export const Header = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Link
               to="/candidate-login"
-              className="btn-secondary"
-              style={{ padding: '8px 16px', fontSize: '13.5px' }}
+              style={{
+                color: '#334155',
+                background: 'transparent',
+                border: 'none',
+                padding: '8px 16px',
+                fontSize: '13.5px',
+                fontWeight: 600,
+                borderRadius: '10px',
+                textDecoration: 'none',
+                transition: 'all 0.15s ease',
+              }}
+              className="hover:text-emerald-600 hover:bg-slate-50 transition-colors"
             >
-              Sign In
+              Log In
             </Link>
             <Link
               to="/candidate-register"
               className="btn-primary"
-              style={{ padding: '8px 16px', fontSize: '13.5px' }}
+              style={{
+                padding: '8px 18px',
+                fontSize: '13.5px',
+                fontWeight: 600,
+                borderRadius: '10px',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
             >
-              Job Seeker Sign Up
+              Sign Up
             </Link>
           </div>
         )}
@@ -214,3 +233,5 @@ export const Header = () => {
     </header>
   )
 }
+
+export const Navbar = Header;

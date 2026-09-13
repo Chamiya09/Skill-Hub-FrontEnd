@@ -194,15 +194,31 @@ export const Login = () => {
           </button>
         </form>
 
-        {/* Card Footer */}
-        <div className="auth-card-footer">
-          <p>
-            Don't have a company account?{' '}
-            <Link to="/company-register" className="auth-footer-link">
-              Register Your Company
+        {/* Card Footer with Clean Minimal Links */}
+        <div className="auth-card-footer" style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', textAlign: 'center' }}>
+          <p style={{ margin: 0, fontSize: '13.5px', color: '#64748b' }}>
+            New to our platform?{' '}
+            <Link
+              to="/company-register"
+              className="hover:text-primary-600 transition-colors"
+              style={{ color: '#00b074', fontWeight: 600, textDecoration: 'none' }}
+            >
+              Create Company Account
             </Link>
           </p>
-          <div className="auth-security-badge">
+
+          <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>
+            Are you a job seeker?{' '}
+            <Link
+              to="/candidate-login"
+              className="hover:text-primary-600 transition-colors"
+              style={{ color: '#00b074', fontWeight: 600, textDecoration: 'none' }}
+            >
+              Candidate Login
+            </Link>
+          </p>
+
+          <div className="auth-security-badge" style={{ marginTop: '8px' }}>
             <ShieldCheckIcon />
             <span>SOC-2 Type II Certified • 256-Bit Enterprise SSL</span>
           </div>

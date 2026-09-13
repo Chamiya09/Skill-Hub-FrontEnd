@@ -55,6 +55,8 @@ export interface RegisterCandidatePayload {
   lastName: string;
   email: string;
   password: string;
+  headline?: string;
+  phone?: string;
 }
 
 export interface LoginPayload {

@@ -222,21 +222,31 @@ export const CandidateLogin: React.FC = () => {
           </button>
         </form>
 
-        {/* Card Footer with Alternate Login Links */}
-        <div className="auth-card-footer">
-          <p>
-            New to Skill Hub?{' '}
-            <Link to="/candidate-register" className="auth-footer-link">
-              Create Candidate Account
+        {/* Card Footer with Clean Minimal Links */}
+        <div className="auth-card-footer" style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', textAlign: 'center' }}>
+          <p style={{ margin: 0, fontSize: '13.5px', color: '#64748b' }}>
+            Don't have an account?{' '}
+            <Link
+              to="/candidate-register"
+              className="hover:text-primary-600 transition-colors"
+              style={{ color: '#00b074', fontWeight: 600, textDecoration: 'none' }}
+            >
+              Sign Up
             </Link>
           </p>
-          <div style={{ marginTop: '8px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '12.5px', color: '#64748b' }}>
-            Are you an Employer?{' '}
-            <Link to="/company-login" style={{ color: '#00b074', fontWeight: 600, textDecoration: 'none' }}>
-              Sign in to Company Portal
+
+          <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>
+            Are you an employer?{' '}
+            <Link
+              to="/company-login"
+              className="hover:text-primary-600 transition-colors"
+              style={{ color: '#00b074', fontWeight: 600, textDecoration: 'none' }}
+            >
+              Company Login
             </Link>
-          </div>
-          <div className="auth-security-badge" style={{ marginTop: '12px' }}>
+          </p>
+
+          <div className="auth-security-badge" style={{ marginTop: '8px' }}>
             <ShieldCheckIcon />
             <span>Secure TLS 1.3 • Privacy Guaranteed</span>
           </div>

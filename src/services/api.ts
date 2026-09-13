@@ -773,3 +773,180 @@ export const usersApi = {
     });
   }
 };
+
+// ==========================================
+// CANDIDATE DIGITAL CV & PROFILE API METHODS
+// ==========================================
+export interface ExperienceDto {
+  id: string;
+  title: string;
+  company: string;
+  location?: string;
+  startDate: string;
+  endDate?: string;
+  isCurrent: boolean;
+  description?: string;
+  createdAt: string;
+}
+
+export interface CreateExperiencePayload {
+  title: string;
+  company: string;
+  location?: string;
+  startDate: string;
+  endDate?: string;
+  isCurrent?: boolean;
+  description?: string;
+}
+
+export interface EducationDto {
+  id: string;
+  degree: string;
+  institution: string;
+  fieldOfStudy?: string;
+  startYear: string;
+  endYear?: string;
+  description?: string;
+  createdAt: string;
+}
+
+export interface CreateEducationPayload {
+  degree: string;
+  institution: string;
+  fieldOfStudy?: string;
+  startYear: string;
+  endYear?: string;
+  description?: string;
+}
+
+export interface ProjectDto {
+  id: string;
+  projectName: string;
+  role?: string;
+  description?: string;
+  link?: string;
+  createdAt: string;
+}
+
+export interface CreateProjectPayload {
+  projectName: string;
+  role?: string;
+  description?: string;
+  link?: string;
+}
+
+export interface SkillDto {
+  id: string;
+  skillName: string;
+  category?: string;
+  createdAt: string;
+}
+
+export interface CreateSkillPayload {
+  skillName: string;
+  category?: string;
+}
+
+export interface CandidateCvDto {
+  experiences: ExperienceDto[];
+  educations: EducationDto[];
+  projects: ProjectDto[];
+  skills: SkillDto[];
+}
+
+export const candidateCvApi = {
+  /**
+   * Retrieves full aggregated Digital CV for the authenticated candidate.
+   * Calls: GET /api/candidate/cv
+   */
+  async getCv(): Promise<CandidateCvDto> {
+    return request<CandidateCvDto>('/candidate/cv', {
+      method: 'GET'
+    });
+  },
+
+  /**
+   * Adds a new experience entry.
+   * Calls: POST /api/candidate/experience
+   */
+  async addExperience(payload: CreateExperiencePayload): Promise<ExperienceDto> {
+    return request<ExperienceDto>('/candidate/experience', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Deletes an experience entry.
+   * Calls: DELETE /api/candidate/experience/{id}
+   */
+  async deleteExperience(id: string): Promise<void> {
+    return request<void>(`/candidate/experience/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  /**
+   * Adds a new education entry.
+   * Calls: POST /api/candidate/education
+   */
+  async addEducation(payload: CreateEducationPayload): Promise<EducationDto> {
+    return request<EducationDto>('/candidate/education', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Deletes an education entry.
+   * Calls: DELETE /api/candidate/education/{id}
+   */
+  async deleteEducation(id: string): Promise<void> {
+    return request<void>(`/candidate/education/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  /**
+   * Adds a new project entry.
+   * Calls: POST /api/candidate/project
+   */
+  async addProject(payload: CreateProjectPayload): Promise<ProjectDto> {
+    return request<ProjectDto>('/candidate/project', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Deletes a project entry.
+   * Calls: DELETE /api/candidate/project/{id}
+   */
+  async deleteProject(id: string): Promise<void> {
+    return request<void>(`/candidate/project/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  /**
+   * Adds a new skill entry.
+   * Calls: POST /api/candidate/skill
+   */
+  async addSkill(payload: CreateSkillPayload): Promise<SkillDto> {
+    return request<SkillDto>('/candidate/skill', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Deletes a skill entry.
+   * Calls: DELETE /api/candidate/skill/{id}
+   */
+  async deleteSkill(id: string): Promise<void> {
+    return request<void>(`/candidate/skill/${id}`, {
+      method: 'DELETE'
+    });
+  }
+};
+

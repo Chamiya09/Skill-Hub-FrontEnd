@@ -1,9 +1,10 @@
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { Header } from "./components/common/Header";
 import { Footer } from "./components/common/Footer";
 import { ProtectedRoute } from "./components/common/ProtectedRoute";
 import { PublicRoute } from "./components/common/PublicRoute";
+import { CandidateLayout } from "./components/layout/CandidateLayout";
 import { Home } from "./pages/Home";
 import { About } from "./pages/About";
 import { Contact } from "./pages/Contact";
@@ -13,6 +14,9 @@ import { Register } from "./pages/Register";
 import { CandidateLogin } from "./pages/CandidateLogin";
 import { CandidateRegister } from "./pages/CandidateRegister";
 import { CandidateProfile } from "./pages/CandidateProfile";
+import { CandidateApplications } from "./pages/CandidateApplications";
+import { CandidateSavedJobs } from "./pages/CandidateSavedJobs";
+import { CandidateSettings } from "./pages/CandidateSettings";
 import { Dashboard } from "./pages/Dashboard";
 import { JobVacancies } from "./pages/JobVacancies";
 import { EditJob } from "./pages/EditJob";
@@ -33,6 +37,8 @@ function AppContent() {
     location.pathname === "/candidate/login" ||
     location.pathname === "/candidate-register" ||
     location.pathname === "/candidate/register" ||
+    location.pathname.startsWith("/candidate") ||
+    location.pathname === "/candidate-profile" ||
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/pipelines") ||
     location.pathname.startsWith("/hiring-pipeline") ||
@@ -62,7 +68,7 @@ function AppContent() {
             <Route path="/company/profile/:id" element={<PublicCompanyProfile />} />
             <Route path="/companies/:id" element={<PublicCompanyProfile />} />
 
-            {/* Candidate Portal Routes */}
+            {/* Candidate Public Auth Routes */}
             <Route
               path="/candidate-login"
               element={
@@ -95,21 +101,27 @@ function AppContent() {
                 </PublicRoute>
               }
             />
+
+            {/* Candidate Portal Layout & Nested Protected Routes */}
             <Route
-              path="/candidate/profile"
+              path="/candidate"
               element={
                 <ProtectedRoute>
-                  <CandidateProfile />
+                  <CandidateLayout />
                 </ProtectedRoute>
               }
-            />
+            >
+              <Route index element={<Navigate to="/candidate/profile" replace />} />
+              <Route path="profile" element={<CandidateProfile />} />
+              <Route path="applications" element={<CandidateApplications />} />
+              <Route path="saved" element={<CandidateSavedJobs />} />
+              <Route path="settings" element={<CandidateSettings />} />
+            </Route>
+            
+            {/* Legacy / Direct candidate redirect */}
             <Route
               path="/candidate-profile"
-              element={
-                <ProtectedRoute>
-                  <CandidateProfile />
-                </ProtectedRoute>
-              }
+              element={<Navigate to="/candidate/profile" replace />}
             />
 
             {/* Employer / Company Auth Routes */}

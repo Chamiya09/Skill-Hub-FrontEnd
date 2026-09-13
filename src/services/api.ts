@@ -22,6 +22,7 @@ export interface UserDto {
   linkedinUrl?: string;
   twitterUrl?: string;
   githubUrl?: string;
+  updatedAt?: string;
 }
 
 export interface AuthResponseDto {
@@ -252,77 +253,57 @@ export const companyProfileApi = {
   async getProfile(): Promise<CompanyProfileDto> {
     const user = authStorage.getUser();
     const companyId = user?.companyId || user?.id || '';
-    
-    // Check local storage profile
-    let localProfile: Partial<CompanyProfileDto> = {};
-    try {
-      const stored = localStorage.getItem(this.getProfileKey(companyId)) || localStorage.getItem(this.getProfileKey('current'));
-      if (stored) localProfile = JSON.parse(stored);
-    } catch (e) {
-      console.warn('Error reading local profile', e);
-    }
 
-    // Discover location from real posted company jobs if not set
-    let discoveredLocation = '';
-    try {
-      const myJobs = await jobsApi.getJobs();
-      if (myJobs && myJobs.length > 0) {
-        discoveredLocation = myJobs[0].location || '';
-      }
-    } catch {
-      // Ignore
-    }
-
-    // Attempt backend sync
+    // Attempt backend sync directly from PostgreSQL database
     try {
       const me = await companyAuthApi.getMe();
       const combined: CompanyProfileDto = {
         id: me.companyId || me.id || companyId,
-        companyName: me.companyName || user?.companyName || localProfile.companyName || '',
-        adminName: (user as any)?.adminName || localProfile.adminName || user?.fullName || '',
-        contactEmail: me.email || user?.contactEmail || user?.email || localProfile.contactEmail || '',
-        phone: (user as any)?.phone || localProfile.phone || '',
-        companySize: (user as any)?.companySize || localProfile.companySize || '51-200 Employees',
-        foundedYear: (user as any)?.foundedYear || localProfile.foundedYear || '2020',
-        logoUrl: localProfile.logoUrl || (user as any)?.logoUrl || '',
-        website: (me as any)?.website || localProfile.website || (user as any)?.website || '',
-        linkedinUrl: (user as any)?.linkedinUrl || localProfile.linkedinUrl || '',
-        twitterUrl: (user as any)?.twitterUrl || localProfile.twitterUrl || '',
-        githubUrl: (user as any)?.githubUrl || localProfile.githubUrl || '',
-        location: localProfile.location || (user as any)?.location || discoveredLocation || '',
-        industry: (me as any)?.industry || localProfile.industry || (user as any)?.industry || 'Technology & Software',
-        about: localProfile.about || (user as any)?.about || '',
+        companyName: me.companyName || user?.companyName || '',
+        adminName: me.adminName || me.fullName || (user as any)?.adminName || user?.fullName || '',
+        contactEmail: me.contactEmail || me.email || (user as any)?.contactEmail || user?.email || '',
+        phone: me.phone || (user as any)?.phone || '',
+        companySize: me.companySize || (user as any)?.companySize || '',
+        foundedYear: me.foundedYear || (user as any)?.foundedYear || '',
+        logoUrl: me.logoUrl || (user as any)?.logoUrl || '',
+        website: me.website || (user as any)?.website || '',
+        linkedinUrl: me.linkedinUrl || (user as any)?.linkedinUrl || '',
+        twitterUrl: me.twitterUrl || (user as any)?.twitterUrl || '',
+        githubUrl: me.githubUrl || (user as any)?.githubUrl || '',
+        location: me.location || (user as any)?.location || '',
+        industry: me.industry || (user as any)?.industry || '',
+        about: me.about || (user as any)?.about || '',
         createdAt: me.createdAt || user?.createdAt || new Date().toISOString(),
-        updatedAt: localProfile.updatedAt || new Date().toISOString(),
+        updatedAt: me.updatedAt || user?.updatedAt || new Date().toISOString(),
       };
       return combined;
     } catch {
-      // Fallback from cached user
+      // Fallback from cached authenticated user session
       return {
         id: companyId,
-        companyName: user?.companyName || localProfile.companyName || '',
-        adminName: (user as any)?.adminName || localProfile.adminName || user?.fullName || '',
-        contactEmail: user?.contactEmail || user?.email || localProfile.contactEmail || '',
-        phone: (user as any)?.phone || localProfile.phone || '',
-        companySize: (user as any)?.companySize || localProfile.companySize || '51-200 Employees',
-        foundedYear: (user as any)?.foundedYear || localProfile.foundedYear || '2020',
-        logoUrl: localProfile.logoUrl || (user as any)?.logoUrl || '',
-        website: (user as any)?.website || localProfile.website || '',
-        linkedinUrl: (user as any)?.linkedinUrl || localProfile.linkedinUrl || '',
-        twitterUrl: (user as any)?.twitterUrl || localProfile.twitterUrl || '',
-        githubUrl: (user as any)?.githubUrl || localProfile.githubUrl || '',
-        location: localProfile.location || (user as any)?.location || discoveredLocation || '',
-        industry: (user as any)?.industry || localProfile.industry || 'Technology & Software',
-        about: localProfile.about || (user as any)?.about || '',
+        companyName: user?.companyName || '',
+        adminName: (user as any)?.adminName || user?.fullName || '',
+        contactEmail: (user as any)?.contactEmail || user?.email || '',
+        phone: (user as any)?.phone || '',
+        companySize: (user as any)?.companySize || '',
+        foundedYear: (user as any)?.foundedYear || '',
+        logoUrl: (user as any)?.logoUrl || '',
+        website: (user as any)?.website || '',
+        linkedinUrl: (user as any)?.linkedinUrl || '',
+        twitterUrl: (user as any)?.twitterUrl || '',
+        githubUrl: (user as any)?.githubUrl || '',
+        location: (user as any)?.location || '',
+        industry: (user as any)?.industry || '',
+        about: (user as any)?.about || '',
         createdAt: user?.createdAt || new Date().toISOString(),
-        updatedAt: localProfile.updatedAt || new Date().toISOString(),
+        updatedAt: user?.updatedAt || new Date().toISOString(),
       };
     }
   },
 
   async updateProfile(payload: UpdateCompanyProfilePayload): Promise<CompanyProfileDto> {
     const current = await this.getProfile();
-    const updated: CompanyProfileDto = {
+    let updated: CompanyProfileDto = {
       ...current,
       ...payload,
       updatedAt: new Date().toISOString(),
@@ -330,15 +311,34 @@ export const companyProfileApi = {
 
     // Attempt backend update
     try {
-      await request('/company/profile', {
+      const backendResponse = await request<any>('/company/profile', {
         method: 'PUT',
         body: JSON.stringify({
           companyName: payload.companyName,
-          industry: payload.industry,
-          website: payload.website,
+          adminName: payload.adminName,
           contactEmail: payload.contactEmail,
+          phone: payload.phone,
+          companySize: payload.companySize,
+          foundedYear: payload.foundedYear,
+          logoUrl: payload.logoUrl,
+          website: payload.website,
+          linkedinUrl: payload.linkedinUrl,
+          twitterUrl: payload.twitterUrl,
+          githubUrl: payload.githubUrl,
+          location: payload.location,
+          industry: payload.industry,
+          about: payload.about,
         }),
       });
+
+      if (backendResponse) {
+        updated = {
+          ...updated,
+          ...backendResponse,
+          adminName: backendResponse.adminName || backendResponse.fullName || updated.adminName,
+          contactEmail: backendResponse.contactEmail || backendResponse.email || updated.contactEmail,
+        };
+      }
     } catch (e) {
       console.warn('Backend profile update notice:', e);
     }
@@ -417,7 +417,7 @@ export const companyProfileApi = {
 
     const sampleJob = matchedJobs[0] || (allJobs.length > 0 ? allJobs[0] : null);
     const companyName = profileData.companyName || sampleJob?.companyName || decodeURIComponent(idOrName) || 'Company';
-    const location = profileData.location || sampleJob?.location || '';
+    const location = profileData.location || '';
 
     const company: CompanyProfileDto = {
       id: idOrName || sampleJob?.companyId || '',

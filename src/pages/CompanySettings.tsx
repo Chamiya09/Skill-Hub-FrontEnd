@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import {
   companyProfileApi,
   authStorage,
-  type CompanyProfileDto,
   type UpdateCompanyProfilePayload,
 } from '../services/api';
 import {
@@ -52,35 +51,29 @@ const COMPANY_SIZE_OPTIONS = [
 export const CompanySettings: React.FC = () => {
   const { currentUser, setUser, updateUser, refreshProfile } = useAuth();
 
-  // Initialize immediately from cached user & local storage so page renders with ZERO blink
+  // Initialize immediately from authenticated user context
+  // Pre-fill actual registration details (companyName, email, website, industry), while extended fields start strictly as empty strings ('') unless saved in database
   const [formData, setFormData] = useState<UpdateCompanyProfilePayload>(() => {
     const cached = authStorage.getUser();
-    let localProfile: Partial<CompanyProfileDto> = {};
-    if (typeof window !== 'undefined') {
-      try {
-        const companyId = cached?.companyId || cached?.id || 'current';
-        const stored =
-          localStorage.getItem(`skillhub_company_profile_${companyId}`) ||
-          localStorage.getItem(`skillhub_company_profile_current`);
-        if (stored) localProfile = JSON.parse(stored);
-      } catch {}
-    }
 
     return {
-      companyName: localProfile.companyName || cached?.companyName || '',
-      adminName: localProfile.adminName || (cached as any)?.adminName || cached?.fullName || '',
-      contactEmail: localProfile.contactEmail || (cached as any)?.contactEmail || cached?.email || '',
-      phone: localProfile.phone || (cached as any)?.phone || '',
-      companySize: localProfile.companySize || (cached as any)?.companySize || '51-200 Employees (Growth Stage)',
-      foundedYear: localProfile.foundedYear || (cached as any)?.foundedYear || '2020',
-      logoUrl: localProfile.logoUrl || cached?.logoUrl || '',
-      website: localProfile.website || cached?.website || '',
-      linkedinUrl: localProfile.linkedinUrl || (cached as any)?.linkedinUrl || '',
-      twitterUrl: localProfile.twitterUrl || (cached as any)?.twitterUrl || '',
-      githubUrl: localProfile.githubUrl || (cached as any)?.githubUrl || '',
-      location: localProfile.location || cached?.location || '',
-      industry: localProfile.industry || cached?.industry || 'Software Development & SaaS',
-      about: localProfile.about || cached?.about || '',
+      // Core Registration Details (Pre-filled from currentUser / cached authenticated user)
+      companyName: currentUser?.companyName || cached?.companyName || '',
+      adminName: currentUser?.fullName || (currentUser as any)?.adminName || cached?.fullName || (cached as any)?.adminName || '',
+      contactEmail: currentUser?.email || (currentUser as any)?.contactEmail || cached?.email || (cached as any)?.contactEmail || '',
+      website: currentUser?.website || cached?.website || '',
+      industry: currentUser?.industry || cached?.industry || '',
+      
+      // Extended Profile Fields (Strictly empty '' unless legitimately present in authenticated user record)
+      phone: currentUser?.phone || (currentUser as any)?.phone || cached?.phone || (cached as any)?.phone || '',
+      companySize: currentUser?.companySize || (currentUser as any)?.companySize || cached?.companySize || (cached as any)?.companySize || '',
+      foundedYear: currentUser?.foundedYear || (currentUser as any)?.foundedYear || cached?.foundedYear || (cached as any)?.foundedYear || '',
+      logoUrl: currentUser?.logoUrl || cached?.logoUrl || '',
+      linkedinUrl: currentUser?.linkedinUrl || (currentUser as any)?.linkedinUrl || cached?.linkedinUrl || (cached as any)?.linkedinUrl || '',
+      twitterUrl: currentUser?.twitterUrl || (currentUser as any)?.twitterUrl || cached?.twitterUrl || (cached as any)?.twitterUrl || '',
+      githubUrl: currentUser?.githubUrl || (currentUser as any)?.githubUrl || cached?.githubUrl || (cached as any)?.githubUrl || '',
+      location: currentUser?.location || cached?.location || '',
+      about: currentUser?.about || cached?.about || '',
     };
   });
 
@@ -89,7 +82,7 @@ export const CompanySettings: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const hasLoadedRef = useRef(false);
 
-  // Smooth background profile fetch once on component mount
+  // Smooth background profile fetch once on component mount from PostgreSQL database
   useEffect(() => {
     if (hasLoadedRef.current) return;
     hasLoadedRef.current = true;
@@ -101,16 +94,16 @@ export const CompanySettings: React.FC = () => {
           companyName: profile.companyName || prev.companyName || '',
           adminName: profile.adminName || prev.adminName || '',
           contactEmail: profile.contactEmail || prev.contactEmail || '',
-          phone: profile.phone || prev.phone || '',
-          companySize: profile.companySize || prev.companySize || '51-200 Employees (Growth Stage)',
-          foundedYear: profile.foundedYear || prev.foundedYear || '2020',
-          logoUrl: profile.logoUrl || prev.logoUrl || '',
           website: profile.website || prev.website || '',
+          industry: profile.industry || prev.industry || '',
+          phone: profile.phone || prev.phone || '',
+          companySize: profile.companySize || prev.companySize || '',
+          foundedYear: profile.foundedYear || prev.foundedYear || '',
+          logoUrl: profile.logoUrl || prev.logoUrl || '',
           linkedinUrl: profile.linkedinUrl || prev.linkedinUrl || '',
           twitterUrl: profile.twitterUrl || prev.twitterUrl || '',
           githubUrl: profile.githubUrl || prev.githubUrl || '',
           location: profile.location || prev.location || '',
-          industry: profile.industry || prev.industry || 'Software Development & SaaS',
           about: profile.about || prev.about || '',
         }));
       } catch (err: any) {
@@ -138,29 +131,47 @@ export const CompanySettings: React.FC = () => {
       setErrorMessage(null);
       setSuccessMessage(null);
 
+      // Construct comprehensive payload including all fields
+      const payloadToSave: UpdateCompanyProfilePayload = {
+        companyName: formData.companyName?.trim() || '',
+        adminName: formData.adminName?.trim() || '',
+        contactEmail: formData.contactEmail?.trim() || '',
+        phone: formData.phone?.trim() || '',
+        companySize: formData.companySize || '',
+        foundedYear: formData.foundedYear?.trim() || '',
+        logoUrl: formData.logoUrl?.trim() || '',
+        website: formData.website?.trim() || '',
+        linkedinUrl: formData.linkedinUrl?.trim() || '',
+        twitterUrl: formData.twitterUrl?.trim() || '',
+        githubUrl: formData.githubUrl?.trim() || '',
+        location: formData.location?.trim() || '',
+        industry: formData.industry || '',
+        about: formData.about?.trim() || '',
+      };
+
       // 1. Submit update to backend API & persist to company profile storage
-      const updatedProfile = await companyProfileApi.updateProfile(formData);
+      const updatedProfile = await companyProfileApi.updateProfile(payloadToSave);
 
       // 2. Overwrite and update Global Auth Context & LocalStorage / Session state
       if (currentUser) {
         const updatedUser = {
           ...currentUser,
-          companyName: formData.companyName?.trim() || currentUser.companyName,
-          adminName: formData.adminName?.trim() || currentUser.fullName,
-          fullName: formData.adminName?.trim() || currentUser.fullName,
-          email: formData.contactEmail?.trim() || currentUser.email,
-          contactEmail: formData.contactEmail?.trim() || currentUser.email,
-          phone: formData.phone?.trim() || '',
-          companySize: formData.companySize?.trim() || '',
-          foundedYear: formData.foundedYear?.trim() || '',
-          logoUrl: formData.logoUrl?.trim() || '',
-          website: formData.website?.trim() || '',
-          linkedinUrl: formData.linkedinUrl?.trim() || '',
-          twitterUrl: formData.twitterUrl?.trim() || '',
-          githubUrl: formData.githubUrl?.trim() || '',
-          location: formData.location?.trim() || '',
-          industry: formData.industry?.trim() || '',
-          about: formData.about?.trim() || '',
+          companyName: payloadToSave.companyName || currentUser.companyName,
+          adminName: payloadToSave.adminName || currentUser.fullName,
+          fullName: payloadToSave.adminName || currentUser.fullName,
+          email: payloadToSave.contactEmail || currentUser.email,
+          contactEmail: payloadToSave.contactEmail || currentUser.email,
+          phone: payloadToSave.phone || '',
+          companySize: payloadToSave.companySize || '',
+          foundedYear: payloadToSave.foundedYear || '',
+          logoUrl: payloadToSave.logoUrl || '',
+          website: payloadToSave.website || '',
+          linkedinUrl: payloadToSave.linkedinUrl || '',
+          twitterUrl: payloadToSave.twitterUrl || '',
+          githubUrl: payloadToSave.githubUrl || '',
+          location: payloadToSave.location || '',
+          industry: payloadToSave.industry || '',
+          about: payloadToSave.about || '',
         };
         setUser(updatedUser);
         updateUser(updatedUser);
@@ -172,7 +183,7 @@ export const CompanySettings: React.FC = () => {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
           new CustomEvent('skillhub_company_profile_updated', {
-            detail: { ...updatedProfile, ...formData },
+            detail: { ...updatedProfile, ...payloadToSave },
           })
         );
       }
@@ -321,7 +332,6 @@ export const CompanySettings: React.FC = () => {
             <div className="settings-form-group">
               <label htmlFor="companyIndustry" className="settings-label">
                 <span>Industry / Sector</span>
-                <span className="required-star">*</span>
               </label>
               <div className="settings-input-wrapper">
                 <span className="settings-input-icon">
@@ -330,12 +340,12 @@ export const CompanySettings: React.FC = () => {
                 <select
                   name="industry"
                   id="companyIndustry"
-                  required
-                  value={formData.industry || 'Software Development & SaaS'}
+                  value={formData.industry || ''}
                   onChange={handleChange}
                   className="settings-input-field"
                   style={{ cursor: 'pointer', appearance: 'auto' }}
                 >
+                  <option value="">Select Industry...</option>
                   {INDUSTRY_OPTIONS.map((ind) => (
                     <option key={ind} value={ind}>
                       {ind}
@@ -357,11 +367,12 @@ export const CompanySettings: React.FC = () => {
                 <select
                   name="companySize"
                   id="companySize"
-                  value={formData.companySize || '51-200 Employees (Growth Stage)'}
+                  value={formData.companySize || ''}
                   onChange={handleChange}
                   className="settings-input-field"
                   style={{ cursor: 'pointer', appearance: 'auto' }}
                 >
+                  <option value="">Select Company Size...</option>
                   {COMPANY_SIZE_OPTIONS.map((size) => (
                     <option key={size} value={size}>
                       {size}
@@ -396,7 +407,6 @@ export const CompanySettings: React.FC = () => {
             <div className="settings-form-group">
               <label htmlFor="companyLocation" className="settings-label">
                 <span>Headquarters Location</span>
-                <span className="required-star">*</span>
               </label>
               <div className="settings-input-wrapper">
                 <span className="settings-input-icon">
@@ -406,8 +416,7 @@ export const CompanySettings: React.FC = () => {
                   type="text"
                   name="location"
                   id="companyLocation"
-                  required
-                  placeholder="e.g. San Francisco, CA or Remote First"
+                  placeholder="e.g. Colombo, Sri Lanka"
                   value={formData.location || ''}
                   onChange={handleChange}
                   className="settings-input-field"
@@ -422,7 +431,7 @@ export const CompanySettings: React.FC = () => {
           <div className="settings-section-header">
             <div className="settings-section-title-box">
               <h2>Registration & Account Representative</h2>
-              <p>Primary contact officer and billing administrator details</p>
+              <p>Primary contact officer and account details (Pre-filled and fully editable)</p>
             </div>
             <span className="settings-step-badge">Step 2 of 4</span>
           </div>
@@ -599,12 +608,10 @@ export const CompanySettings: React.FC = () => {
           <div className="settings-form-group">
             <label htmlFor="companyAbout" className="settings-label">
               <span>Company Overview & Mission</span>
-              <span className="required-star">*</span>
             </label>
             <textarea
               name="about"
               id="companyAbout"
-              required
               rows={6}
               placeholder="Share your company's mission, engineering culture, tech stack highlights, and what makes your team unique..."
               value={formData.about || ''}

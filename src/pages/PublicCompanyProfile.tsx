@@ -43,18 +43,30 @@ export const PublicCompanyProfile: React.FC = () => {
 
   useEffect(() => {
     const fetchCompanyData = async () => {
+      const identifier = (id || '').trim();
+      if (!identifier) {
+        setError('No company identifier provided.');
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
         setLogoError(false);
 
-        const identifier = id || 'current';
+        // Strictly fetch the specific company data by route parameter id or slug from PostgreSQL database
         const data = await companyProfileApi.getPublicProfile(identifier);
+        if (!data || !data.company) {
+          throw new Error(`Company '${identifier}' could not be found.`);
+        }
         setCompany(data.company);
         setJobs(data.jobs || []);
       } catch (err: any) {
         console.error('Failed to load public company profile:', err);
         setError(err.message || 'Unable to retrieve company information.');
+        setCompany(null);
+        setJobs([]);
       } finally {
         setLoading(false);
       }
@@ -78,7 +90,7 @@ export const PublicCompanyProfile: React.FC = () => {
     );
   };
 
-  // Strict Frontend Filter: ensure ONLY jobs matching this company's ID or unique name are retained
+  // Strict Frontend Filter: ensure ONLY jobs matching this specific company's ID or exact company name are displayed
   const companyJobs = useMemo(() => {
     if (!company) return [];
     const targetId = (company.id || '').toLowerCase().trim();
@@ -173,7 +185,7 @@ export const PublicCompanyProfile: React.FC = () => {
     );
   }
 
-  const primaryLocation = company.location || (jobs.length > 0 && jobs[0].location) || 'Headquarters';
+  const primaryLocation = company.location || 'Headquarters';
 
   return (
     <div className="public-company-container">

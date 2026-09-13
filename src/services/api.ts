@@ -385,80 +385,39 @@ export const companyProfileApi = {
   },
 
   async getPublicProfile(idOrName: string): Promise<{ company: CompanyProfileDto; jobs: JobDto[] }> {
-    const rawIdentifier = (idOrName || 'current').trim();
-    const currentUser = authStorage.getUser();
-    const effectiveCompanyId =
-      rawIdentifier === 'current'
-        ? currentUser?.companyId || currentUser?.id || ''
-        : rawIdentifier;
+    const rawIdentifier = (idOrName || '').trim();
+    if (!rawIdentifier) {
+      throw new Error('Company identifier is required.');
+    }
 
-    // 1. First, attempt to fetch directly from backend dedicated public company endpoint
+    // 1. Fetch strictly from backend dedicated public company endpoint by ID or slug
+    let result: any = null;
     try {
-      const result = await request<{ company: CompanyProfileDto; jobs: JobDto[] }>(
-        `/public/jobs/company/${encodeURIComponent(effectiveCompanyId)}`,
+      result = await request<{ company: CompanyProfileDto; jobs: JobDto[] }>(
+        `/companies/${encodeURIComponent(rawIdentifier)}`,
         { method: 'GET' }
       );
-      if (result && result.company) {
-        return {
-          company: result.company,
-          jobs: (result.jobs || []).map((j) => ({ ...j, tags: extractJobTags(j) })),
-        };
-      }
-    } catch {
-      // Continue to fallback
+    } catch (err) {
+      // Fallback attempt to alternate public jobs company route
+      result = await request<{ company: CompanyProfileDto; jobs: JobDto[] }>(
+        `/public/jobs/company/${encodeURIComponent(rawIdentifier)}`,
+        { method: 'GET' }
+      );
     }
 
-    // 2. Fallback: Fetch jobs strictly filtered by companyId from PostgreSQL
-    let matchedJobs: JobDto[] = [];
-    try {
-      if (effectiveCompanyId) {
-        matchedJobs = await publicJobsApi.getJobs({ companyId: effectiveCompanyId });
-      }
-    } catch {
-      matchedJobs = [];
+    if (result && (result.company || result.id)) {
+      const companyData = result.company || result;
+      return {
+        company: {
+          ...companyData,
+          id: companyData.id || rawIdentifier,
+        },
+        jobs: (result.jobs || []).map((j: JobDto) => ({ ...j, tags: extractJobTags(j) })),
+      };
     }
 
-    // 3. Resolve company profile data
-    let profileData: Partial<CompanyProfileDto> = {};
-    try {
-      const stored =
-        localStorage.getItem(this.getProfileKey(effectiveCompanyId)) ||
-        localStorage.getItem(this.getProfileKey('current'));
-      if (stored) profileData = JSON.parse(stored);
-    } catch {
-      profileData = {};
-    }
-
-    const companyName =
-      profileData.companyName ||
-      (effectiveCompanyId && currentUser && (effectiveCompanyId === currentUser.companyId || effectiveCompanyId === currentUser.id) ? currentUser.companyName : '') ||
-      (matchedJobs.length > 0 ? matchedJobs[0].companyName : '') ||
-      'Company';
-
-    const company: CompanyProfileDto = {
-      id: effectiveCompanyId,
-      companyName,
-      adminName: profileData.adminName || '',
-      contactEmail: profileData.contactEmail || '',
-      phone: profileData.phone || '',
-      companySize: profileData.companySize || '',
-      foundedYear: profileData.foundedYear || '',
-      logoUrl: profileData.logoUrl || '',
-      website: profileData.website || '',
-      linkedinUrl: profileData.linkedinUrl || '',
-      twitterUrl: profileData.twitterUrl || '',
-      githubUrl: profileData.githubUrl || '',
-      location: profileData.location || '',
-      industry: profileData.industry || '',
-      about: profileData.about || '',
-      createdAt: profileData.createdAt || new Date().toISOString(),
-    };
-
-    return {
-      company,
-      jobs: matchedJobs,
-    };
-  }
+    throw new Error(`Company '${rawIdentifier}' was not found.`);
+  },
 };
 
 // ==========================================

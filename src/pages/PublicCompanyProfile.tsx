@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   companyProfileApi,
@@ -11,12 +11,6 @@ import {
   BuildingIcon,
   GlobeIcon,
   MapPinIcon,
-  CheckIcon,
-  SparkleIcon,
-  BriefcaseIcon,
-  ArrowRightIcon,
-  ExternalLinkIcon,
-  SearchIcon,
   UsersIcon,
   CalendarIcon,
   MailIcon,
@@ -24,6 +18,12 @@ import {
   LinkedInIcon,
   TwitterIcon,
   GitHubIcon,
+  ExternalLinkIcon,
+  CheckIcon,
+  SearchIcon,
+  BriefcaseIcon,
+  ArrowRightIcon,
+  SparkleIcon,
 } from '../components/common/Icons';
 
 export const PublicCompanyProfile: React.FC = () => {
@@ -51,7 +51,7 @@ export const PublicCompanyProfile: React.FC = () => {
         const identifier = id || 'current';
         const data = await companyProfileApi.getPublicProfile(identifier);
         setCompany(data.company);
-        setJobs(data.jobs);
+        setJobs(data.jobs || []);
       } catch (err: any) {
         console.error('Failed to load public company profile:', err);
         setError(err.message || 'Unable to retrieve company information.');
@@ -78,17 +78,39 @@ export const PublicCompanyProfile: React.FC = () => {
     );
   };
 
-  // Filter jobs by search term
-  const filteredJobs = jobs.filter((job) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      job.title.toLowerCase().includes(q) ||
-      job.department.toLowerCase().includes(q) ||
-      job.location.toLowerCase().includes(q) ||
-      job.employmentType.toLowerCase().includes(q)
-    );
-  });
+  // Strict Frontend Filter: ensure ONLY jobs matching this company's ID or unique name are retained
+  const companyJobs = useMemo(() => {
+    if (!company) return [];
+    const targetId = (company.id || '').toLowerCase().trim();
+    const targetName = (company.companyName || '').toLowerCase().trim();
+
+    return jobs.filter((job) => {
+      const jobCompanyId = (job.companyId || '').toLowerCase().trim();
+      const jobCompanyName = (job.companyName || '').toLowerCase().trim();
+
+      if (targetId && jobCompanyId) {
+        return jobCompanyId === targetId;
+      }
+      if (targetName && jobCompanyName) {
+        return jobCompanyName === targetName;
+      }
+      return false;
+    });
+  }, [jobs, company]);
+
+  // Filter company's jobs by search term (title, department, location, tags)
+  const filteredJobs = useMemo(() => {
+    if (!searchQuery.trim()) return companyJobs;
+    const q = searchQuery.toLowerCase().trim();
+    return companyJobs.filter((job) => {
+      const inTitle = job.title.toLowerCase().includes(q);
+      const inDept = job.department.toLowerCase().includes(q);
+      const inLoc = job.location.toLowerCase().includes(q);
+      const inType = job.employmentType.toLowerCase().includes(q);
+      const inTags = job.tags ? job.tags.some((t) => t.toLowerCase().includes(q)) : false;
+      return inTitle || inDept || inLoc || inType || inTags;
+    });
+  }, [companyJobs, searchQuery]);
 
   const companyInitials =
     (company?.companyName || 'CO')
@@ -193,7 +215,7 @@ export const PublicCompanyProfile: React.FC = () => {
           <span className="public-positions-badge-label">Active Requisitions</span>
           <div className="public-positions-badge-pill">
             <BriefcaseIcon />
-            <span>{jobs.length} Open {jobs.length === 1 ? 'Position' : 'Positions'}</span>
+            <span>{companyJobs.length} Open {companyJobs.length === 1 ? 'Position' : 'Positions'}</span>
           </div>
         </div>
       </header>
@@ -222,9 +244,9 @@ export const PublicCompanyProfile: React.FC = () => {
             <div className="public-about-text">
               {company.about ? (
                 company.about
-                  .split('\n')
-                  .filter((p) => p.trim().length > 0)
-                  .map((para, idx) => <p key={idx}>{para}</p>)
+                .split('\n')
+                .filter((p) => p.trim().length > 0)
+                .map((para, idx) => <p key={idx}>{para}</p>)
               ) : (
                 <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>
                   No detailed company overview has been published yet.
@@ -246,7 +268,7 @@ export const PublicCompanyProfile: React.FC = () => {
               </div>
 
               {/* Search filter within company's open vacancies */}
-              {jobs.length > 2 && (
+              {companyJobs.length > 2 && (
                 <div className="public-jobs-search-box">
                   <span className="search-icon">
                     <SearchIcon />

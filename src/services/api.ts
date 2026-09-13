@@ -385,42 +385,58 @@ export const companyProfileApi = {
   },
 
   async getPublicProfile(idOrName: string): Promise<{ company: CompanyProfileDto; jobs: JobDto[] }> {
-    // Fetch all public jobs from PostgreSQL
-    let allJobs: JobDto[] = [];
+    const rawIdentifier = (idOrName || 'current').trim();
+    const currentUser = authStorage.getUser();
+    const effectiveCompanyId =
+      rawIdentifier === 'current'
+        ? currentUser?.companyId || currentUser?.id || ''
+        : rawIdentifier;
+
+    // 1. First, attempt to fetch directly from backend dedicated public company endpoint
     try {
-      allJobs = await publicJobsApi.getJobs();
+      const result = await request<{ company: CompanyProfileDto; jobs: JobDto[] }>(
+        `/public/jobs/company/${encodeURIComponent(effectiveCompanyId)}`,
+        { method: 'GET' }
+      );
+      if (result && result.company) {
+        return {
+          company: result.company,
+          jobs: (result.jobs || []).map((j) => ({ ...j, tags: extractJobTags(j) })),
+        };
+      }
     } catch {
-      allJobs = [];
+      // Continue to fallback
     }
 
-    const decoded = decodeURIComponent(idOrName || '').toLowerCase().trim();
+    // 2. Fallback: Fetch jobs strictly filtered by companyId from PostgreSQL
+    let matchedJobs: JobDto[] = [];
+    try {
+      if (effectiveCompanyId) {
+        matchedJobs = await publicJobsApi.getJobs({ companyId: effectiveCompanyId });
+      }
+    } catch {
+      matchedJobs = [];
+    }
 
-    // Match company jobs
-    const matchedJobs = allJobs.filter((j) => {
-      if (!decoded) return true;
-      const jCompanyId = (j.companyId || '').toLowerCase();
-      const jCompanyName = (j.companyName || '').toLowerCase();
-      const jSlug = jCompanyName.replace(/\s+/g, '-');
-      return jCompanyId === decoded || jCompanyName === decoded || jSlug === decoded || jCompanyName.includes(decoded);
-    });
-
-    // Check if we have local stored profile
+    // 3. Resolve company profile data
     let profileData: Partial<CompanyProfileDto> = {};
     try {
       const stored =
-        localStorage.getItem(this.getProfileKey(idOrName)) ||
+        localStorage.getItem(this.getProfileKey(effectiveCompanyId)) ||
         localStorage.getItem(this.getProfileKey('current'));
       if (stored) profileData = JSON.parse(stored);
     } catch {
       profileData = {};
     }
 
-    const sampleJob = matchedJobs[0] || (allJobs.length > 0 ? allJobs[0] : null);
-    const companyName = profileData.companyName || sampleJob?.companyName || decodeURIComponent(idOrName) || 'Company';
-    const location = profileData.location || '';
+    const companyName =
+      profileData.companyName ||
+      (effectiveCompanyId && currentUser && (effectiveCompanyId === currentUser.companyId || effectiveCompanyId === currentUser.id) ? currentUser.companyName : '') ||
+      (matchedJobs.length > 0 ? matchedJobs[0].companyName : '') ||
+      'Company';
 
     const company: CompanyProfileDto = {
-      id: idOrName || sampleJob?.companyId || '',
+      id: effectiveCompanyId,
       companyName,
       adminName: profileData.adminName || '',
       contactEmail: profileData.contactEmail || '',
@@ -432,10 +448,10 @@ export const companyProfileApi = {
       linkedinUrl: profileData.linkedinUrl || '',
       twitterUrl: profileData.twitterUrl || '',
       githubUrl: profileData.githubUrl || '',
-      location,
+      location: profileData.location || '',
       industry: profileData.industry || '',
       about: profileData.about || '',
-      createdAt: profileData.createdAt || sampleJob?.createdAt || new Date().toISOString(),
+      createdAt: profileData.createdAt || new Date().toISOString(),
     };
 
     return {
@@ -617,6 +633,7 @@ export const jobsApi = {
 // PUBLIC JOBS API (UNAUTHENTICATED)
 // ==========================================
 export interface PublicJobsFilterParams {
+  companyId?: string;
   search?: string;
   department?: string;
   employmentType?: string;
@@ -627,10 +644,11 @@ export interface PublicJobsFilterParams {
 export const publicJobsApi = {
   /**
    * Retrieves active jobs publicly without requiring authentication.
-   * Calls: GET /api/public/jobs
+   * Supports filtering strictly by companyId: GET /api/public/jobs?companyId=...
    */
   async getJobs(params: PublicJobsFilterParams = {}): Promise<JobDto[]> {
     const query = new URLSearchParams();
+    if (params.companyId) query.append('companyId', params.companyId);
     if (params.search) query.append('search', params.search);
     if (params.department && params.department !== 'All' && params.department !== 'All Roles') {
       query.append('department', params.department);

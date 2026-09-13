@@ -635,13 +635,6 @@ export const CandidateProfile: React.FC = () => {
               <p>Core competencies, languages, frameworks, and architecture tools</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsSkillModalOpen(true)}
-            className="candidate-add-btn"
-          >
-            + Add Skill
-          </button>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -682,13 +675,6 @@ export const CandidateProfile: React.FC = () => {
               <p>Work history, roles, leadership contributions, and project deliveries</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsExpModalOpen(true)}
-            className="candidate-add-btn"
-          >
-            + Add Experience
-          </button>
         </div>
 
         {/* Timeline List */}
@@ -744,13 +730,6 @@ export const CandidateProfile: React.FC = () => {
               <p>Open-source contributions, distributed systems, and deployed applications</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsProjModalOpen(true)}
-            className="candidate-add-btn"
-          >
-            + Add Project
-          </button>
         </div>
 
         <div className="candidate-grid-cards">
@@ -812,13 +791,6 @@ export const CandidateProfile: React.FC = () => {
               <p>Degrees, academic distinctions, and accredited certifications</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsEduModalOpen(true)}
-            className="candidate-add-btn"
-          >
-            + Add Education
-          </button>
         </div>
 
         <div className="candidate-grid-cards">

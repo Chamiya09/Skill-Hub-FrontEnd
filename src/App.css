@@ -11150,6 +11150,125 @@ select.w-full {
   color: #008759;
 }
 
+/* =========================================================
+   CANDIDATE SPEED DIAL FLOATING ACTION BUTTON (VERTICAL)
+   ========================================================= */
+.candidate-speed-dial-container {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  user-select: none;
+}
+
+.candidate-speed-dial-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 2px;
+  animation: speedDialFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes speedDialFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.candidate-speed-dial-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  transition: transform 0.18s ease;
+}
+
+.candidate-speed-dial-item:hover {
+  transform: translateX(-3px);
+}
+
+.candidate-speed-dial-label {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.candidate-speed-dial-item:hover .candidate-speed-dial-label {
+  border-color: #00b074;
+  color: #008759;
+  box-shadow: 0 4px 12px rgba(0, 176, 116, 0.12);
+}
+
+.candidate-speed-dial-icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #008759;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.candidate-speed-dial-item:hover .candidate-speed-dial-icon-btn {
+  background: #e6f9f2;
+  border-color: #00b074;
+  color: #00b074;
+  transform: scale(1.08);
+  box-shadow: 0 4px 14px rgba(0, 176, 116, 0.2);
+}
+
+.candidate-speed-dial-main-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #00b074;
+  border: 1px solid rgba(0, 150, 99, 0.3);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 176, 116, 0.32);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.candidate-speed-dial-main-btn:hover {
+  background: #009663;
+  transform: scale(1.06);
+  box-shadow: 0 6px 20px rgba(0, 176, 116, 0.42);
+}
+
+.candidate-speed-dial-main-btn:active {
+  transform: scale(0.95);
+}
+
+
 
 
 

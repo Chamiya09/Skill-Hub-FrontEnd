@@ -108,30 +108,30 @@ export const SpeedDialFab: React.FC<SpeedDialFabProps> = ({
   ];
 
   return (
-    <div ref={containerRef} className="fixed bottom-8 right-8 z-40 flex flex-col items-end gap-3 select-none">
-      {/* Expanded Speed Dial Menu Options */}
+    <div ref={containerRef} className="candidate-speed-dial-container">
+      {/* Expanded Speed Dial Menu Options - Expands Vertically Upwards */}
       {isOpen && (
-        <div className="flex flex-col items-end gap-2.5 mb-1 animate-fadeIn">
+        <div className="candidate-speed-dial-menu">
           {actions.map((action, idx) => (
-            <div
+            <button
               key={idx}
-              className="flex items-center gap-2.5 group cursor-pointer"
+              type="button"
+              className="candidate-speed-dial-item"
               onClick={action.onClick}
             >
-              {/* Floating Pill Label */}
-              <span className="px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-800 shadow-sm opacity-95 group-hover:opacity-100 group-hover:border-[#00b074] group-hover:text-[#00b074] transition-all">
+              {/* Floating Pill Label on Left */}
+              <span className="candidate-speed-dial-label">
                 {action.label}
               </span>
 
-              {/* Action Button */}
-              <button
-                type="button"
-                className={`w-11 h-11 rounded-2xl border flex items-center justify-center transition-all duration-200 group-hover:scale-105 cursor-pointer shadow-sm ${action.color}`}
+              {/* Action Button on Right */}
+              <div
+                className="candidate-speed-dial-icon-btn"
                 aria-label={action.label}
               >
                 {action.icon}
-              </button>
-            </div>
+              </div>
+            </button>
           ))}
         </div>
       )}
@@ -140,7 +140,7 @@ export const SpeedDialFab: React.FC<SpeedDialFabProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-14 h-14 rounded-2xl bg-[#00b074] hover:bg-[#009663] text-white flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-lg shadow-emerald-500/25 border border-emerald-600/30"
+        className="candidate-speed-dial-main-btn"
         aria-label="Add Section to Digital CV"
         title="Add to Digital CV"
       >
@@ -149,3 +149,4 @@ export const SpeedDialFab: React.FC<SpeedDialFabProps> = ({
     </div>
   );
 };
+

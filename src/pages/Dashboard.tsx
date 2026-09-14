@@ -79,12 +79,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
     return `${dateStr} | ${timeStr}`
   })()
 
-  // Authenticate gate
+  // Authenticate gate & Role Protection
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       navigate('/company-login')
+    } else if (!authLoading && isAuthenticated && currentUser?.role?.toLowerCase() === 'candidate') {
+      navigate('/candidate/profile', { replace: true })
     }
-  }, [authLoading, isAuthenticated, navigate])
+  }, [authLoading, isAuthenticated, currentUser, navigate])
 
   // Fetch real company stats and jobs
   const fetchDashboardData = useCallback(async () => {

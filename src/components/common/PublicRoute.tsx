@@ -7,9 +7,12 @@ interface PublicRouteProps {
 }
 
 export const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, currentUser } = useAuth();
 
-  if (isAuthenticated) {
+  if (isAuthenticated && currentUser) {
+    if (currentUser.role?.toLowerCase() === 'candidate') {
+      return <Navigate to="/candidate/profile" replace />;
+    }
     return <Navigate to="/dashboard" replace />;
   }
 

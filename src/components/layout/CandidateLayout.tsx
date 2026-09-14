@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { CandidateSidebar } from './CandidateSidebar';
 import { ClockIcon, MenuIcon } from '../common/Icons';
 
 export const CandidateLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { currentUser, isAuthenticated, isLoading } = useAuth();
+
+  // Role Protection: Redirect Employers away from Candidate Portal
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && currentUser) {
+      const role = (currentUser.role || '').toLowerCase();
+      if (role === 'company' || role === 'employer' || role === 'admin') {
+        navigate('/dashboard', { replace: true });
+      }
+    }
+  }, [isLoading, isAuthenticated, currentUser, navigate]);
 
   // Real-time Live Clock (matching Company Dashboard)
   const [currentDateTime, setCurrentDateTime] = useState<Date>(new Date());

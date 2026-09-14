@@ -847,7 +847,25 @@ export interface CreateSkillPayload {
   category?: string;
 }
 
+export interface CandidateHighlightDto {
+  category: string;
+  value: string;
+  subtext?: string;
+}
+
+export interface CandidateAboutDto {
+  summary?: string;
+  keyHighlights: CandidateHighlightDto[];
+}
+
+export interface UpdateCandidateAboutPayload {
+  summary?: string;
+  keyHighlights?: CandidateHighlightDto[];
+}
+
 export interface CandidateCvDto {
+  summary?: string;
+  keyHighlights?: CandidateHighlightDto[];
   experiences: ExperienceDto[];
   educations: EducationDto[];
   projects: ProjectDto[];
@@ -866,12 +884,44 @@ export const candidateCvApi = {
   },
 
   /**
+   * Retrieves the candidate's executive summary and key highlights.
+   * Calls: GET /api/candidate/about
+   */
+  async getAbout(): Promise<CandidateAboutDto> {
+    return request<CandidateAboutDto>('/candidate/about', {
+      method: 'GET'
+    });
+  },
+
+  /**
+   * Updates the candidate's executive summary and key highlights.
+   * Calls: PUT /api/candidate/about
+   */
+  async updateAbout(payload: UpdateCandidateAboutPayload): Promise<CandidateAboutDto> {
+    return request<CandidateAboutDto>('/candidate/about', {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
    * Adds a new experience entry.
    * Calls: POST /api/candidate/experience
    */
   async addExperience(payload: CreateExperiencePayload): Promise<ExperienceDto> {
     return request<ExperienceDto>('/candidate/experience', {
       method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Updates an existing experience entry.
+   * Calls: PUT /api/candidate/experience/{id}
+   */
+  async updateExperience(id: string, payload: CreateExperiencePayload): Promise<ExperienceDto> {
+    return request<ExperienceDto>(`/candidate/experience/${id}`, {
+      method: 'PUT',
       body: JSON.stringify(payload)
     });
   },
@@ -898,6 +948,17 @@ export const candidateCvApi = {
   },
 
   /**
+   * Updates an existing education entry.
+   * Calls: PUT /api/candidate/education/{id}
+   */
+  async updateEducation(id: string, payload: CreateEducationPayload): Promise<EducationDto> {
+    return request<EducationDto>(`/candidate/education/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
    * Deletes an education entry.
    * Calls: DELETE /api/candidate/education/{id}
    */
@@ -914,6 +975,17 @@ export const candidateCvApi = {
   async addProject(payload: CreateProjectPayload): Promise<ProjectDto> {
     return request<ProjectDto>('/candidate/project', {
       method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Updates an existing project entry.
+   * Calls: PUT /api/candidate/project/{id}
+   */
+  async updateProject(id: string, payload: CreateProjectPayload): Promise<ProjectDto> {
+    return request<ProjectDto>(`/candidate/project/${id}`, {
+      method: 'PUT',
       body: JSON.stringify(payload)
     });
   },

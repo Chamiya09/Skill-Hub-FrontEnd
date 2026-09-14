@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { candidateCvApi, type ExperienceDto } from '../../../services/api';
@@ -8,6 +8,7 @@ interface AddExperienceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (experience: ExperienceDto) => void;
+  initialData?: ExperienceDto | null;
 }
 
 const quillModules = {
@@ -30,6 +31,7 @@ export const AddExperienceModal: React.FC<AddExperienceModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  initialData,
 }) => {
   const [title, setTitle] = useState('');
   const [company, setCompany] = useState('');
@@ -41,6 +43,27 @@ export const AddExperienceModal: React.FC<AddExperienceModalProps> = ({
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialData) {
+      setTitle(initialData.title || '');
+      setCompany(initialData.company || '');
+      setLocation(initialData.location || '');
+      setStartDate(initialData.startDate || '');
+      setEndDate(initialData.endDate || '');
+      setIsCurrent(!!initialData.isCurrent);
+      setDescription(initialData.description || '');
+    } else {
+      setTitle('');
+      setCompany('');
+      setLocation('');
+      setStartDate('');
+      setEndDate('');
+      setIsCurrent(false);
+      setDescription('');
+    }
+    setErrorMsg(null);
+  }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -55,7 +78,8 @@ export const AddExperienceModal: React.FC<AddExperienceModalProps> = ({
 
     setLoading(true);
     try {
-      const created = await candidateCvApi.addExperience({
+      let saved: ExperienceDto;
+      const payload = {
         title: title.trim(),
         company: company.trim(),
         location: location.trim() || undefined,
@@ -63,25 +87,25 @@ export const AddExperienceModal: React.FC<AddExperienceModalProps> = ({
         endDate: isCurrent ? undefined : endDate.trim() || undefined,
         isCurrent,
         description: description.trim() || undefined,
-      });
+      };
 
-      onSuccess(created);
+      if (initialData?.id) {
+        saved = await candidateCvApi.updateExperience(initialData.id, payload);
+      } else {
+        saved = await candidateCvApi.addExperience(payload);
+      }
+
+      onSuccess(saved);
       onClose();
-      // Reset form
-      setTitle('');
-      setCompany('');
-      setLocation('');
-      setStartDate('');
-      setEndDate('');
-      setIsCurrent(false);
-      setDescription('');
     } catch (err: any) {
-      console.error('Failed to add experience:', err);
+      console.error('Failed to save experience:', err);
       setErrorMsg(err.message || 'Unable to save experience. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  const isEditing = !!initialData?.id;
 
   return (
     <div className="candidate-modal-backdrop" onClick={onClose}>
@@ -93,7 +117,7 @@ export const AddExperienceModal: React.FC<AddExperienceModalProps> = ({
               <BriefcaseIcon />
             </div>
             <div className="candidate-modal-title-text">
-              <h2>Add Work Experience</h2>
+              <h2>{isEditing ? 'Edit Work Experience' : 'Add Work Experience'}</h2>
               <p>Document your career history, achievements, and impact</p>
             </div>
           </div>
@@ -256,7 +280,7 @@ export const AddExperienceModal: React.FC<AddExperienceModalProps> = ({
               className="settings-btn-save"
             >
               <CheckIcon />
-              <span>{loading ? 'Saving...' : 'Save Experience'}</span>
+              <span>{loading ? 'Saving...' : isEditing ? 'Save Changes' : 'Save Experience'}</span>
             </button>
           </div>
         </form>
@@ -264,3 +288,4 @@ export const AddExperienceModal: React.FC<AddExperienceModalProps> = ({
     </div>
   );
 };
+

@@ -10,6 +10,7 @@ import {
   type EducationDto,
   type ProjectDto,
   type SkillDto,
+  type CandidateHighlightDto,
 } from '../services/api';
 import {
   SparkleIcon,
@@ -29,6 +30,7 @@ import { AddExperienceModal } from '../components/candidates/modals/AddExperienc
 import { AddEducationModal } from '../components/candidates/modals/AddEducationModal';
 import { AddProjectModal } from '../components/candidates/modals/AddProjectModal';
 import { AddSkillModal } from '../components/candidates/modals/AddSkillModal';
+import { EditAboutModal } from '../components/candidates/modals/EditAboutModal';
 
 const quillModules = {
   toolbar: [
@@ -161,6 +163,24 @@ const defaultSkills: SkillDto[] = [
   { id: 'sk-11', skillName: 'Technical Leadership', category: 'Soft Skills & Leadership', createdAt: new Date().toISOString() },
 ];
 
+const defaultKeyHighlights: CandidateHighlightDto[] = [
+  {
+    category: 'Architecture',
+    value: '99.99% Cloud Uptime',
+    subtext: 'Enterprise AWS & Kubernetes SLA',
+  },
+  {
+    category: 'Engineering',
+    value: '14+ Engineers Led',
+    subtext: 'Agile sprints & architectural reviews',
+  },
+  {
+    category: 'Impact',
+    value: '42% Latency Reduction',
+    subtext: 'Optimized Redis & Kafka pipelines',
+  },
+];
+
 export const CandidateProfile: React.FC = () => {
   const { currentUser, updateUser } = useAuth();
 
@@ -169,6 +189,10 @@ export const CandidateProfile: React.FC = () => {
   const [educations, setEducations] = useState<EducationDto[]>(defaultEducations);
   const [projects, setProjects] = useState<ProjectDto[]>(defaultProjects);
   const [skills, setSkills] = useState<SkillDto[]>(defaultSkills);
+  const [summary, setSummary] = useState(
+    '<p>Passionate <strong>Senior Full-Stack Engineer</strong> with <strong>8+ years of experience</strong> designing and scaling fault-tolerant cloud services, modern web applications, and enterprise microservices.</p><p>Proven track record of leading cross-functional engineering teams, optimizing application performance, and deploying high-impact products from inception to millions of daily active users.</p>'
+  );
+  const [keyHighlights, setKeyHighlights] = useState<CandidateHighlightDto[]>(defaultKeyHighlights);
 
   // Profile Edit State
   const [headline, setHeadline] = useState(
@@ -182,10 +206,16 @@ export const CandidateProfile: React.FC = () => {
 
   // Modal Control States
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [isExpModalOpen, setIsExpModalOpen] = useState(false);
   const [isEduModalOpen, setIsEduModalOpen] = useState(false);
   const [isProjModalOpen, setIsProjModalOpen] = useState(false);
   const [isSkillModalOpen, setIsSkillModalOpen] = useState(false);
+
+  // Selected item state for editing
+  const [editingExperience, setEditingExperience] = useState<ExperienceDto | null>(null);
+  const [editingEducation, setEditingEducation] = useState<EducationDto | null>(null);
+  const [editingProject, setEditingProject] = useState<ProjectDto | null>(null);
 
   const [savingProfile, setSavingProfile] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -195,6 +225,13 @@ export const CandidateProfile: React.FC = () => {
   const loadCvData = useCallback(async () => {
     try {
       const cv = await candidateCvApi.getCv();
+      if (cv.summary !== undefined && cv.summary !== null) {
+        setSummary(cv.summary);
+        setBio(cv.summary);
+      }
+      if (cv.keyHighlights !== undefined && cv.keyHighlights !== null) {
+        setKeyHighlights(cv.keyHighlights);
+      }
       if (cv.experiences && cv.experiences.length > 0) {
         setExperiences(cv.experiences);
       }
@@ -280,12 +317,14 @@ export const CandidateProfile: React.FC = () => {
     }
   };
 
-  const handleDeleteSkill = async (id: string) => {
+  const handleDeleteSkill = async (id: string, name?: string) => {
+    if (name && !window.confirm(`Are you sure you want to remove skill "${name}"?`)) return;
     try {
       if (!id.startsWith('sk-')) {
         await candidateCvApi.deleteSkill(id);
       }
       setSkills((prev) => prev.filter((item) => item.id !== id));
+      setSuccessMsg(`Skill "${name || 'entry'}" removed.`);
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to delete skill.');
     }
@@ -591,34 +630,41 @@ export const CandidateProfile: React.FC = () => {
               <p>Career highlights and leadership profile</p>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => setIsAboutModalOpen(true)}
+            className="candidate-action-btn"
+            title="Edit About & Summary"
+            aria-label="Edit About & Summary"
+          >
+            <EditIcon />
+          </button>
         </div>
 
-        {/* Safely Rendered HTML Bio */}
-        <div
-          className="candidate-rich-text"
-          dangerouslySetInnerHTML={sanitizeHtml(bio)}
-        />
+        {/* Safely Rendered HTML Summary */}
+        {summary ? (
+          <div
+            className="candidate-rich-text"
+            dangerouslySetInnerHTML={sanitizeHtml(summary)}
+          />
+        ) : (
+          <p style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '14px', margin: '8px 0' }}>
+            No executive summary provided yet. Click the edit icon to add your professional story.
+          </p>
+        )}
 
-        {/* Quick Highlights Metrics Bar */}
-        <div className="candidate-metrics-grid">
-          <div className="candidate-metric-box">
-            <span className="candidate-metric-label">Architecture</span>
-            <span className="candidate-metric-val">99.99% Cloud Uptime</span>
-            <span className="candidate-metric-sub">Enterprise AWS & Kubernetes SLA</span>
+        {/* Quick Highlights Metrics Bar (Conditionally Rendered) */}
+        {keyHighlights && keyHighlights.length > 0 && (
+          <div className="candidate-metrics-grid">
+            {keyHighlights.map((hl, idx) => (
+              <div key={idx} className="candidate-metric-box">
+                <span className="candidate-metric-label">{hl.category}</span>
+                <span className="candidate-metric-val">{hl.value}</span>
+                {hl.subtext && <span className="candidate-metric-sub">{hl.subtext}</span>}
+              </div>
+            ))}
           </div>
-
-          <div className="candidate-metric-box">
-            <span className="candidate-metric-label">Engineering</span>
-            <span className="candidate-metric-val">14+ Engineers Led</span>
-            <span className="candidate-metric-sub">Agile sprints & architectural reviews</span>
-          </div>
-
-          <div className="candidate-metric-box">
-            <span className="candidate-metric-label">Impact</span>
-            <span className="candidate-metric-val">42% Latency Reduction</span>
-            <span className="candidate-metric-sub">Optimized Redis & Kafka pipelines</span>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* =========================================================================
@@ -647,9 +693,9 @@ export const CandidateProfile: React.FC = () => {
                     <span>{skill.skillName}</span>
                     <button
                       type="button"
-                      onClick={() => handleDeleteSkill(skill.id)}
+                      onClick={() => handleDeleteSkill(skill.id, skill.skillName)}
                       className="candidate-skill-delete-btn"
-                      title="Remove skill"
+                      title={`Remove skill ${skill.skillName}`}
                     >
                       ×
                     </button>
@@ -689,18 +735,31 @@ export const CandidateProfile: React.FC = () => {
                       {job.company} {job.location ? `• ${job.location}` : ''}
                     </p>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span className="candidate-timeline-date">
                       {job.startDate} — {job.isCurrent ? 'Present' : job.endDate || 'Present'}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteExperience(job.id)}
-                      className="candidate-delete-icon-btn"
-                      title="Delete experience"
-                    >
-                      <TrashIcon />
-                    </button>
+                    <div className="candidate-actions-group">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingExperience(job);
+                          setIsExpModalOpen(true);
+                        }}
+                        className="candidate-action-btn"
+                        title="Edit work experience"
+                      >
+                        <EditIcon />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteExperience(job.id)}
+                        className="candidate-action-btn candidate-action-btn-danger"
+                        title="Delete work experience"
+                      >
+                        <TrashIcon />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -740,14 +799,27 @@ export const CandidateProfile: React.FC = () => {
                   <span className="candidate-item-category-tag">
                     {proj.role || 'Featured Project'}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteProject(proj.id)}
-                    className="candidate-delete-icon-btn"
-                    title="Delete project"
-                  >
-                    <TrashIcon />
-                  </button>
+                  <div className="candidate-actions-group">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingProject(proj);
+                        setIsProjModalOpen(true);
+                      }}
+                      className="candidate-action-btn"
+                      title="Edit project"
+                    >
+                      <EditIcon />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteProject(proj.id)}
+                      className="candidate-action-btn candidate-action-btn-danger"
+                      title="Delete project"
+                    >
+                      <TrashIcon />
+                    </button>
+                  </div>
                 </div>
                 <h3 className="candidate-item-title">{proj.projectName}</h3>
                 {proj.description && (
@@ -803,14 +875,27 @@ export const CandidateProfile: React.FC = () => {
                     <span style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>
                       {item.startYear} {item.endYear ? `— ${item.endYear}` : ''}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteEducation(item.id)}
-                      className="candidate-delete-icon-btn"
-                      title="Delete education"
-                    >
-                      <TrashIcon />
-                    </button>
+                    <div className="candidate-actions-group">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingEducation(item);
+                          setIsEduModalOpen(true);
+                        }}
+                        className="candidate-action-btn"
+                        title="Edit education"
+                      >
+                        <EditIcon />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteEducation(item.id)}
+                        className="candidate-action-btn candidate-action-btn-danger"
+                        title="Delete education"
+                      >
+                        <TrashIcon />
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <h3 className="candidate-item-title">{item.degree}</h3>
@@ -838,9 +923,18 @@ export const CandidateProfile: React.FC = () => {
           FLOATING ACTION BUTTON (SPEED DIAL)
           ========================================================================= */}
       <SpeedDialFab
-        onAddExperience={() => setIsExpModalOpen(true)}
-        onAddEducation={() => setIsEduModalOpen(true)}
-        onAddProject={() => setIsProjModalOpen(true)}
+        onAddExperience={() => {
+          setEditingExperience(null);
+          setIsExpModalOpen(true);
+        }}
+        onAddEducation={() => {
+          setEditingEducation(null);
+          setIsEduModalOpen(true);
+        }}
+        onAddProject={() => {
+          setEditingProject(null);
+          setIsProjModalOpen(true);
+        }}
         onAddSkill={() => setIsSkillModalOpen(true)}
       />
 
@@ -849,28 +943,58 @@ export const CandidateProfile: React.FC = () => {
           ========================================================================= */}
       <AddExperienceModal
         isOpen={isExpModalOpen}
-        onClose={() => setIsExpModalOpen(false)}
-        onSuccess={(newExp) => {
-          setExperiences((prev) => [newExp, ...prev]);
-          setSuccessMsg(`Added experience at ${newExp.company}!`);
+        initialData={editingExperience}
+        onClose={() => {
+          setIsExpModalOpen(false);
+          setEditingExperience(null);
+        }}
+        onSuccess={(saved) => {
+          if (editingExperience) {
+            setExperiences((prev) => prev.map((e) => (e.id === saved.id ? saved : e)));
+            setSuccessMsg(`Updated experience at ${saved.company}!`);
+          } else {
+            setExperiences((prev) => [saved, ...prev]);
+            setSuccessMsg(`Added experience at ${saved.company}!`);
+          }
+          setEditingExperience(null);
         }}
       />
 
       <AddEducationModal
         isOpen={isEduModalOpen}
-        onClose={() => setIsEduModalOpen(false)}
-        onSuccess={(newEdu) => {
-          setEducations((prev) => [newEdu, ...prev]);
-          setSuccessMsg(`Added education from ${newEdu.institution}!`);
+        initialData={editingEducation}
+        onClose={() => {
+          setIsEduModalOpen(false);
+          setEditingEducation(null);
+        }}
+        onSuccess={(saved) => {
+          if (editingEducation) {
+            setEducations((prev) => prev.map((ed) => (ed.id === saved.id ? saved : ed)));
+            setSuccessMsg(`Updated education from ${saved.institution}!`);
+          } else {
+            setEducations((prev) => [saved, ...prev]);
+            setSuccessMsg(`Added education from ${saved.institution}!`);
+          }
+          setEditingEducation(null);
         }}
       />
 
       <AddProjectModal
         isOpen={isProjModalOpen}
-        onClose={() => setIsProjModalOpen(false)}
-        onSuccess={(newProj) => {
-          setProjects((prev) => [newProj, ...prev]);
-          setSuccessMsg(`Added project: ${newProj.projectName}!`);
+        initialData={editingProject}
+        onClose={() => {
+          setIsProjModalOpen(false);
+          setEditingProject(null);
+        }}
+        onSuccess={(saved) => {
+          if (editingProject) {
+            setProjects((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
+            setSuccessMsg(`Updated project: ${saved.projectName}!`);
+          } else {
+            setProjects((prev) => [saved, ...prev]);
+            setSuccessMsg(`Added project: ${saved.projectName}!`);
+          }
+          setEditingProject(null);
         }}
       />
 
@@ -880,6 +1004,19 @@ export const CandidateProfile: React.FC = () => {
         onSuccess={(newSkill) => {
           setSkills((prev) => [...prev, newSkill]);
           setSuccessMsg(`Added skill: ${newSkill.skillName}!`);
+        }}
+      />
+
+      <EditAboutModal
+        isOpen={isAboutModalOpen}
+        initialSummary={summary}
+        initialHighlights={keyHighlights}
+        onClose={() => setIsAboutModalOpen(false)}
+        onSuccess={(data) => {
+          setSummary(data.summary || '');
+          setBio(data.summary || '');
+          setKeyHighlights(data.keyHighlights || []);
+          setSuccessMsg('Executive summary and key highlights updated successfully!');
         }}
       />
     </div>

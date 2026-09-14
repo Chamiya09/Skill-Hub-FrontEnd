@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { candidateCvApi, type ProjectDto } from '../../../services/api';
@@ -8,6 +8,7 @@ interface AddProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (project: ProjectDto) => void;
+  initialData?: ProjectDto | null;
 }
 
 const CodeFolderIcon: React.FC = () => (
@@ -38,6 +39,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  initialData,
 }) => {
   const [projectName, setProjectName] = useState('');
   const [role, setRole] = useState('');
@@ -48,6 +50,38 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialData) {
+      setProjectName(initialData.projectName || '');
+      // If role contains bullet/stack breakdown (e.g. "Lead • React, C#"), extract
+      if (initialData.role) {
+        if (initialData.role.includes('•')) {
+          const parts = initialData.role.split('•');
+          setRole(parts[0].trim());
+          const tags = parts[1].split(',').map((t) => t.trim()).filter(Boolean);
+          setTechTags(tags);
+        } else {
+          setRole(initialData.role);
+          setTechTags([]);
+        }
+      } else {
+        setRole('');
+        setTechTags([]);
+      }
+      setLink(initialData.link || '');
+      setDescription(initialData.description || '');
+      setTagInput('');
+    } else {
+      setProjectName('');
+      setRole('');
+      setTechTags(['React', 'TypeScript', 'Node.js']);
+      setTagInput('');
+      setLink('');
+      setDescription('');
+    }
+    setErrorMsg(null);
+  }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -92,29 +126,31 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
         ? techTags.join(', ')
         : undefined;
 
-      const created = await candidateCvApi.addProject({
+      let saved: ProjectDto;
+      const payload = {
         projectName: projectName.trim(),
         role: combinedRole,
         link: link.trim() || undefined,
         description: description.trim() || undefined,
-      });
+      };
 
-      onSuccess(created);
+      if (initialData?.id) {
+        saved = await candidateCvApi.updateProject(initialData.id, payload);
+      } else {
+        saved = await candidateCvApi.addProject(payload);
+      }
+
+      onSuccess(saved);
       onClose();
-      // Reset form
-      setProjectName('');
-      setRole('');
-      setTechTags(['React', 'TypeScript', 'Node.js']);
-      setTagInput('');
-      setLink('');
-      setDescription('');
     } catch (err: any) {
-      console.error('Failed to add project:', err);
+      console.error('Failed to save project:', err);
       setErrorMsg(err.message || 'Unable to save project. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  const isEditing = !!initialData?.id;
 
   return (
     <div className="candidate-modal-backdrop" onClick={onClose}>
@@ -126,7 +162,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
               <CodeFolderIcon />
             </div>
             <div className="candidate-modal-title-text">
-              <h2>Add Project & Portfolio</h2>
+              <h2>{isEditing ? 'Edit Project & Portfolio' : 'Add Project & Portfolio'}</h2>
               <p>Showcase technical builds, open-source work, and live apps</p>
             </div>
           </div>
@@ -317,7 +353,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
               className="settings-btn-save"
             >
               <CheckIcon />
-              <span>{loading ? 'Saving...' : 'Save Project'}</span>
+              <span>{loading ? 'Saving...' : isEditing ? 'Save Changes' : 'Save Project'}</span>
             </button>
           </div>
         </form>
@@ -325,3 +361,5 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
     </div>
   );
 };
+
+

@@ -11268,6 +11268,39 @@ select.w-full {
   transform: scale(0.95);
 }
 
+/* Candidate Item Action Group (Edit & Delete Ghost Buttons) */
+.candidate-actions-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.candidate-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.18s ease;
+}
+
+.candidate-action-btn:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.candidate-action-btn-danger:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+
 
 
 

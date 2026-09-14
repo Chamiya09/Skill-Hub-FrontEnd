@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { candidateCvApi, type EducationDto } from '../../../services/api';
 import { XIcon, CheckIcon } from '../../common/Icons';
 
@@ -6,6 +6,7 @@ interface AddEducationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (education: EducationDto) => void;
+  initialData?: EducationDto | null;
 }
 
 const GraduationCapIcon: React.FC = () => (
@@ -19,6 +20,7 @@ export const AddEducationModal: React.FC<AddEducationModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  initialData,
 }) => {
   const [degree, setDegree] = useState('');
   const [institution, setInstitution] = useState('');
@@ -29,6 +31,25 @@ export const AddEducationModal: React.FC<AddEducationModalProps> = ({
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialData) {
+      setDegree(initialData.degree || '');
+      setInstitution(initialData.institution || '');
+      setFieldOfStudy(initialData.fieldOfStudy || '');
+      setStartYear(initialData.startYear || '');
+      setEndYear(initialData.endYear || '');
+      setDescription(initialData.description || '');
+    } else {
+      setDegree('');
+      setInstitution('');
+      setFieldOfStudy('');
+      setStartYear('');
+      setEndYear('');
+      setDescription('');
+    }
+    setErrorMsg(null);
+  }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -43,31 +64,33 @@ export const AddEducationModal: React.FC<AddEducationModalProps> = ({
 
     setLoading(true);
     try {
-      const created = await candidateCvApi.addEducation({
+      let saved: EducationDto;
+      const payload = {
         degree: degree.trim(),
         institution: institution.trim(),
         fieldOfStudy: fieldOfStudy.trim() || undefined,
         startYear: startYear.trim(),
         endYear: endYear.trim() || undefined,
         description: description.trim() || undefined,
-      });
+      };
 
-      onSuccess(created);
+      if (initialData?.id) {
+        saved = await candidateCvApi.updateEducation(initialData.id, payload);
+      } else {
+        saved = await candidateCvApi.addEducation(payload);
+      }
+
+      onSuccess(saved);
       onClose();
-      // Reset form
-      setDegree('');
-      setInstitution('');
-      setFieldOfStudy('');
-      setStartYear('');
-      setEndYear('');
-      setDescription('');
     } catch (err: any) {
-      console.error('Failed to add education:', err);
+      console.error('Failed to save education:', err);
       setErrorMsg(err.message || 'Unable to save education. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  const isEditing = !!initialData?.id;
 
   return (
     <div className="candidate-modal-backdrop" onClick={onClose}>
@@ -79,7 +102,7 @@ export const AddEducationModal: React.FC<AddEducationModalProps> = ({
               <GraduationCapIcon />
             </div>
             <div className="candidate-modal-title-text">
-              <h2>Add Education & Degree</h2>
+              <h2>{isEditing ? 'Edit Education & Degree' : 'Add Education & Degree'}</h2>
               <p>Highlight your academic qualifications and credentials</p>
             </div>
           </div>
@@ -218,7 +241,7 @@ export const AddEducationModal: React.FC<AddEducationModalProps> = ({
               className="settings-btn-save"
             >
               <CheckIcon />
-              <span>{loading ? 'Saving...' : 'Save Education'}</span>
+              <span>{loading ? 'Saving...' : isEditing ? 'Save Changes' : 'Save Education'}</span>
             </button>
           </div>
         </form>
@@ -226,3 +249,4 @@ export const AddEducationModal: React.FC<AddEducationModalProps> = ({
     </div>
   );
 };
+

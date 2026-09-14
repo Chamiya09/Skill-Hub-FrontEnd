@@ -58,6 +58,55 @@ const ExternalLinkIcon: React.FC = () => (
   </svg>
 );
 
+// Helper to parse Role and Tech Stack from combined project role strings
+const parseProjectDetails = (rawRole?: string) => {
+  if (!rawRole) return { displayRole: '', techStack: [] as string[] };
+
+  let displayRole = '';
+  let techString = '';
+
+  if (rawRole.includes('•')) {
+    const parts = rawRole.split('•');
+    displayRole = parts[0].trim();
+    techString = parts.slice(1).join(',');
+  } else if (rawRole.includes('|')) {
+    const parts = rawRole.split('|');
+    displayRole = parts[0].trim();
+    techString = parts.slice(1).join(',');
+  } else if (rawRole.includes('(') && rawRole.includes(')')) {
+    const match = rawRole.match(/^([^(]+)\(([^)]+)\)/);
+    if (match) {
+      displayRole = match[1].trim();
+      techString = match[2].trim();
+    } else {
+      displayRole = rawRole.trim();
+    }
+  } else if (rawRole.includes(',')) {
+    const parts = rawRole.split(',').map((s) => s.trim()).filter(Boolean);
+    const knownRoles = ['lead', 'engineer', 'developer', 'architect', 'full stack', 'frontend', 'backend', 'devops', 'intern', 'consultant', 'manager'];
+    const firstPartLower = parts[0]?.toLowerCase() || '';
+    const hasRoleKeyword = knownRoles.some((k) => firstPartLower.includes(k));
+
+    if (hasRoleKeyword && parts.length > 1) {
+      displayRole = parts[0];
+      techString = parts.slice(1).join(',');
+    } else {
+      techString = rawRole;
+    }
+  } else {
+    displayRole = rawRole.trim();
+  }
+
+  const techStack = techString
+    ? techString
+        .split(',')
+        .map((t) => t.trim().replace(/^•\s*/, ''))
+        .filter(Boolean)
+    : [];
+
+  return { displayRole, techStack };
+};
+
 interface CandidateProfileReadOnlyProps {
   candidateId?: string;
   initialData?: CandidateProfileResponseDto | null;
@@ -390,37 +439,64 @@ export const CandidateProfileReadOnly: React.FC<CandidateProfileReadOnlyProps> =
               </div>
             </div>
 
-            <div className="candidate-projects-grid">
-              {profileData.projects.map((proj: ProjectDto) => (
-                <div key={proj.id} className="candidate-project-card">
-                  <div className="candidate-project-header">
-                    <div>
-                      <h3 className="candidate-project-name">{proj.projectName}</h3>
-                      {proj.role && (
-                        <p className="candidate-project-role">{proj.role}</p>
+            <div className="candidate-projects-list">
+              {profileData.projects.map((proj: ProjectDto) => {
+                const { displayRole, techStack } = parseProjectDetails(proj.role);
+                return (
+                  <div key={proj.id} className="candidate-project-item">
+                    {/* 1. Primary Header: Project Title & Link */}
+                    <div className="candidate-project-header">
+                      <div style={{ flex: 1 }}>
+                        <h3 className="candidate-project-title">{proj.projectName}</h3>
+                        {/* 2. Secondary Meta: Role with System Theme Color */}
+                        {displayRole && (
+                          <p className="candidate-project-role">
+                            {displayRole}
+                          </p>
+                        )}
+                      </div>
+
+                      {proj.link && (
+                        <div className="candidate-project-actions">
+                          <a
+                            href={proj.link.startsWith('http') ? proj.link : `https://${proj.link}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="candidate-project-link-btn"
+                            title="View Project Link"
+                          >
+                            <span>View Project</span>
+                            <ExternalLinkIcon />
+                          </a>
+                        </div>
                       )}
                     </div>
-                    {proj.link && (
-                      <a
-                        href={proj.link.startsWith('http') ? proj.link : `https://${proj.link}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="candidate-project-link-btn"
-                        title="View Project Link"
-                      >
-                        <ExternalLinkIcon />
-                      </a>
+
+                    {/* 3. Tech Stack: Distinct Badges/Pills with System Theme */}
+                    {techStack.length > 0 && (
+                      <div className="candidate-project-tags">
+                        {techStack.map((tech, idx) => (
+                          <span
+                            key={idx}
+                            className="candidate-project-tag"
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* 4. Description Layout with Rich Text System Styling */}
+                    {proj.description && (
+                      <div
+                        className="candidate-rich-text"
+                        style={{ marginTop: '10px' }}
+                        dangerouslySetInnerHTML={sanitizeHtml(proj.description)}
+                      />
                     )}
                   </div>
-
-                  {proj.description && (
-                    <div
-                      className="candidate-project-description"
-                      dangerouslySetInnerHTML={sanitizeHtml(proj.description)}
-                    />
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

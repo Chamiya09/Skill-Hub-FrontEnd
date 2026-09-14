@@ -10855,6 +10855,100 @@ select.w-full {
   }
 }
 
+/* Candidate Featured Projects & Builds - System UI Corporate Theme */
+.candidate-projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.candidate-project-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.candidate-project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.candidate-project-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.2px;
+  margin: 0;
+}
+
+.candidate-project-role {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #008759;
+  margin: 4px 0 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.candidate-project-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.candidate-project-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: #e6f9f2;
+  border: 1px solid #b7eedc;
+  color: #008759;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.candidate-project-link-btn:hover {
+  background: #d1f4e7;
+  border-color: #00b074;
+  color: #00704a;
+  transform: translateY(-1px);
+}
+
+.candidate-project-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.candidate-project-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  transition: all 0.18s ease;
+}
+
+.candidate-project-tag:hover {
+  background: #e6f9f2;
+  border-color: #b7eedc;
+  color: #008759;
+}
+
 .candidate-item-card {
   background: #f8fafc;
   border: 1px solid #e2e8f0;

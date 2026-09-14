@@ -110,6 +110,55 @@ const EmptyState: React.FC<EmptyStateProps> = ({ icon, message, actionLabel, onA
   </div>
 );
 
+// Helper to parse Role and Tech Stack from combined project role strings
+const parseProjectDetails = (rawRole?: string) => {
+  if (!rawRole) return { displayRole: '', techStack: [] as string[] };
+
+  let displayRole = '';
+  let techString = '';
+
+  if (rawRole.includes('•')) {
+    const parts = rawRole.split('•');
+    displayRole = parts[0].trim();
+    techString = parts.slice(1).join(',');
+  } else if (rawRole.includes('|')) {
+    const parts = rawRole.split('|');
+    displayRole = parts[0].trim();
+    techString = parts.slice(1).join(',');
+  } else if (rawRole.includes('(') && rawRole.includes(')')) {
+    const match = rawRole.match(/^([^(]+)\(([^)]+)\)/);
+    if (match) {
+      displayRole = match[1].trim();
+      techString = match[2].trim();
+    } else {
+      displayRole = rawRole.trim();
+    }
+  } else if (rawRole.includes(',')) {
+    const parts = rawRole.split(',').map((s) => s.trim()).filter(Boolean);
+    const knownRoles = ['lead', 'engineer', 'developer', 'architect', 'full stack', 'frontend', 'backend', 'devops', 'intern', 'consultant', 'manager'];
+    const firstPartLower = parts[0]?.toLowerCase() || '';
+    const hasRoleKeyword = knownRoles.some((k) => firstPartLower.includes(k));
+
+    if (hasRoleKeyword && parts.length > 1) {
+      displayRole = parts[0];
+      techString = parts.slice(1).join(',');
+    } else {
+      techString = rawRole;
+    }
+  } else {
+    displayRole = rawRole.trim();
+  }
+
+  const techStack = techString
+    ? techString
+        .split(',')
+        .map((t) => t.trim().replace(/^•\s*/, ''))
+        .filter(Boolean)
+    : [];
+
+  return { displayRole, techStack };
+};
+
 // Skeleton Loader Component (Premium Corporate Light Theme)
 const CandidateProfileSkeleton: React.FC = () => (
   <div className="candidate-profile-container">
@@ -792,61 +841,84 @@ export const CandidateProfile: React.FC = () => {
         </div>
 
         {projects && projects.length > 0 ? (
-          <div className="candidate-grid-cards">
-            {projects.map((proj) => (
-              <div key={proj.id} className="candidate-item-card">
-                <div className="candidate-item-card-top">
-                  <div className="candidate-item-card-badge-row">
-                    <span className="candidate-item-category-tag">
-                      {proj.role || 'Featured Project'}
-                    </span>
-                    <div className="candidate-actions-group">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingProject(proj);
-                          setIsProjModalOpen(true);
-                        }}
-                        className="candidate-action-btn"
-                        title="Edit project"
-                      >
-                        <EditIcon />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteProject(proj.id)}
-                        className="candidate-action-btn candidate-action-btn-danger"
-                        title="Delete project"
-                      >
-                        <TrashIcon />
-                      </button>
+          <div className="candidate-projects-list">
+            {projects.map((proj) => {
+              const { displayRole, techStack } = parseProjectDetails(proj.role);
+              return (
+                <div key={proj.id} className="candidate-project-item">
+                  {/* 1. Primary Header: Project Title & Actions */}
+                  <div className="candidate-project-header">
+                    <div style={{ flex: 1 }}>
+                      <h3 className="candidate-project-title">{proj.projectName}</h3>
+                      {/* 2. Secondary Meta: Role with System Theme Color */}
+                      {displayRole && (
+                        <p className="candidate-project-role">
+                          {displayRole}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="candidate-project-actions">
+                      {proj.link && (
+                        <a
+                          href={proj.link.startsWith('http') ? proj.link : `https://${proj.link}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="candidate-project-link-btn"
+                        >
+                          <span>View Project</span>
+                          <ExternalLinkIcon />
+                        </a>
+                      )}
+                      <div className="candidate-actions-group">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingProject(proj);
+                            setIsProjModalOpen(true);
+                          }}
+                          className="candidate-action-btn"
+                          title="Edit project"
+                        >
+                          <EditIcon />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteProject(proj.id)}
+                          className="candidate-action-btn candidate-action-btn-danger"
+                          title="Delete project"
+                        >
+                          <TrashIcon />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <h3 className="candidate-item-title">{proj.projectName}</h3>
+
+                  {/* 3. Tech Stack: Distinct Badges/Pills with System Theme */}
+                  {techStack.length > 0 && (
+                    <div className="candidate-project-tags">
+                      {techStack.map((tech, idx) => (
+                        <span
+                          key={idx}
+                          className="candidate-project-tag"
+                        >
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 4. Description Layout with Rich Text System Styling */}
                   {proj.description && (
                     <div
                       className="candidate-rich-text"
+                      style={{ marginTop: '10px' }}
                       dangerouslySetInnerHTML={sanitizeHtml(proj.description)}
                     />
                   )}
                 </div>
-
-                {proj.link && (
-                  <div className="candidate-item-footer">
-                    <a
-                      href={proj.link.startsWith('http') ? proj.link : `https://${proj.link}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="candidate-item-link"
-                    >
-                      <span>View Repository / Link</span>
-                      <ExternalLinkIcon />
-                    </a>
-                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>Live Project</span>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <EmptyState

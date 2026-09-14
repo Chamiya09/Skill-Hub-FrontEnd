@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import DOMPurify from 'dompurify';
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
 import { useAuth } from '../context/AuthContext';
 import {
-  candidateAuthApi,
   candidateCvApi,
   type ExperienceDto,
   type EducationDto,
@@ -33,22 +30,7 @@ import { AddProjectModal } from '../components/candidates/modals/AddProjectModal
 import { AddSkillModal } from '../components/candidates/modals/AddSkillModal';
 import { EditAboutModal } from '../components/candidates/modals/EditAboutModal';
 import { AddCertificationModal } from '../components/candidates/modals/AddCertificationModal';
-
-const quillModules = {
-  toolbar: [
-    ['bold', 'italic', 'underline'],
-    [{ list: 'ordered' }, { list: 'bullet' }],
-    ['clean'],
-  ],
-};
-
-const quillFormats = [
-  'bold',
-  'italic',
-  'underline',
-  'list',
-  'bullet',
-];
+import { EditProfileModal } from '../components/candidates/modals/EditProfileModal';
 
 const sanitizeHtml = (htmlContent: string) => {
   return { __html: DOMPurify.sanitize(htmlContent || '') };
@@ -217,14 +199,33 @@ export const CandidateProfile: React.FC = () => {
   const [keyHighlights, setKeyHighlights] = useState<CandidateHighlightDto[]>(defaultKeyHighlights);
 
   // Profile Edit State
+  const [firstName, setFirstName] = useState(
+    currentUser?.firstName || (currentUser?.fullName ? currentUser.fullName.split(' ')[0] : 'Jessica')
+  );
+  const [lastName, setLastName] = useState(
+    currentUser?.lastName || (currentUser?.fullName ? currentUser.fullName.split(' ').slice(1).join(' ') : 'Taylor')
+  );
   const [headline, setHeadline] = useState(
     currentUser?.headline || 'Senior Full-Stack Cloud Architect • Distributed Systems & React/Node.js'
   );
   const [phone, setPhone] = useState(currentUser?.phone || '+1 (555) 749-2041');
   const [location, setLocation] = useState(currentUser?.location || 'San Francisco, CA (Open to Remote)');
-  const [bio, setBio] = useState(
-    '<p>Passionate <strong>Senior Full-Stack Engineer</strong> with <strong>8+ years of experience</strong> designing and scaling fault-tolerant cloud services, modern web applications, and enterprise microservices.</p><p>Proven track record of leading cross-functional engineering teams, optimizing application performance, and deploying high-impact products from inception to millions of daily active users.</p>'
-  );
+  const [website, setWebsite] = useState(currentUser?.website || 'https://jessicataylor.dev');
+  const [linkedinUrl, setLinkedinUrl] = useState(currentUser?.linkedinUrl || 'https://linkedin.com');
+  const [githubUrl, setGithubUrl] = useState(currentUser?.githubUrl || 'https://github.com');
+
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.firstName) setFirstName(currentUser.firstName);
+      if (currentUser.lastName) setLastName(currentUser.lastName);
+      if (currentUser.headline) setHeadline(currentUser.headline);
+      if (currentUser.phone) setPhone(currentUser.phone);
+      if (currentUser.location) setLocation(currentUser.location);
+      if (currentUser.website) setWebsite(currentUser.website);
+      if (currentUser.linkedinUrl) setLinkedinUrl(currentUser.linkedinUrl);
+      if (currentUser.githubUrl) setGithubUrl(currentUser.githubUrl);
+    }
+  }, [currentUser]);
 
   // Modal Control States
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -241,7 +242,6 @@ export const CandidateProfile: React.FC = () => {
   const [editingProject, setEditingProject] = useState<ProjectDto | null>(null);
   const [editingCertification, setEditingCertification] = useState<CertificationDto | null>(null);
 
-  const [savingProfile, setSavingProfile] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -251,7 +251,6 @@ export const CandidateProfile: React.FC = () => {
       const cv = await candidateCvApi.getCv();
       if (cv.summary !== undefined && cv.summary !== null) {
         setSummary(cv.summary);
-        setBio(cv.summary);
       }
       if (cv.keyHighlights !== undefined && cv.keyHighlights !== null) {
         setKeyHighlights(cv.keyHighlights);
@@ -279,30 +278,6 @@ export const CandidateProfile: React.FC = () => {
   useEffect(() => {
     loadCvData();
   }, [loadCvData]);
-
-  // Update profile handler
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSavingProfile(true);
-    setSuccessMsg(null);
-    setErrorMsg(null);
-
-    try {
-      const updated = await candidateAuthApi.updateProfile({
-        headline: headline.trim(),
-        phone: phone.trim(),
-        location: location.trim(),
-      });
-      updateUser(updated);
-      setSuccessMsg('Digital CV details updated successfully!');
-      setIsEditingProfile(false);
-    } catch (err: any) {
-      console.error('Failed to update candidate profile:', err);
-      setErrorMsg(err.message || 'Unable to update profile details.');
-    } finally {
-      setSavingProfile(false);
-    }
-  };
 
   // Delete Item Handlers
   const handleDeleteExperience = async (id: string) => {
@@ -371,8 +346,8 @@ export const CandidateProfile: React.FC = () => {
   };
 
   const candidateDisplayName =
+    `${firstName || ''} ${lastName || ''}`.trim() ||
     currentUser?.fullName ||
-    `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() ||
     'Jessica Taylor';
 
   const candidateEmail = currentUser?.email || 'jessica.taylor.cloud@example.com';
@@ -457,11 +432,11 @@ export const CandidateProfile: React.FC = () => {
             <div className="candidate-hero-actions">
               <button
                 type="button"
-                onClick={() => setIsEditingProfile(!isEditingProfile)}
+                onClick={() => setIsEditingProfile(true)}
                 className="candidate-btn-edit"
               >
                 <EditIcon />
-                <span>{isEditingProfile ? 'Cancel Edit' : 'Edit Profile'}</span>
+                <span>Edit Profile</span>
               </button>
               <button
                 type="button"
@@ -517,144 +492,54 @@ export const CandidateProfile: React.FC = () => {
               <span>{candidateEmail}</span>
             </a>
 
-            <a
-              href={`tel:${phone}`}
-              className="candidate-contact-pill"
-            >
-              <PhoneIcon />
-              <span>{phone}</span>
-            </a>
+            {phone && (
+              <a
+                href={`tel:${phone}`}
+                className="candidate-contact-pill"
+              >
+                <PhoneIcon />
+                <span>{phone}</span>
+              </a>
+            )}
 
-            <a
-              href="https://linkedin.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="candidate-contact-pill"
-            >
-              <LinkedInIcon />
-              <span>LinkedIn</span>
-            </a>
+            {linkedinUrl && (
+              <a
+                href={linkedinUrl.startsWith('http') ? linkedinUrl : `https://${linkedinUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="candidate-contact-pill"
+              >
+                <LinkedInIcon />
+                <span>LinkedIn</span>
+              </a>
+            )}
 
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="candidate-contact-pill"
-            >
-              <GitHubIcon />
-              <span>GitHub</span>
-            </a>
+            {githubUrl && (
+              <a
+                href={githubUrl.startsWith('http') ? githubUrl : `https://${githubUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="candidate-contact-pill"
+              >
+                <GitHubIcon />
+                <span>GitHub</span>
+              </a>
+            )}
 
-            <span className="candidate-contact-pill" style={{ cursor: 'default' }}>
-              <GlobeLinkIcon />
-              <span>Portfolio: https://jessicataylor.dev</span>
-            </span>
+            {website && (
+              <a
+                href={website.startsWith('http') ? website : `https://${website}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="candidate-contact-pill"
+              >
+                <GlobeLinkIcon />
+                <span>{website}</span>
+              </a>
+            )}
           </div>
         </div>
       </div>
-
-      {/* =========================================================================
-          INTERACTIVE EDIT PROFILE FORM (Toggled by "Edit Profile" Button)
-          ========================================================================= */}
-      {isEditingProfile && (
-        <div className="candidate-edit-form-card">
-          <div className="candidate-card-header">
-            <div className="candidate-card-title-group">
-              <div className="candidate-icon-box">
-                <EditIcon />
-              </div>
-              <div className="candidate-card-title-text">
-                <h2>Edit Digital CV Profile</h2>
-                <p>Update your professional headline, location, and bio</p>
-              </div>
-            </div>
-          </div>
-
-          <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div className="settings-form-group" style={{ marginBottom: 0 }}>
-              <label className="settings-label">Professional Headline / Target Job Title</label>
-              <div className="settings-input-wrapper">
-                <input
-                  type="text"
-                  required
-                  value={headline}
-                  onChange={(e) => setHeadline(e.target.value)}
-                  className="settings-input-field"
-                  style={{ paddingLeft: '16px' }}
-                />
-              </div>
-            </div>
-
-            <div className="settings-form-grid">
-              <div className="settings-form-group" style={{ marginBottom: 0 }}>
-                <label className="settings-label">Phone Number</label>
-                <div className="settings-input-wrapper">
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="settings-input-field"
-                    style={{ paddingLeft: '16px' }}
-                  />
-                </div>
-              </div>
-
-              <div className="settings-form-group" style={{ marginBottom: 0 }}>
-                <label className="settings-label">Location & Work Preference</label>
-                <div className="settings-input-wrapper">
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="settings-input-field"
-                    style={{ paddingLeft: '16px' }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Rich Text Editor for Bio */}
-            <div className="settings-form-group" style={{ marginBottom: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <label className="settings-label" style={{ margin: 0 }}>
-                  Professional Bio & Summary
-                </label>
-                <span style={{ fontSize: '11px', color: '#009e67', fontWeight: 700, background: '#e6f9f2', padding: '2px 8px', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                  <SparkleIcon />
-                  <span>Rich Text Enabled</span>
-                </span>
-              </div>
-              <div className="candidate-quill-wrapper">
-                <ReactQuill
-                  theme="snow"
-                  value={bio}
-                  onChange={setBio}
-                  modules={quillModules}
-                  formats={quillFormats}
-                  placeholder="Share an executive summary of your background, key achievements, and technical passions..."
-                />
-              </div>
-            </div>
-
-            <div className="settings-actions-footer">
-              <button
-                type="button"
-                onClick={() => setIsEditingProfile(false)}
-                className="settings-btn-cancel"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={savingProfile}
-                className="settings-btn-save"
-              >
-                {savingProfile ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
 
       {/* =========================================================================
           SECTION 2: ABOUT / PROFESSIONAL SUMMARY
@@ -1142,7 +1027,6 @@ export const CandidateProfile: React.FC = () => {
         onClose={() => setIsAboutModalOpen(false)}
         onSuccess={(data) => {
           setSummary(data.summary || '');
-          setBio(data.summary || '');
           setKeyHighlights(data.keyHighlights || []);
           setSuccessMsg('Executive summary and key highlights updated successfully!');
         }}
@@ -1164,6 +1048,33 @@ export const CandidateProfile: React.FC = () => {
             setSuccessMsg(`Added certification: ${saved.title}!`);
           }
           setEditingCertification(null);
+        }}
+      />
+
+      <EditProfileModal
+        isOpen={isEditingProfile}
+        initialData={{
+          firstName,
+          lastName,
+          headline,
+          phone,
+          location,
+          website,
+          linkedinUrl,
+          githubUrl,
+        }}
+        onClose={() => setIsEditingProfile(false)}
+        onSuccess={(updated) => {
+          updateUser(updated);
+          if (updated.firstName) setFirstName(updated.firstName);
+          if (updated.lastName) setLastName(updated.lastName);
+          if (updated.headline) setHeadline(updated.headline);
+          if (updated.phone) setPhone(updated.phone);
+          if (updated.location) setLocation(updated.location);
+          if (updated.website) setWebsite(updated.website);
+          if (updated.linkedinUrl) setLinkedinUrl(updated.linkedinUrl);
+          if (updated.githubUrl) setGithubUrl(updated.githubUrl);
+          setSuccessMsg('Profile details updated successfully!');
         }}
       />
     </div>

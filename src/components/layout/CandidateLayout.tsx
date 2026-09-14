@@ -35,7 +35,7 @@ export const CandidateLayout: React.FC = () => {
   const getPageTitle = () => {
     if (location.pathname.startsWith('/candidate/applications')) return 'Applied Jobs';
     if (location.pathname.startsWith('/candidate/saved')) return 'Saved Jobs';
-    if (location.pathname.startsWith('/candidate/settings')) return 'Account & Security';
+    if (location.pathname.startsWith('/candidate/settings') || location.pathname.startsWith('/candidate/security')) return 'Account & Security';
     return 'My Digital CV';
   };
 

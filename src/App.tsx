@@ -16,7 +16,7 @@ import { CandidateRegister } from "./pages/CandidateRegister";
 import { CandidateProfile } from "./pages/CandidateProfile";
 import { CandidateApplications } from "./pages/CandidateApplications";
 import { CandidateSavedJobs } from "./pages/CandidateSavedJobs";
-import { CandidateSettings } from "./pages/CandidateSettings";
+import { CandidateSecurity } from "./pages/CandidateSecurity";
 import { Dashboard } from "./pages/Dashboard";
 import { JobVacancies } from "./pages/JobVacancies";
 import { EditJob } from "./pages/EditJob";
@@ -115,7 +115,8 @@ function AppContent() {
               <Route path="profile" element={<CandidateProfile />} />
               <Route path="applications" element={<CandidateApplications />} />
               <Route path="saved" element={<CandidateSavedJobs />} />
-              <Route path="settings" element={<CandidateSettings />} />
+              <Route path="settings" element={<CandidateSecurity />} />
+              <Route path="security" element={<CandidateSecurity />} />
             </Route>
             
             {/* Legacy / Direct candidate redirect */}

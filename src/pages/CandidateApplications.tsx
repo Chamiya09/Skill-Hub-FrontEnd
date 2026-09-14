@@ -12,7 +12,6 @@ import {
   ClockIcon,
   SparkleIcon,
   BuildingIcon,
-  CheckIcon,
 } from '../components/common/Icons';
 
 export const CandidateApplications: React.FC = () => {

@@ -3716,26 +3716,333 @@
 }
 
 .applicants-cell-box {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
+  padding: 5px 12px 5px 6px;
+  border-radius: 9999px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+  margin: 0;
+  text-align: left;
+}
+
+.applicants-cell-box:hover {
+  background: #e6f9f2;
+  border-color: #a7f3d0;
+  color: #008759;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 176, 116, 0.12);
+}
+
+.applicants-cell-box:active {
+  transform: translateY(0);
 }
 
 .applicants-icon-wrap {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: #f1f5f9;
-  color: #475569;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #64748b;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.applicants-icon-wrap svg {
+  width: 13px;
+  height: 13px;
+}
+
+.applicants-cell-box:hover .applicants-icon-wrap {
+  background: #00b074;
+  color: #ffffff;
 }
 
 .applicants-count-num {
   font-weight: 700;
-  color: #0f172a;
+  color: #1e293b;
+  font-size: 12.5px;
+  letter-spacing: -0.1px;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+.applicants-cell-box:hover .applicants-count-num {
+  color: #008759;
+}
+
+/* =========================================================
+   JOB APPLICANTS TABLE COMPONENT STYLES
+   ========================================================= */
+.job-applicants-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.job-applicants-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13.5px;
+}
+
+.job-applicants-table thead tr {
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.job-applicants-table th {
+  padding: 14px 16px;
+  white-space: nowrap;
+}
+
+.job-applicants-table tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.15s ease;
+  cursor: pointer;
+}
+
+.job-applicants-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.job-applicants-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.job-applicants-table td {
+  padding: 14px 16px;
+  vertical-align: middle;
+}
+
+.job-applicants-candidate-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.job-applicants-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 700;
   font-size: 13px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.job-applicants-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.job-applicants-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.job-applicants-name {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 14px;
+  letter-spacing: -0.1px;
+  transition: color 0.15s ease;
+}
+
+.job-applicants-table tbody tr:hover .job-applicants-name {
+  color: #00b074;
+}
+
+.job-applicants-email {
+  font-size: 12px;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.job-applicants-email svg {
+  width: 13px;
+  height: 13px;
+  color: #94a3b8;
+}
+
+.job-applicants-headline {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.job-applicants-location {
+  font-size: 12px;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.job-applicants-location svg {
+  width: 13px;
+  height: 13px;
+  color: #94a3b8;
+}
+
+.job-applicants-skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-width: 260px;
+}
+
+.job-applicants-skill-tag {
+  font-size: 11px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.job-applicants-more-skills {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  align-self: center;
+}
+
+.job-applicants-date {
+  font-size: 12.5px;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.job-applicants-date svg {
+  width: 13px;
+  height: 13px;
+  color: #94a3b8;
+}
+
+.job-applicants-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #e6f9f2;
+  color: #008759;
+  border: 1px solid #bbf7d0;
+  white-space: nowrap;
+}
+
+.job-applicants-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00b074;
+}
+
+.job-applicants-view-cv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #008759;
+  background: #e6f9f2;
+  border: 1px solid #bbf7d0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.job-applicants-view-cv-btn:hover {
+  background: #00b074;
+  color: #ffffff;
+  border-color: #00b074;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 176, 116, 0.2);
+}
+
+.job-applicants-view-cv-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.job-applicants-empty-state,
+.job-applicants-loading-state {
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.job-applicants-empty-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.job-applicants-empty-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.job-applicants-empty-desc {
+  font-size: 13px;
+  color: #64748b;
+  max-width: 360px;
+  line-height: 1.5;
 }
 
 .date-posted-text {

@@ -13,7 +13,6 @@ import {
   UsersIcon,
   ClockIcon,
   ArrowRightIcon,
-  MailIcon,
   MapPinIcon,
   CheckIcon,
   InfoIcon,

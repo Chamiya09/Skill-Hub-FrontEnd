@@ -497,7 +497,7 @@ export const companyProfileApi = {
 export interface JobDto {
   id: string;
   companyId: string;
-  companyName: string;
+  companyName?: string;
   logoUrl?: string;
   title: string;
   department: string;
@@ -509,8 +509,9 @@ export interface JobDto {
   description: string;
   whatWeOffer?: string;
   tags?: string[];
+  applicantsCount?: number;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
 }
 
 export interface CreateJobPayload {
@@ -1184,9 +1185,16 @@ export const jobApplicationsApi = {
    * Calls: GET /api/jobs/{jobId}/applications
    */
   async getJobApplicants(jobId: string): Promise<JobApplicantDto[]> {
-    return request<JobApplicantDto[]>(`/jobs/${jobId}/applications`, {
-      method: 'GET',
-    });
+    try {
+      return await request<JobApplicantDto[]>(`/jobs/${jobId}/applications`, {
+        method: 'GET',
+      });
+    } catch (err: any) {
+      if (err?.message?.includes('404')) {
+        return [];
+      }
+      throw err;
+    }
   },
 
   /**

@@ -52,38 +52,38 @@ export const JobApplicantsTable: React.FC<JobApplicantsTableProps> = ({
   }, [applicants, searchQuery]);
 
   return (
-    <div className="w-full overflow-x-auto bg-white rounded-xl border border-slate-200">
-      <table className="w-full border-collapse text-left text-sm">
+    <div className="job-applicants-table-wrapper">
+      <table className="job-applicants-table">
         <thead>
-          <tr className="border-b border-slate-200 bg-slate-50/80 text-xs font-bold uppercase tracking-wider text-slate-600">
-            <th className="py-3.5 px-4">Candidate</th>
-            <th className="py-3.5 px-4">Role & Experience</th>
-            <th className="py-3.5 px-4">Skills</th>
-            <th className="py-3.5 px-4">Applied Date</th>
-            <th className="py-3.5 px-4">Status</th>
-            <th className="py-3.5 px-4 text-right">Action</th>
+          <tr>
+            <th>Candidate</th>
+            <th>Role & Experience</th>
+            <th>Skills</th>
+            <th>Applied Date</th>
+            <th>Status</th>
+            <th style={{ textAlign: 'right' }}>Action</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody>
           {isLoading ? (
             <tr>
-              <td colSpan={100} className="py-16 text-center">
-                <div className="flex flex-col items-center justify-center space-y-3">
+              <td colSpan={6}>
+                <div className="job-applicants-loading-state">
                   <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-                  <p className="text-xs font-semibold text-slate-500">Loading applicants...</p>
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: '#64748b' }}>Loading applicants...</p>
                 </div>
               </td>
             </tr>
           ) : applicants.length === 0 ? (
             /* 1. STRICT 0 APPLICANTS EMPTY STATE AS REQUIRED */
             <tr>
-              <td colSpan={100} className="py-12 text-center">
-                <div className="flex flex-col items-center justify-center">
-                  <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3 text-gray-400">
+              <td colSpan={6}>
+                <div className="job-applicants-empty-state">
+                  <div className="job-applicants-empty-icon">
                     <UsersIcon />
                   </div>
-                  <h3 className="text-base font-bold text-gray-900 mb-1">No applicants yet</h3>
-                  <p className="text-sm text-gray-500 max-w-sm mx-auto">
+                  <h3 className="job-applicants-empty-title">No applicants yet</h3>
+                  <p className="job-applicants-empty-desc">
                     When candidates apply for this position, they will appear here.
                   </p>
                 </div>
@@ -91,13 +91,13 @@ export const JobApplicantsTable: React.FC<JobApplicantsTableProps> = ({
             </tr>
           ) : filteredApplicants.length === 0 ? (
             <tr>
-              <td colSpan={100} className="py-12 text-center">
-                <div className="flex flex-col items-center justify-center">
-                  <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3 text-gray-400">
+              <td colSpan={6}>
+                <div className="job-applicants-empty-state">
+                  <div className="job-applicants-empty-icon">
                     <UsersIcon />
                   </div>
-                  <h3 className="text-base font-bold text-gray-900 mb-1">No candidates match your search</h3>
-                  <p className="text-sm text-gray-500 max-w-sm mx-auto">
+                  <h3 className="job-applicants-empty-title">No candidates match your search</h3>
+                  <p className="job-applicants-empty-desc">
                     Try searching with a different candidate name or skill keyword.
                   </p>
                 </div>
@@ -124,62 +124,55 @@ export const JobApplicantsTable: React.FC<JobApplicantsTableProps> = ({
               return (
                 <tr
                   key={applicant.id}
-                  className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
                   onClick={() => onSelectCandidate && onSelectCandidate(applicant.candidateId)}
                 >
                   {/* Candidate Identity */}
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-3">
+                  <td>
+                    <div className="job-applicants-candidate-cell">
                       {applicant.candidateAvatarUrl ? (
-                        <img
-                          src={applicant.candidateAvatarUrl}
-                          alt={name}
-                          className="w-10 h-10 rounded-full object-cover border border-slate-200"
-                        />
+                        <div className="job-applicants-avatar">
+                          <img
+                            src={applicant.candidateAvatarUrl}
+                            alt={name}
+                          />
+                        </div>
                       ) : (
                         <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-none"
+                          className="job-applicants-avatar"
                           style={{ background: getGradientForName(name) }}
                         >
                           {initials}
                         </div>
                       )}
-                      <div>
-                        <div className="font-semibold text-slate-900 group-hover:text-emerald-700 transition-colors">
-                          {name}
-                        </div>
-                        <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
-                          <span className="flex items-center gap-1">
-                            <MailIcon /> {applicant.candidateEmail || 'No email'}
-                          </span>
-                        </div>
+                      <div className="job-applicants-info">
+                        <span className="job-applicants-name">{name}</span>
+                        <span className="job-applicants-email">
+                          <MailIcon /> {applicant.candidateEmail || 'No email'}
+                        </span>
                       </div>
                     </div>
                   </td>
 
                   {/* Role & Headline */}
-                  <td className="py-4 px-4">
-                    <div className="text-sm font-medium text-slate-800">
+                  <td>
+                    <div className="job-applicants-headline">
                       {applicant.candidateHeadline || 'Candidate'}
                     </div>
-                    <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                    <div className="job-applicants-location">
                       <MapPinIcon /> {applicant.candidateLocation || 'Location unspecified'}
                     </div>
                   </td>
 
                   {/* Skills Snippet */}
-                  <td className="py-4 px-4">
-                    <div className="flex flex-wrap gap-1 max-w-xs">
+                  <td>
+                    <div className="job-applicants-skills-list">
                       {(applicant.skills || []).slice(0, 3).map((skill, idx) => (
-                        <span
-                          key={idx}
-                          className="text-[11px] font-medium bg-slate-100 text-slate-700 px-2 py-0.5 rounded"
-                        >
+                        <span key={idx} className="job-applicants-skill-tag">
                           {skill}
                         </span>
                       ))}
                       {(applicant.skills || []).length > 3 && (
-                        <span className="text-[10px] text-slate-400 self-center">
+                        <span className="job-applicants-more-skills">
                           +{applicant.skills.length - 3}
                         </span>
                       )}
@@ -187,29 +180,29 @@ export const JobApplicantsTable: React.FC<JobApplicantsTableProps> = ({
                   </td>
 
                   {/* Applied Date */}
-                  <td className="py-4 px-4 text-xs text-slate-600 whitespace-nowrap">
-                    <div className="flex items-center gap-1">
+                  <td>
+                    <span className="job-applicants-date">
                       <ClockIcon /> {formattedDate}
-                    </div>
+                    </span>
                   </td>
 
                   {/* Status */}
-                  <td className="py-4 px-4 whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <td>
+                    <span className="job-applicants-status-badge">
+                      <span className="job-applicants-status-dot"></span>
                       {applicant.status || 'Applied'}
                     </span>
                   </td>
 
                   {/* Action */}
-                  <td className="py-4 px-4 text-right whitespace-nowrap">
+                  <td style={{ textAlign: 'right' }}>
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         onSelectCandidate && onSelectCandidate(applicant.candidateId);
                       }}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-200 transition-colors"
+                      className="job-applicants-view-cv-btn"
                     >
                       <span>View CV</span>
                       <ArrowRightIcon />

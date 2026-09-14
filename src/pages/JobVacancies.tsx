@@ -417,14 +417,14 @@ export const JobVacancies = () => {
                           applicantsCount: job.applicantsCount,
                           createdAt: job.postedDate,
                         })}
-                        className="applicants-cell-box text-left hover:bg-emerald-50/60 p-1.5 rounded-lg transition-colors cursor-pointer group"
+                        className="applicants-cell-box"
                         title="Click to view and review candidate applicants"
                       >
-                        <div className="applicants-icon-wrap group-hover:bg-[#00b074] group-hover:text-white transition-colors">
+                        <div className="applicants-icon-wrap">
                           <UsersIcon />
                         </div>
-                        <span className="applicants-count-num group-hover:text-[#00b074] font-semibold transition-colors">
-                          {job.applicantsCount} Applicants
+                        <span className="applicants-count-num">
+                          {job.applicantsCount} {job.applicantsCount === 1 ? 'Applicant' : 'Applicants'}
                         </span>
                       </button>
                     </td>

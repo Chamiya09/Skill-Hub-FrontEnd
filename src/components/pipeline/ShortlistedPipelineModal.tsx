@@ -15,9 +15,7 @@ import {
   MailIcon,
   CheckIcon,
   CalendarIcon,
-  ClipboardCheckIcon,
   UserCheckIcon,
-  BriefcaseIcon,
   UsersIcon,
   ArrowRightIcon,
 } from '../common/Icons';

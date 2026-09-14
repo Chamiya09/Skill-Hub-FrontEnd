@@ -34,7 +34,6 @@ export const JobDetailsPublic: React.FC = () => {
   const [isApplying, setIsApplying] = useState(false)
   const [hasApplied, setHasApplied] = useState(false)
   const [applicationSubmitted, setApplicationSubmitted] = useState(false)
-  const [applyErrorMessage, setApplyErrorMessage] = useState<string | null>(null)
 
   // Check if current user is an employer/recruiter
   const isEmployer = Boolean(

@@ -120,7 +120,7 @@ export const EditAboutModal: React.FC<EditAboutModalProps> = ({
     <div className="candidate-modal-backdrop" onClick={onClose}>
       <div
         className="candidate-modal-card"
-        style={{ maxWidth: '640px' }}
+        style={{ maxWidth: '640px', width: '100%', overflowX: 'hidden' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -152,7 +152,7 @@ export const EditAboutModal: React.FC<EditAboutModalProps> = ({
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="candidate-modal-form">
+        <form onSubmit={handleSubmit} className="candidate-modal-form" style={{ overflowX: 'hidden' }}>
           {/* Field 1: Rich Text Summary */}
           <div className="settings-form-group" style={{ marginBottom: 0 }}>
             <div
@@ -200,16 +200,17 @@ export const EditAboutModal: React.FC<EditAboutModalProps> = ({
             <div
               style={{
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: 'flex-start',
                 justifyContent: 'space-between',
-                marginBottom: '8px',
+                marginBottom: '10px',
+                gap: '12px',
               }}
             >
-              <div>
-                <label className="settings-label" style={{ margin: 0 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <label className="settings-label" style={{ margin: 0, display: 'block' }}>
                   Key Highlight Cards (Optional)
                 </label>
-                <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748b' }}>
+                <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#64748b', lineHeight: 1.4 }}>
                   Define up to 3 standout achievements or metrics displayed below your summary.
                 </p>
               </div>
@@ -217,19 +218,21 @@ export const EditAboutModal: React.FC<EditAboutModalProps> = ({
                 <button
                   type="button"
                   onClick={handleAddHighlight}
-                  className="candidate-action-btn"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '4px',
+                    gap: '6px',
                     fontSize: '12px',
-                    fontWeight: 600,
-                    color: '#009e67',
+                    fontWeight: 700,
+                    color: '#008759',
                     background: '#e6f9f2',
-                    border: '1px solid #b3eedb',
-                    padding: '4px 10px',
+                    border: '1px solid #b7eedc',
+                    padding: '6px 12px',
                     borderRadius: '8px',
                     cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    transition: 'all 0.2s ease',
                   }}
                 >
                   <PlusIcon />
@@ -260,7 +263,7 @@ export const EditAboutModal: React.FC<EditAboutModalProps> = ({
                     gap: '6px',
                     fontSize: '12px',
                     fontWeight: 600,
-                    color: '#009e67',
+                    color: '#008759',
                     background: '#ffffff',
                     border: '1px solid #cbd5e1',
                     padding: '6px 14px',
@@ -308,7 +311,6 @@ export const EditAboutModal: React.FC<EditAboutModalProps> = ({
                       <button
                         type="button"
                         onClick={() => handleRemoveHighlight(index)}
-                        className="candidate-action-btn delete"
                         style={{
                           background: 'transparent',
                           border: 'none',

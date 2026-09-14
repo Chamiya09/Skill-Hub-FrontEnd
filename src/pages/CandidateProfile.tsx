@@ -173,6 +173,23 @@ const CandidateProfileSkeleton: React.FC = () => (
       </div>
     </div>
 
+    {/* Experience Section Skeleton */}
+    <div className="candidate-card">
+      <div className="candidate-card-header">
+        <div className="candidate-card-title-group">
+          <div className="candidate-skeleton-pulse" style={{ width: '40px', height: '40px', borderRadius: '12px' }} />
+          <div>
+            <div className="candidate-skeleton-pulse" style={{ width: '180px', height: '18px', borderRadius: '6px', marginBottom: '6px' }} />
+            <div className="candidate-skeleton-pulse-light" style={{ width: '250px', height: '13px', borderRadius: '4px' }} />
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '8px' }}>
+        <div className="candidate-skeleton-pulse-light" style={{ height: '100px', borderRadius: '16px' }} />
+        <div className="candidate-skeleton-pulse-light" style={{ height: '100px', borderRadius: '16px' }} />
+      </div>
+    </div>
+
     {/* Skills Section Skeleton */}
     <div className="candidate-card">
       <div className="candidate-card-header">
@@ -188,23 +205,6 @@ const CandidateProfileSkeleton: React.FC = () => (
         {[80, 95, 110, 75, 120, 90, 85, 105].map((w, i) => (
           <div key={i} className="candidate-skeleton-pulse-light" style={{ width: `${w}px`, height: '32px', borderRadius: '9999px' }} />
         ))}
-      </div>
-    </div>
-
-    {/* Experience Section Skeleton */}
-    <div className="candidate-card">
-      <div className="candidate-card-header">
-        <div className="candidate-card-title-group">
-          <div className="candidate-skeleton-pulse" style={{ width: '40px', height: '40px', borderRadius: '12px' }} />
-          <div>
-            <div className="candidate-skeleton-pulse" style={{ width: '180px', height: '18px', borderRadius: '6px', marginBottom: '6px' }} />
-            <div className="candidate-skeleton-pulse-light" style={{ width: '250px', height: '13px', borderRadius: '4px' }} />
-          </div>
-        </div>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '8px' }}>
-        <div className="candidate-skeleton-pulse-light" style={{ height: '100px', borderRadius: '16px' }} />
-        <div className="candidate-skeleton-pulse-light" style={{ height: '100px', borderRadius: '16px' }} />
       </div>
     </div>
   </div>
@@ -697,56 +697,7 @@ export const CandidateProfile: React.FC = () => {
       </div>
 
       {/* =========================================================================
-          SECTION 3: TECHNICAL & SOFT SKILLS (Dynamic from DB)
-          ========================================================================= */}
-      <div className="candidate-card">
-        <div className="candidate-card-header">
-          <div className="candidate-card-title-group">
-            <div className="candidate-icon-box">
-              <AwardIcon />
-            </div>
-            <div className="candidate-card-title-text">
-              <h2>Technical & Professional Skills</h2>
-              <p>Core competencies, languages, frameworks, and architecture tools</p>
-            </div>
-          </div>
-        </div>
-
-        {Object.keys(skillsByCategory).length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {Object.keys(skillsByCategory).map((catName) => (
-              <div key={catName} className="candidate-skill-category-group">
-                <h3 className="candidate-skill-cat-title">{catName}</h3>
-                <div className="candidate-skill-pills-wrap">
-                  {skillsByCategory[catName]?.map((skill) => (
-                    <div key={skill.id} className="candidate-skill-chip">
-                      <span>{skill.skillName}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteSkill(skill.id, skill.skillName)}
-                        className="candidate-skill-delete-btn"
-                        title={`Remove skill ${skill.skillName}`}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            icon={<AwardIcon />}
-            message="No skills added yet. Click the + button to add technical and professional competencies."
-            actionLabel="Add Skill"
-            onAction={() => setIsSkillModalOpen(true)}
-          />
-        )}
-      </div>
-
-      {/* =========================================================================
-          SECTION 4: WORK EXPERIENCE (Dynamic from DB)
+          SECTION 3: WORK EXPERIENCE (Dynamic from DB)
           ========================================================================= */}
       <div className="candidate-card">
         <div className="candidate-card-header">
@@ -825,7 +776,7 @@ export const CandidateProfile: React.FC = () => {
       </div>
 
       {/* =========================================================================
-          SECTION 5: FEATURED PROJECTS & BUILDS (Dynamic from DB)
+          SECTION 4: FEATURED PROJECTS & BUILDS (Dynamic from DB)
           ========================================================================= */}
       <div className="candidate-card">
         <div className="candidate-card-header">
@@ -906,6 +857,55 @@ export const CandidateProfile: React.FC = () => {
               setEditingProject(null);
               setIsProjModalOpen(true);
             }}
+          />
+        )}
+      </div>
+
+      {/* =========================================================================
+          SECTION 5: TECHNICAL & SOFT SKILLS (Dynamic from DB)
+          ========================================================================= */}
+      <div className="candidate-card">
+        <div className="candidate-card-header">
+          <div className="candidate-card-title-group">
+            <div className="candidate-icon-box">
+              <AwardIcon />
+            </div>
+            <div className="candidate-card-title-text">
+              <h2>Technical & Professional Skills</h2>
+              <p>Core competencies, languages, frameworks, and architecture tools</p>
+            </div>
+          </div>
+        </div>
+
+        {Object.keys(skillsByCategory).length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {Object.keys(skillsByCategory).map((catName) => (
+              <div key={catName} className="candidate-skill-category-group">
+                <h3 className="candidate-skill-cat-title">{catName}</h3>
+                <div className="candidate-skill-pills-wrap">
+                  {skillsByCategory[catName]?.map((skill) => (
+                    <div key={skill.id} className="candidate-skill-chip">
+                      <span>{skill.skillName}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSkill(skill.id, skill.skillName)}
+                        className="candidate-skill-delete-btn"
+                        title={`Remove skill ${skill.skillName}`}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={<AwardIcon />}
+            message="No skills added yet. Click the + button to add technical and professional competencies."
+            actionLabel="Add Skill"
+            onAction={() => setIsSkillModalOpen(true)}
           />
         )}
       </div>

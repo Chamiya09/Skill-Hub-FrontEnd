@@ -96,7 +96,7 @@ export const FindJobs = () => {
         const matchesSearch =
           !term ||
           job.title.toLowerCase().includes(term) ||
-          job.companyName.toLowerCase().includes(term) ||
+          (job.companyName || '').toLowerCase().includes(term) ||
           job.department.toLowerCase().includes(term) ||
           job.location.toLowerCase().includes(term) ||
           matchesTags

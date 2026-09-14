@@ -34,6 +34,7 @@ export const JobDetailsPublic: React.FC = () => {
   const [isApplying, setIsApplying] = useState(false)
   const [hasApplied, setHasApplied] = useState(false)
   const [applicationSubmitted, setApplicationSubmitted] = useState(false)
+  const [applyErrorMessage, setApplyErrorMessage] = useState<string | null>(null)
 
   // Check if current user is an employer/recruiter
   const isEmployer = Boolean(
@@ -785,6 +786,12 @@ export const JobDetailsPublic: React.FC = () => {
                       </>
                     )}
                   </button>
+
+                  {applyErrorMessage && (
+                    <div style={{ color: '#dc2626', fontSize: '12px', marginBottom: '8px', textAlign: 'center' }}>
+                      {applyErrorMessage}
+                    </div>
+                  )}
 
                   <div style={{ textAlign: 'center', fontSize: '12px', color: '#94a3b8' }}>
                     Instant application powered by <strong>Digital CV</strong>

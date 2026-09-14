@@ -408,18 +408,18 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
               <p className="text-xs font-semibold text-slate-500">Loading applicants from database...</p>
             </div>
           ) : filteredCandidates.length === 0 ? (
-            <div className="py-12 text-center text-slate-500">
-              <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-3">
+            <div className="py-12 text-center">
+              <div className="w-12 h-12 bg-slate-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-3">
                 <UsersIcon />
               </div>
-              <p className="text-sm font-semibold text-slate-700">
+              <h3 className="text-base font-bold text-gray-900 mb-1">
                 {applicants.length === 0
-                  ? 'No candidates have applied to this job yet.'
-                  : 'No candidates match your search filter.'}
-              </p>
-              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                  ? 'No applicants yet'
+                  : 'No candidates match your search'}
+              </h3>
+              <p className="text-sm text-gray-500 max-w-sm mx-auto">
                 {applicants.length === 0
-                  ? 'Applications submitted by candidates will appear here automatically.'
+                  ? 'When candidates apply for this position, they will appear here.'
                   : 'Try searching with a different candidate name or skill keyword.'}
               </p>
             </div>

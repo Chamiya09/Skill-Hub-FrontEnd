@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { jobsApi, type JobDto } from '../services/api';
+import { jobsApi, jobApplicationsApi, type JobDto } from '../services/api';
 import { ShortlistedPipelineModal } from '../components/pipeline/ShortlistedPipelineModal';
 import {
   FunnelIcon,
@@ -26,13 +26,33 @@ export const HiringPipeline: React.FC<HiringPipelineProps> = ({ onSelectJob }) =
   const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Closed'>('All');
   const [selectedJobForModal, setSelectedJobForModal] = useState<JobDto | null>(null);
 
-  // Fetch company jobs
+  // Real applicant counts per job
+  const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>({});
+
+  // Fetch company jobs and their real applicant counts
   const fetchJobs = async () => {
     try {
       setLoading(true);
       setErrorMessage(null);
       const data = await jobsApi.getJobs();
       setJobs(data);
+
+      // Fetch applicant counts for published jobs
+      const published = (data || []).filter((j) => (j.status || 'Active').toLowerCase() !== 'draft');
+      const countsMap: Record<string, number> = {};
+
+      await Promise.allSettled(
+        published.map(async (job) => {
+          try {
+            const apps = await jobApplicationsApi.getJobApplicants(job.id);
+            countsMap[job.id] = apps.length;
+          } catch {
+            countsMap[job.id] = 0;
+          }
+        })
+      );
+
+      setApplicantCounts(countsMap);
     } catch (err: any) {
       console.error('Error fetching jobs for hiring pipeline:', err);
       setErrorMessage(err.message || 'Failed to load company job requisitions.');
@@ -77,21 +97,9 @@ export const HiringPipeline: React.FC<HiringPipelineProps> = ({ onSelectJob }) =
     });
   }, [publishedJobs, searchQuery, selectedDepartment, statusFilter]);
 
-  // Mock shortlisted count per job (e.g. 4 for tech roles, 3 for other)
-  const getShortlistedCount = (job: JobDto) => {
-    const title = job.title.toLowerCase();
-    if (title.includes('engineer') || title.includes('developer') || title.includes('architect')) {
-      return 4;
-    }
-    if (title.includes('manager') || title.includes('lead') || title.includes('designer')) {
-      return 3;
-    }
-    return 2;
-  };
-
   const totalShortlistedCount = useMemo(() => {
-    return publishedJobs.reduce((acc, job) => acc + getShortlistedCount(job), 0);
-  }, [publishedJobs]);
+    return publishedJobs.reduce((acc, job) => acc + (applicantCounts[job.id] || 0), 0);
+  }, [publishedJobs, applicantCounts]);
 
   const handleCardClick = (job: JobDto) => {
     if (onSelectJob) {
@@ -245,7 +253,7 @@ export const HiringPipeline: React.FC<HiringPipelineProps> = ({ onSelectJob }) =
         <div className="jobs-grid">
           {filteredJobs.map((job) => {
             const isClosed = (job.status || '').toLowerCase() === 'closed';
-            const shortlistedCount = getShortlistedCount(job);
+            const shortlistedCount = applicantCounts[job.id] || 0;
 
             return (
               <div

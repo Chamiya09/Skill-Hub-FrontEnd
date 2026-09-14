@@ -11502,6 +11502,86 @@ select.w-full {
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
 }
 
+/* Candidate Profile Empty State & Skeleton Enhancements */
+.candidate-empty-state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 20px;
+  background: #f8fafc;
+  border: 1.5px dashed #e2e8f0;
+  border-radius: 16px;
+  gap: 12px;
+}
+
+.candidate-empty-state-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.candidate-empty-state-text {
+  font-size: 13.5px;
+  color: #64748b;
+  max-width: 460px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.candidate-empty-state-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: #008759;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 135, 89, 0.2);
+}
+
+.candidate-empty-state-btn:hover {
+  background: #00704a;
+  transform: translateY(-1px);
+}
+
+/* Shimmer pulse helper */
+@keyframes candidate-shimmer {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.candidate-skeleton-pulse {
+  animation: candidate-shimmer 1.7s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background-color: #e2e8f0;
+}
+
+.candidate-skeleton-pulse-light {
+  animation: candidate-shimmer 1.7s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background-color: #f1f5f9;
+}
+
+
 
 
 

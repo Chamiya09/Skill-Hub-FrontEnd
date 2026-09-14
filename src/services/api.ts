@@ -891,7 +891,41 @@ export interface CandidateCvDto {
   certifications: CertificationDto[];
 }
 
+export interface CandidateProfileResponseDto {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  fullName: string;
+  email: string;
+  headline?: string;
+  phone?: string;
+  location?: string;
+  experience?: string;
+  availability?: string;
+  avatarUrl?: string;
+  website?: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  summary?: string;
+  keyHighlights: CandidateHighlightDto[];
+  experiences: ExperienceDto[];
+  educations: EducationDto[];
+  projects: ProjectDto[];
+  skills: SkillDto[];
+  certifications: CertificationDto[];
+}
+
 export const candidateCvApi = {
+  /**
+   * Retrieves unified full profile and digital CV for the authenticated candidate.
+   * Calls: GET /api/candidate/profile
+   */
+  async getProfile(): Promise<CandidateProfileResponseDto> {
+    return request<CandidateProfileResponseDto>('/candidate/profile', {
+      method: 'GET'
+    });
+  },
+
   /**
    * Retrieves full aggregated Digital CV for the authenticated candidate.
    * Calls: GET /api/candidate/cv

@@ -3,11 +3,12 @@ import DOMPurify from 'dompurify';
 import { useAuth } from '../context/AuthContext';
 import {
   candidateCvApi,
+  candidateAuthApi,
+  type CandidateProfileResponseDto,
   type ExperienceDto,
   type EducationDto,
   type ProjectDto,
   type SkillDto,
-  type CandidateHighlightDto,
   type CertificationDto,
 } from '../services/api';
 import {
@@ -36,7 +37,7 @@ const sanitizeHtml = (htmlContent: string) => {
   return { __html: DOMPurify.sanitize(htmlContent || '') };
 };
 
-// Lucide-style extra icons
+// Extra Icons
 const GlobeLinkIcon: React.FC = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10" />
@@ -83,153 +84,139 @@ const ExternalLinkIcon: React.FC = () => (
   </svg>
 );
 
-// Fallback initial items if user hasn't added entries yet
-const defaultExperiences: ExperienceDto[] = [
-  {
-    id: 'exp-mock-1',
-    title: 'Lead Cloud & Full-Stack Architect',
-    company: 'Horizon Cloud Systems Inc.',
-    location: 'San Francisco, CA (Remote)',
-    startDate: '2023',
-    endDate: 'Present',
-    isCurrent: true,
-    description: '<p>Architected and deployed high-throughput distributed event streaming pipelines reducing cross-region data latency by <strong>42%</strong>.</p><ul><li>Spearheaded the migration of legacy monoliths to containerized microservices running on <strong>AWS EKS</strong>.</li><li>Established automated CI/CD pipelines, integration test suites, and strict SLA monitoring.</li></ul>',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'exp-mock-2',
-    title: 'Senior Full-Stack Software Engineer',
-    company: 'Nexus FinTech Solutions',
-    location: 'New York, NY (Hybrid)',
-    startDate: '2020',
-    endDate: '2023',
-    isCurrent: false,
-    description: '<p>Built real-time transaction reconciliation dashboard using <strong>React</strong>, <strong>TypeScript</strong>, and <strong>.NET Core Web API</strong> handling $40M+ daily volume.</p><ul><li>Designed high-performance multi-level caching layer with <strong>Redis</strong>.</li><li>Reduced API response times from 340ms to 45ms.</li></ul>',
-    createdAt: new Date().toISOString(),
-  },
-];
+// Empty State Box Component
+interface EmptyStateProps {
+  icon: React.ReactNode;
+  message: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}
 
-const defaultEducations: EducationDto[] = [
-  {
-    id: 'edu-mock-1',
-    degree: 'Bachelor of Science in Computer Science & Engineering',
-    institution: 'Stanford University',
-    fieldOfStudy: 'Distributed Systems & Software Architecture',
-    startYear: '2014',
-    endYear: '2018',
-    description: 'Graduated with Departmental Honors. Focus on Parallel Algorithms, Cloud Networking, and Distributed Systems.',
-    createdAt: new Date().toISOString(),
-  },
-];
+const EmptyState: React.FC<EmptyStateProps> = ({ icon, message, actionLabel, onAction }) => (
+  <div className="candidate-empty-state-box">
+    <div className="candidate-empty-state-icon">
+      {icon}
+    </div>
+    <p className="candidate-empty-state-text">{message}</p>
+    {actionLabel && onAction && (
+      <button
+        type="button"
+        onClick={onAction}
+        className="candidate-empty-state-btn"
+      >
+        <span>+ {actionLabel}</span>
+      </button>
+    )}
+  </div>
+);
 
-const defaultCertifications: CertificationDto[] = [
-  {
-    id: 'cert-mock-1',
-    title: 'AWS Certified Solutions Architect – Professional',
-    issuingOrganization: 'Amazon Web Services (AWS)',
-    issueDate: 'Issued Aug 2023',
-    credentialUrl: 'https://aws.amazon.com/verification',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'cert-mock-2',
-    title: 'Certified Kubernetes Administrator (CKA)',
-    issuingOrganization: 'Cloud Native Computing Foundation (CNCF)',
-    issueDate: 'Issued Jan 2024',
-    credentialUrl: 'https://www.cncf.io/certification/cka/',
-    createdAt: new Date().toISOString(),
-  },
-];
+// Skeleton Loader Component (Premium Corporate Light Theme)
+const CandidateProfileSkeleton: React.FC = () => (
+  <div className="candidate-profile-container">
+    {/* Hero Card Skeleton */}
+    <div className="candidate-hero-card">
+      <div className="candidate-hero-banner">
+        <div className="candidate-skeleton-pulse" style={{ width: '130px', height: '28px', borderRadius: '9999px' }} />
+      </div>
+      <div className="candidate-hero-body">
+        <div className="candidate-hero-top-row">
+          <div className="candidate-avatar-wrapper">
+            <div className="candidate-skeleton-pulse" style={{ width: '104px', height: '104px', borderRadius: '50%', border: '4px solid #ffffff' }} />
+          </div>
+          <div className="candidate-hero-actions">
+            <div className="candidate-skeleton-pulse" style={{ width: '116px', height: '40px', borderRadius: '12px' }} />
+            <div className="candidate-skeleton-pulse" style={{ width: '130px', height: '40px', borderRadius: '12px' }} />
+          </div>
+        </div>
 
-const defaultProjects: ProjectDto[] = [
-  {
-    id: 'proj-mock-1',
-    projectName: 'High-Throughput Distributed Cache & In-Memory Key-Value Store',
-    role: 'Lead Architect / C# & Redis',
-    description: '<p>Engineered an asynchronous high-concurrency memory cache supporting LRU eviction and replication with sub-millisecond read/write latency.</p><ul><li>Zero-allocation serialization engine with <strong>99.999% uptime</strong>.</li><li>Benchmark throughput surpassing 1.2M operations per second.</li></ul>',
-    link: 'https://github.com/example/distributed-cache',
-    createdAt: new Date().toISOString(),
-  },
-];
+        <div className="candidate-identity-info">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+            <div className="candidate-skeleton-pulse" style={{ width: '220px', height: '28px', borderRadius: '8px' }} />
+            <div className="candidate-skeleton-pulse" style={{ width: '96px', height: '24px', borderRadius: '9999px' }} />
+          </div>
+          <div className="candidate-skeleton-pulse-light" style={{ width: '70%', height: '18px', borderRadius: '6px', marginBottom: '12px' }} />
+          <div style={{ display: 'flex', gap: '14px' }}>
+            <div className="candidate-skeleton-pulse-light" style={{ width: '110px', height: '16px', borderRadius: '6px' }} />
+            <div className="candidate-skeleton-pulse-light" style={{ width: '90px', height: '16px', borderRadius: '6px' }} />
+            <div className="candidate-skeleton-pulse-light" style={{ width: '100px', height: '16px', borderRadius: '6px' }} />
+          </div>
+        </div>
 
-const defaultSkills: SkillDto[] = [
-  { id: 'sk-1', skillName: 'TypeScript', category: 'Languages & Core Stack', createdAt: new Date().toISOString() },
-  { id: 'sk-2', skillName: 'C# / .NET 8', category: 'Languages & Core Stack', createdAt: new Date().toISOString() },
-  { id: 'sk-3', skillName: 'React 19', category: 'Frameworks & Libraries', createdAt: new Date().toISOString() },
-  { id: 'sk-4', skillName: 'Next.js', category: 'Frameworks & Libraries', createdAt: new Date().toISOString() },
-  { id: 'sk-5', skillName: 'ASP.NET Core Web API', category: 'Frameworks & Libraries', createdAt: new Date().toISOString() },
-  { id: 'sk-6', skillName: 'AWS (ECS & Lambda)', category: 'Cloud, DevOps & Databases', createdAt: new Date().toISOString() },
-  { id: 'sk-7', skillName: 'Docker & Kubernetes', category: 'Cloud, DevOps & Databases', createdAt: new Date().toISOString() },
-  { id: 'sk-8', skillName: 'PostgreSQL', category: 'Cloud, DevOps & Databases', createdAt: new Date().toISOString() },
-  { id: 'sk-9', skillName: 'Microservices Architecture', category: 'Architecture & Practices', createdAt: new Date().toISOString() },
-  { id: 'sk-10', skillName: 'System Design', category: 'Architecture & Practices', createdAt: new Date().toISOString() },
-  { id: 'sk-11', skillName: 'Technical Leadership', category: 'Soft Skills & Leadership', createdAt: new Date().toISOString() },
-];
+        <div className="candidate-contact-bar">
+          <div className="candidate-skeleton-pulse-light" style={{ width: '180px', height: '34px', borderRadius: '10px' }} />
+          <div className="candidate-skeleton-pulse-light" style={{ width: '140px', height: '34px', borderRadius: '10px' }} />
+          <div className="candidate-skeleton-pulse-light" style={{ width: '100px', height: '34px', borderRadius: '10px' }} />
+        </div>
+      </div>
+    </div>
 
-const defaultKeyHighlights: CandidateHighlightDto[] = [
-  {
-    category: 'Architecture',
-    value: '99.99% Cloud Uptime',
-    subtext: 'Enterprise AWS & Kubernetes SLA',
-  },
-  {
-    category: 'Engineering',
-    value: '14+ Engineers Led',
-    subtext: 'Agile sprints & architectural reviews',
-  },
-  {
-    category: 'Impact',
-    value: '42% Latency Reduction',
-    subtext: 'Optimized Redis & Kafka pipelines',
-  },
-];
+    {/* About Section Skeleton */}
+    <div className="candidate-card">
+      <div className="candidate-card-header">
+        <div className="candidate-card-title-group">
+          <div className="candidate-skeleton-pulse" style={{ width: '40px', height: '40px', borderRadius: '12px' }} />
+          <div>
+            <div className="candidate-skeleton-pulse" style={{ width: '190px', height: '18px', borderRadius: '6px', marginBottom: '6px' }} />
+            <div className="candidate-skeleton-pulse-light" style={{ width: '240px', height: '13px', borderRadius: '4px' }} />
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '8px 0 16px' }}>
+        <div className="candidate-skeleton-pulse-light" style={{ width: '100%', height: '14px', borderRadius: '4px' }} />
+        <div className="candidate-skeleton-pulse-light" style={{ width: '92%', height: '14px', borderRadius: '4px' }} />
+        <div className="candidate-skeleton-pulse-light" style={{ width: '80%', height: '14px', borderRadius: '4px' }} />
+      </div>
+      <div className="candidate-metrics-grid">
+        <div className="candidate-skeleton-pulse-light" style={{ height: '72px', borderRadius: '14px' }} />
+        <div className="candidate-skeleton-pulse-light" style={{ height: '72px', borderRadius: '14px' }} />
+        <div className="candidate-skeleton-pulse-light" style={{ height: '72px', borderRadius: '14px' }} />
+      </div>
+    </div>
+
+    {/* Skills Section Skeleton */}
+    <div className="candidate-card">
+      <div className="candidate-card-header">
+        <div className="candidate-card-title-group">
+          <div className="candidate-skeleton-pulse" style={{ width: '40px', height: '40px', borderRadius: '12px' }} />
+          <div>
+            <div className="candidate-skeleton-pulse" style={{ width: '200px', height: '18px', borderRadius: '6px', marginBottom: '6px' }} />
+            <div className="candidate-skeleton-pulse-light" style={{ width: '260px', height: '13px', borderRadius: '4px' }} />
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+        {[80, 95, 110, 75, 120, 90, 85, 105].map((w, i) => (
+          <div key={i} className="candidate-skeleton-pulse-light" style={{ width: `${w}px`, height: '32px', borderRadius: '9999px' }} />
+        ))}
+      </div>
+    </div>
+
+    {/* Experience Section Skeleton */}
+    <div className="candidate-card">
+      <div className="candidate-card-header">
+        <div className="candidate-card-title-group">
+          <div className="candidate-skeleton-pulse" style={{ width: '40px', height: '40px', borderRadius: '12px' }} />
+          <div>
+            <div className="candidate-skeleton-pulse" style={{ width: '180px', height: '18px', borderRadius: '6px', marginBottom: '6px' }} />
+            <div className="candidate-skeleton-pulse-light" style={{ width: '250px', height: '13px', borderRadius: '4px' }} />
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '8px' }}>
+        <div className="candidate-skeleton-pulse-light" style={{ height: '100px', borderRadius: '16px' }} />
+        <div className="candidate-skeleton-pulse-light" style={{ height: '100px', borderRadius: '16px' }} />
+      </div>
+    </div>
+  </div>
+);
 
 export const CandidateProfile: React.FC = () => {
   const { currentUser, updateUser } = useAuth();
 
-  // Dynamic CV Data State
-  const [experiences, setExperiences] = useState<ExperienceDto[]>(defaultExperiences);
-  const [educations, setEducations] = useState<EducationDto[]>(defaultEducations);
-  const [projects, setProjects] = useState<ProjectDto[]>(defaultProjects);
-  const [skills, setSkills] = useState<SkillDto[]>(defaultSkills);
-  const [certifications, setCertifications] = useState<CertificationDto[]>(defaultCertifications);
-  const [summary, setSummary] = useState(
-    '<p>Passionate <strong>Senior Full-Stack Engineer</strong> with <strong>8+ years of experience</strong> designing and scaling fault-tolerant cloud services, modern web applications, and enterprise microservices.</p><p>Proven track record of leading cross-functional engineering teams, optimizing application performance, and deploying high-impact products from inception to millions of daily active users.</p>'
-  );
-  const [keyHighlights, setKeyHighlights] = useState<CandidateHighlightDto[]>(defaultKeyHighlights);
-
-  // Profile Edit State
-  const [firstName, setFirstName] = useState(
-    currentUser?.firstName || (currentUser?.fullName ? currentUser.fullName.split(' ')[0] : 'Jessica')
-  );
-  const [lastName, setLastName] = useState(
-    currentUser?.lastName || (currentUser?.fullName ? currentUser.fullName.split(' ').slice(1).join(' ') : 'Taylor')
-  );
-  const [headline, setHeadline] = useState(
-    currentUser?.headline || 'Senior Full-Stack Cloud Architect • Distributed Systems & React/Node.js'
-  );
-  const [phone, setPhone] = useState(currentUser?.phone || '+1 (555) 749-2041');
-  const [location, setLocation] = useState(currentUser?.location || 'San Francisco, CA (Open to Remote)');
-  const [experience, setExperience] = useState(currentUser?.experience || '8-10 Years');
-  const [availability, setAvailability] = useState(currentUser?.availability || 'Immediate');
-  const [website, setWebsite] = useState(currentUser?.website || 'https://jessicataylor.dev');
-  const [linkedinUrl, setLinkedinUrl] = useState(currentUser?.linkedinUrl || 'https://linkedin.com');
-  const [githubUrl, setGithubUrl] = useState(currentUser?.githubUrl || 'https://github.com');
-
-  useEffect(() => {
-    if (currentUser) {
-      if (currentUser.firstName) setFirstName(currentUser.firstName);
-      if (currentUser.lastName) setLastName(currentUser.lastName);
-      if (currentUser.headline) setHeadline(currentUser.headline);
-      if (currentUser.phone !== undefined) setPhone(currentUser.phone || '');
-      if (currentUser.location !== undefined) setLocation(currentUser.location || '');
-      if (currentUser.experience !== undefined) setExperience(currentUser.experience || '');
-      if (currentUser.availability !== undefined) setAvailability(currentUser.availability || '');
-      if (currentUser.website !== undefined) setWebsite(currentUser.website || '');
-      if (currentUser.linkedinUrl !== undefined) setLinkedinUrl(currentUser.linkedinUrl || '');
-      if (currentUser.githubUrl !== undefined) setGithubUrl(currentUser.githubUrl || '');
-    }
-  }, [currentUser]);
+  // Dynamic Candidate Profile & CV State
+  const [profileData, setProfileData] = useState<CandidateProfileResponseDto | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Modal Control States
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -249,112 +236,185 @@ export const CandidateProfile: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Fetch Full CV from Backend on Mount
-  const loadCvData = useCallback(async () => {
+  // Fetch Full Profile from Backend
+  const loadProfileData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const cv = await candidateCvApi.getCv();
-      if (cv.summary !== undefined && cv.summary !== null) {
-        setSummary(cv.summary);
+      let data: CandidateProfileResponseDto;
+      try {
+        data = await candidateCvApi.getProfile();
+      } catch {
+        // Fallback to fetch /candidate/cv and /candidate/me concurrently
+        const [cv, user] = await Promise.all([
+          candidateCvApi.getCv(),
+          candidateAuthApi.getMe().catch(() => currentUser),
+        ]);
+        data = {
+          id: user?.id || '',
+          firstName: user?.firstName,
+          lastName: user?.lastName,
+          fullName: user?.fullName || '',
+          email: user?.email || '',
+          headline: user?.headline,
+          phone: user?.phone,
+          location: user?.location,
+          experience: user?.experience,
+          availability: user?.availability,
+          avatarUrl: user?.avatarUrl,
+          website: user?.website,
+          linkedinUrl: user?.linkedinUrl,
+          githubUrl: user?.githubUrl,
+          summary: cv.summary || user?.about,
+          keyHighlights: cv.keyHighlights || [],
+          experiences: cv.experiences || [],
+          educations: cv.educations || [],
+          projects: cv.projects || [],
+          skills: cv.skills || [],
+          certifications: cv.certifications || [],
+        };
       }
-      if (cv.keyHighlights !== undefined && cv.keyHighlights !== null) {
-        setKeyHighlights(cv.keyHighlights);
-      }
-      if (cv.experiences && cv.experiences.length > 0) {
-        setExperiences(cv.experiences);
-      }
-      if (cv.educations && cv.educations.length > 0) {
-        setEducations(cv.educations);
-      }
-      if (cv.projects && cv.projects.length > 0) {
-        setProjects(cv.projects);
-      }
-      if (cv.skills && cv.skills.length > 0) {
-        setSkills(cv.skills);
-      }
-      if (cv.certifications && cv.certifications.length > 0) {
-        setCertifications(cv.certifications);
-      }
-    } catch (err) {
-      console.warn('Could not load dynamic CV from backend, using current state:', err);
+      setProfileData(data);
+    } catch (err: any) {
+      console.error('Failed to load candidate profile:', err);
+      setError(err?.message || 'Failed to load profile data from the database. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
-    loadCvData();
-  }, [loadCvData]);
+    loadProfileData();
+  }, [loadProfileData]);
 
   // Delete Item Handlers
   const handleDeleteExperience = async (id: string) => {
     if (!window.confirm('Are you sure you want to remove this work experience?')) return;
     try {
-      if (!id.startsWith('exp-mock-')) {
-        await candidateCvApi.deleteExperience(id);
-      }
-      setExperiences((prev) => prev.filter((item) => item.id !== id));
+      await candidateCvApi.deleteExperience(id);
+      setProfileData((prev) => (prev ? {
+        ...prev,
+        experiences: prev.experiences.filter((item) => item.id !== id),
+      } : null));
       setSuccessMsg('Experience entry removed.');
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to delete experience.');
+      setErrorMsg(err?.message || 'Failed to delete experience.');
     }
   };
 
   const handleDeleteEducation = async (id: string) => {
     if (!window.confirm('Are you sure you want to remove this educational qualification?')) return;
     try {
-      if (!id.startsWith('edu-mock-')) {
-        await candidateCvApi.deleteEducation(id);
-      }
-      setEducations((prev) => prev.filter((item) => item.id !== id));
+      await candidateCvApi.deleteEducation(id);
+      setProfileData((prev) => (prev ? {
+        ...prev,
+        educations: prev.educations.filter((item) => item.id !== id),
+      } : null));
       setSuccessMsg('Education entry removed.');
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to delete education entry.');
+      setErrorMsg(err?.message || 'Failed to delete education entry.');
     }
   };
 
   const handleDeleteCertification = async (id: string) => {
     if (!window.confirm('Are you sure you want to remove this certification?')) return;
     try {
-      if (!id.startsWith('cert-mock-')) {
-        await candidateCvApi.deleteCertification(id);
-      }
-      setCertifications((prev) => prev.filter((item) => item.id !== id));
+      await candidateCvApi.deleteCertification(id);
+      setProfileData((prev) => (prev ? {
+        ...prev,
+        certifications: prev.certifications.filter((item) => item.id !== id),
+      } : null));
       setSuccessMsg('Certification entry removed.');
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to delete certification.');
+      setErrorMsg(err?.message || 'Failed to delete certification.');
     }
   };
 
   const handleDeleteProject = async (id: string) => {
     if (!window.confirm('Are you sure you want to remove this project?')) return;
     try {
-      if (!id.startsWith('proj-mock-')) {
-        await candidateCvApi.deleteProject(id);
-      }
-      setProjects((prev) => prev.filter((item) => item.id !== id));
+      await candidateCvApi.deleteProject(id);
+      setProfileData((prev) => (prev ? {
+        ...prev,
+        projects: prev.projects.filter((item) => item.id !== id),
+      } : null));
       setSuccessMsg('Project removed.');
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to delete project.');
+      setErrorMsg(err?.message || 'Failed to delete project.');
     }
   };
 
   const handleDeleteSkill = async (id: string, name?: string) => {
     if (name && !window.confirm(`Are you sure you want to remove skill "${name}"?`)) return;
     try {
-      if (!id.startsWith('sk-')) {
-        await candidateCvApi.deleteSkill(id);
-      }
-      setSkills((prev) => prev.filter((item) => item.id !== id));
+      await candidateCvApi.deleteSkill(id);
+      setProfileData((prev) => (prev ? {
+        ...prev,
+        skills: prev.skills.filter((item) => item.id !== id),
+      } : null));
       setSuccessMsg(`Skill "${name || 'entry'}" removed.`);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to delete skill.');
+      setErrorMsg(err?.message || 'Failed to delete skill.');
     }
   };
 
-  const candidateDisplayName =
-    `${firstName || ''} ${lastName || ''}`.trim() ||
-    currentUser?.fullName ||
-    'Jessica Taylor';
+  // Render Skeleton Loader while loading
+  if (isLoading) {
+    return <CandidateProfileSkeleton />;
+  }
 
-  const candidateEmail = currentUser?.email || 'jessica.taylor.cloud@example.com';
+  // Render Error state if loading failed completely
+  if (error && !profileData) {
+    return (
+      <div className="candidate-profile-container">
+        <div className="candidate-alert-error" style={{ margin: '40px 0', padding: '24px', borderRadius: '16px' }}>
+          <div>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 6px' }}>Failed to Load Profile</h3>
+            <p style={{ margin: 0, fontSize: '13.5px' }}>{error}</p>
+          </div>
+          <button
+            type="button"
+            onClick={loadProfileData}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#b91c1c',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Profile data values
+  const candidateDisplayName =
+    profileData?.fullName ||
+    `${profileData?.firstName || ''} ${profileData?.lastName || ''}`.trim() ||
+    currentUser?.fullName ||
+    'Candidate';
+
+  const candidateEmail = profileData?.email || currentUser?.email || '';
+  const headline = profileData?.headline || currentUser?.headline || '';
+  const phone = profileData?.phone || currentUser?.phone || '';
+  const location = profileData?.location || currentUser?.location || '';
+  const experience = profileData?.experience || currentUser?.experience || '';
+  const availability = profileData?.availability || currentUser?.availability || '';
+  const website = profileData?.website || currentUser?.website || '';
+  const linkedinUrl = profileData?.linkedinUrl || currentUser?.linkedinUrl || '';
+  const githubUrl = profileData?.githubUrl || currentUser?.githubUrl || '';
+  const summary = profileData?.summary || '';
+  const keyHighlights = profileData?.keyHighlights || [];
+  const experiences = profileData?.experiences || [];
+  const educations = profileData?.educations || [];
+  const projects = profileData?.projects || [];
+  const skills = profileData?.skills || [];
+  const certifications = profileData?.certifications || [];
 
   const initials =
     candidateDisplayName
@@ -363,7 +423,8 @@ export const CandidateProfile: React.FC = () => {
       .map((n) => n[0])
       .slice(0, 2)
       .join('')
-      .toUpperCase() || 'JT';
+      .toUpperCase() ||
+    (candidateEmail ? candidateEmail[0].toUpperCase() : 'CV');
 
   // Group skills by category
   const skillsByCategory = skills.reduce<Record<string, SkillDto[]>>((acc, skill) => {
@@ -463,9 +524,15 @@ export const CandidateProfile: React.FC = () => {
               </span>
             </div>
 
-            <p className="candidate-headline-text">
-              {headline}
-            </p>
+            {headline ? (
+              <p className="candidate-headline-text">
+                {headline}
+              </p>
+            ) : (
+              <p className="candidate-headline-text" style={{ color: '#94a3b8', fontStyle: 'italic' }}>
+                No professional headline provided yet. Click &quot;Edit Profile&quot; to add your title.
+              </p>
+            )}
 
             {/* Dynamic Meta Info Tags: Location, Experience, Availability */}
             {(() => {
@@ -516,13 +583,15 @@ export const CandidateProfile: React.FC = () => {
 
           {/* Contact & Social Links Row */}
           <div className="candidate-contact-bar">
-            <a
-              href={`mailto:${candidateEmail}`}
-              className="candidate-contact-pill"
-            >
-              <MailIcon />
-              <span>{candidateEmail}</span>
-            </a>
+            {candidateEmail && (
+              <a
+                href={`mailto:${candidateEmail}`}
+                className="candidate-contact-pill"
+              >
+                <MailIcon />
+                <span>{candidateEmail}</span>
+              </a>
+            )}
 
             {phone && (
               <a
@@ -605,9 +674,12 @@ export const CandidateProfile: React.FC = () => {
             dangerouslySetInnerHTML={sanitizeHtml(summary)}
           />
         ) : (
-          <p style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '14px', margin: '8px 0' }}>
-            No executive summary provided yet. Click the edit icon to add your professional story.
-          </p>
+          <EmptyState
+            icon={<SparkleIcon />}
+            message="No executive summary provided yet. Click the edit icon to add your professional story."
+            actionLabel="Add Executive Summary"
+            onAction={() => setIsAboutModalOpen(true)}
+          />
         )}
 
         {/* Quick Highlights Metrics Bar (Conditionally Rendered) */}
@@ -640,28 +712,37 @@ export const CandidateProfile: React.FC = () => {
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {Object.keys(skillsByCategory).map((catName) => (
-            <div key={catName} className="candidate-skill-category-group">
-              <h3 className="candidate-skill-cat-title">{catName}</h3>
-              <div className="candidate-skill-pills-wrap">
-                {skillsByCategory[catName].map((skill) => (
-                  <div key={skill.id} className="candidate-skill-chip">
-                    <span>{skill.skillName}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteSkill(skill.id, skill.skillName)}
-                      className="candidate-skill-delete-btn"
-                      title={`Remove skill ${skill.skillName}`}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
+        {Object.keys(skillsByCategory).length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {Object.keys(skillsByCategory).map((catName) => (
+              <div key={catName} className="candidate-skill-category-group">
+                <h3 className="candidate-skill-cat-title">{catName}</h3>
+                <div className="candidate-skill-pills-wrap">
+                  {skillsByCategory[catName]?.map((skill) => (
+                    <div key={skill.id} className="candidate-skill-chip">
+                      <span>{skill.skillName}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSkill(skill.id, skill.skillName)}
+                        className="candidate-skill-delete-btn"
+                        title={`Remove skill ${skill.skillName}`}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={<AwardIcon />}
+            message="No skills added yet. Click the + button to add technical and professional competencies."
+            actionLabel="Add Skill"
+            onAction={() => setIsSkillModalOpen(true)}
+          />
+        )}
       </div>
 
       {/* =========================================================================
@@ -680,56 +761,67 @@ export const CandidateProfile: React.FC = () => {
           </div>
         </div>
 
-        {/* Timeline List */}
-        <div className="candidate-timeline-wrap">
-          {experiences.map((job) => (
-            <div key={job.id} className="candidate-timeline-entry">
-              <div className="candidate-timeline-card">
-                <div className="candidate-timeline-header">
-                  <div>
-                    <h3 className="candidate-timeline-title">{job.title}</h3>
-                    <p className="candidate-timeline-company">
-                      {job.company} {job.location ? `• ${job.location}` : ''}
-                    </p>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span className="candidate-timeline-date">
-                      {job.startDate} — {job.isCurrent ? 'Present' : job.endDate || 'Present'}
-                    </span>
-                    <div className="candidate-actions-group">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingExperience(job);
-                          setIsExpModalOpen(true);
-                        }}
-                        className="candidate-action-btn"
-                        title="Edit work experience"
-                      >
-                        <EditIcon />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteExperience(job.id)}
-                        className="candidate-action-btn candidate-action-btn-danger"
-                        title="Delete work experience"
-                      >
-                        <TrashIcon />
-                      </button>
+        {experiences && experiences.length > 0 ? (
+          <div className="candidate-timeline-wrap">
+            {experiences.map((job) => (
+              <div key={job.id} className="candidate-timeline-entry">
+                <div className="candidate-timeline-card">
+                  <div className="candidate-timeline-header">
+                    <div>
+                      <h3 className="candidate-timeline-title">{job.title}</h3>
+                      <p className="candidate-timeline-company">
+                        {job.company} {job.location ? `• ${job.location}` : ''}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span className="candidate-timeline-date">
+                        {job.startDate} — {job.isCurrent ? 'Present' : job.endDate || 'Present'}
+                      </span>
+                      <div className="candidate-actions-group">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingExperience(job);
+                            setIsExpModalOpen(true);
+                          }}
+                          className="candidate-action-btn"
+                          title="Edit work experience"
+                        >
+                          <EditIcon />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteExperience(job.id)}
+                          className="candidate-action-btn candidate-action-btn-danger"
+                          title="Delete work experience"
+                        >
+                          <TrashIcon />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {job.description && (
-                  <div
-                    className="candidate-rich-text"
-                    dangerouslySetInnerHTML={sanitizeHtml(job.description)}
-                  />
-                )}
+                  {job.description && (
+                    <div
+                      className="candidate-rich-text"
+                      dangerouslySetInnerHTML={sanitizeHtml(job.description)}
+                    />
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={<BriefcaseIcon />}
+            message="No experience added yet. Click the + button to add your work history."
+            actionLabel="Add Experience"
+            onAction={() => {
+              setEditingExperience(null);
+              setIsExpModalOpen(true);
+            }}
+          />
+        )}
       </div>
 
       {/* =========================================================================
@@ -748,62 +840,74 @@ export const CandidateProfile: React.FC = () => {
           </div>
         </div>
 
-        <div className="candidate-grid-cards">
-          {projects.map((proj) => (
-            <div key={proj.id} className="candidate-item-card">
-              <div className="candidate-item-card-top">
-                <div className="candidate-item-card-badge-row">
-                  <span className="candidate-item-category-tag">
-                    {proj.role || 'Featured Project'}
-                  </span>
-                  <div className="candidate-actions-group">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingProject(proj);
-                        setIsProjModalOpen(true);
-                      }}
-                      className="candidate-action-btn"
-                      title="Edit project"
-                    >
-                      <EditIcon />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteProject(proj.id)}
-                      className="candidate-action-btn candidate-action-btn-danger"
-                      title="Delete project"
-                    >
-                      <TrashIcon />
-                    </button>
+        {projects && projects.length > 0 ? (
+          <div className="candidate-grid-cards">
+            {projects.map((proj) => (
+              <div key={proj.id} className="candidate-item-card">
+                <div className="candidate-item-card-top">
+                  <div className="candidate-item-card-badge-row">
+                    <span className="candidate-item-category-tag">
+                      {proj.role || 'Featured Project'}
+                    </span>
+                    <div className="candidate-actions-group">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingProject(proj);
+                          setIsProjModalOpen(true);
+                        }}
+                        className="candidate-action-btn"
+                        title="Edit project"
+                      >
+                        <EditIcon />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteProject(proj.id)}
+                        className="candidate-action-btn candidate-action-btn-danger"
+                        title="Delete project"
+                      >
+                        <TrashIcon />
+                      </button>
+                    </div>
                   </div>
+                  <h3 className="candidate-item-title">{proj.projectName}</h3>
+                  {proj.description && (
+                    <div
+                      className="candidate-rich-text"
+                      dangerouslySetInnerHTML={sanitizeHtml(proj.description)}
+                    />
+                  )}
                 </div>
-                <h3 className="candidate-item-title">{proj.projectName}</h3>
-                {proj.description && (
-                  <div
-                    className="candidate-rich-text"
-                    dangerouslySetInnerHTML={sanitizeHtml(proj.description)}
-                  />
+
+                {proj.link && (
+                  <div className="candidate-item-footer">
+                    <a
+                      href={proj.link.startsWith('http') ? proj.link : `https://${proj.link}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="candidate-item-link"
+                    >
+                      <span>View Repository / Link</span>
+                      <ExternalLinkIcon />
+                    </a>
+                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>Live Project</span>
+                  </div>
                 )}
               </div>
-
-              {proj.link && (
-                <div className="candidate-item-footer">
-                  <a
-                    href={proj.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="candidate-item-link"
-                  >
-                    <span>View Repository / Link</span>
-                    <ExternalLinkIcon />
-                  </a>
-                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>Live Artifact</span>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={<CodeFolderIcon />}
+            message="No projects added yet. Click the + button to showcase your featured repositories and live builds."
+            actionLabel="Add Project"
+            onAction={() => {
+              setEditingProject(null);
+              setIsProjModalOpen(true);
+            }}
+          />
+        )}
       </div>
 
       {/* =========================================================================
@@ -822,58 +926,70 @@ export const CandidateProfile: React.FC = () => {
           </div>
         </div>
 
-        <div className="candidate-grid-cards">
-          {educations.map((item) => (
-            <div key={item.id} className="candidate-item-card">
-              <div className="candidate-item-card-top">
-                <div className="candidate-item-card-badge-row">
-                  <span className="candidate-item-category-tag">Academic Credential</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>
-                      {item.startYear} {item.endYear ? `— ${item.endYear}` : ''}
-                    </span>
-                    <div className="candidate-actions-group">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingEducation(item);
-                          setIsEduModalOpen(true);
-                        }}
-                        className="candidate-action-btn"
-                        title="Edit education"
-                      >
-                        <EditIcon />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteEducation(item.id)}
-                        className="candidate-action-btn candidate-action-btn-danger"
-                        title="Delete education"
-                      >
-                        <TrashIcon />
-                      </button>
+        {educations && educations.length > 0 ? (
+          <div className="candidate-grid-cards">
+            {educations.map((item) => (
+              <div key={item.id} className="candidate-item-card">
+                <div className="candidate-item-card-top">
+                  <div className="candidate-item-card-badge-row">
+                    <span className="candidate-item-category-tag">Academic Credential</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>
+                        {item.startYear} {item.endYear ? `— ${item.endYear}` : ''}
+                      </span>
+                      <div className="candidate-actions-group">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingEducation(item);
+                            setIsEduModalOpen(true);
+                          }}
+                          className="candidate-action-btn"
+                          title="Edit education"
+                        >
+                          <EditIcon />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteEducation(item.id)}
+                          className="candidate-action-btn candidate-action-btn-danger"
+                          title="Delete education"
+                        >
+                          <TrashIcon />
+                        </button>
+                      </div>
                     </div>
                   </div>
+                  <h3 className="candidate-item-title">{item.degree}</h3>
+                  <p className="candidate-item-subtitle">
+                    {item.institution} {item.fieldOfStudy ? `• ${item.fieldOfStudy}` : ''}
+                  </p>
+                  {item.description && (
+                    <p className="candidate-item-desc">{item.description}</p>
+                  )}
                 </div>
-                <h3 className="candidate-item-title">{item.degree}</h3>
-                <p className="candidate-item-subtitle">
-                  {item.institution} {item.fieldOfStudy ? `• ${item.fieldOfStudy}` : ''}
-                </p>
-                {item.description && (
-                  <p className="candidate-item-desc">{item.description}</p>
-                )}
-              </div>
 
-              <div className="candidate-item-footer">
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#008759' }}>
-                  <CheckIcon />
-                  <span>Verified Degree</span>
-                </span>
-                <span style={{ fontSize: '11.5px', color: '#94a3b8' }}>Skill Hub Verified</span>
+                <div className="candidate-item-footer">
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#008759' }}>
+                    <CheckIcon />
+                    <span>Verified Degree</span>
+                  </span>
+                  <span style={{ fontSize: '11.5px', color: '#94a3b8' }}>Skill Hub Verified</span>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={<GraduationCapIcon />}
+            message="No education credentials added yet. Click the + button to add your degrees and academic history."
+            actionLabel="Add Education"
+            onAction={() => {
+              setEditingEducation(null);
+              setIsEduModalOpen(true);
+            }}
+          />
+        )}
       </div>
 
       {/* =========================================================================
@@ -892,72 +1008,84 @@ export const CandidateProfile: React.FC = () => {
           </div>
         </div>
 
-        <div className="candidate-grid-cards">
-          {certifications.map((item) => (
-            <div key={item.id} className="candidate-item-card">
-              <div className="candidate-item-card-top">
-                <div className="candidate-item-card-badge-row">
-                  <span className="candidate-item-category-tag">Verified Certificate</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {item.issueDate && (
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>
-                        {item.issueDate}
-                      </span>
-                    )}
-                    <div className="candidate-actions-group">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingCertification(item);
-                          setIsCertModalOpen(true);
-                        }}
-                        className="candidate-action-btn"
-                        title="Edit certification"
-                      >
-                        <EditIcon />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteCertification(item.id)}
-                        className="candidate-action-btn candidate-action-btn-danger"
-                        title="Delete certification"
-                      >
-                        <TrashIcon />
-                      </button>
+        {certifications && certifications.length > 0 ? (
+          <div className="candidate-grid-cards">
+            {certifications.map((item) => (
+              <div key={item.id} className="candidate-item-card">
+                <div className="candidate-item-card-top">
+                  <div className="candidate-item-card-badge-row">
+                    <span className="candidate-item-category-tag">Verified Certificate</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {item.issueDate && (
+                        <span style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>
+                          {item.issueDate}
+                        </span>
+                      )}
+                      <div className="candidate-actions-group">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingCertification(item);
+                            setIsCertModalOpen(true);
+                          }}
+                          className="candidate-action-btn"
+                          title="Edit certification"
+                        >
+                          <EditIcon />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCertification(item.id)}
+                          className="candidate-action-btn candidate-action-btn-danger"
+                          title="Delete certification"
+                        >
+                          <TrashIcon />
+                        </button>
+                      </div>
                     </div>
                   </div>
+                  <h3 className="candidate-item-title">{item.title}</h3>
+                  <p className="candidate-item-subtitle" style={{ margin: '4px 0 0' }}>
+                    {item.issuingOrganization}
+                  </p>
                 </div>
-                <h3 className="candidate-item-title">{item.title}</h3>
-                <p className="candidate-item-subtitle" style={{ margin: '4px 0 0' }}>
-                  {item.issuingOrganization}
-                </p>
-              </div>
 
-              {item.credentialUrl && (
-                <div className="candidate-item-footer">
-                  <a
-                    href={item.credentialUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="candidate-item-link"
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      color: '#008759',
-                      fontWeight: 600,
-                      textDecoration: 'none',
-                    }}
-                  >
-                    <span>Show Credential</span>
-                    <ExternalLinkIcon />
-                  </a>
-                  <span style={{ fontSize: '11.5px', color: '#94a3b8' }}>Verified Issuer</span>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                {item.credentialUrl && (
+                  <div className="candidate-item-footer">
+                    <a
+                      href={item.credentialUrl.startsWith('http') ? item.credentialUrl : `https://${item.credentialUrl}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="candidate-item-link"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        color: '#008759',
+                        fontWeight: 600,
+                        textDecoration: 'none',
+                      }}
+                    >
+                      <span>Show Credential</span>
+                      <ExternalLinkIcon />
+                    </a>
+                    <span style={{ fontSize: '11.5px', color: '#94a3b8' }}>Verified Issuer</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={<AwardIcon />}
+            message="No certifications added yet. Click the + button to add your licenses and certificates."
+            actionLabel="Add Certification"
+            onAction={() => {
+              setEditingCertification(null);
+              setIsCertModalOpen(true);
+            }}
+          />
+        )}
       </div>
 
       {/* =========================================================================
@@ -994,13 +1122,17 @@ export const CandidateProfile: React.FC = () => {
           setEditingExperience(null);
         }}
         onSuccess={(saved) => {
-          if (editingExperience) {
-            setExperiences((prev) => prev.map((e) => (e.id === saved.id ? saved : e)));
-            setSuccessMsg(`Updated experience at ${saved.company}!`);
-          } else {
-            setExperiences((prev) => [saved, ...prev]);
-            setSuccessMsg(`Added experience at ${saved.company}!`);
-          }
+          setProfileData((prev) => {
+            if (!prev) return null;
+            const exists = prev.experiences.some((e) => e.id === saved.id);
+            return {
+              ...prev,
+              experiences: exists
+                ? prev.experiences.map((e) => (e.id === saved.id ? saved : e))
+                : [saved, ...prev.experiences],
+            };
+          });
+          setSuccessMsg(editingExperience ? `Updated experience at ${saved.company}!` : `Added experience at ${saved.company}!`);
           setEditingExperience(null);
         }}
       />
@@ -1013,13 +1145,17 @@ export const CandidateProfile: React.FC = () => {
           setEditingEducation(null);
         }}
         onSuccess={(saved) => {
-          if (editingEducation) {
-            setEducations((prev) => prev.map((ed) => (ed.id === saved.id ? saved : ed)));
-            setSuccessMsg(`Updated education from ${saved.institution}!`);
-          } else {
-            setEducations((prev) => [saved, ...prev]);
-            setSuccessMsg(`Added education from ${saved.institution}!`);
-          }
+          setProfileData((prev) => {
+            if (!prev) return null;
+            const exists = prev.educations.some((ed) => ed.id === saved.id);
+            return {
+              ...prev,
+              educations: exists
+                ? prev.educations.map((ed) => (ed.id === saved.id ? saved : ed))
+                : [saved, ...prev.educations],
+            };
+          });
+          setSuccessMsg(editingEducation ? `Updated education from ${saved.institution}!` : `Added education from ${saved.institution}!`);
           setEditingEducation(null);
         }}
       />
@@ -1032,13 +1168,17 @@ export const CandidateProfile: React.FC = () => {
           setEditingProject(null);
         }}
         onSuccess={(saved) => {
-          if (editingProject) {
-            setProjects((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
-            setSuccessMsg(`Updated project: ${saved.projectName}!`);
-          } else {
-            setProjects((prev) => [saved, ...prev]);
-            setSuccessMsg(`Added project: ${saved.projectName}!`);
-          }
+          setProfileData((prev) => {
+            if (!prev) return null;
+            const exists = prev.projects.some((p) => p.id === saved.id);
+            return {
+              ...prev,
+              projects: exists
+                ? prev.projects.map((p) => (p.id === saved.id ? saved : p))
+                : [saved, ...prev.projects],
+            };
+          });
+          setSuccessMsg(editingProject ? `Updated project: ${saved.projectName}!` : `Added project: ${saved.projectName}!`);
           setEditingProject(null);
         }}
       />
@@ -1047,7 +1187,10 @@ export const CandidateProfile: React.FC = () => {
         isOpen={isSkillModalOpen}
         onClose={() => setIsSkillModalOpen(false)}
         onSuccess={(newSkill) => {
-          setSkills((prev) => [...prev, newSkill]);
+          setProfileData((prev) => (prev ? {
+            ...prev,
+            skills: [...prev.skills, newSkill],
+          } : null));
           setSuccessMsg(`Added skill: ${newSkill.skillName}!`);
         }}
       />
@@ -1058,8 +1201,11 @@ export const CandidateProfile: React.FC = () => {
         initialHighlights={keyHighlights}
         onClose={() => setIsAboutModalOpen(false)}
         onSuccess={(data) => {
-          setSummary(data.summary || '');
-          setKeyHighlights(data.keyHighlights || []);
+          setProfileData((prev) => (prev ? {
+            ...prev,
+            summary: data.summary || '',
+            keyHighlights: data.keyHighlights || [],
+          } : null));
           setSuccessMsg('Executive summary and key highlights updated successfully!');
         }}
       />
@@ -1072,13 +1218,17 @@ export const CandidateProfile: React.FC = () => {
           setEditingCertification(null);
         }}
         onSuccess={(saved) => {
-          if (editingCertification) {
-            setCertifications((prev) => prev.map((c) => (c.id === saved.id ? saved : c)));
-            setSuccessMsg(`Updated certification: ${saved.title}!`);
-          } else {
-            setCertifications((prev) => [saved, ...prev]);
-            setSuccessMsg(`Added certification: ${saved.title}!`);
-          }
+          setProfileData((prev) => {
+            if (!prev) return null;
+            const exists = prev.certifications.some((c) => c.id === saved.id);
+            return {
+              ...prev,
+              certifications: exists
+                ? prev.certifications.map((c) => (c.id === saved.id ? saved : c))
+                : [saved, ...prev.certifications],
+            };
+          });
+          setSuccessMsg(editingCertification ? `Updated certification: ${saved.title}!` : `Added certification: ${saved.title}!`);
           setEditingCertification(null);
         }}
       />
@@ -1086,30 +1236,34 @@ export const CandidateProfile: React.FC = () => {
       <EditProfileModal
         isOpen={isEditingProfile}
         initialData={{
-          firstName,
-          lastName,
-          headline,
-          phone,
-          location,
-          experience,
-          availability,
-          website,
-          linkedinUrl,
-          githubUrl,
+          firstName: profileData?.firstName || currentUser?.firstName,
+          lastName: profileData?.lastName || currentUser?.lastName,
+          headline: profileData?.headline || currentUser?.headline,
+          phone: profileData?.phone || currentUser?.phone,
+          location: profileData?.location || currentUser?.location,
+          experience: profileData?.experience || currentUser?.experience,
+          availability: profileData?.availability || currentUser?.availability,
+          website: profileData?.website || currentUser?.website,
+          linkedinUrl: profileData?.linkedinUrl || currentUser?.linkedinUrl,
+          githubUrl: profileData?.githubUrl || currentUser?.githubUrl,
         }}
         onClose={() => setIsEditingProfile(false)}
         onSuccess={(updated) => {
           updateUser(updated);
-          if (updated.firstName !== undefined) setFirstName(updated.firstName || '');
-          if (updated.lastName !== undefined) setLastName(updated.lastName || '');
-          if (updated.headline !== undefined) setHeadline(updated.headline || '');
-          if (updated.phone !== undefined) setPhone(updated.phone || '');
-          if (updated.location !== undefined) setLocation(updated.location || '');
-          if (updated.experience !== undefined) setExperience(updated.experience || '');
-          if (updated.availability !== undefined) setAvailability(updated.availability || '');
-          if (updated.website !== undefined) setWebsite(updated.website || '');
-          if (updated.linkedinUrl !== undefined) setLinkedinUrl(updated.linkedinUrl || '');
-          if (updated.githubUrl !== undefined) setGithubUrl(updated.githubUrl || '');
+          setProfileData((prev) => (prev ? {
+            ...prev,
+            firstName: updated.firstName !== undefined ? updated.firstName : prev.firstName,
+            lastName: updated.lastName !== undefined ? updated.lastName : prev.lastName,
+            fullName: updated.fullName || `${updated.firstName || prev.firstName || ''} ${updated.lastName || prev.lastName || ''}`.trim() || prev.fullName,
+            headline: updated.headline !== undefined ? updated.headline : prev.headline,
+            phone: updated.phone !== undefined ? updated.phone : prev.phone,
+            location: updated.location !== undefined ? updated.location : prev.location,
+            experience: updated.experience !== undefined ? updated.experience : prev.experience,
+            availability: updated.availability !== undefined ? updated.availability : prev.availability,
+            website: updated.website !== undefined ? updated.website : prev.website,
+            linkedinUrl: updated.linkedinUrl !== undefined ? updated.linkedinUrl : prev.linkedinUrl,
+            githubUrl: updated.githubUrl !== undefined ? updated.githubUrl : prev.githubUrl,
+          } : null));
           setSuccessMsg('Profile details updated successfully!');
         }}
       />

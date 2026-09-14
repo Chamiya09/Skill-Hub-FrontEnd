@@ -11,6 +11,7 @@ import {
   type ProjectDto,
   type SkillDto,
   type CandidateHighlightDto,
+  type CertificationDto,
 } from '../services/api';
 import {
   SparkleIcon,
@@ -31,6 +32,7 @@ import { AddEducationModal } from '../components/candidates/modals/AddEducationM
 import { AddProjectModal } from '../components/candidates/modals/AddProjectModal';
 import { AddSkillModal } from '../components/candidates/modals/AddSkillModal';
 import { EditAboutModal } from '../components/candidates/modals/EditAboutModal';
+import { AddCertificationModal } from '../components/candidates/modals/AddCertificationModal';
 
 const quillModules = {
   toolbar: [
@@ -133,7 +135,26 @@ const defaultEducations: EducationDto[] = [
     fieldOfStudy: 'Distributed Systems & Software Architecture',
     startYear: '2014',
     endYear: '2018',
-    description: 'Focus in Distributed Systems, Algorithms, and Software Architecture. Graduated with Honors (First Class distinction).',
+    description: 'Graduated with Departmental Honors. Focus on Parallel Algorithms, Cloud Networking, and Distributed Systems.',
+    createdAt: new Date().toISOString(),
+  },
+];
+
+const defaultCertifications: CertificationDto[] = [
+  {
+    id: 'cert-mock-1',
+    title: 'AWS Certified Solutions Architect – Professional',
+    issuingOrganization: 'Amazon Web Services (AWS)',
+    issueDate: 'Issued Aug 2023',
+    credentialUrl: 'https://aws.amazon.com/verification',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'cert-mock-2',
+    title: 'Certified Kubernetes Administrator (CKA)',
+    issuingOrganization: 'Cloud Native Computing Foundation (CNCF)',
+    issueDate: 'Issued Jan 2024',
+    credentialUrl: 'https://www.cncf.io/certification/cka/',
     createdAt: new Date().toISOString(),
   },
 ];
@@ -189,6 +210,7 @@ export const CandidateProfile: React.FC = () => {
   const [educations, setEducations] = useState<EducationDto[]>(defaultEducations);
   const [projects, setProjects] = useState<ProjectDto[]>(defaultProjects);
   const [skills, setSkills] = useState<SkillDto[]>(defaultSkills);
+  const [certifications, setCertifications] = useState<CertificationDto[]>(defaultCertifications);
   const [summary, setSummary] = useState(
     '<p>Passionate <strong>Senior Full-Stack Engineer</strong> with <strong>8+ years of experience</strong> designing and scaling fault-tolerant cloud services, modern web applications, and enterprise microservices.</p><p>Proven track record of leading cross-functional engineering teams, optimizing application performance, and deploying high-impact products from inception to millions of daily active users.</p>'
   );
@@ -211,11 +233,13 @@ export const CandidateProfile: React.FC = () => {
   const [isEduModalOpen, setIsEduModalOpen] = useState(false);
   const [isProjModalOpen, setIsProjModalOpen] = useState(false);
   const [isSkillModalOpen, setIsSkillModalOpen] = useState(false);
+  const [isCertModalOpen, setIsCertModalOpen] = useState(false);
 
   // Selected item state for editing
   const [editingExperience, setEditingExperience] = useState<ExperienceDto | null>(null);
   const [editingEducation, setEditingEducation] = useState<EducationDto | null>(null);
   const [editingProject, setEditingProject] = useState<ProjectDto | null>(null);
+  const [editingCertification, setEditingCertification] = useState<CertificationDto | null>(null);
 
   const [savingProfile, setSavingProfile] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -243,6 +267,9 @@ export const CandidateProfile: React.FC = () => {
       }
       if (cv.skills && cv.skills.length > 0) {
         setSkills(cv.skills);
+      }
+      if (cv.certifications && cv.certifications.length > 0) {
+        setCertifications(cv.certifications);
       }
     } catch (err) {
       console.warn('Could not load dynamic CV from backend, using current state:', err);
@@ -292,7 +319,7 @@ export const CandidateProfile: React.FC = () => {
   };
 
   const handleDeleteEducation = async (id: string) => {
-    if (!window.confirm('Are you sure you want to remove this education entry?')) return;
+    if (!window.confirm('Are you sure you want to remove this educational qualification?')) return;
     try {
       if (!id.startsWith('edu-mock-')) {
         await candidateCvApi.deleteEducation(id);
@@ -300,7 +327,20 @@ export const CandidateProfile: React.FC = () => {
       setEducations((prev) => prev.filter((item) => item.id !== id));
       setSuccessMsg('Education entry removed.');
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to delete education.');
+      setErrorMsg(err.message || 'Failed to delete education entry.');
+    }
+  };
+
+  const handleDeleteCertification = async (id: string) => {
+    if (!window.confirm('Are you sure you want to remove this certification?')) return;
+    try {
+      if (!id.startsWith('cert-mock-')) {
+        await candidateCvApi.deleteCertification(id);
+      }
+      setCertifications((prev) => prev.filter((item) => item.id !== id));
+      setSuccessMsg('Certification entry removed.');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to delete certification.');
     }
   };
 
@@ -920,6 +960,90 @@ export const CandidateProfile: React.FC = () => {
       </div>
 
       {/* =========================================================================
+          SECTION 7: LICENSES & CERTIFICATIONS (Dynamic from DB)
+          ========================================================================= */}
+      <div className="candidate-card">
+        <div className="candidate-card-header">
+          <div className="candidate-card-title-group">
+            <div className="candidate-icon-box">
+              <AwardIcon />
+            </div>
+            <div className="candidate-card-title-text">
+              <h2>Licenses & Certifications</h2>
+              <p>Accredited professional certifications, licenses, and verified credentials</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="candidate-grid-cards">
+          {certifications.map((item) => (
+            <div key={item.id} className="candidate-item-card">
+              <div className="candidate-item-card-top">
+                <div className="candidate-item-card-badge-row">
+                  <span className="candidate-item-category-tag">Verified Certificate</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {item.issueDate && (
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>
+                        {item.issueDate}
+                      </span>
+                    )}
+                    <div className="candidate-actions-group">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingCertification(item);
+                          setIsCertModalOpen(true);
+                        }}
+                        className="candidate-action-btn"
+                        title="Edit certification"
+                      >
+                        <EditIcon />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCertification(item.id)}
+                        className="candidate-action-btn candidate-action-btn-danger"
+                        title="Delete certification"
+                      >
+                        <TrashIcon />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <h3 className="candidate-item-title">{item.title}</h3>
+                <p className="candidate-item-subtitle" style={{ margin: '4px 0 0' }}>
+                  {item.issuingOrganization}
+                </p>
+              </div>
+
+              {item.credentialUrl && (
+                <div className="candidate-item-footer">
+                  <a
+                    href={item.credentialUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="candidate-item-link"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      color: '#008759',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <span>Show Credential</span>
+                    <ExternalLinkIcon />
+                  </a>
+                  <span style={{ fontSize: '11.5px', color: '#94a3b8' }}>Verified Issuer</span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* =========================================================================
           FLOATING ACTION BUTTON (SPEED DIAL)
           ========================================================================= */}
       <SpeedDialFab
@@ -936,6 +1060,10 @@ export const CandidateProfile: React.FC = () => {
           setIsProjModalOpen(true);
         }}
         onAddSkill={() => setIsSkillModalOpen(true)}
+        onAddCertification={() => {
+          setEditingCertification(null);
+          setIsCertModalOpen(true);
+        }}
       />
 
       {/* =========================================================================
@@ -1017,6 +1145,25 @@ export const CandidateProfile: React.FC = () => {
           setBio(data.summary || '');
           setKeyHighlights(data.keyHighlights || []);
           setSuccessMsg('Executive summary and key highlights updated successfully!');
+        }}
+      />
+
+      <AddCertificationModal
+        isOpen={isCertModalOpen}
+        initialData={editingCertification}
+        onClose={() => {
+          setIsCertModalOpen(false);
+          setEditingCertification(null);
+        }}
+        onSuccess={(saved) => {
+          if (editingCertification) {
+            setCertifications((prev) => prev.map((c) => (c.id === saved.id ? saved : c)));
+            setSuccessMsg(`Updated certification: ${saved.title}!`);
+          } else {
+            setCertifications((prev) => [saved, ...prev]);
+            setSuccessMsg(`Added certification: ${saved.title}!`);
+          }
+          setEditingCertification(null);
         }}
       />
     </div>

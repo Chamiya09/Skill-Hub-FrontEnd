@@ -863,6 +863,22 @@ export interface UpdateCandidateAboutPayload {
   keyHighlights?: CandidateHighlightDto[];
 }
 
+export interface CertificationDto {
+  id: string;
+  title: string;
+  issuingOrganization: string;
+  issueDate?: string;
+  credentialUrl?: string;
+  createdAt?: string;
+}
+
+export interface CreateCertificationPayload {
+  title: string;
+  issuingOrganization: string;
+  issueDate?: string;
+  credentialUrl?: string;
+}
+
 export interface CandidateCvDto {
   summary?: string;
   keyHighlights?: CandidateHighlightDto[];
@@ -870,6 +886,7 @@ export interface CandidateCvDto {
   educations: EducationDto[];
   projects: ProjectDto[];
   skills: SkillDto[];
+  certifications: CertificationDto[];
 }
 
 export const candidateCvApi = {
@@ -1017,6 +1034,48 @@ export const candidateCvApi = {
    */
   async deleteSkill(id: string): Promise<void> {
     return request<void>(`/candidate/skill/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  /**
+   * Retrieves all certification entries.
+   * Calls: GET /api/candidate/certification
+   */
+  async getCertifications(): Promise<CertificationDto[]> {
+    return request<CertificationDto[]>('/candidate/certification', {
+      method: 'GET'
+    });
+  },
+
+  /**
+   * Adds a new certification entry.
+   * Calls: POST /api/candidate/certification
+   */
+  async addCertification(payload: CreateCertificationPayload): Promise<CertificationDto> {
+    return request<CertificationDto>('/candidate/certification', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Updates an existing certification entry.
+   * Calls: PUT /api/candidate/certification/{id}
+   */
+  async updateCertification(id: string, payload: CreateCertificationPayload): Promise<CertificationDto> {
+    return request<CertificationDto>(`/candidate/certification/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Deletes a certification entry.
+   * Calls: DELETE /api/candidate/certification/{id}
+   */
+  async deleteCertification(id: string): Promise<void> {
+    return request<void>(`/candidate/certification/${id}`, {
       method: 'DELETE'
     });
   }

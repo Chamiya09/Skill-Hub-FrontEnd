@@ -16,7 +16,7 @@ import {
   PhoneIcon,
   MapPinIcon,
   BriefcaseIcon,
-  BuildingIcon,
+  ClockIcon,
   CheckIcon,
   LinkedInIcon,
   GitHubIcon,
@@ -210,6 +210,8 @@ export const CandidateProfile: React.FC = () => {
   );
   const [phone, setPhone] = useState(currentUser?.phone || '+1 (555) 749-2041');
   const [location, setLocation] = useState(currentUser?.location || 'San Francisco, CA (Open to Remote)');
+  const [experience, setExperience] = useState(currentUser?.experience || '8-10 Years');
+  const [availability, setAvailability] = useState(currentUser?.availability || 'Immediate');
   const [website, setWebsite] = useState(currentUser?.website || 'https://jessicataylor.dev');
   const [linkedinUrl, setLinkedinUrl] = useState(currentUser?.linkedinUrl || 'https://linkedin.com');
   const [githubUrl, setGithubUrl] = useState(currentUser?.githubUrl || 'https://github.com');
@@ -219,11 +221,13 @@ export const CandidateProfile: React.FC = () => {
       if (currentUser.firstName) setFirstName(currentUser.firstName);
       if (currentUser.lastName) setLastName(currentUser.lastName);
       if (currentUser.headline) setHeadline(currentUser.headline);
-      if (currentUser.phone) setPhone(currentUser.phone);
-      if (currentUser.location) setLocation(currentUser.location);
-      if (currentUser.website) setWebsite(currentUser.website);
-      if (currentUser.linkedinUrl) setLinkedinUrl(currentUser.linkedinUrl);
-      if (currentUser.githubUrl) setGithubUrl(currentUser.githubUrl);
+      if (currentUser.phone !== undefined) setPhone(currentUser.phone || '');
+      if (currentUser.location !== undefined) setLocation(currentUser.location || '');
+      if (currentUser.experience !== undefined) setExperience(currentUser.experience || '');
+      if (currentUser.availability !== undefined) setAvailability(currentUser.availability || '');
+      if (currentUser.website !== undefined) setWebsite(currentUser.website || '');
+      if (currentUser.linkedinUrl !== undefined) setLinkedinUrl(currentUser.linkedinUrl || '');
+      if (currentUser.githubUrl !== undefined) setGithubUrl(currentUser.githubUrl || '');
     }
   }, [currentUser]);
 
@@ -463,23 +467,51 @@ export const CandidateProfile: React.FC = () => {
               {headline}
             </p>
 
-            {/* Location & Quick Meta Tags */}
-            <div className="candidate-meta-row">
-              <span className="candidate-meta-item">
-                <MapPinIcon />
-                <span>{location}</span>
-              </span>
-              <span className="candidate-meta-divider">•</span>
-              <span className="candidate-meta-item">
-                <BriefcaseIcon />
-                <span>8+ Years Experience</span>
-              </span>
-              <span className="candidate-meta-divider">•</span>
-              <span className="candidate-meta-item">
-                <BuildingIcon />
-                <span>Immediate Availability</span>
-              </span>
-            </div>
+            {/* Dynamic Meta Info Tags: Location, Experience, Availability */}
+            {(() => {
+              const metaItems = [
+                location ? { id: 'loc', icon: <MapPinIcon />, text: location } : null,
+                experience
+                  ? {
+                      id: 'exp',
+                      icon: <BriefcaseIcon />,
+                      text:
+                        experience.includes('Experience') || experience.includes('Level')
+                          ? experience
+                          : `${experience} Experience`,
+                    }
+                  : null,
+                availability
+                  ? {
+                      id: 'avail',
+                      icon: <ClockIcon />,
+                      text:
+                        availability.includes('Notice') ||
+                        availability.includes('Immediate') ||
+                        availability.includes('Offers') ||
+                        availability.includes('Looking')
+                          ? availability
+                          : `${availability} Availability`,
+                    }
+                  : null,
+              ].filter(Boolean) as { id: string; icon: React.ReactNode; text: string }[];
+
+              if (metaItems.length === 0) return null;
+
+              return (
+                <div className="candidate-meta-row">
+                  {metaItems.map((item, index) => (
+                    <React.Fragment key={item.id}>
+                      {index > 0 && <span className="candidate-meta-divider">•</span>}
+                      <span className="candidate-meta-item">
+                        {item.icon}
+                        <span>{item.text}</span>
+                      </span>
+                    </React.Fragment>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Contact & Social Links Row */}
@@ -1059,6 +1091,8 @@ export const CandidateProfile: React.FC = () => {
           headline,
           phone,
           location,
+          experience,
+          availability,
           website,
           linkedinUrl,
           githubUrl,
@@ -1066,14 +1100,16 @@ export const CandidateProfile: React.FC = () => {
         onClose={() => setIsEditingProfile(false)}
         onSuccess={(updated) => {
           updateUser(updated);
-          if (updated.firstName) setFirstName(updated.firstName);
-          if (updated.lastName) setLastName(updated.lastName);
-          if (updated.headline) setHeadline(updated.headline);
-          if (updated.phone) setPhone(updated.phone);
-          if (updated.location) setLocation(updated.location);
-          if (updated.website) setWebsite(updated.website);
-          if (updated.linkedinUrl) setLinkedinUrl(updated.linkedinUrl);
-          if (updated.githubUrl) setGithubUrl(updated.githubUrl);
+          if (updated.firstName !== undefined) setFirstName(updated.firstName || '');
+          if (updated.lastName !== undefined) setLastName(updated.lastName || '');
+          if (updated.headline !== undefined) setHeadline(updated.headline || '');
+          if (updated.phone !== undefined) setPhone(updated.phone || '');
+          if (updated.location !== undefined) setLocation(updated.location || '');
+          if (updated.experience !== undefined) setExperience(updated.experience || '');
+          if (updated.availability !== undefined) setAvailability(updated.availability || '');
+          if (updated.website !== undefined) setWebsite(updated.website || '');
+          if (updated.linkedinUrl !== undefined) setLinkedinUrl(updated.linkedinUrl || '');
+          if (updated.githubUrl !== undefined) setGithubUrl(updated.githubUrl || '');
           setSuccessMsg('Profile details updated successfully!');
         }}
       />

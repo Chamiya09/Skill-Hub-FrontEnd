@@ -12,11 +12,30 @@ interface EditProfileModalProps {
     headline?: string;
     phone?: string;
     location?: string;
+    experience?: string;
+    availability?: string;
     website?: string;
     linkedinUrl?: string;
     githubUrl?: string;
   };
 }
+
+const EXPERIENCE_OPTIONS = [
+  'Entry Level',
+  '1-3 Years',
+  '3-5 Years',
+  '5-8 Years',
+  '8-10 Years',
+  '10+ Years',
+];
+
+const AVAILABILITY_OPTIONS = [
+  'Immediate',
+  '2 Weeks Notice',
+  '1 Month Notice',
+  'Open to Offers',
+  'Not Currently Looking',
+];
 
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   isOpen,
@@ -29,6 +48,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [headline, setHeadline] = useState('');
   const [phone, setPhone] = useState('');
   const [location, setLocation] = useState('');
+  const [experience, setExperience] = useState('');
+  const [availability, setAvailability] = useState('');
   const [website, setWebsite] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
@@ -43,6 +64,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       setHeadline(initialData?.headline || '');
       setPhone(initialData?.phone || '');
       setLocation(initialData?.location || '');
+      setExperience(initialData?.experience || '');
+      setAvailability(initialData?.availability || '');
       setWebsite(initialData?.website || '');
       setLinkedinUrl(initialData?.linkedinUrl || '');
       setGithubUrl(initialData?.githubUrl || '');
@@ -65,6 +88,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         headline: headline.trim(),
         phone: phone.trim(),
         location: location.trim(),
+        experience: experience.trim(),
+        availability: availability.trim(),
         website: website.trim(),
         linkedinUrl: linkedinUrl.trim(),
         githubUrl: githubUrl.trim(),
@@ -95,7 +120,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             </div>
             <div className="candidate-modal-title-text">
               <h2>Edit Personal & Contact Details</h2>
-              <p>Update your basic information, headline, and external profile links</p>
+              <p>Update your basic information, headline, experience level, and availability</p>
             </div>
           </div>
           <button
@@ -117,6 +142,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="candidate-modal-form">
+          {/* First & Last Name */}
           <div className="settings-form-grid">
             <div className="settings-form-group" style={{ marginBottom: 0 }}>
               <label className="settings-label">
@@ -154,6 +180,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             </div>
           </div>
 
+          {/* Professional Headline */}
           <div className="settings-form-group" style={{ marginBottom: 0 }}>
             <label className="settings-label">
               Professional Headline / Target Role <span className="settings-label required-star">*</span>
@@ -171,27 +198,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             </div>
           </div>
 
+          {/* Location & Phone Number */}
           <div className="settings-form-grid">
             <div className="settings-form-group" style={{ marginBottom: 0 }}>
-              <label className="settings-label">Phone Number</label>
-              <div className="settings-input-wrapper">
-                <input
-                  type="tel"
-                  placeholder="e.g. +1 (555) 749-2041"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="settings-input-field"
-                  style={{ paddingLeft: '16px' }}
-                />
-              </div>
-            </div>
-
-            <div className="settings-form-group" style={{ marginBottom: 0 }}>
-              <label className="settings-label">Location & Work Preference</label>
+              <label className="settings-label">Location (e.g. City, Country)</label>
               <div className="settings-input-wrapper">
                 <input
                   type="text"
-                  placeholder="e.g. San Francisco, CA (Open to Remote)"
+                  placeholder="e.g. Colombo, Sri Lanka"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   className="settings-input-field"
@@ -199,8 +213,64 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 />
               </div>
             </div>
+
+            <div className="settings-form-group" style={{ marginBottom: 0 }}>
+              <label className="settings-label">Phone Number</label>
+              <div className="settings-input-wrapper">
+                <input
+                  type="tel"
+                  placeholder="e.g. +94 77 123 4567"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="settings-input-field"
+                  style={{ paddingLeft: '16px' }}
+                />
+              </div>
+            </div>
           </div>
 
+          {/* Experience & Availability Dropdowns */}
+          <div className="settings-form-grid">
+            <div className="settings-form-group" style={{ marginBottom: 0 }}>
+              <label className="settings-label">Years of Experience</label>
+              <div className="settings-input-wrapper">
+                <select
+                  value={experience}
+                  onChange={(e) => setExperience(e.target.value)}
+                  className="settings-input-field"
+                  style={{ paddingLeft: '16px', background: '#fff' }}
+                >
+                  <option value="">Select Experience Level</option>
+                  {EXPERIENCE_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="settings-form-group" style={{ marginBottom: 0 }}>
+              <label className="settings-label">Job Availability Status</label>
+              <div className="settings-input-wrapper">
+                <select
+                  value={availability}
+                  onChange={(e) => setAvailability(e.target.value)}
+                  className="settings-input-field"
+                  style={{ paddingLeft: '16px', background: '#fff' }}
+                >
+                  <option value="">Select Availability Status</option>
+                  {AVAILABILITY_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Social Links */}
           <div className="settings-form-grid">
             <div className="settings-form-group" style={{ marginBottom: 0 }}>
               <label className="settings-label">Portfolio / Personal Website</label>
@@ -268,3 +338,4 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     </div>
   );
 };
+export default EditProfileModal;

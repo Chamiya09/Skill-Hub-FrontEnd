@@ -16,6 +16,8 @@ export interface UserDto {
   logoUrl?: string;
   website?: string;
   location?: string;
+  experience?: string;
+  availability?: string;
   industry?: string;
   about?: string;
   companySize?: string;

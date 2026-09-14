@@ -37,7 +37,8 @@ export const CandidateSecurity: React.FC = () => {
   // Validation Flags
   const isLengthValid = newPassword.length >= 6;
   const isMatchValid = newPassword.length > 0 && newPassword === confirmNewPassword;
-  const isDifferentFromCurrent = newPassword.length > 0 && currentPassword.length > 0 && newPassword !== currentPassword;
+  const isDifferentFromCurrent =
+    newPassword.length > 0 && currentPassword.length > 0 && newPassword !== currentPassword;
 
   // Handle Password Update Submission
   const handlePasswordUpdate = async (e: React.FormEvent) => {
@@ -96,7 +97,7 @@ export const CandidateSecurity: React.FC = () => {
     try {
       setIsDeletingAccount(true);
       setDeleteError(null);
-      
+
       // Simulate API call for deletion
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -111,193 +112,209 @@ export const CandidateSecurity: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl pb-12">
-      {/* 1. Header Card */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-none">
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-[#00b074] text-xs font-bold tracking-wider mb-2 border border-emerald-100/60">
-          <ShieldCheckIcon />
-          <span>SECURITY & CREDENTIALS</span>
+    <div className="candidate-security-container">
+      {/* 1. Header Card (System UI Theme) */}
+      <div className="settings-header-card">
+        <div>
+          <div className="settings-badge">
+            <ShieldCheckIcon />
+            <span>Account Security</span>
+          </div>
+          <h1 className="settings-title">Account & Security</h1>
+          <p className="settings-subtitle">
+            Manage your authentication credentials, password encryption, and account status for your candidate portal.
+          </p>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Account & Security</h1>
-        <p className="text-xs sm:text-sm text-gray-500 mt-1.5 max-w-2xl">
-          Manage your candidate access credentials, password encryption, and irreversible account termination settings.
-        </p>
       </div>
 
-      {/* 2. Password Management Card */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-none space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-5">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <LockIcon />
-              <span>Password Management</span>
-            </h2>
-            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-              Ensure your candidate portal is safeguarded with a secure, distinct password.
-            </p>
+      {/* Success Notification Alert */}
+      {passwordSuccess && (
+        <div className="auth-alert-success" style={{ marginBottom: '8px' }}>
+          <CheckIcon />
+          <span>{passwordSuccess}</span>
+        </div>
+      )}
+
+      {/* Error Notification Alert */}
+      {passwordError && (
+        <div
+          className="auth-alert-error"
+          style={{ justifyContent: 'space-between', marginBottom: '8px' }}
+        >
+          <span>{passwordError}</span>
+          <button
+            type="button"
+            onClick={() => setPasswordError(null)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#b91c1c',
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontSize: '12px',
+            }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* 2. Password Management Card (System UI Theme) */}
+      <div className="settings-section-card">
+        <div className="settings-section-header">
+          <div className="settings-section-title-box">
+            <h2>Password Management</h2>
+            <p>Ensure your candidate account is safeguarded with a secure, distinct password</p>
           </div>
-          <span className="self-start sm:self-auto px-2.5 py-1 text-xs font-semibold text-gray-600 bg-gray-100 rounded-full">
-            Authentication
-          </span>
+          <span className="settings-step-badge">Authentication</span>
         </div>
 
-        {/* Success Alert */}
-        {passwordSuccess && (
-          <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm font-medium flex items-center justify-between gap-3 animate-fadeIn">
-            <div className="flex items-center gap-2">
-              <span className="p-1 bg-emerald-100 rounded-full text-[#00b074]">
-                <CheckIcon />
-              </span>
-              <span>{passwordSuccess}</span>
+        <form onSubmit={handlePasswordUpdate}>
+          <div className="settings-form-grid" style={{ maxWidth: '640px' }}>
+            {/* Current Password Field */}
+            <div className="settings-form-group settings-col-full">
+              <label htmlFor="currentPassword" className="settings-label">
+                <span>Current Password</span>
+                <span className="required-star">*</span>
+              </label>
+              <div className="settings-input-wrapper">
+                <span className="settings-input-icon">
+                  <LockIcon />
+                </span>
+                <input
+                  type={showCurrent ? 'text' : 'password'}
+                  id="currentPassword"
+                  required
+                  placeholder="Enter current password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="settings-input-field"
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrent(!showCurrent)}
+                  className="settings-eye-toggle-btn"
+                  aria-label={showCurrent ? 'Hide current password' : 'Show current password'}
+                >
+                  {showCurrent ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setPasswordSuccess(null)}
-              className="text-xs font-bold text-emerald-700 hover:text-emerald-900 cursor-pointer"
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
 
-        {/* Error Alert */}
-        {passwordError && (
-          <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm font-medium flex items-center justify-between gap-3 animate-fadeIn">
-            <div className="flex items-center gap-2">
-              <span className="text-base">⚠️</span>
-              <span>{passwordError}</span>
+            {/* New Password Field */}
+            <div className="settings-form-group settings-col-full">
+              <label htmlFor="newPassword" className="settings-label">
+                <span>New Password</span>
+                <span className="required-star">*</span>
+              </label>
+              <div className="settings-input-wrapper">
+                <span className="settings-input-icon">
+                  <LockIcon />
+                </span>
+                <input
+                  type={showNew ? 'text' : 'password'}
+                  id="newPassword"
+                  required
+                  minLength={6}
+                  placeholder="Enter new strong password (min 6 chars)"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="settings-input-field"
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNew(!showNew)}
+                  className="settings-eye-toggle-btn"
+                  aria-label={showNew ? 'Hide new password' : 'Show new password'}
+                >
+                  {showNew ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setPasswordError(null)}
-              className="text-xs font-bold text-red-600 hover:text-red-800 cursor-pointer"
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
 
-        {/* Password Form */}
-        <form onSubmit={handlePasswordUpdate} className="space-y-5 max-w-xl">
-          {/* Current Password Field */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-              Current Password <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                <LockIcon />
-              </span>
-              <input
-                type={showCurrent ? 'text' : 'password'}
-                required
-                placeholder="Enter current password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                autoComplete="current-password"
-                className="w-full pl-10 pr-11 py-2.5 text-sm bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#00b074] focus:ring-1 focus:ring-[#00b074] transition-all"
-              />
-              <button
-                type="button"
-                onClick={() => setShowCurrent(!showCurrent)}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
-                aria-label={showCurrent ? 'Hide current password' : 'Show current password'}
-              >
-                {showCurrent ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
-            </div>
-          </div>
-
-          {/* New Password Field */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-              New Password <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                <LockIcon />
-              </span>
-              <input
-                type={showNew ? 'text' : 'password'}
-                required
-                minLength={6}
-                placeholder="Enter new strong password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                autoComplete="new-password"
-                className="w-full pl-10 pr-11 py-2.5 text-sm bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#00b074] focus:ring-1 focus:ring-[#00b074] transition-all"
-              />
-              <button
-                type="button"
-                onClick={() => setShowNew(!showNew)}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
-                aria-label={showNew ? 'Hide new password' : 'Show new password'}
-              >
-                {showNew ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
-            </div>
-          </div>
-
-          {/* Confirm New Password Field */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-              Confirm New Password <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                <LockIcon />
-              </span>
-              <input
-                type={showConfirm ? 'text' : 'password'}
-                required
-                placeholder="Re-enter new password"
-                value={confirmNewPassword}
-                onChange={(e) => setConfirmNewPassword(e.target.value)}
-                autoComplete="new-password"
-                className="w-full pl-10 pr-11 py-2.5 text-sm bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#00b074] focus:ring-1 focus:ring-[#00b074] transition-all"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirm(!showConfirm)}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
-                aria-label={showConfirm ? 'Hide confirmation password' : 'Show confirmation password'}
-              >
-                {showConfirm ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
+            {/* Confirm New Password Field */}
+            <div className="settings-form-group settings-col-full">
+              <label htmlFor="confirmNewPassword" className="settings-label">
+                <span>Confirm New Password</span>
+                <span className="required-star">*</span>
+              </label>
+              <div className="settings-input-wrapper">
+                <span className="settings-input-icon">
+                  <LockIcon />
+                </span>
+                <input
+                  type={showConfirm ? 'text' : 'password'}
+                  id="confirmNewPassword"
+                  required
+                  placeholder="Re-enter new password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  className="settings-input-field"
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="settings-eye-toggle-btn"
+                  aria-label={showConfirm ? 'Hide confirmation password' : 'Show confirmation password'}
+                >
+                  {showConfirm ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Password Strength / Verification Requirements */}
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-2">
-            <span className="text-xs font-bold text-gray-700 tracking-wider">PASSWORD REQUIREMENTS</span>
-            <ul className="space-y-1.5 text-xs">
-              <li className={`flex items-center gap-2 ${isLengthValid ? 'text-emerald-600 font-semibold' : 'text-gray-500'}`}>
-                <span className="font-bold">{isLengthValid ? '✓' : '○'}</span>
+          {/* Password Requirements Checklist */}
+          <div className="password-requirements-card">
+            <div className="password-requirements-title">PASSWORD REQUIREMENTS:</div>
+            <ul className="password-req-list">
+              <li className={`password-req-item ${isLengthValid ? 'valid' : ''}`}>
+                <span className="password-req-icon">{isLengthValid ? '✓' : '○'}</span>
                 <span>Minimum 6 characters in length</span>
               </li>
-              <li className={`flex items-center gap-2 ${isMatchValid ? 'text-emerald-600 font-semibold' : 'text-gray-500'}`}>
-                <span className="font-bold">{isMatchValid ? '✓' : '○'}</span>
+              <li className={`password-req-item ${isMatchValid ? 'valid' : ''}`}>
+                <span className="password-req-icon">{isMatchValid ? '✓' : '○'}</span>
                 <span>New password and confirmation match</span>
               </li>
               {newPassword.length > 0 && currentPassword.length > 0 && (
-                <li className={`flex items-center gap-2 ${isDifferentFromCurrent ? 'text-emerald-600 font-semibold' : 'text-gray-500'}`}>
-                  <span className="font-bold">{isDifferentFromCurrent ? '✓' : '○'}</span>
+                <li className={`password-req-item ${isDifferentFromCurrent ? 'valid' : ''}`}>
+                  <span className="password-req-icon">{isDifferentFromCurrent ? '✓' : '○'}</span>
                   <span>Different from your current password</span>
                 </li>
               )}
             </ul>
           </div>
 
-          {/* Submit Button */}
-          <div className="pt-2">
+          {/* Action Row */}
+          <div
+            className="settings-actions-footer"
+            style={{
+              maxWidth: '640px',
+              marginTop: '24px',
+              padding: '16px 0 0 0',
+              borderTop: '1px solid #f1f5f9',
+            }}
+          >
             <button
               type="submit"
               disabled={isUpdatingPassword}
-              className="px-6 py-2.5 rounded-xl bg-[#00b074] hover:bg-[#009663] text-white font-bold text-xs sm:text-sm transition-all cursor-pointer disabled:opacity-70 flex items-center justify-center gap-2 shadow-none"
+              className="settings-btn-save"
+              style={{ width: 'auto', minWidth: '180px' }}
             >
               {isUpdatingPassword ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div
+                    style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid #ffffff',
+                      borderTopColor: 'transparent',
+                      borderRadius: '50%',
+                      animation: 'spin 0.8s linear infinite',
+                    }}
+                  />
                   <span>Updating Password...</span>
                 </>
               ) : (
@@ -311,33 +328,43 @@ export const CandidateSecurity: React.FC = () => {
         </form>
       </div>
 
-      {/* 3. Card 2: Danger Zone Card */}
-      <div className="bg-white border border-red-200 rounded-2xl p-6 sm:p-8 shadow-none space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-red-100 pb-5">
+      {/* 3. Danger Zone Card (System UI Theme) */}
+      <div className="danger-zone-card">
+        <div className="danger-zone-header">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-100 text-red-700 text-[11px] font-bold tracking-wider mb-1.5">
+            <div className="danger-badge">
               <span>DANGER ZONE</span>
             </div>
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <span className="text-red-600"><TrashIcon /></span>
+            <h2
+              style={{
+                fontSize: '16.5px',
+                fontWeight: 800,
+                color: '#0f172a',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                margin: 0,
+              }}
+            >
+              <span style={{ color: '#dc2626', display: 'flex' }}>
+                <TrashIcon />
+              </span>
               <span>Account Termination</span>
             </h2>
-            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-              Permanently remove your candidate profile and all associated data from the Skill Hub platform.
+            <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>
+              Permanently remove your candidate profile and all associated application data.
             </p>
           </div>
-          <span className="self-start sm:self-auto px-2.5 py-1 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-full">
-            Irreversible
-          </span>
+          <span className="danger-step-badge">Irreversible</span>
         </div>
 
         {/* Warning Callout Box */}
-        <div className="p-4 rounded-xl bg-red-50/50 border border-red-200/80 text-xs sm:text-sm text-red-900 space-y-2">
-          <div className="flex items-center gap-2 font-bold text-red-700">
+        <div className="danger-warning-box">
+          <div className="danger-warning-title">
             <span>⚠️</span>
             <span>Warning: Deleting your account is permanent</span>
           </div>
-          <p className="text-red-700/90 leading-relaxed text-xs">
+          <p className="danger-warning-desc">
             Once confirmed, your Digital CV, job applications, interview history, verified skills, and saved jobs will be completely erased. You cannot recover this account or any linked data afterwards.
           </p>
         </div>
@@ -351,7 +378,7 @@ export const CandidateSecurity: React.FC = () => {
               setDeleteError(null);
               setShowDeleteModal(true);
             }}
-            className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-none flex items-center gap-2"
+            className="danger-btn-delete"
           >
             <TrashIcon />
             <span>Delete Account</span>
@@ -359,32 +386,37 @@ export const CandidateSecurity: React.FC = () => {
         </div>
       </div>
 
-      {/* 4. Delete Account Confirmation Modal */}
+      {/* 4. Delete Account Confirmation Modal (System UI Theme) */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn">
+        <div className="candidate-modal-backdrop" onClick={() => setShowDeleteModal(false)}>
           <div
-            className="bg-white rounded-2xl border border-gray-200 max-w-md w-full p-6 sm:p-7 shadow-none space-y-5 animate-scaleUp"
+            className="candidate-modal-card"
+            style={{ maxWidth: '480px' }}
+            onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-delete-title"
           >
             {/* Modal Header */}
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-bold">
+            <div className="candidate-modal-header" style={{ borderBottomColor: '#fee2e2' }}>
+              <div className="candidate-modal-title-box">
+                <div
+                  className="candidate-icon-box"
+                  style={{ background: '#fee2e2', color: '#dc2626', border: '1px solid #fecaca' }}
+                >
                   <TrashIcon />
                 </div>
-                <div>
-                  <h3 id="modal-delete-title" className="text-lg font-bold text-gray-900">
+                <div className="candidate-modal-title-text">
+                  <h2 id="modal-delete-title" style={{ color: '#991b1b' }}>
                     Delete Candidate Account?
-                  </h3>
-                  <p className="text-xs text-red-600 font-medium">This action cannot be undone.</p>
+                  </h2>
+                  <p style={{ color: '#dc2626' }}>This action cannot be undone.</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowDeleteModal(false)}
-                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                className="candidate-modal-close-btn"
                 aria-label="Close"
               >
                 <XIcon />
@@ -392,13 +424,24 @@ export const CandidateSecurity: React.FC = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="text-xs sm:text-sm text-gray-600 space-y-3">
-              <p>
-                Are you absolutely sure you want to delete your Skill Hub candidate account? All submitted applications and resume details will be instantly removed.
+            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <p style={{ fontSize: '13.5px', color: '#475569', lineHeight: 1.55, margin: 0 }}>
+                Are you absolutely sure you want to delete your Skill Hub candidate account? All submitted applications, resume details, and history will be permanently erased.
               </p>
+
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                  To confirm, type <span className="text-red-600 uppercase font-mono">DELETE</span> below:
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: '#334155',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    marginBottom: '8px',
+                  }}
+                >
+                  To confirm, type <span style={{ color: '#dc2626', fontFamily: 'monospace', fontWeight: 800 }}>DELETE</span> below:
                 </label>
                 <input
                   type="text"
@@ -408,23 +451,35 @@ export const CandidateSecurity: React.FC = () => {
                     setDeleteError(null);
                   }}
                   placeholder="Type DELETE to confirm"
-                  className="w-full px-3.5 py-2.5 text-sm bg-white border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all font-mono"
+                  className="danger-modal-input"
                   autoFocus
                 />
               </div>
 
               {deleteError && (
-                <p className="text-xs font-semibold text-red-600">{deleteError}</p>
+                <div
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    background: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    color: '#b91c1c',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                  }}
+                >
+                  ⚠️ {deleteError}
+                </div>
               )}
             </div>
 
             {/* Modal Footer Actions */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+            <div className="candidate-modal-footer">
               <button
                 type="button"
                 disabled={isDeletingAccount}
                 onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold text-xs sm:text-sm hover:bg-gray-50 transition-colors cursor-pointer"
+                className="settings-btn-cancel"
               >
                 Cancel
               </button>
@@ -432,11 +487,20 @@ export const CandidateSecurity: React.FC = () => {
                 type="button"
                 disabled={isDeletingAccount || deleteConfirmationText.trim().toUpperCase() !== 'DELETE'}
                 onClick={handleDeleteAccount}
-                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-none"
+                className="danger-btn-delete"
               >
                 {isDeletingAccount ? (
                   <>
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div
+                      style={{
+                        width: '14px',
+                        height: '14px',
+                        border: '2px solid #ffffff',
+                        borderTopColor: 'transparent',
+                        borderRadius: '50%',
+                        animation: 'spin 0.8s linear infinite',
+                      }}
+                    />
                     <span>Deleting Account...</span>
                   </>
                 ) : (
@@ -453,4 +517,5 @@ export const CandidateSecurity: React.FC = () => {
     </div>
   );
 };
+
 export default CandidateSecurity;

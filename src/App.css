@@ -11300,6 +11300,208 @@ select.w-full {
   color: #ef4444;
 }
 
+/* =========================================================
+   CANDIDATE ACCOUNT & SECURITY - SYSTEM UI THEME
+   ========================================================= */
+.candidate-security-container {
+  width: 100%;
+  max-width: 920px;
+  padding-bottom: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.settings-eye-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 6px;
+  transition: color 0.18s ease;
+}
+
+.settings-eye-toggle-btn:hover {
+  color: #475569;
+}
+
+.password-requirements-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  max-width: 640px;
+  margin-top: 18px;
+}
+
+.password-requirements-title {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #475569;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.password-req-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.password-req-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #64748b;
+  transition: color 0.2s ease;
+}
+
+.password-req-item.valid {
+  color: #009663;
+  font-weight: 600;
+}
+
+.password-req-icon {
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Danger Zone Account Deletion */
+.danger-zone-card {
+  background: #ffffff;
+  border: 1px solid #fecaca;
+  border-radius: 20px;
+  padding: 28px 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.danger-zone-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #fee2e2;
+  flex-wrap: wrap;
+}
+
+.danger-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.danger-step-badge {
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  color: #dc2626;
+  background: #fef2f2;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+}
+
+.danger-warning-box {
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 12px;
+  padding: 16px 20px;
+  max-width: 640px;
+  margin-bottom: 22px;
+}
+
+.danger-warning-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #991b1b;
+  margin-bottom: 4px;
+}
+
+.danger-warning-desc {
+  font-size: 12.5px;
+  color: #b91c1c;
+  margin: 0;
+  line-height: 1.55;
+}
+
+.danger-btn-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 24px;
+  background: #dc2626;
+  border: none;
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.danger-btn-delete:hover:not(:disabled) {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.3);
+}
+
+.danger-btn-delete:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.danger-modal-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #0f172a;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.danger-modal-input:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
 
 
 

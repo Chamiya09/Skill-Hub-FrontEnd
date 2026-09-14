@@ -827,6 +827,7 @@ export interface ProjectDto {
   role?: string;
   description?: string;
   link?: string;
+  liveUrl?: string;
   createdAt: string;
 }
 
@@ -835,6 +836,7 @@ export interface CreateProjectPayload {
   role?: string;
   description?: string;
   link?: string;
+  liveUrl?: string;
 }
 
 export interface SkillDto {

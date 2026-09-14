@@ -844,32 +844,41 @@ export const CandidateProfile: React.FC = () => {
           <div className="candidate-projects-list">
             {projects.map((proj) => {
               const { displayRole, techStack } = parseProjectDetails(proj.role);
+              const projectUrl = proj.link || proj.liveUrl || (proj as any).projectUrl;
+
               return (
                 <div key={proj.id} className="candidate-project-item">
-                  {/* 1. Primary Header: Project Title & Actions */}
+                  {/* 1. Primary Header: Project Title & Actions (Edit/Delete) */}
                   <div className="candidate-project-header">
                     <div style={{ flex: 1 }}>
                       <h3 className="candidate-project-title">{proj.projectName}</h3>
-                      {/* 2. Secondary Meta: Role with System Theme Color */}
-                      {displayRole && (
-                        <p className="candidate-project-role">
-                          {displayRole}
-                        </p>
-                      )}
+
+                      {/* 2. Secondary Meta: Role with System Theme Color and Subtle Text Link */}
+                      <div className="candidate-project-meta-row">
+                        {displayRole && (
+                          <span className="candidate-project-role">
+                            {displayRole}
+                          </span>
+                        )}
+                        {projectUrl && (
+                          <>
+                            {displayRole && <span className="candidate-project-meta-divider">•</span>}
+                            <a
+                              href={projectUrl.startsWith('http') ? projectUrl : `https://${projectUrl}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="candidate-project-link"
+                            >
+                              <span>View Project</span>
+                              <ExternalLinkIcon />
+                            </a>
+                          </>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="candidate-project-actions">
-                      {proj.link && (
-                        <a
-                          href={proj.link.startsWith('http') ? proj.link : `https://${proj.link}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="candidate-project-link-btn"
-                        >
-                          <span>View Project</span>
-                          <ExternalLinkIcon />
-                        </a>
-                      )}
+                    {/* Action buttons aligned strictly to far right */}
+                    <div className="flex items-center gap-2 ml-4 flex-shrink-0">
                       <div className="candidate-actions-group">
                         <button
                           type="button"
@@ -894,7 +903,7 @@ export const CandidateProfile: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* 3. Tech Stack: Distinct Badges/Pills with System Theme */}
+                  {/* 3. Tech Stack: System UI Theme Badges */}
                   {techStack.length > 0 && (
                     <div className="candidate-project-tags">
                       {techStack.map((tech, idx) => (
@@ -908,11 +917,11 @@ export const CandidateProfile: React.FC = () => {
                     </div>
                   )}
 
-                  {/* 4. Description Layout with Rich Text System Styling */}
+                  {/* 4. Description: Completely independent safe rendering */}
                   {proj.description && (
                     <div
                       className="candidate-rich-text"
-                      style={{ marginTop: '10px' }}
+                      style={{ marginTop: '6px' }}
                       dangerouslySetInnerHTML={sanitizeHtml(proj.description)}
                     />
                   )}

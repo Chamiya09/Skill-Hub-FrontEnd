@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { publicJobsApi, type JobDto } from '../services/api'
+import { publicJobsApi, jobApplicationsApi, type JobDto } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { JobVacancyCard } from '../components/jobs/JobVacancyCard'
 import { SleekSpinner, JobCardSkeleton } from '../components/common/SkeletonCard'
@@ -34,6 +34,7 @@ export const JobDetailsPublic: React.FC = () => {
   const [isApplying, setIsApplying] = useState(false)
   const [hasApplied, setHasApplied] = useState(false)
   const [applicationSubmitted, setApplicationSubmitted] = useState(false)
+  const [applyErrorMessage, setApplyErrorMessage] = useState<string | null>(null)
 
   // Check if current user is an employer/recruiter
   const isEmployer = Boolean(
@@ -50,6 +51,7 @@ export const JobDetailsPublic: React.FC = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
     setHasApplied(false)
+    setApplyErrorMessage(null)
   }, [id])
 
   // Fetch target job details
@@ -72,6 +74,24 @@ export const JobDetailsPublic: React.FC = () => {
 
     fetchJob()
   }, [id])
+
+  // Check candidate application status
+  useEffect(() => {
+    if (!id || !currentUser || isEmployer) return
+
+    const checkStatus = async () => {
+      try {
+        const res = await jobApplicationsApi.getStatus(id)
+        if (res && res.hasApplied) {
+          setHasApplied(true)
+        }
+      } catch (err) {
+        // Silently catch status check error
+      }
+    }
+
+    checkStatus()
+  }, [id, currentUser, isEmployer])
 
   // Fetch suggested matching jobs
   useEffect(() => {
@@ -99,30 +119,36 @@ export const JobDetailsPublic: React.FC = () => {
   }
 
   // =========================================================================
-  // ONE-CLICK DIGITAL CV APPLY HANDLER (INTEGRATION READY)
+  // ONE-CLICK DIGITAL CV APPLY HANDLER (LIVE INTEGRATION)
   // =========================================================================
-  const handleApply = () => {
+  const handleApply = async () => {
     if (isEmployer || hasApplied || isApplying) return
 
-    setIsApplying(true)
+    if (!currentUser) {
+      // Redirect unauthenticated user to login with redirect back
+      navigate(`/candidate/login?redirect=/jobs/${id}`)
+      return
+    }
 
-    // =========================================================================
-    // TODO: Another team member will integrate the Digital CV payload here.
-    // E.g.:
-    // await applicationsApi.submitDigitalCvApplication({
-    //   jobId: job?.id,
-    //   candidateId: currentUser?.id,
-    //   digitalCvProfile: candidateCvData,
-    // })
-    // =========================================================================
+    if (!job?.id) return
 
-    // Simulate network request duration
-    setTimeout(() => {
-      setIsApplying(false)
+    try {
+      setIsApplying(true)
+      setApplyErrorMessage(null)
+      await jobApplicationsApi.apply(job.id)
       setHasApplied(true)
       setApplicationSubmitted(true)
-      setTimeout(() => setApplicationSubmitted(false), 5000)
-    }, 1500)
+      setTimeout(() => setApplicationSubmitted(false), 6000)
+    } catch (err: any) {
+      console.error('Error submitting application:', err)
+      const msg = err.message || 'Failed to submit application.'
+      setApplyErrorMessage(msg)
+      if (msg.toLowerCase().includes('already applied')) {
+        setHasApplied(true)
+      }
+    } finally {
+      setIsApplying(false)
+    }
   }
 
   if (loading) {

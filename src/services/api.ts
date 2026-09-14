@@ -1117,3 +1117,94 @@ export const candidateCvApi = {
   }
 };
 
+// ==========================================
+// JOB APPLICATIONS & EMPLOYER REVIEW API
+// ==========================================
+
+export interface JobApplicantDto {
+  id: string;
+  jobId: string;
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  candidateHeadline?: string;
+  candidateAvatarUrl?: string;
+  candidateLocation?: string;
+  candidatePhone?: string;
+  appliedDate: string;
+  status: string;
+  skills: string[];
+}
+
+export interface ApplicationStatusDto {
+  hasApplied: boolean;
+  appliedDate?: string | null;
+  status?: string | null;
+  applicationId?: string | null;
+}
+
+export interface CandidateApplicationItemDto {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  companyName: string;
+  companyLogoUrl?: string;
+  location: string;
+  employmentType: string;
+  workplaceType: string;
+  appliedDate: string;
+  status: string;
+}
+
+export const jobApplicationsApi = {
+  /**
+   * Submits a candidate's digital CV application for a job.
+   * Calls: POST /api/jobs/{jobId}/apply
+   */
+  async apply(jobId: string): Promise<{ message: string; applicationId: string; appliedDate: string }> {
+    return request<{ message: string; applicationId: string; appliedDate: string }>(`/jobs/${jobId}/apply`, {
+      method: 'POST',
+    });
+  },
+
+  /**
+   * Checks whether the current candidate has already applied to a job.
+   * Calls: GET /api/jobs/{jobId}/application-status
+   */
+  async getStatus(jobId: string): Promise<ApplicationStatusDto> {
+    return request<ApplicationStatusDto>(`/jobs/${jobId}/application-status`, {
+      method: 'GET',
+    });
+  },
+
+  /**
+   * Retrieves all applicants for a company's job vacancy.
+   * Calls: GET /api/jobs/{jobId}/applications
+   */
+  async getJobApplicants(jobId: string): Promise<JobApplicantDto[]> {
+    return request<JobApplicantDto[]>(`/jobs/${jobId}/applications`, {
+      method: 'GET',
+    });
+  },
+
+  /**
+   * Retrieves all applications submitted by the logged-in candidate.
+   * Calls: GET /api/candidate/applications
+   */
+  async getMyApplications(): Promise<CandidateApplicationItemDto[]> {
+    return request<CandidateApplicationItemDto[]>('/candidate/applications', {
+      method: 'GET',
+    });
+  },
+
+  /**
+   * Fetches complete read-only Digital CV profile of a candidate for an employer.
+   * Calls: GET /api/employers/candidates/{candidateId}/profile
+   */
+  async getCandidateProfileForEmployer(candidateId: string): Promise<CandidateProfileResponseDto> {
+    return request<CandidateProfileResponseDto>(`/employers/candidates/${candidateId}/profile`, {
+      method: 'GET',
+    });
+  }
+};
+

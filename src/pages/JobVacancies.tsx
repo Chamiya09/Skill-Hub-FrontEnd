@@ -10,6 +10,7 @@ import {
   CheckIcon,
 } from '../components/common/Icons';
 import { JobFormModal, type JobFormData } from '../components/jobs/JobFormModal';
+import { CandidatesListModal } from '../components/candidates/CandidatesListModal';
 import { jobsApi, type JobDto } from '../services/api';
 import { TableRowSkeleton } from '../components/common/SkeletonCard';
 
@@ -45,6 +46,9 @@ export const JobVacancies = () => {
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<JobVacancyItem | null>(null);
 
+  // Applicants Modal State
+  const [selectedJobForApplicants, setSelectedJobForApplicants] = useState<JobDto | null>(null);
+
   // Modal states for Direct Delete
   const [vacancyToDelete, setVacancyToDelete] = useState<JobVacancyItem | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
@@ -64,7 +68,7 @@ export const JobVacancies = () => {
         status: (j.status as any) || 'Active',
         experienceLevel: j.experienceLevel,
         salaryRange: j.salaryRange || '',
-        applicantsCount: 0,
+        applicantsCount: j.applicantsCount || 0,
         aiMatchScore: 95,
         postedDate: j.createdAt ? j.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
         description: j.description,
@@ -395,14 +399,34 @@ export const JobVacancies = () => {
 
                     {/* Applicants Count Column */}
                     <td>
-                      <div className="applicants-cell-box">
-                        <div className="applicants-icon-wrap">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedJobForApplicants({
+                          id: job.id,
+                          companyId: '',
+                          title: job.title,
+                          department: job.department,
+                          location: job.location,
+                          employmentType: job.type,
+                          experienceLevel: job.experienceLevel || '',
+                          salaryRange: job.salaryRange,
+                          status: job.status,
+                          description: job.description || '',
+                          whatWeOffer: job.benefits,
+                          tags: job.tags,
+                          applicantsCount: job.applicantsCount,
+                          createdAt: job.postedDate,
+                        })}
+                        className="applicants-cell-box text-left hover:bg-emerald-50/60 p-1.5 rounded-lg transition-colors cursor-pointer group"
+                        title="Click to view and review candidate applicants"
+                      >
+                        <div className="applicants-icon-wrap group-hover:bg-[#00b074] group-hover:text-white transition-colors">
                           <UsersIcon />
                         </div>
-                        <span className="applicants-count-num">
+                        <span className="applicants-count-num group-hover:text-[#00b074] font-semibold transition-colors">
                           {job.applicantsCount} Applicants
                         </span>
-                      </div>
+                      </button>
                     </td>
 
                     {/* Date Posted Column */}
@@ -537,6 +561,18 @@ export const JobVacancies = () => {
             : null
         }
         isEditMode={!!editingJob}
+      />
+
+      {/* =========================================================
+          6. CANDIDATES / APPLICANTS LIST MODAL
+          ========================================================= */}
+      <CandidatesListModal
+        isOpen={Boolean(selectedJobForApplicants)}
+        onClose={() => {
+          setSelectedJobForApplicants(null);
+          fetchJobs();
+        }}
+        job={selectedJobForApplicants}
       />
     </div>
   );

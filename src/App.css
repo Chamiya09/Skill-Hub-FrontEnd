@@ -12649,25 +12649,46 @@ select.w-full {
   list-style: none;
 }
 
-.ai-insight-card li + li {
-  margin-top: 7px;
+.ai-insight-list {
+  margin-top: 12px !important;
 }
 
-.ai-insight-card li {
-  position: relative;
-  padding-left: 14px;
+.ai-insight-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
 
-.ai-insight-card li::before {
-  position: absolute;
-  top: 0.65em;
-  left: 1px;
-  width: 5px;
-  height: 5px;
+.ai-insight-list-item + .ai-insight-list-item {
+  margin-top: 6px;
+}
+
+.ai-insight-bullet {
+  width: 6px;
+  height: 6px;
+  margin-top: 6px;
+  flex-shrink: 0;
   border-radius: 9999px;
-  background: currentColor;
-  content: '';
-  opacity: 0.55;
+}
+
+.ai-insight-bullet.strength-bullet {
+  background: #22c55e;
+}
+
+.ai-insight-bullet.gap-bullet {
+  background: #f43f5e;
+}
+
+.ai-insight-empty-item {
+  opacity: 0.8;
+}
+
+.strengths-card .ai-insight-empty-item {
+  color: #16a34a;
+}
+
+.gaps-card .ai-insight-empty-item {
+  color: #e11d48;
 }
 
 .ai-insights-empty {

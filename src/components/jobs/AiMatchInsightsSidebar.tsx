@@ -139,10 +139,19 @@ export function AiMatchInsightsSidebar({
                     <span className="ai-insight-icon"><CheckCircle2 size={19} /></span>
                     <h3>Strengths</h3>
                   </div>
-                  <ul>
-                    {aiResults.strengths.map((strength, index) => (
-                      <li key={`${strength}-${index}`}>{strength}</li>
-                    ))}
+                  <ul className="ai-insight-list mt-3 space-y-1.5 text-sm text-green-800">
+                    {aiResults.strengths.length > 0 ? (
+                      aiResults.strengths.map((item, idx) => (
+                        <li key={idx} className="ai-insight-list-item flex items-start gap-2">
+                          <div className="ai-insight-bullet strength-bullet mt-1 w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                          <span>{item}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="ai-insight-empty-item text-green-600 opacity-80">
+                        No specific strengths listed.
+                      </li>
+                    )}
                   </ul>
                 </section>
 
@@ -151,10 +160,19 @@ export function AiMatchInsightsSidebar({
                     <span className="ai-insight-icon"><AlertTriangle size={19} /></span>
                     <h3>Missing Skill Gaps</h3>
                   </div>
-                  <ul>
-                    {aiResults.missingSkills.map((skill, index) => (
-                      <li key={`${skill}-${index}`}>{skill}</li>
-                    ))}
+                  <ul className="ai-insight-list mt-3 space-y-1.5 text-sm text-rose-800">
+                    {aiResults.missingSkills.length > 0 ? (
+                      aiResults.missingSkills.map((item, idx) => (
+                        <li key={idx} className="ai-insight-list-item flex items-start gap-2">
+                          <div className="ai-insight-bullet gap-bullet mt-1 w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                          <span>{item}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="ai-insight-empty-item text-rose-600 opacity-80">
+                        No skill gaps identified.
+                      </li>
+                    )}
                   </ul>
                 </section>
 

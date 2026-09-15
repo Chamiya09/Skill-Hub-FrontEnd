@@ -514,6 +514,28 @@ export interface JobDto {
   updatedAt?: string;
 }
 
+export interface AiMatchRequestDto {
+  candidateSkills: string[];
+  candidateExperienceYears: number;
+  jobRequirements: string[];
+}
+
+export interface AiMatchResponseDto {
+  matchPercentage: number;
+  strengths: string[];
+  missingSkills: string[];
+  aiRecommendation: string;
+}
+
+export const aiMatchApi = {
+  async analyze(requestDto: AiMatchRequestDto): Promise<AiMatchResponseDto> {
+    return request<AiMatchResponseDto>('/candidate/analyze-job', {
+      method: 'POST',
+      body: JSON.stringify(requestDto),
+    });
+  },
+};
+
 export interface CreateJobPayload {
   title: string;
   department: string;

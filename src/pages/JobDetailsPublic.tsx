@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { publicJobsApi, jobApplicationsApi, type JobDto } from '../services/api'
+import {
+  aiMatchApi,
+  candidateCvApi,
+  jobApplicationsApi,
+  publicJobsApi,
+  type AiMatchResponseDto,
+  type JobDto,
+} from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { JobVacancyCard } from '../components/jobs/JobVacancyCard'
 import { AiMatchInsightsSidebar } from '../components/jobs/AiMatchInsightsSidebar'
 import { SleekSpinner, JobCardSkeleton } from '../components/common/SkeletonCard'
-import { Sparkles } from 'lucide-react'
+import { Loader2, Sparkles } from 'lucide-react'
 import {
   SparkleIcon,
   MapPinIcon,
@@ -37,7 +44,10 @@ export const JobDetailsPublic: React.FC = () => {
   const [hasApplied, setHasApplied] = useState(false)
   const [applicationSubmitted, setApplicationSubmitted] = useState(false)
   const [applyErrorMessage, setApplyErrorMessage] = useState<string | null>(null)
-  const [isMatchInsightsOpen, setIsMatchInsightsOpen] = useState(false)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [aiResults, setAiResults] = useState<AiMatchResponseDto | null>(null)
+  const [showSidebar, setShowSidebar] = useState(false)
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
 
   // Check if current user is an employer/recruiter
   const isEmployer = Boolean(
@@ -119,6 +129,49 @@ export const JobDetailsPublic: React.FC = () => {
     navigator.clipboard.writeText(window.location.href)
     setShareCopied(true)
     setTimeout(() => setShareCopied(false), 3000)
+  }
+
+  const handleAnalyzeMatch = async () => {
+    if (!job || isEmployer || isAnalyzing) return
+
+    if (!currentUser) {
+      navigate(`/candidate/login?redirect=/jobs/${id}`)
+      return
+    }
+
+    try {
+      setIsAnalyzing(true)
+      setAnalysisError(null)
+
+      const digitalCv = await candidateCvApi.getCv()
+      const candidateSkills = digitalCv.skills
+        .map((skill) => skill.skillName.trim())
+        .filter(Boolean)
+      const jobRequirements = [
+        ...(job.tags ?? []),
+        job.department,
+        job.experienceLevel,
+      ].filter((requirement): requirement is string => Boolean(requirement?.trim()))
+
+      const result = await aiMatchApi.analyze({
+        candidateSkills,
+        // Temporary fallback until total experience is calculated from CV dates.
+        candidateExperienceYears: 2,
+        jobRequirements: [...new Set(jobRequirements)],
+      })
+
+      setAiResults(result)
+      setShowSidebar(true)
+    } catch (error: unknown) {
+      console.error('AI match analysis failed:', error)
+      setAnalysisError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to analyze your match right now. Please try again.',
+      )
+    } finally {
+      setIsAnalyzing(false)
+    }
   }
 
   // =========================================================================
@@ -519,13 +572,24 @@ export const JobDetailsPublic: React.FC = () => {
               {!isEmployer && (
                 <button
                   type="button"
-                  onClick={() => setIsMatchInsightsOpen(true)}
+                  onClick={handleAnalyzeMatch}
+                  disabled={isAnalyzing}
                   className="job-details-analyze-match-btn flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 font-semibold text-sm rounded-full transition-all shadow-sm"
                   aria-haspopup="dialog"
                 >
-                  <Sparkles size={16} aria-hidden="true" />
-                  <span>Analyze Match</span>
+                  {isAnalyzing ? (
+                    <Loader2 className="animate-spin" size={16} aria-hidden="true" />
+                  ) : (
+                    <Sparkles size={16} aria-hidden="true" />
+                  )}
+                  <span>{isAnalyzing ? 'Scanning Profile...' : 'Analyze Match'}</span>
                 </button>
+              )}
+
+              {analysisError && !isEmployer && (
+                <p className="job-details-analysis-error" role="alert">
+                  {analysisError}
+                </p>
               )}
 
               {/* Action Buttons: Save & Share */}
@@ -976,9 +1040,9 @@ export const JobDetailsPublic: React.FC = () => {
 
       {!isEmployer && (
         <AiMatchInsightsSidebar
-          isOpen={isMatchInsightsOpen}
-          onClose={() => setIsMatchInsightsOpen(false)}
-          matchPercentage={88}
+          isOpen={showSidebar}
+          onClose={() => setShowSidebar(false)}
+          aiResults={aiResults}
           onGenerateCoverLetter={handleApply}
         />
       )}

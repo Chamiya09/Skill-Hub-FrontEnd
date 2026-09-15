@@ -12654,6 +12654,31 @@ select.w-full {
   margin-top: 7px;
 }
 
+.ai-insight-card li {
+  position: relative;
+  padding-left: 14px;
+}
+
+.ai-insight-card li::before {
+  position: absolute;
+  top: 0.65em;
+  left: 1px;
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: currentColor;
+  content: '';
+  opacity: 0.55;
+}
+
+.ai-insights-empty {
+  margin: 48px 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}
+
 .ai-insights-footer {
   padding: 16px 20px 18px;
   border-top: 1px solid #e2e8f0;
@@ -12740,6 +12765,21 @@ select.w-full {
   color: #065f46;
   box-shadow: 0 5px 14px rgba(5, 150, 105, 0.12);
   transform: translateY(-1px);
+}
+
+.job-details-analyze-match-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+  transform: none;
+}
+
+.job-details-analysis-error {
+  max-width: 250px;
+  margin: -6px 0 0;
+  color: #dc2626;
+  font-size: 11.5px;
+  line-height: 1.4;
+  text-align: right;
 }
 
 @media (prefers-reduced-motion: reduce) {

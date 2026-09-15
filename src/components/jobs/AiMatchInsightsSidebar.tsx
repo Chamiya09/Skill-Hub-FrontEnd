@@ -12,36 +12,29 @@ import {
 export interface AiMatchInsightsSidebarProps {
   isOpen: boolean
   onClose: () => void
-  matchPercentage?: number
-  strengths?: string[]
-  missingSkills?: string[]
-  recommendation?: string
+  aiResults: AiMatchResults | null
   onGenerateCoverLetter?: () => void
 }
 
-const DEFAULT_STRENGTHS = [
-  "Your React.js and Node.js experience perfectly matches the company's core stack.",
-]
-
-const DEFAULT_MISSING_SKILLS = [
-  'The job requires Docker & AWS knowledge, which is currently missing in your Knowledge Graph. Consider adding a Docker project to boost your score to 95%!',
-]
-
-const DEFAULT_RECOMMENDATION =
-  'Recommended to apply! Your Semantic Twin can generate a tailored cover letter highlighting your full-stack projects.'
+export interface AiMatchResults {
+  matchPercentage: number
+  strengths: string[]
+  missingSkills: string[]
+  aiRecommendation: string
+}
 
 export function AiMatchInsightsSidebar({
   isOpen,
   onClose,
-  matchPercentage = 88,
-  strengths = DEFAULT_STRENGTHS,
-  missingSkills = DEFAULT_MISSING_SKILLS,
-  recommendation = DEFAULT_RECOMMENDATION,
+  aiResults,
   onGenerateCoverLetter,
 }: AiMatchInsightsSidebarProps) {
   const titleId = useId()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
-  const score = Math.min(100, Math.max(0, Math.round(matchPercentage)))
+  const score = Math.min(
+    100,
+    Math.max(0, Math.round(aiResults?.matchPercentage ?? 0)),
+  )
   const radius = 76
   const circumference = 2 * Math.PI * radius
   const progressOffset = circumference * (1 - score / 100)
@@ -108,7 +101,9 @@ export function AiMatchInsightsSidebar({
         </header>
 
         <div className="ai-insights-body">
-          <section className="ai-score-section" aria-label={`${score}% job match`}>
+          {aiResults ? (
+            <>
+              <section className="ai-score-section" aria-label={`${score}% job match`}>
             <div
               className="ai-score-ring drop-shadow-[0_0_15px_rgba(52,211,118,0.5)]"
               role="progressbar"
@@ -136,37 +131,47 @@ export function AiMatchInsightsSidebar({
               <span><Sparkles size={13} /> Real-time AI analysis</span>
               <p>Your profile has strong alignment with this opportunity.</p>
             </div>
-          </section>
+              </section>
 
-          <div className="ai-insights-breakdown">
-            <section className="ai-insight-card strengths-card bg-green-50 border-green-100">
-              <div className="ai-insight-card-header">
-                <span className="ai-insight-icon"><CheckCircle2 size={19} /></span>
-                <h3>Strengths</h3>
-              </div>
-              <ul>
-                {strengths.map((strength) => <li key={strength}>{strength}</li>)}
-              </ul>
-            </section>
+              <div className="ai-insights-breakdown">
+                <section className="ai-insight-card strengths-card bg-green-50 border-green-100">
+                  <div className="ai-insight-card-header">
+                    <span className="ai-insight-icon"><CheckCircle2 size={19} /></span>
+                    <h3>Strengths</h3>
+                  </div>
+                  <ul>
+                    {aiResults.strengths.map((strength, index) => (
+                      <li key={`${strength}-${index}`}>{strength}</li>
+                    ))}
+                  </ul>
+                </section>
 
-            <section className="ai-insight-card gaps-card bg-rose-50 border-rose-100">
-              <div className="ai-insight-card-header">
-                <span className="ai-insight-icon"><AlertTriangle size={19} /></span>
-                <h3>Missing Skill Gaps</h3>
-              </div>
-              <ul>
-                {missingSkills.map((skill) => <li key={skill}>{skill}</li>)}
-              </ul>
-            </section>
+                <section className="ai-insight-card gaps-card bg-rose-50 border-rose-100">
+                  <div className="ai-insight-card-header">
+                    <span className="ai-insight-icon"><AlertTriangle size={19} /></span>
+                    <h3>Missing Skill Gaps</h3>
+                  </div>
+                  <ul>
+                    {aiResults.missingSkills.map((skill, index) => (
+                      <li key={`${skill}-${index}`}>{skill}</li>
+                    ))}
+                  </ul>
+                </section>
 
-            <section className="ai-insight-card recommendation-card bg-amber-50 border-amber-100">
-              <div className="ai-insight-card-header">
-                <span className="ai-insight-icon"><Lightbulb size={19} /></span>
-                <h3>AI Recommendation</h3>
+                <section className="ai-insight-card recommendation-card bg-amber-50 border-amber-100">
+                  <div className="ai-insight-card-header">
+                    <span className="ai-insight-icon"><Lightbulb size={19} /></span>
+                    <h3>AI Recommendation</h3>
+                  </div>
+                  <p>{aiResults.aiRecommendation}</p>
+                </section>
               </div>
-              <p>{recommendation}</p>
-            </section>
-          </div>
+            </>
+          ) : (
+            <div className="ai-insights-empty" role="status">
+              No match analysis is available yet.
+            </div>
+          )}
         </div>
 
         <footer className="ai-insights-footer">

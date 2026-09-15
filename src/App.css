@@ -5731,10 +5731,19 @@
   display: flex !important;
 }
 
+.flex-col {
+  flex-direction: column !important;
+}
+
+.flex-wrap {
+  flex-wrap: wrap !important;
+}
+
 .flex-1 {
   flex: 1 1 0% !important;
 }
 
+.shrink-0,
 .flex-shrink-0 {
   flex-shrink: 0 !important;
 }
@@ -5773,6 +5782,7 @@
 }
 
 .gap-1 { gap: 0.25rem !important; }
+.gap-1\.5 { gap: 0.375rem !important; }
 .gap-2 { gap: 0.5rem !important; }
 .gap-3 { gap: 0.75rem !important; }
 .gap-4 { gap: 1rem !important; }
@@ -5827,11 +5837,27 @@
 .text-left { text-align: left !important; }
 .text-center { text-align: center !important; }
 .text-right { text-align: right !important; }
+.leading-none { line-height: 1 !important; }
 
 .truncate {
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
+}
+
+.object-cover { object-fit: cover !important; }
+.cursor-pointer { cursor: pointer !important; }
+
+/* Tailwind's preflight normally supplies these resets. Keep them scoped to
+   utility-styled modal copy because this project uses local utility rules. */
+.popup-section-card h4.text-base {
+  margin: 0;
+}
+
+.popup-section-card p.mt-1\.5 {
+  margin-right: 0;
+  margin-bottom: 0;
+  margin-left: 0;
 }
 
 /* Colors */
@@ -5852,6 +5878,7 @@
 
 .text-emerald-600 { color: #059669 !important; }
 .text-emerald-700 { color: #047857 !important; }
+.text-slate-600 { color: #475569 !important; }
 
 /* Backgrounds */
 .bg-transparent { background-color: transparent !important; }
@@ -5867,6 +5894,7 @@
 .bg-blue-700 { background-color: #1d4ed8 !important; }
 
 .bg-red-50 { background-color: #fef2f2 !important; }
+.bg-slate-50 { background-color: #f8fafc !important; }
 
 .hover\:bg-blue-700:hover {
   background-color: #1d4ed8 !important;
@@ -5911,6 +5939,9 @@
 .border-blue-200 { border-color: #bfdbfe !important; }
 .border-blue-600 { border-color: #2563eb !important; }
 .border-red-200 { border-color: #fecaca !important; }
+.border-slate-200 { border-color: #e2e8f0 !important; }
+
+.hover\:border-emerald-200:hover { border-color: #a7f3d0 !important; }
 
 .rounded-md { border-radius: 0.375rem !important; }
 .rounded-lg { border-radius: 0.5rem !important; }
@@ -5930,6 +5961,7 @@
 
 .mt-0\.5 { margin-top: 0.125rem !important; }
 .mt-1 { margin-top: 0.25rem !important; }
+.mt-1\.5 { margin-top: 0.375rem !important; }
 .mt-2 { margin-top: 0.5rem !important; }
 .mt-3 { margin-top: 0.75rem !important; }
 .mt-4 { margin-top: 1rem !important; }
@@ -5939,9 +5971,11 @@
 .p-2\.5 { padding: 0.625rem !important; }
 .p-3 { padding: 0.75rem !important; }
 .p-4 { padding: 1rem !important; }
+.p-5 { padding: 1.25rem !important; }
 .p-6 { padding: 1.5rem !important; }
 
 .px-2 { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+.px-2\.5 { padding-left: 0.625rem !important; padding-right: 0.625rem !important; }
 .px-3 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
 .px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
 .px-5 { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
@@ -5965,6 +5999,15 @@
 
 /* Responsive adjustments */
 @media (min-width: 640px) {
+  .sm\:flex-row {
+    flex-direction: row !important;
+  }
+  .sm\:items-center {
+    align-items: center !important;
+  }
+  .sm\:ml-auto {
+    margin-left: auto !important;
+  }
   .sm\:p-8 {
     padding: 2rem !important;
   }
@@ -5986,6 +6029,10 @@
 }
 
 .shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.hover\:shadow-md:hover {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
 }
 

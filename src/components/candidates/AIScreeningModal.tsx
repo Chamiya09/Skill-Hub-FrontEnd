@@ -650,42 +650,55 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                       <div
                         key={candidate.id}
                         onClick={() => setSelectedCandidateId(candidate.candidateId)}
-                        className="popup-candidate-item cursor-pointer"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white border border-gray-200 rounded-2xl gap-4 hover:border-emerald-200 hover:shadow-md transition-all cursor-pointer"
                         title="Click to view full verified Digital CV Profile"
                       >
-                        {candidate.avatarUrl ? (
-                          <img
-                            src={candidate.avatarUrl}
-                            alt={candidate.name}
-                            className="candidate-avatar object-cover"
-                          />
-                        ) : (
-                          <div className="candidate-avatar" style={{ background: candidate.avatarBg }}>
-                            {initials}
-                          </div>
-                        )}
-                        <div className="candidate-main-info">
-                          <div className="candidate-name-row">
-                            <span className="candidate-name">{candidate.name}</span>
-                            <span className="candidate-company">• {candidate.location}</span>
-                          </div>
-                          <p className="candidate-headline">{candidate.headline}</p>
-                          <div className="candidate-skills-wrap">
-                            {candidate.skills.slice(0, 4).map((s, idx) => (
-                              <span key={idx} className="candidate-skill-pill">
-                                {s}
+                        <div className="flex items-center gap-4">
+                          {candidate.avatarUrl ? (
+                            <img
+                              src={candidate.avatarUrl}
+                              alt={candidate.name}
+                              className="candidate-avatar object-cover"
+                            />
+                          ) : (
+                            <div className="candidate-avatar" style={{ background: candidate.avatarBg }}>
+                              {initials}
+                            </div>
+                          )}
+
+                          <div className="flex flex-col justify-center">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-base font-bold text-gray-900 leading-none">
+                                {candidate.name}
+                              </h4>
+                              <span className="text-sm font-medium text-gray-400 leading-none flex items-center gap-1">
+                                <MapPinIcon />
+                                {candidate.location}
                               </span>
-                            ))}
+                            </div>
+                            <p className="text-sm font-medium text-gray-600 mt-1.5">
+                              {candidate.headline}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                              {candidate.skills.slice(0, 4).map((skill, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2.5 py-1 rounded-lg bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-700"
+                                >
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         </div>
 
-                        <div className="candidate-right-actions">
-                          <span className="popup-status-pending">
+                        <div className="flex items-center gap-4 shrink-0 sm:ml-auto">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-sm font-medium text-slate-600">
                             <ClockIcon />
                             <span>Screening Pending</span>
                           </span>
-                          <span className="popup-view-cv-link">
-                            View CV →
+                          <span className="text-sm font-bold text-emerald-600 flex items-center gap-1">
+                            View CV &rarr;
                           </span>
                         </div>
                       </div>

@@ -46,6 +46,7 @@ export const CandidateLayout: React.FC = () => {
   })();
 
   const getPageTitle = () => {
+    if (location.pathname.startsWith('/candidate/recommended') || location.pathname.startsWith('/candidate/dashboard')) return 'AI Job Recommendations';
     if (location.pathname.startsWith('/candidate/applications')) return 'Applied Jobs';
     if (location.pathname.startsWith('/candidate/saved')) return 'Saved Jobs';
     if (location.pathname.startsWith('/candidate/settings') || location.pathname.startsWith('/candidate/security')) return 'Account & Security';

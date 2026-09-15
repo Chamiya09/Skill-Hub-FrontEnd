@@ -1240,3 +1240,24 @@ export const jobApplicationsApi = {
   }
 };
 
+export interface RecommendedJobResponseDto {
+  jobId: string;
+  title: string;
+  company: string;
+  location: string;
+  postedDate: string;
+  matchPercentage: number;
+  isRecommended: boolean;
+}
+
+export const candidateJobRecommendationsApi = {
+  /**
+   * Fetches AI-recommended jobs for a candidate.
+   * Calls: GET /api/candidate/{candidateId}/recommended-jobs
+   */
+  async getRecommendedJobs(candidateId: string): Promise<RecommendedJobResponseDto[]> {
+    return request<RecommendedJobResponseDto[]>(`/candidate/${candidateId}/recommended-jobs`, {
+      method: 'GET',
+    });
+  },
+};

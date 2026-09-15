@@ -8,7 +8,6 @@ import {
   SearchIcon,
   ClockIcon,
   BriefcaseIcon,
-  CheckIcon,
   FilterIcon,
 } from '../components/common/Icons'
 
@@ -26,7 +25,6 @@ export const FindJobs = () => {
   const [selectedExperience, setSelectedExperience] = useState('All')
   const [sortBy, setSortBy] = useState<'match' | 'recent'>('match')
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([])
-  const [appliedJobTitle, setAppliedJobTitle] = useState<string | null>(null)
 
   // Fetch real public jobs from backend
   const fetchPublicJobs = async () => {
@@ -78,13 +76,6 @@ export const FindJobs = () => {
     )
   }
 
-  const handleApply = (jobTitle: string) => {
-    setAppliedJobTitle(jobTitle)
-    setTimeout(() => {
-      setAppliedJobTitle(null)
-    }, 3500)
-  }
-
   const filteredJobs = useMemo(() => {
     return jobs
       .filter((job) => {
@@ -133,48 +124,6 @@ export const FindJobs = () => {
 
   return (
     <div className="findjobs-container">
-      {/* Toast Notification (Light Theme) */}
-      {appliedJobTitle && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '24px',
-            right: '24px',
-            zIndex: 9999,
-            background: '#ffffff',
-            color: '#0f172a',
-            padding: '16px 24px',
-            borderRadius: '16px',
-            boxShadow: '0 12px 30px rgba(0,0,0,0.12)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            border: '1px solid #b7eedc',
-          }}
-        >
-          <div
-            style={{
-              width: '28px',
-              height: '28px',
-              borderRadius: '50%',
-              background: '#e6f9f2',
-              color: '#00b074',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <CheckIcon />
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>Application Dispatched!</div>
-            <div style={{ fontSize: '13px', color: '#64748b' }}>
-              Your profile was submitted to <strong>{appliedJobTitle}</strong>.
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Hero Section */}
       <div className="findjobs-hero">
         <div className="badge-tag">
@@ -378,9 +327,7 @@ export const FindJobs = () => {
                 job={job}
                 isBookmarked={isBookmarked}
                 onToggleBookmark={toggleBookmark}
-                onQuickApply={handleApply}
                 showBookmark={true}
-                matchPercentage={95}
               />
             )
           })}

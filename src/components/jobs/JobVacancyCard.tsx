@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import type { JobDto } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import {
-  SparkleIcon,
   MapPinIcon,
   ClockIcon,
   BriefcaseIcon,
@@ -15,11 +14,7 @@ interface JobVacancyCardProps {
   job: JobDto
   isBookmarked?: boolean
   onToggleBookmark?: (id: string) => void
-  onQuickApply?: (jobTitle: string) => void
   showBookmark?: boolean
-  showApplyButton?: boolean
-  showAiMatch?: boolean
-  matchPercentage?: number
   className?: string
 }
 
@@ -28,19 +23,19 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
   isBookmarked = false,
   onToggleBookmark,
   showBookmark = true,
-  showAiMatch = true,
-  matchPercentage = 95,
   className = '',
 }) => {
   const { currentUser } = useAuth()
+  const legacyUserType =
+    currentUser && 'type' in currentUser
+      ? (currentUser as { type?: string }).type
+      : undefined
 
   // Hide AI Match recommendation completely for employers (companies)
   const isEmployer =
     currentUser?.role === 'COMPANY' ||
     currentUser?.role === 'EMPLOYER' ||
-    (currentUser as any)?.type === 'EMPLOYER'
-
-  const shouldShowAiMatch = showAiMatch && !isEmployer
+    legacyUserType === 'EMPLOYER'
 
   // Check if current user is the employer/company owner of this job
   const isOwner =
@@ -110,7 +105,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
 
   return (
     <div className={`rich-job-card ${className}`}>
-      {/* Top Header Row: Company Info + AI Match Badge */}
+      {/* Top Header Row: Company Info */}
       <div className="job-card-header">
         <Link
           to={`/company/${job.companyId || encodeURIComponent(dynamicCompanyName)}`}
@@ -140,14 +135,6 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
             <span className="job-post-date">{formattedDate}</span>
           </div>
         </Link>
-
-        {/* AI Match Pill Badge (Strictly visible only to Candidates) */}
-        {shouldShowAiMatch && (
-          <div className="job-ai-match-pill">
-            <SparkleIcon />
-            <span>{matchPercentage}% AI Match</span>
-          </div>
-        )}
       </div>
 
       {/* Job Title */}

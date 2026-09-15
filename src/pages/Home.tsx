@@ -217,7 +217,6 @@ export const Home = () => {
                 isBookmarked={bookmarkedIds.includes(job.id)}
                 onToggleBookmark={toggleBookmark}
                 showBookmark={true}
-                matchPercentage={95}
               />
             ))}
           </div>

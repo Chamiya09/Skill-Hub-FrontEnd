@@ -96,10 +96,10 @@ export const CandidateDashboard: React.FC = () => {
   };
 
   const filteredJobs = filterHighMatchOnly
-    ? jobs.filter((j) => j.matchPercentage >= 80 || j.isRecommended)
+    ? jobs.filter((j) => j.matchPercentage >= 70 || j.isRecommended)
     : jobs;
 
-  const topMatchCount = jobs.filter((j) => j.matchPercentage >= 80 || j.isRecommended).length;
+  const topMatchCount = jobs.filter((j) => j.matchPercentage >= 70 || j.isRecommended).length;
 
   return (
     <div className="space-y-8">
@@ -147,7 +147,7 @@ export const CandidateDashboard: React.FC = () => {
             <div className="text-xl sm:text-2xl font-bold text-white mt-1">{jobs.length}</div>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-wider text-emerald-400 font-medium">Top Matches (≥ 80%)</div>
+            <div className="text-xs uppercase tracking-wider text-emerald-400 font-medium">Top Matches (≥ 70%)</div>
             <div className="text-xl sm:text-2xl font-bold text-emerald-400 mt-1">{topMatchCount}</div>
           </div>
           <div>
@@ -239,7 +239,7 @@ export const CandidateDashboard: React.FC = () => {
           <h3 className="text-lg font-bold text-slate-800">No Job Recommendations Found</h3>
           <p className="text-slate-500 text-xs sm:text-sm max-w-md mx-auto">
             {filterHighMatchOnly
-              ? 'None of the active jobs currently reach the 80% match threshold. Try viewing all recommendations or adding more skills to your CV.'
+              ? 'None of the active jobs currently reach the 70% match threshold. Try viewing all recommendations or adding more skills to your CV.'
               : 'Add more skills, certifications, and project experience to your Digital CV to empower our AI matching engine.'}
           </p>
           <div className="pt-2 flex items-center justify-center gap-3">

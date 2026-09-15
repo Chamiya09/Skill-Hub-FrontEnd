@@ -32,7 +32,7 @@ export const RecommendedJobCard: React.FC<RecommendedJobCardProps> = ({
   onSave,
   isSaved = false,
 }) => {
-  const isHighMatch = job.matchPercentage >= 80 || job.isRecommended;
+  const isHighMatch = job.matchPercentage >= 70 || job.isRecommended;
 
   const formattedDate = job.postedDate
     ? new Date(job.postedDate).toLocaleDateString('en-US', {
@@ -59,7 +59,7 @@ export const RecommendedJobCard: React.FC<RecommendedJobCardProps> = ({
       <div>
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex flex-wrap items-center gap-2">
-            {/* Recommendation Glowing Badge (>= 80%) */}
+            {/* Recommendation Glowing Badge (>= 70%) */}
             {isHighMatch ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm shadow-emerald-200/50">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />

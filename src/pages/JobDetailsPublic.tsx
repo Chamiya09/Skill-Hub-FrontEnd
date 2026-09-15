@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthContext'
 import { JobVacancyCard } from '../components/jobs/JobVacancyCard'
 import { AiMatchInsightsSidebar } from '../components/jobs/AiMatchInsightsSidebar'
 import { SleekSpinner, JobCardSkeleton } from '../components/common/SkeletonCard'
-import { Loader2, Sparkles } from 'lucide-react'
+import { CheckCircle, Loader2, Sparkles } from 'lucide-react'
 import {
   SparkleIcon,
   MapPinIcon,
@@ -766,35 +766,35 @@ export const JobDetailsPublic: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  <button
-                    type="button"
-                    onClick={handleApply}
-                    disabled={isApplying || hasApplied}
-                    className="btn-primary job-details-apply-btn w-full"
-                    style={{
-                      cursor: hasApplied ? 'default' : isApplying ? 'not-allowed' : 'pointer',
-                      background: hasApplied ? '#e6f9f2' : undefined,
-                      color: hasApplied ? '#009e67' : undefined,
-                      borderColor: hasApplied ? '#b7eedc' : undefined,
-                    }}
-                  >
-                    {isApplying ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Applying...</span>
-                      </>
-                    ) : hasApplied ? (
-                      <>
-                        <CheckIcon />
-                        <span>Applied</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Apply Now</span>
-                        <ArrowRightIcon />
-                      </>
-                    )}
-                  </button>
+                  {hasApplied ? (
+                    <button
+                      type="button"
+                      disabled
+                      className="job-details-applied-btn w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-500 font-semibold rounded-xl cursor-not-allowed border border-gray-200"
+                    >
+                      <CheckCircle className="text-emerald-500" size={18} aria-hidden="true" />
+                      <span>Already Applied</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleApply}
+                      disabled={isApplying}
+                      className="btn-primary job-details-apply-btn w-full"
+                    >
+                      {isApplying ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Applying...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Apply Now</span>
+                          <ArrowRightIcon />
+                        </>
+                      )}
+                    </button>
+                  )}
 
                   {applyErrorMessage && (
                     <div style={{ color: '#dc2626', fontSize: '12px', marginBottom: '8px', textAlign: 'center' }}>
@@ -1043,7 +1043,7 @@ export const JobDetailsPublic: React.FC = () => {
           isOpen={showSidebar}
           onClose={() => setShowSidebar(false)}
           aiResults={aiResults}
-          onGenerateCoverLetter={handleApply}
+          hasApplied={hasApplied}
         />
       )}
     </div>

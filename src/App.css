@@ -12477,7 +12477,6 @@ select.w-full {
 }
 
 .ai-insights-close:focus-visible,
-.ai-cover-letter-button:focus-visible,
 .job-details-analyze-match-btn:focus-visible {
   outline: 3px solid rgba(52, 211, 153, 0.28);
   outline-offset: 2px;
@@ -12679,47 +12678,20 @@ select.w-full {
   text-align: center;
 }
 
-.ai-insights-footer {
-  padding: 16px 20px 18px;
-  border-top: 1px solid #e2e8f0;
-  background: #ffffff;
-  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.04);
-}
-
-.ai-cover-letter-button {
+.ai-insights-applied-banner {
   width: 100%;
-  min-height: 48px;
-  padding: 11px 15px;
+  margin: -4px 0 20px;
+  padding: 7px 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  border: 1px solid #059669;
-  border-radius: 11px;
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 750;
-  cursor: pointer;
-  box-shadow: 0 8px 18px rgba(5, 150, 105, 0.2);
-  transition: all 160ms ease;
-}
-
-.ai-cover-letter-button:hover {
-  background: linear-gradient(135deg, #059669, #047857);
-  box-shadow: 0 10px 22px rgba(5, 150, 105, 0.27);
-  transform: translateY(-1px);
-}
-
-.ai-cover-letter-button svg:last-child {
-  margin-left: auto;
-}
-
-.ai-insights-footer > p {
-  margin: 9px 0 0;
-  color: #94a3b8;
-  font-size: 10.5px;
-  line-height: 1.4;
+  gap: 6px;
+  border: 1px solid #d1fae5;
+  border-radius: 10px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 650;
   text-align: center;
 }
 
@@ -12737,6 +12709,28 @@ select.w-full {
   font-weight: 700;
   line-height: 1.25;
   transition: all 150ms ease;
+}
+
+.job-details-applied-btn {
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 12px;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: not-allowed;
+}
+
+.job-details-applied-btn svg {
+  color: #10b981;
 }
 
 .job-details-analyze-match-btn {
@@ -12786,14 +12780,13 @@ select.w-full {
   .ai-insights-backdrop,
   .ai-match-insights-sidebar,
   .ai-score-progress,
-  .ai-cover-letter-button {
+  .job-details-analyze-match-btn {
     transition-duration: 1ms !important;
   }
 }
 
 @media (max-width: 480px) {
-  .ai-insights-header,
-  .ai-insights-footer {
+  .ai-insights-header {
     padding-right: 16px;
     padding-left: 16px;
   }

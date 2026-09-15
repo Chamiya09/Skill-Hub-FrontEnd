@@ -1,11 +1,10 @@
 import { useEffect, useId, useRef } from 'react'
 import {
   AlertTriangle,
-  ArrowRight,
+  CheckCircle,
   CheckCircle2,
   Lightbulb,
   Sparkles,
-  WandSparkles,
   X,
 } from 'lucide-react'
 
@@ -13,7 +12,7 @@ export interface AiMatchInsightsSidebarProps {
   isOpen: boolean
   onClose: () => void
   aiResults: AiMatchResults | null
-  onGenerateCoverLetter?: () => void
+  hasApplied: boolean
 }
 
 export interface AiMatchResults {
@@ -27,7 +26,7 @@ export function AiMatchInsightsSidebar({
   isOpen,
   onClose,
   aiResults,
-  onGenerateCoverLetter,
+  hasApplied,
 }: AiMatchInsightsSidebarProps) {
   const titleId = useId()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
@@ -58,11 +57,6 @@ export function AiMatchInsightsSidebar({
       previouslyFocused?.focus()
     }
   }, [isOpen, onClose])
-
-  const handlePrimaryAction = () => {
-    onGenerateCoverLetter?.()
-    onClose()
-  }
 
   return (
     <>
@@ -101,6 +95,12 @@ export function AiMatchInsightsSidebar({
         </header>
 
         <div className="ai-insights-body">
+          {hasApplied && (
+            <div className="ai-insights-applied-banner w-full bg-emerald-50 text-emerald-700 text-xs font-semibold py-1.5 text-center flex justify-center items-center gap-1.5">
+              <CheckCircle size={14} aria-hidden="true" />
+              <span>You have already applied for this position.</span>
+            </div>
+          )}
           {aiResults ? (
             <>
               <section className="ai-score-section" aria-label={`${score}% job match`}>
@@ -174,18 +174,6 @@ export function AiMatchInsightsSidebar({
           )}
         </div>
 
-        <footer className="ai-insights-footer">
-          <button
-            type="button"
-            className="ai-cover-letter-button"
-            onClick={handlePrimaryAction}
-          >
-            <WandSparkles size={18} />
-            <span>Generate AI Cover Letter &amp; Apply</span>
-            <ArrowRight size={17} />
-          </button>
-          <p>AI guidance supports—but never replaces—your decision.</p>
-        </footer>
       </aside>
     </>
   )

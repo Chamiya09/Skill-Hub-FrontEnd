@@ -993,13 +993,7 @@ export const JobDetailsPublic: React.FC = () => {
           </div>
 
           {suggestedLoading ? (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '24px',
-              }}
-            >
+            <div className="suggested-jobs-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
               {Array.from({ length: 3 }).map((_, i) => (
                 <JobCardSkeleton key={i} />
               ))}
@@ -1019,13 +1013,7 @@ export const JobDetailsPublic: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '24px',
-              }}
-            >
+            <div className="suggested-jobs-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
               {suggestedJobs.map((sJob) => (
                 <JobVacancyCard
                   key={sJob.id}

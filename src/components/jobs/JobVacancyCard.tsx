@@ -104,7 +104,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
   const salaryDisplay = formatSalary(job.salaryRange)
 
   return (
-    <div className={`rich-job-card ${className}`}>
+    <div className={`rich-job-card w-full ${className}`}>
       {/* Top Header Row: Company Info */}
       <div className="job-card-header">
         <Link
@@ -212,7 +212,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
       )}
 
       {/* Footer Row: Salary & Action Buttons */}
-      <div className="job-card-footer">
+      <div className="job-card-footer flex justify-between">
         {/* Salary Information */}
         <div className="job-salary-stack">
           <span className="job-salary-amount">{salaryDisplay.main}</span>

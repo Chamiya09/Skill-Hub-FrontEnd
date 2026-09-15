@@ -817,6 +817,8 @@
 
 .rich-job-card,
 .job-card {
+  width: 100%;
+  min-width: 0;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 20px;
@@ -5710,6 +5712,14 @@
 
 .flex {
   display: flex !important;
+}
+
+.suggested-jobs-grid.grid {
+  width: 100%;
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)) !important;
+  gap: 24px;
 }
 
 .flex-col {

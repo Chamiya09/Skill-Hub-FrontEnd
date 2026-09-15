@@ -5878,6 +5878,7 @@
 
 .text-emerald-600 { color: #059669 !important; }
 .text-emerald-700 { color: #047857 !important; }
+.text-indigo-700 { color: #4338ca !important; }
 .text-slate-600 { color: #475569 !important; }
 
 /* Backgrounds */
@@ -5894,6 +5895,7 @@
 .bg-blue-700 { background-color: #1d4ed8 !important; }
 
 .bg-red-50 { background-color: #fef2f2 !important; }
+.bg-indigo-50 { background-color: #eef2ff !important; }
 .bg-slate-50 { background-color: #f8fafc !important; }
 
 .hover\:bg-blue-700:hover {
@@ -5939,9 +5941,11 @@
 .border-blue-200 { border-color: #bfdbfe !important; }
 .border-blue-600 { border-color: #2563eb !important; }
 .border-red-200 { border-color: #fecaca !important; }
+.border-indigo-100 { border-color: #e0e7ff !important; }
 .border-slate-200 { border-color: #e2e8f0 !important; }
 
 .hover\:border-emerald-200:hover { border-color: #a7f3d0 !important; }
+.hover\:border-indigo-200:hover { border-color: #c7d2fe !important; }
 
 .rounded-md { border-radius: 0.375rem !important; }
 .rounded-lg { border-radius: 0.5rem !important; }
@@ -9345,6 +9349,329 @@ select.w-full {
 .popup-view-cv-link:hover {
   color: #008759;
   transform: translateX(2px);
+}
+
+/* AI Screening cards: analytical, insight-first visual language */
+.ai-screening-candidate-card {
+  background-image: linear-gradient(110deg, rgba(238, 242, 255, 0.34), rgba(255, 255, 255, 0) 42%);
+}
+
+.ai-screening-candidate-card:hover {
+  background-image: linear-gradient(110deg, rgba(238, 242, 255, 0.72), rgba(255, 255, 255, 0) 48%);
+  transform: translateY(-1px);
+}
+
+.ai-screening-candidate-identity {
+  min-width: 0;
+  flex: 1;
+}
+
+.ai-screening-name-row {
+  flex-wrap: wrap;
+}
+
+.ai-rank-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border: 1px solid #e0e7ff;
+  border-radius: 9999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ai-match-ring {
+  --match-score: 0%;
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: conic-gradient(#4f46e5 var(--match-score), #e0e7ff 0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #3730a3;
+}
+
+.ai-match-ring::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border-radius: inherit;
+  background: #ffffff;
+}
+
+.ai-match-ring span,
+.ai-match-ring small {
+  position: relative;
+  z-index: 1;
+}
+
+.ai-match-ring span {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.ai-match-ring small {
+  margin-top: 3px;
+  color: #6366f1;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ai-view-cv-link,
+.ai-shortlist-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ai-view-cv-link {
+  padding-right: 4px;
+  padding-left: 4px;
+  border: 0;
+  background: transparent;
+  color: #4f46e5;
+}
+
+.ai-view-cv-link:hover {
+  color: #3730a3;
+  transform: translateX(2px);
+}
+
+.ai-shortlist-btn {
+  border: 1px solid #c7d2fe;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.ai-shortlist-btn:hover:not(:disabled) {
+  border-color: #a5b4fc;
+  background: #e0e7ff;
+}
+
+.ai-shortlist-btn.is-shortlisted,
+.ai-shortlist-btn:disabled {
+  border-color: #d1fae5;
+  background: #ecfdf5;
+  color: #047857;
+  cursor: default;
+}
+
+/* Hiring Pipeline cards: corporate workflow and next-action hierarchy */
+.pipeline-candidate-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.pipeline-candidate-card:hover {
+  border-color: #a7f3d0 !important;
+  box-shadow: 0 5px 14px rgba(15, 23, 42, 0.07) !important;
+  transform: translateY(-1px);
+}
+
+.pipeline-candidate-identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  flex: 1;
+}
+
+.pipeline-candidate-avatar {
+  width: 46px;
+  height: 46px;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pipeline-candidate-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.pipeline-candidate-name-row,
+.pipeline-candidate-location,
+.pipeline-stage-detail,
+.pipeline-candidate-contact,
+.pipeline-candidate-contact > span {
+  display: flex;
+  align-items: center;
+}
+
+.pipeline-candidate-name-row {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pipeline-candidate-name-row h4 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.pipeline-candidate-location {
+  gap: 3px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.pipeline-candidate-role {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pipeline-candidate-role strong {
+  color: #334155;
+  font-weight: 650;
+}
+
+.pipeline-stage-detail {
+  gap: 5px;
+  margin-top: 5px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.pipeline-stage-detail svg {
+  color: #10b981;
+}
+
+.pipeline-candidate-contact {
+  gap: 12px;
+  margin-top: 7px;
+  flex-wrap: wrap;
+}
+
+.pipeline-candidate-contact > span {
+  gap: 4px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.pipeline-view-cv-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: #059669;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pipeline-candidate-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.pipeline-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 9px 15px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pipeline-action-secondary {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+}
+
+.pipeline-action-secondary:hover {
+  border-color: #10b981;
+  background: #f0fdf4;
+  color: #047857;
+}
+
+.pipeline-action-primary {
+  border: 1px solid #059669;
+  background: #059669;
+  color: #ffffff;
+  box-shadow: 0 2px 5px rgba(5, 150, 105, 0.2);
+}
+
+.pipeline-action-primary:hover {
+  border-color: #047857;
+  background: #047857;
+  box-shadow: 0 4px 9px rgba(5, 150, 105, 0.24);
+}
+
+@media (max-width: 920px) {
+  .pipeline-candidate-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .pipeline-candidate-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 640px) {
+  .ai-screening-actions,
+  .pipeline-candidate-actions {
+    flex-wrap: wrap;
+  }
+
+  .pipeline-candidate-actions {
+    justify-content: stretch;
+  }
+
+  .pipeline-action-btn {
+    flex: 1 1 100%;
+  }
 }
 
 /* Popup Footer */

@@ -83,6 +83,13 @@ const getGradientForName = (name: string): string => {
   return AVATAR_GRADIENTS[index];
 };
 
+const getDaysInStage = (appliedDate: string): number => {
+  const startedAt = new Date(appliedDate).getTime();
+  if (Number.isNaN(startedAt)) return 1;
+
+  return Math.max(1, Math.ceil((Date.now() - startedAt) / 86_400_000));
+};
+
 export const HiringPipeline: React.FC = () => {
   const navigate = useNavigate();
 
@@ -797,7 +804,7 @@ export const HiringPipeline: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                filteredModalCandidates.map((candidate, idx) => {
+                filteredModalCandidates.map((candidate) => {
                   const initials = candidate.name
                     .split(' ')
                     .map((n) => n[0])
@@ -805,225 +812,76 @@ export const HiringPipeline: React.FC = () => {
                     .substring(0, 2)
                     .toUpperCase();
 
-                  const score = candidate.aiScore || 88;
+                  const daysInStage = getDaysInStage(candidate.appliedDate);
+                  const stageDetail = candidate.interviewStatus === 'Scheduled'
+                    ? 'Interview scheduled — preparation in progress'
+                    : candidate.assessmentStatus === 'Sent'
+                      ? 'Assessment sent — awaiting completion'
+                      : `In Shortlist for ${daysInStage} ${daysInStage === 1 ? 'day' : 'days'}`;
 
                   return (
-                    /* Neat Horizontal Card / Row */
                     <div
                       key={candidate.id}
-                      style={{
-                        background: '#ffffff',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '12px',
-                        padding: '16px 20px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '20px',
-                        transition: 'all 0.15s ease',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = '#00b074';
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 176, 116, 0.06)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = '#e2e8f0';
-                        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02)';
-                      }}
+                      className="pipeline-candidate-card bg-white border border-gray-200 shadow-sm"
                     >
-                      {/* Left Side: Avatar, Full Name, Applied Role, AI Match Score */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0, flex: 1 }}>
-                        {/* Avatar / Initials */}
+                      <div className="pipeline-candidate-identity">
                         {candidate.avatarUrl ? (
                           <img
                             src={candidate.avatarUrl}
                             alt={candidate.name}
-                            style={{
-                              width: '46px',
-                              height: '46px',
-                              borderRadius: '50%',
-                              objectFit: 'cover',
-                              border: '1px solid #e2e8f0',
-                              flexShrink: 0,
-                            }}
+                            className="pipeline-candidate-avatar object-cover"
                           />
                         ) : (
-                          <div
-                            style={{
-                              width: '46px',
-                              height: '46px',
-                              borderRadius: '50%',
-                              background: candidate.avatarBg,
-                              color: '#ffffff',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontWeight: 700,
-                              fontSize: '14px',
-                              flexShrink: 0,
-                            }}
-                          >
+                          <div className="pipeline-candidate-avatar" style={{ background: candidate.avatarBg }}>
                             {initials}
                           </div>
                         )}
 
-                        {/* Candidate Identity & Role */}
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
-                              {candidate.name}
-                            </span>
-                            <span style={{ fontSize: '12px', color: '#64748b', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                        <div className="pipeline-candidate-copy">
+                          <div className="pipeline-candidate-name-row">
+                            <h4>{candidate.name}</h4>
+                            <span className="pipeline-candidate-location">
                               <MapPinIcon /> {candidate.location}
                             </span>
-                            <span
-                              style={{
-                                fontSize: '11px',
-                                fontWeight: 700,
-                                background: '#e6f9f2',
-                                color: '#008759',
-                                padding: '2px 8px',
-                                borderRadius: '9999px',
-                              }}
-                            >
-                              #{idx + 1} AI Match
-                            </span>
-
-                            {/* Optional Status Indicators */}
-                            {candidate.assessmentStatus === 'Sent' && (
-                              <span style={{ fontSize: '11px', fontWeight: 600, color: '#0284c7', background: '#eff6ff', padding: '1px 6px', borderRadius: '4px' }}>
-                                Assessment Sent
-                              </span>
-                            )}
-                            {candidate.interviewStatus === 'Scheduled' && (
-                              <span style={{ fontSize: '11px', fontWeight: 600, color: '#059669', background: '#ecfdf5', padding: '1px 6px', borderRadius: '4px' }}>
-                                Interview Scheduled
-                              </span>
-                            )}
                           </div>
-
-                          {/* Applied Role */}
-                          <div style={{ fontSize: '13px', color: '#475569', marginTop: '2px', fontWeight: 500 }}>
-                            <span style={{ color: '#0f172a', fontWeight: 600 }}>Applied Role:</span> {candidate.jobTitle} &nbsp;·&nbsp; <span style={{ color: '#64748b' }}>{candidate.headline}</span>
-                          </div>
-
-                          {/* Contact & Skills */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px', flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: '12px', color: '#64748b', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                              <MailIcon /> {candidate.email}
-                            </span>
-                            <span style={{ fontSize: '12px', color: '#64748b', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                              <PhoneIcon /> {candidate.phone}
-                            </span>
-
-                            {/* View Digital CV Text Link */}
+                          <p className="pipeline-candidate-role">
+                            <strong>{candidate.jobTitle}</strong>
+                            <span>·</span>
+                            {candidate.headline}
+                          </p>
+                          <span className="pipeline-stage-detail">
+                            <ClockIcon /> {stageDetail}
+                          </span>
+                          <div className="pipeline-candidate-contact">
+                            <span><MailIcon /> {candidate.email}</span>
+                            <span><PhoneIcon /> {candidate.phone}</span>
                             <button
                               type="button"
+                              className="pipeline-view-cv-link"
                               onClick={() => setViewingCvCandidateId(candidate.candidateId)}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#00b074',
-                                fontSize: '12px',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '3px',
-                                padding: '0 4px',
-                              }}
                               title="View Verified Candidate Digital CV"
                             >
-                              <span>View Digital CV</span>
-                              <ArrowRightIcon />
+                              View CV <ArrowRightIcon />
                             </button>
-                          </div>
-                        </div>
-
-                        {/* AI Match Score Progress / Badge */}
-                        <div style={{ width: '130px', flexShrink: 0, textAlign: 'right', paddingRight: '12px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px', marginBottom: '4px' }}>
-                            <span style={{ color: '#008759' }}><SparkleIcon /></span>
-                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#008759' }}>
-                              {score}% Match
-                            </span>
-                          </div>
-                          <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '9999px', overflow: 'hidden' }}>
-                            <div
-                              style={{
-                                width: `${score}%`,
-                                height: '100%',
-                                background: 'linear-gradient(90deg, #00b074 0%, #10b981 100%)',
-                                borderRadius: '9999px',
-                              }}
-                            />
                           </div>
                         </div>
                       </div>
 
-                      {/* Right Side (Actions): Connect Assessment & Schedule Interview */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-                        {/* 1. Connect Assessment (Secondary Outline Button) */}
+                      <div className="pipeline-candidate-actions">
                         <button
                           type="button"
                           onClick={() => setAssessmentCandidate(candidate)}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '8px 14px',
-                            fontSize: '12.5px',
-                            fontWeight: 700,
-                            color: '#334155',
-                            background: '#ffffff',
-                            border: '1px solid #cbd5e1',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                            whiteSpace: 'nowrap',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = '#00b074';
-                            e.currentTarget.style.color = '#008759';
-                            e.currentTarget.style.background = '#f0fdf4';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = '#cbd5e1';
-                            e.currentTarget.style.color = '#334155';
-                            e.currentTarget.style.background = '#ffffff';
-                          }}
+                          className="pipeline-action-btn pipeline-action-secondary"
                           title="Connect and send specialized skill assessment"
                         >
                           <ClipboardCheckIcon />
                           <span>Connect Assessment</span>
                         </button>
 
-                        {/* 2. Schedule Interview (Primary Solid Button) */}
                         <button
                           type="button"
                           onClick={() => setInterviewCandidate(candidate)}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '8px 14px',
-                            fontSize: '12.5px',
-                            fontWeight: 700,
-                            color: '#ffffff',
-                            background: '#00b074',
-                            border: '1px solid #009e67',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                            whiteSpace: 'nowrap',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#008759';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#00b074';
-                          }}
+                          className="pipeline-action-btn pipeline-action-primary"
                           title="Schedule calendar interview with candidate"
                         >
                           <CalendarIcon />

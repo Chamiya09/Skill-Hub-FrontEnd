@@ -230,6 +230,22 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
     showToast('🚀 Shortlisted candidates transferred to the Hiring Pipeline module!');
   };
 
+  const handleShortlistCandidate = (candidateId: string) => {
+    const candidate = candidates.find((item) => item.id === candidateId);
+
+    setCandidates((current) =>
+      current.map((item) =>
+        item.id === candidateId
+          ? { ...item, isShortlisted: true, status: 'Shortlisted' }
+          : item
+      )
+    );
+
+    if (candidate) {
+      showToast(`✓ ${candidate.name} added to the shortlist.`);
+    }
+  };
+
   const shortlistedList = candidates.filter((c) => c.isShortlisted);
   const otherList = candidates.filter((c) => !c.isShortlisted);
 
@@ -504,48 +520,60 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                         <div
                           key={candidate.id}
                           onClick={() => setSelectedCandidateId(candidate.candidateId)}
-                          className="popup-candidate-item highlight cursor-pointer"
+                          className="ai-screening-candidate-card flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white border border-indigo-100 rounded-2xl gap-4 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer"
                           title="Click to view full verified Digital CV Profile"
                         >
-                          {candidate.avatarUrl ? (
-                            <img
-                              src={candidate.avatarUrl}
-                              alt={candidate.name}
-                              className="candidate-avatar object-cover"
-                            />
-                          ) : (
-                            <div className="candidate-avatar" style={{ background: candidate.avatarBg }}>
-                              {initials}
-                            </div>
-                          )}
-                          <div className="candidate-main-info">
-                            <div className="candidate-name-row">
-                              <span className="candidate-name">{candidate.name}</span>
-                              <span className="candidate-company">• {candidate.location}</span>
-                              {candidate.rank && (
-                                <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                                  #{candidate.rank} Top Match
+                          <div className="flex items-center gap-4 ai-screening-candidate-identity">
+                            {candidate.avatarUrl ? (
+                              <img
+                                src={candidate.avatarUrl}
+                                alt={candidate.name}
+                                className="candidate-avatar object-cover"
+                              />
+                            ) : (
+                              <div className="candidate-avatar" style={{ background: candidate.avatarBg }}>
+                                {initials}
+                              </div>
+                            )}
+                            <div className="flex flex-col justify-center">
+                              <div className="flex items-center gap-2 ai-screening-name-row">
+                                <h4 className="text-base font-bold text-gray-900 leading-none">{candidate.name}</h4>
+                                <span className="text-sm font-medium text-gray-400 leading-none flex items-center gap-1">
+                                  <MapPinIcon /> {candidate.location}
                                 </span>
-                              )}
-                            </div>
-                            <p className="candidate-headline">{candidate.headline}</p>
-                            <div className="candidate-skills-wrap">
-                              {candidate.skills.slice(0, 4).map((s, idx) => (
-                                <span key={idx} className="candidate-skill-pill">
-                                  {s}
-                                </span>
-                              ))}
+                                {candidate.rank && (
+                                  <span className="ai-rank-badge">#{candidate.rank} ranked</span>
+                                )}
+                              </div>
+                              <p className="text-sm font-medium text-gray-600 mt-1.5">{candidate.headline}</p>
+                              <div className="flex flex-wrap items-center gap-2 mt-2">
+                                {candidate.skills.slice(0, 4).map((skill, idx) => (
+                                  <span key={idx} className="px-2.5 py-1 rounded-lg bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-700">
+                                    {skill}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           </div>
 
-                          <div className="candidate-right-actions">
-                            <span className="popup-status-score high">
-                              <SparkleIcon />
-                              <span>{candidate.aiScore}% Match</span>
-                            </span>
-                            <span className="popup-view-cv-link">
-                              View CV →
-                            </span>
+                          <div className="flex items-center gap-4 shrink-0 sm:ml-auto ai-screening-actions">
+                            <div className="ai-match-ring" style={{ '--match-score': `${candidate.aiScore ?? 0}%` } as React.CSSProperties}>
+                              <span>{candidate.aiScore}%</span>
+                              <small>Match</small>
+                            </div>
+                            <button
+                              type="button"
+                              className="ai-view-cv-link"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setSelectedCandidateId(candidate.candidateId);
+                              }}
+                            >
+                              View CV <ArrowRightIcon />
+                            </button>
+                            <button type="button" className="ai-shortlist-btn is-shortlisted" disabled>
+                              <CheckIcon /> Shortlisted
+                            </button>
                           </div>
                         </div>
                       );
@@ -576,42 +604,58 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                         <div
                           key={candidate.id}
                           onClick={() => setSelectedCandidateId(candidate.candidateId)}
-                          className="popup-candidate-item cursor-pointer"
+                          className="ai-screening-candidate-card flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white border border-indigo-100 rounded-2xl gap-4 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer"
                           title="Click to view full verified Digital CV Profile"
                         >
-                          {candidate.avatarUrl ? (
-                            <img
-                              src={candidate.avatarUrl}
-                              alt={candidate.name}
-                              className="candidate-avatar object-cover"
-                            />
-                          ) : (
-                            <div className="candidate-avatar" style={{ background: candidate.avatarBg }}>
-                              {initials}
-                            </div>
-                          )}
-                          <div className="candidate-main-info">
-                            <div className="candidate-name-row">
-                              <span className="candidate-name">{candidate.name}</span>
-                              <span className="candidate-company">• {candidate.location}</span>
-                            </div>
-                            <p className="candidate-headline">{candidate.headline}</p>
-                            <div className="candidate-skills-wrap">
-                              {candidate.skills.slice(0, 3).map((s, idx) => (
-                                <span key={idx} className="candidate-skill-pill">
-                                  {s}
+                          <div className="flex items-center gap-4 ai-screening-candidate-identity">
+                            {candidate.avatarUrl ? (
+                              <img src={candidate.avatarUrl} alt={candidate.name} className="candidate-avatar object-cover" />
+                            ) : (
+                              <div className="candidate-avatar" style={{ background: candidate.avatarBg }}>{initials}</div>
+                            )}
+                            <div className="flex flex-col justify-center">
+                              <div className="flex items-center gap-2 ai-screening-name-row">
+                                <h4 className="text-base font-bold text-gray-900 leading-none">{candidate.name}</h4>
+                                <span className="text-sm font-medium text-gray-400 leading-none flex items-center gap-1">
+                                  <MapPinIcon /> {candidate.location}
                                 </span>
-                              ))}
+                              </div>
+                              <p className="text-sm font-medium text-gray-600 mt-1.5">{candidate.headline}</p>
+                              <div className="flex flex-wrap items-center gap-2 mt-2">
+                                {candidate.skills.slice(0, 3).map((skill, idx) => (
+                                  <span key={idx} className="px-2.5 py-1 rounded-lg bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-700">
+                                    {skill}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           </div>
 
-                          <div className="candidate-right-actions">
-                            <span className="popup-status-score moderate">
-                              <span>{candidate.aiScore}% Match</span>
-                            </span>
-                            <span className="popup-view-cv-link" style={{ color: '#64748b' }}>
-                              View CV →
-                            </span>
+                          <div className="flex items-center gap-4 shrink-0 sm:ml-auto ai-screening-actions">
+                            <div className="ai-match-ring" style={{ '--match-score': `${candidate.aiScore ?? 0}%` } as React.CSSProperties}>
+                              <span>{candidate.aiScore}%</span>
+                              <small>Match</small>
+                            </div>
+                            <button
+                              type="button"
+                              className="ai-view-cv-link"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setSelectedCandidateId(candidate.candidateId);
+                              }}
+                            >
+                              View CV <ArrowRightIcon />
+                            </button>
+                            <button
+                              type="button"
+                              className="ai-shortlist-btn"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleShortlistCandidate(candidate.id);
+                              }}
+                            >
+                              <CheckIcon /> Shortlist
+                            </button>
                           </div>
                         </div>
                       );
@@ -650,7 +694,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                       <div
                         key={candidate.id}
                         onClick={() => setSelectedCandidateId(candidate.candidateId)}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white border border-gray-200 rounded-2xl gap-4 hover:border-emerald-200 hover:shadow-md transition-all cursor-pointer"
+                        className="ai-screening-candidate-card flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white border border-indigo-100 rounded-2xl gap-4 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer"
                         title="Click to view full verified Digital CV Profile"
                       >
                         <div className="flex items-center gap-4">
@@ -692,14 +736,32 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4 shrink-0 sm:ml-auto">
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-sm font-medium text-slate-600">
+                        <div className="flex items-center gap-4 shrink-0 sm:ml-auto ai-screening-actions">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-sm font-medium text-indigo-700">
                             <ClockIcon />
-                            <span>Screening Pending</span>
+                            <span>AI score pending</span>
                           </span>
-                          <span className="text-sm font-bold text-emerald-600 flex items-center gap-1">
-                            View CV &rarr;
-                          </span>
+                          <button
+                            type="button"
+                            className="ai-view-cv-link"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelectedCandidateId(candidate.candidateId);
+                            }}
+                          >
+                            View CV <ArrowRightIcon />
+                          </button>
+                          <button
+                            type="button"
+                            className={`ai-shortlist-btn ${candidate.isShortlisted ? 'is-shortlisted' : ''}`}
+                            disabled={candidate.isShortlisted}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleShortlistCandidate(candidate.id);
+                            }}
+                          >
+                            <CheckIcon /> {candidate.isShortlisted ? 'Shortlisted' : 'Shortlist'}
+                          </button>
                         </div>
                       </div>
                     );

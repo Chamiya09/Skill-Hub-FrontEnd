@@ -1,8 +1,10 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { publicJobsApi, type JobDto } from '../services/api'
+import { jobRecommendationsApi } from '../services/api'
 import { JobVacancyCard } from '../components/jobs/JobVacancyCard'
 import { SkeletonGrid } from '../components/common/SkeletonCard'
+import { useAuth } from '../context/AuthContext'
 import {
   SparkleIcon,
   SearchIcon,
@@ -12,12 +14,14 @@ import {
 } from '../components/common/Icons'
 
 export const FindJobs = () => {
+  const { currentUser } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const initialSearch = searchParams.get('search') || ''
 
   const [jobs, setJobs] = useState<JobDto[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [matchScores, setMatchScores] = useState<Record<string, number>>({})
 
   const [searchTerm, setSearchTerm] = useState(initialSearch)
   const [selectedCategory, setSelectedCategory] = useState('All Roles')
@@ -56,6 +60,39 @@ export const FindJobs = () => {
     }
   }, [])
 
+  const isCandidate = currentUser?.role?.toLowerCase() === 'candidate'
+
+  useEffect(() => {
+    if (!isCandidate || !currentUser?.id) {
+      return
+    }
+
+    let isCurrent = true
+    Promise.resolve()
+      .then(() => {
+        return jobRecommendationsApi.getForCandidate(currentUser.id)
+      })
+      .then((recommendations) => {
+        if (!isCurrent) return
+        setMatchScores(
+          Object.fromEntries(
+            recommendations.map((job) => [
+              job.jobId,
+              Math.min(100, Math.max(0, job.matchPercentage)),
+            ]),
+          ),
+        )
+      })
+      .catch((error: unknown) => {
+        if (!isCurrent) return
+        console.error('Unable to load AI job recommendations:', error)
+      })
+
+    return () => {
+      isCurrent = false
+    }
+  }, [currentUser?.id, isCandidate])
+
   // Sync search input if query param changes
   useEffect(() => {
     const q = searchParams.get('search')
@@ -76,8 +113,13 @@ export const FindJobs = () => {
     )
   }
 
+  const scoredJobs = useMemo(
+    () => jobs.map((job) => ({ ...job, matchPercentage: matchScores[job.id] })),
+    [jobs, matchScores],
+  )
+
   const filteredJobs = useMemo(() => {
-    return jobs
+    return scoredJobs
       .filter((job) => {
         const term = searchTerm.toLowerCase().trim()
         const matchesTags = (job.tags || []).some((tag) =>
@@ -110,9 +152,9 @@ export const FindJobs = () => {
         if (sortBy === 'recent') {
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         }
-        return 0
+        return (b.matchPercentage ?? -1) - (a.matchPercentage ?? -1)
       })
-  }, [jobs, searchTerm, selectedCategory, selectedWorkType, selectedExperience, sortBy])
+  }, [scoredJobs, searchTerm, selectedCategory, selectedWorkType, selectedExperience, sortBy])
 
   const clearAllFilters = () => {
     setSearchTerm('')

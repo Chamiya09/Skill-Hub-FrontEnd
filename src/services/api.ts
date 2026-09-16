@@ -500,6 +500,7 @@ export const companyProfileApi = {
 // ==========================================
 export interface JobDto {
   id: string;
+  matchPercentage?: number;
   companyId: string;
   companyName?: string;
   logoUrl?: string;

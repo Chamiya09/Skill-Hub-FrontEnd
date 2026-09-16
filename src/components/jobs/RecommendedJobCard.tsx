@@ -7,6 +7,13 @@ interface RecommendedJobCardProps {
 }
 
 export function RecommendedJobCard({ job }: RecommendedJobCardProps) {
+  const matchPercentage = Math.min(100, Math.max(0, job.matchPercentage))
+  const detailsState = {
+    recommendedMatch: {
+      jobId: job.jobId,
+      matchPercentage,
+    },
+  }
   const postedDate = job.postedDate
     ? new Date(job.postedDate).toLocaleDateString('en-US', {
         month: 'short',
@@ -24,6 +31,7 @@ export function RecommendedJobCard({ job }: RecommendedJobCardProps) {
           <div className="flex items-center gap-2 flex-wrap">
             <Link
               to={`/jobs/${job.jobId}`}
+              state={detailsState}
               className="recommended-job-title text-lg font-bold text-gray-900 hover:text-emerald-700 transition-colors"
             >
               {job.title}
@@ -42,7 +50,7 @@ export function RecommendedJobCard({ job }: RecommendedJobCardProps) {
         </div>
 
         <span className="recommended-match-score shrink-0 inline-flex items-center px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-bold">
-          {job.matchPercentage}% Match
+          {matchPercentage}% Match
         </span>
       </div>
 
@@ -57,6 +65,7 @@ export function RecommendedJobCard({ job }: RecommendedJobCardProps) {
         </span>
         <Link
           to={`/jobs/${job.jobId}`}
+          state={detailsState}
           className="recommended-job-link text-emerald-700 font-bold hover:text-emerald-800 transition-colors"
         >
           View Details →

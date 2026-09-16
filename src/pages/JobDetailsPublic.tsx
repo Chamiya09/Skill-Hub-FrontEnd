@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   aiMatchApi,
   candidateCvApi,
@@ -27,6 +27,7 @@ import {
 
 export const JobDetailsPublic: React.FC = () => {
   const { id } = useParams<{ id: string }>()
+  const location = useLocation()
   const navigate = useNavigate()
   const { currentUser } = useAuth()
 
@@ -48,6 +49,21 @@ export const JobDetailsPublic: React.FC = () => {
   const [aiResults, setAiResults] = useState<AiMatchResponseDto | null>(null)
   const [showSidebar, setShowSidebar] = useState(false)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
+
+  const routeMatch = (
+    location.state as {
+      recommendedMatch?: { jobId?: unknown; matchPercentage?: unknown }
+    } | null
+  )?.recommendedMatch
+  const routeMatchPercentage = routeMatch?.matchPercentage
+  const recommendedMatchPercentage =
+    routeMatch?.jobId === id &&
+    typeof routeMatchPercentage === 'number' &&
+    Number.isFinite(routeMatchPercentage) &&
+    routeMatchPercentage >= 0 &&
+    routeMatchPercentage <= 100
+      ? routeMatchPercentage
+      : undefined
 
   // Check if current user is an employer/recruiter
   const isEmployer = Boolean(
@@ -1032,6 +1048,7 @@ export const JobDetailsPublic: React.FC = () => {
           onClose={() => setShowSidebar(false)}
           aiResults={aiResults}
           hasApplied={hasApplied}
+          matchPercentage={recommendedMatchPercentage}
         />
       )}
     </div>

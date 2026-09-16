@@ -17,7 +17,6 @@ import { CandidateProfile } from "./pages/CandidateProfile";
 import { CandidateApplications } from "./pages/CandidateApplications";
 import { CandidateSavedJobs } from "./pages/CandidateSavedJobs";
 import { CandidateSecurity } from "./pages/CandidateSecurity";
-import { CandidateDashboard } from "./pages/CandidateDashboard";
 import { Dashboard } from "./pages/Dashboard";
 import { JobVacancies } from "./pages/JobVacancies";
 import { EditJob } from "./pages/EditJob";
@@ -112,10 +111,10 @@ function AppContent() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Navigate to="/candidate/dashboard" replace />} />
-              <Route path="dashboard" element={<CandidateDashboard />} />
+              <Route index element={<Navigate to="/jobs" replace />} />
+              <Route path="dashboard" element={<Navigate to="/jobs" replace />} />
               <Route path="profile" element={<CandidateProfile />} />
-              <Route path="recommended" element={<CandidateDashboard />} />
+              <Route path="recommended" element={<Navigate to="/jobs" replace />} />
               <Route path="applications" element={<CandidateApplications />} />
               <Route path="saved" element={<CandidateSavedJobs />} />
               <Route path="settings" element={<CandidateSecurity />} />

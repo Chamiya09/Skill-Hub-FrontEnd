@@ -13,6 +13,7 @@ export interface AiMatchInsightsSidebarProps {
   onClose: () => void
   aiResults: AiMatchResults | null
   hasApplied: boolean
+  matchPercentage?: number
 }
 
 export interface AiMatchResults {
@@ -27,13 +28,11 @@ export function AiMatchInsightsSidebar({
   onClose,
   aiResults,
   hasApplied,
+  matchPercentage,
 }: AiMatchInsightsSidebarProps) {
   const titleId = useId()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
-  const score = Math.min(
-    100,
-    Math.max(0, Math.round(aiResults?.matchPercentage ?? 0)),
-  )
+  const score = Math.min(100, Math.max(0, matchPercentage ?? aiResults?.matchPercentage ?? 0))
   const radius = 76
   const circumference = 2 * Math.PI * radius
   const progressOffset = circumference * (1 - score / 100)

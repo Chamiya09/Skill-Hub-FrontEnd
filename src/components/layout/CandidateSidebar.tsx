@@ -117,12 +117,12 @@ export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onCl
         <div className="nav-group-label">CAREER PLATFORM</div>
 
         <NavLink
-          to="/candidate/dashboard"
+          to="/jobs"
           onClick={onClose}
           className={({ isActive }) => `dashboard-nav-item ${isActive ? 'active' : ''}`}
         >
           <SparkleIcon />
-          <span>AI Recommended Jobs</span>
+          <span>Explore Jobs</span>
         </NavLink>
 
         <NavLink

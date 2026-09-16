@@ -10072,9 +10072,98 @@ select.w-full {
    RICH HTML JOB DESCRIPTION TYPOGRAPHY
    ========================================================= */
 .rich-job-html-content {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   color: #334155;
   font-size: 15px;
   line-height: 1.7;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.job-details-content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: 28px;
+  align-items: start;
+  width: 100%;
+  min-width: 0;
+}
+
+.job-details-content-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+.job-description-card {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.job-details-summary-column {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.rich-job-html-content > * {
+  max-width: 100%;
+}
+
+.rich-job-html-content img,
+.rich-job-html-content iframe,
+.rich-job-html-content video,
+.rich-job-html-content table,
+.rich-job-html-content pre {
+  max-width: 100%;
+}
+
+.rich-job-html-content img,
+.rich-job-html-content video {
+  height: auto;
+}
+
+.rich-job-html-content table,
+.rich-job-html-content pre {
+  overflow-x: auto;
+}
+
+@media (max-width: 1024px) {
+  .job-details-content-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .job-details-summary-column {
+    position: static;
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .job-description-card {
+    padding: 22px 20px !important;
+    border-radius: 16px !important;
+  }
+
+  .rich-job-html-content {
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .rich-job-html-content ul,
+  .rich-job-html-content ol {
+    padding-left: 1.25em;
+  }
 }
 
 .rich-job-html-content h1,

@@ -662,19 +662,17 @@ export const JobDetailsPublic: React.FC = () => {
         {/* MAIN BODY: TWO COLUMNS (CONTENT + STICKY SIDEBAR) */}
         {/* ========================================================================= */}
         <div
+          className="job-details-content-grid"
           style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 340px',
-            gap: '28px',
-            alignItems: 'start',
             marginBottom: '60px',
           }}
         >
           {/* Left Column: Job Description & Details */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div className="job-details-content-column">
             
             {/* About the Position (Rendered cleanly from raw HTML) */}
             <div
+              className="job-description-card"
               style={{
                 background: '#ffffff',
                 border: '1px solid #e2e8f0',
@@ -712,6 +710,7 @@ export const JobDetailsPublic: React.FC = () => {
             {/* What We Offer / Benefits (If provided) */}
             {job.whatWeOffer && (
               <div
+                className="job-description-card"
                 style={{
                   background: '#ffffff',
                   border: '1px solid #e2e8f0',
@@ -742,7 +741,7 @@ export const JobDetailsPublic: React.FC = () => {
           </div>
 
           {/* Right Column: Sticky Summary & Apply Card */}
-          <div style={{ position: 'sticky', top: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="job-details-summary-column">
             
             {/* Primary Apply Card (Digital CV One-Click Flow) */}
             <div

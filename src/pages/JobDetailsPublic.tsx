@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   aiMatchApi,
-  candidateCvApi,
   jobApplicationsApi,
   publicJobsApi,
   type AiMatchResponseDto,
@@ -75,6 +74,44 @@ export const JobDetailsPublic: React.FC = () => {
       currentUser.role?.toUpperCase().includes('ADMIN')
     )
   )
+
+  // Re-analyze whenever the authenticated candidate or selected vacancy changes.
+  // The API receives only IDs; authoritative profile/job data is loaded server-side.
+  useEffect(() => {
+    if (!currentUser?.id || !job?.id || isEmployer) return
+
+    let isCurrent = true
+    setIsAnalyzing(true)
+    setAnalysisError(null)
+    setAiResults(null)
+
+    console.log('Fetching match for:', {
+      candidateId: currentUser.id,
+      jobId: job.id,
+    })
+    aiMatchApi.analyze(currentUser.id, job.id)
+      .then((result) => {
+        if (!isCurrent) return
+        setAiResults(result)
+        setShowSidebar(true)
+      })
+      .catch((requestError: unknown) => {
+        if (!isCurrent) return
+        console.error('AI match analysis failed:', requestError)
+        setAnalysisError(
+          requestError instanceof Error
+            ? requestError.message
+            : 'Unable to analyze your match right now. Please try again.',
+        )
+      })
+      .finally(() => {
+        if (isCurrent) setIsAnalyzing(false)
+      })
+
+    return () => {
+      isCurrent = false
+    }
+  }, [currentUser?.id, isEmployer, job?.id])
 
   // Scroll to top when job ID changes
   useEffect(() => {
@@ -159,22 +196,11 @@ export const JobDetailsPublic: React.FC = () => {
       setIsAnalyzing(true)
       setAnalysisError(null)
 
-      const digitalCv = await candidateCvApi.getCv()
-      const candidateSkills = digitalCv.skills
-        .map((skill) => skill.skillName.trim())
-        .filter(Boolean)
-      const jobRequirements = [
-        ...(job.tags ?? []),
-        job.department,
-        job.experienceLevel,
-      ].filter((requirement): requirement is string => Boolean(requirement?.trim()))
-
-      const result = await aiMatchApi.analyze({
-        candidateSkills,
-        // Temporary fallback until total experience is calculated from CV dates.
-        candidateExperienceYears: 2,
-        jobRequirements: [...new Set(jobRequirements)],
+      console.log('Fetching match for:', {
+        candidateId: currentUser.id,
+        jobId: job.id,
       })
+      const result = await aiMatchApi.analyze(currentUser.id, job.id)
 
       setAiResults(result)
       setShowSidebar(true)
@@ -598,7 +624,7 @@ export const JobDetailsPublic: React.FC = () => {
                   ) : (
                     <Sparkles size={16} aria-hidden="true" />
                   )}
-                  <span>{isAnalyzing ? 'Scanning Profile...' : 'Analyze Match'}</span>
+                  <span>{isAnalyzing ? 'Analyzing Semantic Twin...' : 'Analyze Match'}</span>
                 </button>
               )}
 

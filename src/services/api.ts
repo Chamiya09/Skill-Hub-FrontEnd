@@ -127,9 +127,15 @@ async function request<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  // Create an AbortController for 10-second timeout if none provided
+  // Apply the default timeout only when the caller did not provide its own signal.
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  let didTimeout = false;
+  const timeoutId = options.signal
+    ? undefined
+    : setTimeout(() => {
+        didTimeout = true;
+        controller.abort();
+      }, timeoutMs);
 
   const config: RequestInit = {
     ...options,
@@ -162,8 +168,13 @@ async function request<T>(
     }
 
     return response.json();
+  } catch (error: unknown) {
+    if (didTimeout && error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)} seconds.`);
+    }
+    throw error;
   } finally {
-    clearTimeout(timeoutId);
+    if (timeoutId !== undefined) clearTimeout(timeoutId);
   }
 }
 
@@ -520,24 +531,38 @@ export interface JobDto {
 }
 
 export interface AiMatchRequestDto {
-  candidateSkills: string[];
-  candidateExperienceYears: number;
-  jobRequirements: string[];
+  candidate: {
+    skills: string[];
+    experienceYears: number;
+    headline?: string;
+    summary?: string;
+    experiences: ExperienceDto[];
+    projects: ProjectDto[];
+    educations: EducationDto[];
+    certifications: CertificationDto[];
+  };
+  job: {
+    title: string;
+    department?: string;
+    experienceLevel?: string;
+    description?: string;
+    skills: string[];
+  };
 }
 
 export interface AiMatchResponseDto {
   matchPercentage: number;
   strengths: string[];
-  missingSkills: string[];
+  missingSkillGaps: string[];
   aiRecommendation: string;
 }
 
 export const aiMatchApi = {
-  async analyze(requestDto: AiMatchRequestDto): Promise<AiMatchResponseDto> {
-    return request<AiMatchResponseDto>('/candidate/analyze-job', {
-      method: 'POST',
-      body: JSON.stringify(requestDto),
-    });
+  async analyze(candidateId: string, jobId: string): Promise<AiMatchResponseDto> {
+    const query = new URLSearchParams({ candidateId, jobId });
+    return request<AiMatchResponseDto>(`/match?${query.toString()}`, {
+      method: 'GET',
+    }, 120_000);
   },
 };
 
@@ -1196,13 +1221,25 @@ export interface RecommendedJobDto {
   isRecommended: boolean;
 }
 
+const recommendationRequests = new Map<string, Promise<RecommendedJobDto[]>>();
+
 export const jobRecommendationsApi = {
   async getForCandidate(candidateId: string): Promise<RecommendedJobDto[]> {
-    return request<RecommendedJobDto[]>(
+    const existingRequest = recommendationRequests.get(candidateId);
+    if (existingRequest) return existingRequest;
+
+    const pendingRequest = request<RecommendedJobDto[]>(
       `/candidate/${encodeURIComponent(candidateId)}/recommended-jobs`,
       { method: 'GET' },
       120000,
     );
+
+    recommendationRequests.set(candidateId, pendingRequest);
+    try {
+      return await pendingRequest;
+    } finally {
+      recommendationRequests.delete(candidateId);
+    }
   },
 };
 

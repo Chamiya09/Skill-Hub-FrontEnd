@@ -1,28 +1,28 @@
-import { Link } from 'react-router-dom'
-import { Building2, CalendarDays, MapPin, Sparkles } from 'lucide-react'
-import type { RecommendedJobDto } from '../../services/api'
+import { Link } from "react-router-dom";
+import { Building2, CalendarDays, MapPin, Sparkles } from "lucide-react";
+import type { RecommendedJobDto } from "../../services/api";
 
 interface RecommendedJobCardProps {
-  job: RecommendedJobDto
+  job: RecommendedJobDto;
 }
 
 export function RecommendedJobCard({ job }: RecommendedJobCardProps) {
-  const matchPercentage = Math.min(100, Math.max(0, job.matchPercentage))
+  const matchPercentage = Math.min(100, Math.max(0, job.matchPercentage));
   const detailsState = {
     recommendedMatch: {
       jobId: job.jobId,
       matchPercentage,
     },
-  }
+  };
   const postedDate = job.postedDate
-    ? new Date(job.postedDate).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
+    ? new Date(job.postedDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
       })
-    : 'Recently posted'
+    : "Recently posted";
 
-  const isRecommended = job.isRecommended || job.matchPercentage >= 80
+  const isRecommended = job.isRecommended || job.matchPercentage >= 80;
 
   return (
     <article className="recommended-job-card w-full bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:border-emerald-200 hover:shadow-md transition-all">
@@ -72,5 +72,5 @@ export function RecommendedJobCard({ job }: RecommendedJobCardProps) {
         </Link>
       </div>
     </article>
-  )
+  );
 }

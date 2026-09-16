@@ -19,7 +19,7 @@ export interface AiMatchInsightsSidebarProps {
 export interface AiMatchResults {
   matchPercentage: number
   strengths: string[]
-  missingSkills: string[]
+  missingSkillGaps: string[]
   aiRecommendation: string
 }
 
@@ -128,7 +128,13 @@ export function AiMatchInsightsSidebar({
             </div>
             <div className="ai-score-caption">
               <span><Sparkles size={13} /> Real-time AI analysis</span>
-              <p>Your profile has strong alignment with this opportunity.</p>
+              <p>
+                {score >= 75
+                  ? 'Your profile has strong alignment with this opportunity.'
+                  : score >= 50
+                  ? 'Your profile has moderate alignment. Some skill gaps exist.'
+                  : 'Your profile has low alignment with the core requirements.'}
+              </p>
             </div>
               </section>
 
@@ -160,8 +166,8 @@ export function AiMatchInsightsSidebar({
                     <h3>Missing Skill Gaps</h3>
                   </div>
                   <ul className="ai-insight-list mt-3 space-y-1.5 text-sm text-rose-800">
-                    {aiResults.missingSkills.length > 0 ? (
-                      aiResults.missingSkills.map((item, idx) => (
+                    {aiResults.missingSkillGaps.length > 0 ? (
+                      aiResults.missingSkillGaps.map((item, idx) => (
                         <li key={idx} className="ai-insight-list-item flex items-start gap-2">
                           <div className="ai-insight-bullet gap-bullet mt-1 w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
                           <span>{item}</span>
@@ -169,7 +175,7 @@ export function AiMatchInsightsSidebar({
                       ))
                     ) : (
                       <li className="ai-insight-empty-item text-rose-600 opacity-80">
-                        No skill gaps identified.
+                        Perfect Match! No gaps found.
                       </li>
                     )}
                   </ul>

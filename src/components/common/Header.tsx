@@ -124,89 +124,47 @@ export const Header = () => {
                 </div>
 
                 {currentUser.role?.toLowerCase() === 'candidate' ? (
-                  <>
-                    <Link
-                      to="/candidate/profile"
-                      onClick={() => setDropdownOpen(false)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        color: '#334155',
-                        fontSize: '13.5px',
-                        fontWeight: 600,
-                        textDecoration: 'none',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <SparkleIcon />
-                      <span>My Digital CV</span>
-                    </Link>
-                    <Link
-                      to="/candidate/applications"
-                      onClick={() => setDropdownOpen(false)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        color: '#334155',
-                        fontSize: '13.5px',
-                        fontWeight: 600,
-                        textDecoration: 'none',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <span>Applied Jobs</span>
-                    </Link>
-                  </>
+                  <Link
+                    to="/candidate/profile"
+                    onClick={() => setDropdownOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      color: '#334155',
+                      fontSize: '13.5px',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <SparkleIcon />
+                    <span>My Digital CV</span>
+                  </Link>
                 ) : (
-                  <>
-                    <Link
-                      to="/dashboard"
-                      onClick={() => setDropdownOpen(false)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        color: '#334155',
-                        fontSize: '13.5px',
-                        fontWeight: 600,
-                        textDecoration: 'none',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <SparkleIcon />
-                      <span>Employer Dashboard</span>
-                    </Link>
-                    <Link
-                      to="/vacancies"
-                      onClick={() => setDropdownOpen(false)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        color: '#334155',
-                        fontSize: '13.5px',
-                        fontWeight: 600,
-                        textDecoration: 'none',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <span>Job Vacancies</span>
-                    </Link>
-                  </>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setDropdownOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      color: '#334155',
+                      fontSize: '13.5px',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <SparkleIcon />
+                    <span>Employer Dashboard</span>
+                  </Link>
                 )}
 
                 <button

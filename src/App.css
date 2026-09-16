@@ -5722,6 +5722,44 @@
   gap: 24px;
 }
 
+.recommended-jobs-grid.grid {
+  width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)) !important;
+}
+
+.recommended-job-card {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.recommended-job-card:hover {
+  transform: translateY(-2px);
+}
+
+.ai-recommended-badge {
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.16);
+}
+
+.recommended-job-meta {
+  flex-wrap: wrap;
+}
+
+.recommended-job-link {
+  margin-left: auto;
+}
+
+.recommended-job-skeleton {
+  min-height: 190px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@media (max-width: 520px) {
+  .recommended-job-card-top {
+    flex-direction: column;
+  }
+}
+
 .flex-col {
   flex-direction: column !important;
 }

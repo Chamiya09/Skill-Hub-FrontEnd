@@ -110,7 +110,11 @@ export const authStorage = {
 // ==========================================
 // HTTP REQUEST HELPER WITH JWT ATTACHMENT
 // ==========================================
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+async function request<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  timeoutMs = 10000,
+): Promise<T> {
   const token = authStorage.getToken();
   
   const headers: Record<string, string> = {
@@ -125,7 +129,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
   // Create an AbortController for 10-second timeout if none provided
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   const config: RequestInit = {
     ...options,
@@ -1180,6 +1184,26 @@ export interface CandidateApplicationItemDto {
   appliedDate: string;
   status: string;
 }
+
+export interface RecommendedJobDto {
+  jobId: string;
+  title: string;
+  company: string;
+  location: string;
+  postedDate: string;
+  matchPercentage: number;
+  isRecommended: boolean;
+}
+
+export const jobRecommendationsApi = {
+  async getForCandidate(candidateId: string): Promise<RecommendedJobDto[]> {
+    return request<RecommendedJobDto[]>(
+      `/candidate/${encodeURIComponent(candidateId)}/recommended-jobs`,
+      { method: 'GET' },
+      120000,
+    );
+  },
+};
 
 export const jobApplicationsApi = {
   /**

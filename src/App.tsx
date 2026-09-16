@@ -112,10 +112,10 @@ function AppContent() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Navigate to="/candidate/profile" replace />} />
+              <Route index element={<Navigate to="/candidate/dashboard" replace />} />
+              <Route path="dashboard" element={<CandidateDashboard />} />
               <Route path="profile" element={<CandidateProfile />} />
               <Route path="recommended" element={<CandidateDashboard />} />
-              <Route path="dashboard" element={<CandidateDashboard />} />
               <Route path="applications" element={<CandidateApplications />} />
               <Route path="saved" element={<CandidateSavedJobs />} />
               <Route path="settings" element={<CandidateSecurity />} />

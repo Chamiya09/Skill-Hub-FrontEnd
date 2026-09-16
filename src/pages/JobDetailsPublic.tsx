@@ -75,44 +75,6 @@ export const JobDetailsPublic: React.FC = () => {
     )
   )
 
-  // Re-analyze whenever the authenticated candidate or selected vacancy changes.
-  // The API receives only IDs; authoritative profile/job data is loaded server-side.
-  useEffect(() => {
-    if (!currentUser?.id || !job?.id || isEmployer) return
-
-    let isCurrent = true
-    setIsAnalyzing(true)
-    setAnalysisError(null)
-    setAiResults(null)
-
-    console.log('Fetching match for:', {
-      candidateId: currentUser.id,
-      jobId: job.id,
-    })
-    aiMatchApi.analyze(currentUser.id, job.id)
-      .then((result) => {
-        if (!isCurrent) return
-        setAiResults(result)
-        setShowSidebar(true)
-      })
-      .catch((requestError: unknown) => {
-        if (!isCurrent) return
-        console.error('AI match analysis failed:', requestError)
-        setAnalysisError(
-          requestError instanceof Error
-            ? requestError.message
-            : 'Unable to analyze your match right now. Please try again.',
-        )
-      })
-      .finally(() => {
-        if (isCurrent) setIsAnalyzing(false)
-      })
-
-    return () => {
-      isCurrent = false
-    }
-  }, [currentUser?.id, isEmployer, job?.id])
-
   // Scroll to top when job ID changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -195,6 +157,7 @@ export const JobDetailsPublic: React.FC = () => {
     try {
       setIsAnalyzing(true)
       setAnalysisError(null)
+      setAiResults(null)
 
       console.log('Fetching match for:', {
         candidateId: currentUser.id,
@@ -618,13 +581,14 @@ export const JobDetailsPublic: React.FC = () => {
                   disabled={isAnalyzing}
                   className="job-details-analyze-match-btn flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 font-semibold text-sm rounded-full transition-all shadow-sm"
                   aria-haspopup="dialog"
+                  aria-busy={isAnalyzing}
                 >
                   {isAnalyzing ? (
                     <Loader2 className="animate-spin" size={16} aria-hidden="true" />
                   ) : (
                     <Sparkles size={16} aria-hidden="true" />
                   )}
-                  <span>{isAnalyzing ? 'Analyzing Semantic Twin...' : 'Analyze Match'}</span>
+                  <span>{isAnalyzing ? 'Analyzing Semantic Twin...' : 'Generate AI Match Insight'}</span>
                 </button>
               )}
 

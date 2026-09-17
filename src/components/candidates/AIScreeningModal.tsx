@@ -186,7 +186,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
     setAnalyzingStageText('AI is analyzing candidate profiles... This may take a few seconds.');
     setErrorMessage(null);
     try {
-      const ranked = await jobApplicationsApi.runAiScreen(currentJob.id);
+      const ranked = await jobApplicationsApi.runAiScreen(currentJob.id, { forceRefresh: true });
       setCandidates(ranked.map((result, index) => {
         const existing = candidates.find(candidate => candidate.candidateId === result.candidateId);
         return {

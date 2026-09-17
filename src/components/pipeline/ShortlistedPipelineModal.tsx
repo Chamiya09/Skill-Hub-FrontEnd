@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   jobApplicationsApi,
   type JobDto,
@@ -13,7 +13,7 @@ import {
   ClockIcon,
   DollarSignIcon,
   MailIcon,
-  CalendarIcon,
+
   UserCheckIcon,
   UsersIcon,
   ArrowRightIcon,

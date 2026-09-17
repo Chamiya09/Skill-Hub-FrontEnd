@@ -79,6 +79,8 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [, setToastMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
+  const [topCount, setTopCount] = useState<number>(5);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -99,8 +101,8 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
         name: app.fullName || 'Unnamed Candidate',
         headline: app.headline || 'Candidate Profile',
         email: app.email || '',
-        phone: '',
-        location: 'Location unspecified',
+        phone: app.phone || '',
+        location: app.location || 'Location unspecified',
         appliedDate: app.appliedDate
           ? new Date(app.appliedDate).toLocaleDateString('en-US', {
               month: 'short',
@@ -216,11 +218,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
     }
   };
 
-  // Send Shortlisted Candidates to Hiring Pipeline
-  const handleSendToHiringPipeline = () => {
-    setIsTransferred(true);
-    showToast('🚀 Shortlisted candidates transferred to the Hiring Pipeline module!');
-  };
+
 
   const handleShortlistCandidate = async (candidateId: string) => {
     if (!currentJob) return;
@@ -234,6 +232,29 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
     } catch (err: any) {
       showToast(`Failed to shortlist ${candidate.name}: ${err.message}`);
     }
+  };
+
+  const handleShortlist = async () => {
+    if (!currentJob || selectedCandidateIds.length === 0) return;
+    
+    const candidateIdsToShortlist = candidates
+      .filter((c) => selectedCandidateIds.includes(c.id))
+      .map((c) => c.candidateId);
+
+    try {
+      await jobApplicationsApi.moveToShortlist(currentJob.id, candidateIdsToShortlist);
+      showToast(`✓ ${selectedCandidateIds.length} candidate(s) added to the shortlist.`);
+      setSelectedCandidateIds([]);
+      await fetchApplicants(currentJob.id); // Refetch from DB to ensure sync
+    } catch (err: any) {
+      showToast(`Failed to shortlist candidates: ${err.message}`);
+    }
+  };
+
+  const handleAutoSelect = () => {
+    const sorted = [...otherList].sort((a, b) => (b.aiScore ?? 0) - (a.aiScore ?? 0));
+    const topIds = sorted.slice(0, topCount).map(c => c.id);
+    setSelectedCandidateIds(topIds);
   };
 
   const handleRemoveFromShortlist = async (candidateId: string) => {
@@ -589,10 +610,29 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
               {/* Other Applicants Section */}
               {otherList.length > 0 && (
                 <div className="popup-section-card">
-                  <div className="popup-section-header">
+                  <div className="popup-section-header flex justify-between items-center">
                     <h3 className="popup-section-title">
                       Other Applicants ({otherList.length})
                     </h3>
+                    <div className="flex items-center gap-3">
+                      <label className="text-sm font-medium text-slate-600 flex items-center gap-2">
+                        Quick Select Top:
+                        <input
+                          type="number"
+                          min="1"
+                          className="ai-auto-select-input"
+                          value={topCount}
+                          onChange={(e) => setTopCount(Math.max(1, parseInt(e.target.value) || 1))}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleAutoSelect}
+                        className="ai-auto-select-btn"
+                      >
+                        ⚡ Auto-Select
+                      </button>
+                    </div>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -612,6 +652,20 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                           title="Click to view full verified Digital CV Profile"
                         >
                           <div className="flex items-center gap-4 ai-screening-candidate-identity">
+                            <input
+                              type="checkbox"
+                              className="ai-screening-checkbox"
+                              checked={selectedCandidateIds.includes(candidate.id)}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                setSelectedCandidateIds((prev) =>
+                                  e.target.checked
+                                    ? [...prev, candidate.id]
+                                    : prev.filter((id) => id !== candidate.id)
+                                );
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            />
                             {candidate.avatarUrl ? (
                               <img src={candidate.avatarUrl} alt={candidate.name} className="candidate-avatar object-cover" />
                             ) : (
@@ -702,6 +756,20 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                         title="Click to view full verified Digital CV Profile"
                       >
                         <div className="flex items-center gap-4">
+                          <input
+                            type="checkbox"
+                            className="ai-screening-checkbox"
+                            checked={selectedCandidateIds.includes(candidate.id)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              setSelectedCandidateIds((prev) =>
+                                e.target.checked
+                                  ? [...prev, candidate.id]
+                                  : prev.filter((id) => id !== candidate.id)
+                              );
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          />
                           {candidate.avatarUrl ? (
                             <img
                               src={candidate.avatarUrl}
@@ -788,20 +856,18 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
             Close Window
           </button>
 
-          {/* PIPELINE MOVE BUTTON / RUN AI ACTION */}
+          {/* PIPELINE MOVE BUTTON / RUN AI ACTION / BULK SHORTLIST */}
           {isAiAnalyzed ? (
             <button
               type="button"
-              onClick={handleSendToHiringPipeline}
-              disabled={isTransferred}
+              onClick={handleShortlist}
+              disabled={selectedCandidateIds.length === 0}
               className="popup-footer-btn-primary"
               title="Transfer all shortlisted candidates to the next hiring pipeline module"
             >
               <ArrowRightIcon />
               <span>
-                {isTransferred
-                  ? '✓ Shortlisted Sent to Hiring Pipeline'
-                  : `Send Shortlisted (${shortlistedList.length}) to Hiring Pipeline`}
+                Send Shortlisted ({selectedCandidateIds.length}) to Hiring Pipeline
               </span>
             </button>
           ) : isJobClosed ? (

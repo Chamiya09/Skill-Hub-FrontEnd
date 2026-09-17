@@ -1,218 +1,210 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   jobApplicationsApi,
   type CandidateApplicationItemDto,
 } from '../services/api';
 import {
-  BriefcaseIcon,
-  SearchIcon,
   ArrowRightIcon,
-  MapPinIcon,
-  ClockIcon,
-  SparkleIcon,
+  BriefcaseIcon,
   BuildingIcon,
+  ClockIcon,
+  MapPinIcon,
+  SearchIcon,
+  SparkleIcon,
 } from '../components/common/Icons';
+import './CandidateApplications.css';
+
+const STAGES = ['Applied', 'Under Review', 'Shortlisted', 'Interview', 'Offer'] as const;
+
+const PREVIEW_APPLICATIONS: CandidateApplicationItemDto[] = [
+  {
+    id: 'preview-applied',
+    jobId: 'preview-backend-role',
+    jobTitle: 'Senior .NET Backend Engineer',
+    companyName: 'Northstar Digital',
+    location: 'Colombo, Sri Lanka',
+    employmentType: 'Full-time',
+    workplaceType: 'Hybrid',
+    appliedDate: '2026-09-14T09:30:00Z',
+    status: 'Applied',
+  },
+  {
+    id: 'preview-shortlisted',
+    jobId: 'preview-platform-role',
+    jobTitle: 'Full-Stack Platform Engineer',
+    companyName: 'Vertex Labs',
+    location: 'Remote',
+    employmentType: 'Full-time',
+    workplaceType: 'Remote',
+    appliedDate: '2026-09-08T13:15:00Z',
+    status: 'Shortlisted',
+  },
+];
+
+const getStageIndex = (status: string): number => {
+  const value = status.toLowerCase();
+  if (value.includes('offer') || value.includes('accepted') || value.includes('hired')) return 4;
+  if (value.includes('interview')) return 3;
+  if (value.includes('shortlist')) return 2;
+  if (value.includes('review') || value.includes('screen')) return 1;
+  return 0;
+};
+
+const getCopilotMessage = (stage: number): string => [
+  'Your profile shows strong alignment with the role. We will help you prepare as the application progresses.',
+  'Your application is being evaluated. Refresh your Digital CV with measurable project outcomes while you wait.',
+  'You made the shortlist. Your next best step is a focused mock interview based on this role.',
+  'Interview stage reached. Rehearse concise STAR examples and prepare questions for the hiring team.',
+  'You reached the offer stage. Review the complete package, role expectations, and growth path carefully.',
+][stage];
 
 export const CandidateApplications: React.FC = () => {
+  const previewMode = import.meta.env.DEV
+    && new URLSearchParams(window.location.search).get('preview') === 'applications';
   const [applications, setApplications] = useState<CandidateApplicationItemDto[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(!previewMode);
   const [error, setError] = useState<string | null>(null);
 
   const fetchApplications = async () => {
+    if (previewMode) {
+      setApplications(PREVIEW_APPLICATIONS);
+      setIsLoading(false);
+      return;
+    }
     try {
       setIsLoading(true);
       setError(null);
-      const data = await jobApplicationsApi.getMyApplications();
-      setApplications(data || []);
-    } catch (err: any) {
+      setApplications((await jobApplicationsApi.getMyApplications()) || []);
+    } catch (err: unknown) {
       console.error('Error fetching candidate applications:', err);
-      setError(err.message || 'Failed to load your submitted job applications.');
+      setError(err instanceof Error ? err.message : 'Failed to load your applications.');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchApplications();
+    void fetchApplications();
   }, []);
 
   return (
-    <div className="space-y-6">
-      {/* Top Header */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="candidate-applications-page">
+      <section className="applications-hero">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-[#00b074] text-xs font-bold tracking-wider mb-2 border border-emerald-100/60">
-            <BriefcaseIcon />
-            <span>APPLICATIONS TRACKER</span>
-          </div>
-          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Applied Positions</h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1">
-            Track real-time candidate status, recruiter reviews, and AI shortlist results for your Digital CV applications.
+          <div className="applications-eyebrow"><BriefcaseIcon /> APPLICATION TRACKER</div>
+          <h1>Applied Positions</h1>
+          <p className="applications-subtitle">
+            Follow every hiring milestone and get actionable guidance from your AI Copilot.
           </p>
         </div>
-
-        <Link
-          to="/jobs"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00b074] hover:bg-[#009663] text-white font-semibold text-xs sm:text-sm transition-all shadow-none self-start sm:self-auto"
-        >
-          <SearchIcon />
-          <span>Explore Open Positions</span>
+        <Link to="/jobs" className="applications-primary-action">
+          <SearchIcon /> Explore Open Positions
         </Link>
-      </div>
+      </section>
 
-      {/* Error Message */}
       {error && (
-        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between">
+        <div className="applications-error" role="alert">
           <span>{error}</span>
-          <button
-            type="button"
-            onClick={fetchApplications}
-            className="text-xs font-semibold text-red-800 underline hover:no-underline ml-4"
-          >
-            Retry
-          </button>
+          <button type="button" onClick={() => void fetchApplications()}>Retry</button>
         </div>
       )}
 
-      {/* Loading State */}
       {isLoading ? (
-        <div className="bg-white border border-gray-200 rounded-2xl p-16 text-center space-y-3">
-          <div className="w-10 h-10 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-xs font-semibold text-slate-500">Loading your applications...</p>
+        <div className="applications-state-card" aria-live="polite">
+          <div className="applications-spinner" aria-hidden="true" />
+          <p>Loading your application journey...</p>
         </div>
       ) : applications.length === 0 ? (
-        /* Empty State */
-        <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center max-w-xl mx-auto space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-[#00b074] border border-emerald-100 flex items-center justify-center mx-auto text-2xl">
-            <BriefcaseIcon />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-gray-900">No Job Applications Yet</h3>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-md mx-auto">
-              You haven't submitted any job applications yet. Browse verified opportunities from top engineering and product teams and apply in 1-click using your Digital CV.
-            </p>
-          </div>
-          <Link
-            to="/jobs"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00b074] text-white font-bold text-xs sm:text-sm hover:bg-[#009663] transition-all"
-          >
-            <span>Find & Apply to Jobs</span>
-            <ArrowRightIcon />
+        <div className="applications-state-card applications-empty">
+          <div className="applications-empty-icon"><BriefcaseIcon /></div>
+          <h3>No Job Applications Yet</h3>
+          <p>Browse verified opportunities and apply in one click with your Digital CV.</p>
+          <Link to="/jobs" className="applications-primary-action">
+            Find &amp; Apply to Jobs <ArrowRightIcon />
           </Link>
         </div>
       ) : (
-        /* Applications List Cards */
-        <div className="space-y-4">
+        <div className="applications-list">
           {applications.map((app) => {
-            const formattedDate = app.appliedDate
-              ? new Date(app.appliedDate).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })
-              : 'Recent';
-
+            const currentStage = getStageIndex(app.status || 'Applied');
             const initials = app.companyName
-              ? app.companyName
-                  .split(' ')
-                  .map((w) => w[0])
-                  .join('')
-                  .substring(0, 2)
-                  .toUpperCase()
-              : 'CO';
-
-            const isShortlisted = app.status?.toLowerCase().includes('shortlist');
+              .split(' ')
+              .map((word) => word[0])
+              .join('')
+              .slice(0, 2)
+              .toUpperCase();
+            const appliedDate = new Date(app.appliedDate).toLocaleDateString('en-US', {
+              weekday: 'short',
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric',
+            });
 
             return (
-              <div
-                key={app.id}
-                className="bg-white border border-gray-200 hover:border-emerald-300 rounded-2xl p-5 sm:p-6 transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm"
-              >
-                {/* Left: Company & Job Identity */}
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold flex items-center justify-center flex-shrink-0 text-base overflow-hidden">
-                    {app.companyLogoUrl ? (
-                      <img
-                        src={app.companyLogoUrl}
-                        alt={app.companyName}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span>{initials}</span>
-                    )}
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Link
-                        to={`/jobs/${app.jobId}`}
-                        className="text-base sm:text-lg font-bold text-slate-900 hover:text-emerald-600 transition-colors"
-                      >
-                        {app.jobTitle}
-                      </Link>
-                      
-                      {isShortlisted && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 border border-purple-200 text-purple-700 text-xs font-bold">
-                          <SparkleIcon />
-                          <span>AI Shortlisted</span>
-                        </span>
-                      )}
+              <article className="application-card" key={app.id}>
+                <header className="application-card-header">
+                  <div className="application-identity">
+                    <div className="application-logo">
+                      {app.companyLogoUrl
+                        ? <img src={app.companyLogoUrl} alt={`${app.companyName} logo`} />
+                        : <span>{initials}</span>}
                     </div>
-
-                    <div className="text-xs sm:text-sm font-medium text-slate-600 flex items-center gap-1.5">
-                      <BuildingIcon />
-                      <span>{app.companyName}</span>
-                    </div>
-
-                    <div className="flex items-center gap-3 text-xs text-slate-500 pt-1 flex-wrap">
-                      {app.location && (
-                        <span className="flex items-center gap-1">
-                          <MapPinIcon />
-                          <span>{app.location}</span>
-                        </span>
-                      )}
-                      {app.employmentType && (
-                        <>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            <ClockIcon />
-                            <span>{app.employmentType}</span>
-                          </span>
-                        </>
-                      )}
-                      <span>•</span>
-                      <span className="text-slate-400">Applied {formattedDate}</span>
+                    <div className="application-details">
+                      <div className="application-title-row">
+                        <Link to={`/jobs/${app.jobId}`} className="application-title">
+                          {app.jobTitle}
+                        </Link>
+                        <span className="application-status"><b />{STAGES[currentStage]}</span>
+                      </div>
+                      <div className="application-company"><BuildingIcon /> {app.companyName}</div>
+                      <div className="application-meta">
+                        <span><MapPinIcon /> {app.location || 'Location not specified'}</span>
+                        <i aria-hidden="true" />
+                        <span><ClockIcon /> {app.employmentType || 'Job type not specified'}</span>
+                        {app.workplaceType && <><i aria-hidden="true" /><span>{app.workplaceType}</span></>}
+                        <i aria-hidden="true" />
+                        <span>Applied {appliedDate}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </header>
 
-                {/* Right: Status Pill & View Job Link */}
-                <div className="flex items-center gap-3 sm:self-center border-t sm:border-t-0 pt-3 sm:pt-0 justify-between sm:justify-end">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
-                        isShortlisted
-                          ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                          : app.status?.toLowerCase() === 'accepted'
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                      }`}
+                <div className="application-stepper" aria-label={`Application status: ${STAGES[currentStage]}`}>
+                  {STAGES.map((stage, index) => (
+                    <div
+                      className={`application-step ${index <= currentStage ? 'is-complete' : ''} ${index === currentStage ? 'is-current' : ''}`}
+                      key={stage}
                     >
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                      <span>{app.status || 'Applied'}</span>
-                    </span>
-                  </div>
-
-                  <Link
-                    to={`/jobs/${app.jobId}`}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-colors"
-                  >
-                    <span>View Requisition</span>
-                    <ArrowRightIcon />
-                  </Link>
+                      <div className="application-step-track">
+                        <span className="application-step-dot">{index < currentStage ? '✓' : index + 1}</span>
+                        {index < STAGES.length - 1 && <span className="application-step-line" />}
+                      </div>
+                      <span className="application-step-label">{stage}</span>
+                    </div>
+                  ))}
                 </div>
-              </div>
+
+                <div className="application-copilot">
+                  <span className="application-copilot-icon"><SparkleIcon /></span>
+                  <div><strong>AI Copilot Insight</strong><p>{getCopilotMessage(currentStage)}</p></div>
+                </div>
+
+                <footer className="application-actions">
+                  <Link to={`/jobs/${app.jobId}`} className="application-view-link">
+                    View Job Details <ArrowRightIcon />
+                  </Link>
+                  {currentStage === 2 ? (
+                    <Link to={`/candidate/mock-interview?jobId=${app.jobId}`} className="application-smart-action">
+                      🎯 Practice Mock Interview
+                    </Link>
+                  ) : currentStage === 0 ? (
+                    <Link to={`/jobs/${app.jobId}?showInsights=true`} className="application-smart-action">
+                      <SparkleIcon /> Review Match Insights
+                    </Link>
+                  ) : null}
+                </footer>
+              </article>
             );
           })}
         </div>

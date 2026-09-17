@@ -1206,6 +1206,8 @@ export interface ScreenedApplicantDto {
   fullName: string;
   email: string;
   headline?: string;
+  location?: string;
+  phone?: string;
   skills: string[];
   appliedDate: string;
   status: string;

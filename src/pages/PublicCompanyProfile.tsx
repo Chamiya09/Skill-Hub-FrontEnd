@@ -329,8 +329,6 @@ export const PublicCompanyProfile: React.FC = () => {
                     isBookmarked={bookmarkedIds.includes(job.id)}
                     onToggleBookmark={toggleBookmark}
                     showBookmark={true}
-                    showAiMatch={true}
-                    matchPercentage={95}
                   />
                 ))}
               </div>

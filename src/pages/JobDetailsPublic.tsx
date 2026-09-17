@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
-import { publicJobsApi, type JobDto } from '../services/api'
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
+import {
+  aiMatchApi,
+  jobApplicationsApi,
+  publicJobsApi,
+  type AiMatchResponseDto,
+  type JobDto,
+} from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { JobVacancyCard } from '../components/jobs/JobVacancyCard'
+import { AiMatchInsightsSidebar } from '../components/jobs/AiMatchInsightsSidebar'
 import { SleekSpinner, JobCardSkeleton } from '../components/common/SkeletonCard'
+import { CheckCircle, Loader2, Sparkles } from 'lucide-react'
 import {
   SparkleIcon,
   MapPinIcon,
@@ -18,6 +26,7 @@ import {
 
 export const JobDetailsPublic: React.FC = () => {
   const { id } = useParams<{ id: string }>()
+  const location = useLocation()
   const navigate = useNavigate()
   const { currentUser } = useAuth()
 
@@ -34,6 +43,26 @@ export const JobDetailsPublic: React.FC = () => {
   const [isApplying, setIsApplying] = useState(false)
   const [hasApplied, setHasApplied] = useState(false)
   const [applicationSubmitted, setApplicationSubmitted] = useState(false)
+  const [applyErrorMessage, setApplyErrorMessage] = useState<string | null>(null)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [aiResults, setAiResults] = useState<AiMatchResponseDto | null>(null)
+  const [showSidebar, setShowSidebar] = useState(false)
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
+
+  const routeMatch = (
+    location.state as {
+      recommendedMatch?: { jobId?: unknown; matchPercentage?: unknown }
+    } | null
+  )?.recommendedMatch
+  const routeMatchPercentage = routeMatch?.matchPercentage
+  const recommendedMatchPercentage =
+    routeMatch?.jobId === id &&
+    typeof routeMatchPercentage === 'number' &&
+    Number.isFinite(routeMatchPercentage) &&
+    routeMatchPercentage >= 0 &&
+    routeMatchPercentage <= 100
+      ? routeMatchPercentage
+      : undefined
 
   // Check if current user is an employer/recruiter
   const isEmployer = Boolean(
@@ -50,6 +79,7 @@ export const JobDetailsPublic: React.FC = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
     setHasApplied(false)
+    setApplyErrorMessage(null)
   }, [id])
 
   // Fetch target job details
@@ -72,6 +102,24 @@ export const JobDetailsPublic: React.FC = () => {
 
     fetchJob()
   }, [id])
+
+  // Check candidate application status
+  useEffect(() => {
+    if (!id || !currentUser || isEmployer) return
+
+    const checkStatus = async () => {
+      try {
+        const res = await jobApplicationsApi.getStatus(id)
+        if (res && res.hasApplied) {
+          setHasApplied(true)
+        }
+      } catch (err) {
+        // Silently catch status check error
+      }
+    }
+
+    checkStatus()
+  }, [id, currentUser, isEmployer])
 
   // Fetch suggested matching jobs
   useEffect(() => {
@@ -98,31 +146,70 @@ export const JobDetailsPublic: React.FC = () => {
     setTimeout(() => setShareCopied(false), 3000)
   }
 
+  const handleAnalyzeMatch = async () => {
+    if (!job || isEmployer || isAnalyzing) return
+
+    if (!currentUser) {
+      navigate(`/candidate/login?redirect=/jobs/${id}`)
+      return
+    }
+
+    try {
+      setIsAnalyzing(true)
+      setAnalysisError(null)
+      setAiResults(null)
+
+      console.log('Fetching match for:', {
+        candidateId: currentUser.id,
+        jobId: job.id,
+      })
+      const result = await aiMatchApi.analyze(currentUser.id, job.id)
+
+      setAiResults(result)
+      setShowSidebar(true)
+    } catch (error: unknown) {
+      console.error('AI match analysis failed:', error)
+      setAnalysisError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to analyze your match right now. Please try again.',
+      )
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
   // =========================================================================
-  // ONE-CLICK DIGITAL CV APPLY HANDLER (INTEGRATION READY)
+  // ONE-CLICK DIGITAL CV APPLY HANDLER (LIVE INTEGRATION)
   // =========================================================================
-  const handleApply = () => {
+  const handleApply = async () => {
     if (isEmployer || hasApplied || isApplying) return
 
-    setIsApplying(true)
+    if (!currentUser) {
+      // Redirect unauthenticated user to login with redirect back
+      navigate(`/candidate/login?redirect=/jobs/${id}`)
+      return
+    }
 
-    // =========================================================================
-    // TODO: Another team member will integrate the Digital CV payload here.
-    // E.g.:
-    // await applicationsApi.submitDigitalCvApplication({
-    //   jobId: job?.id,
-    //   candidateId: currentUser?.id,
-    //   digitalCvProfile: candidateCvData,
-    // })
-    // =========================================================================
+    if (!job?.id) return
 
-    // Simulate network request duration
-    setTimeout(() => {
-      setIsApplying(false)
+    try {
+      setIsApplying(true)
+      setApplyErrorMessage(null)
+      await jobApplicationsApi.apply(job.id)
       setHasApplied(true)
       setApplicationSubmitted(true)
-      setTimeout(() => setApplicationSubmitted(false), 5000)
-    }, 1500)
+      setTimeout(() => setApplicationSubmitted(false), 6000)
+    } catch (err: any) {
+      console.error('Error submitting application:', err)
+      const msg = err.message || 'Failed to submit application.'
+      setApplyErrorMessage(msg)
+      if (msg.toLowerCase().includes('already applied')) {
+        setHasApplied(true)
+      }
+    } finally {
+      setIsApplying(false)
+    }
   }
 
   if (loading) {
@@ -477,7 +564,7 @@ export const JobDetailsPublic: React.FC = () => {
               </div>
             </div>
 
-            {/* Right Header: AI Match badge (Hidden for Employers) & Save/Share actions */}
+            {/* Right Header: AI analysis trigger and Save/Share actions */}
             <div
               style={{
                 display: 'flex',
@@ -486,25 +573,29 @@ export const JobDetailsPublic: React.FC = () => {
                 gap: '14px',
               }}
             >
-              {/* AI Match badge - Render only for Candidates / Public applicants, HIDE for Employers */}
+              {/* Interactive AI analysis trigger for candidates/public applicants */}
               {!isEmployer && (
-                <div
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: '#e6f9f2',
-                    border: '1px solid #b7eedc',
-                    color: '#009e67',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    padding: '6px 14px',
-                    borderRadius: '9999px',
-                  }}
+                <button
+                  type="button"
+                  onClick={handleAnalyzeMatch}
+                  disabled={isAnalyzing}
+                  className="job-details-analyze-match-btn flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 font-semibold text-sm rounded-full transition-all shadow-sm"
+                  aria-haspopup="dialog"
+                  aria-busy={isAnalyzing}
                 >
-                  <SparkleIcon />
-                  <span>95% AI Match Recommendation</span>
-                </div>
+                  {isAnalyzing ? (
+                    <Loader2 className="animate-spin" size={16} aria-hidden="true" />
+                  ) : (
+                    <Sparkles size={16} aria-hidden="true" />
+                  )}
+                  <span>{isAnalyzing ? 'Analyzing Semantic Twin...' : 'Generate AI Match Insight'}</span>
+                </button>
+              )}
+
+              {analysisError && !isEmployer && (
+                <p className="job-details-analysis-error" role="alert">
+                  {analysisError}
+                </p>
               )}
 
               {/* Action Buttons: Save & Share */}
@@ -561,58 +652,17 @@ export const JobDetailsPublic: React.FC = () => {
         {/* MAIN BODY: TWO COLUMNS (CONTENT + STICKY SIDEBAR) */}
         {/* ========================================================================= */}
         <div
+          className="job-details-content-grid"
           style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 340px',
-            gap: '28px',
-            alignItems: 'start',
             marginBottom: '60px',
           }}
         >
           {/* Left Column: Job Description & Details */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div className="job-details-content-column">
             
-            {/* AI Fit Breakdown Banner - Render only for Candidates / Public applicants, HIDE for Employers */}
-            {!isEmployer && (
-              <div
-                style={{
-                  background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
-                  border: '1px solid #bbf7d0',
-                  borderRadius: '20px',
-                  padding: '22px 24px',
-                  display: 'flex',
-                  gap: '16px',
-                  alignItems: 'flex-start',
-                }}
-              >
-                <div
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    background: '#00b074',
-                    color: '#ffffff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <SparkleIcon />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '15.5px', fontWeight: 700, color: '#065f46', marginBottom: '4px' }}>
-                    Why you match this role (95% AI Compatibility)
-                  </h3>
-                  <p style={{ fontSize: '13.5px', color: '#166534', lineHeight: 1.55, margin: 0 }}>
-                    This requisition requires expertise in <strong>{job.department}</strong> frameworks and engineering best practices. Your verified skills and experience align closely with the criteria defined by {job.companyName}.
-                  </p>
-                </div>
-              </div>
-            )}
-
             {/* About the Position (Rendered cleanly from raw HTML) */}
             <div
+              className="job-description-card"
               style={{
                 background: '#ffffff',
                 border: '1px solid #e2e8f0',
@@ -650,6 +700,7 @@ export const JobDetailsPublic: React.FC = () => {
             {/* What We Offer / Benefits (If provided) */}
             {job.whatWeOffer && (
               <div
+                className="job-description-card"
                 style={{
                   background: '#ffffff',
                   border: '1px solid #e2e8f0',
@@ -680,7 +731,7 @@ export const JobDetailsPublic: React.FC = () => {
           </div>
 
           {/* Right Column: Sticky Summary & Apply Card */}
-          <div style={{ position: 'sticky', top: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="job-details-summary-column">
             
             {/* Primary Apply Card (Digital CV One-Click Flow) */}
             <div
@@ -720,46 +771,41 @@ export const JobDetailsPublic: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  <button
-                    type="button"
-                    onClick={handleApply}
-                    disabled={isApplying || hasApplied}
-                    className="btn-primary"
-                    style={{
-                      width: '100%',
-                      padding: '13px 20px',
-                      fontSize: '14.5px',
-                      fontWeight: 700,
-                      borderRadius: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      marginBottom: '12px',
-                      cursor: hasApplied ? 'default' : isApplying ? 'not-allowed' : 'pointer',
-                      background: hasApplied ? '#e6f9f2' : undefined,
-                      color: hasApplied ? '#009e67' : undefined,
-                      borderColor: hasApplied ? '#b7eedc' : undefined,
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    {isApplying ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Applying with Digital CV...</span>
-                      </>
-                    ) : hasApplied ? (
-                      <>
-                        <CheckIcon />
-                        <span>Applied with Digital CV</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Apply with Digital CV</span>
-                        <ArrowRightIcon />
-                      </>
-                    )}
-                  </button>
+                  {hasApplied ? (
+                    <button
+                      type="button"
+                      disabled
+                      className="job-details-applied-btn w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-500 font-semibold rounded-xl cursor-not-allowed border border-gray-200"
+                    >
+                      <CheckCircle className="text-emerald-500" size={18} aria-hidden="true" />
+                      <span>Already Applied</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleApply}
+                      disabled={isApplying}
+                      className="btn-primary job-details-apply-btn w-full"
+                    >
+                      {isApplying ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Applying...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Apply Now</span>
+                          <ArrowRightIcon />
+                        </>
+                      )}
+                    </button>
+                  )}
+
+                  {applyErrorMessage && (
+                    <div style={{ color: '#dc2626', fontSize: '12px', marginBottom: '8px', textAlign: 'center' }}>
+                      {applyErrorMessage}
+                    </div>
+                  )}
 
                   <div style={{ textAlign: 'center', fontSize: '12px', color: '#94a3b8' }}>
                     Instant application powered by <strong>Digital CV</strong>
@@ -952,13 +998,7 @@ export const JobDetailsPublic: React.FC = () => {
           </div>
 
           {suggestedLoading ? (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '24px',
-              }}
-            >
+            <div className="suggested-jobs-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
               {Array.from({ length: 3 }).map((_, i) => (
                 <JobCardSkeleton key={i} />
               ))}
@@ -978,19 +1018,11 @@ export const JobDetailsPublic: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '24px',
-              }}
-            >
+            <div className="suggested-jobs-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
               {suggestedJobs.map((sJob) => (
                 <JobVacancyCard
                   key={sJob.id}
                   job={sJob}
-                  showAiMatch={!isEmployer}
-                  matchPercentage={92}
                 />
               ))}
             </div>
@@ -998,6 +1030,16 @@ export const JobDetailsPublic: React.FC = () => {
         </section>
 
       </div>
+
+      {!isEmployer && (
+        <AiMatchInsightsSidebar
+          isOpen={showSidebar}
+          onClose={() => setShowSidebar(false)}
+          aiResults={aiResults}
+          hasApplied={hasApplied}
+          matchPercentage={recommendedMatchPercentage}
+        />
+      )}
     </div>
   )
 }

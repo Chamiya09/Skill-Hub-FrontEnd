@@ -1,5 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authStorage, companyAuthApi, type UserDto, type RegisterCompanyPayload } from '../services/api';
+import {
+  authStorage,
+  companyAuthApi,
+  candidateAuthApi,
+  type UserDto,
+  type RegisterCompanyPayload,
+  type RegisterCandidatePayload,
+} from '../services/api';
 
 interface AuthContextType {
   currentUser: UserDto | null;
@@ -8,6 +15,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<UserDto>;
   register: (payload: RegisterCompanyPayload) => Promise<UserDto>;
+  candidateLogin: (email: string, password: string) => Promise<UserDto>;
+  candidateRegister: (payload: RegisterCandidatePayload) => Promise<UserDto>;
   setAuthData: (user: UserDto, token: string) => void;
   setUser: (user: UserDto) => void;
   updateUser: (updatedData: Partial<UserDto>) => void;
@@ -57,7 +66,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const userProfile = await companyAuthApi.getMe();
+      const isCandidate = cachedUser?.role?.toUpperCase() === 'CANDIDATE';
+      const userProfile = isCandidate
+        ? await candidateAuthApi.getMe()
+        : await companyAuthApi.getMe();
+
       if (userProfile) {
         const merged: UserDto = {
           ...cachedUser,
@@ -67,6 +80,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           location: cachedUser?.location || userProfile.location,
           industry: userProfile.industry || cachedUser?.industry,
           about: cachedUser?.about || userProfile.about,
+          headline: userProfile.headline || cachedUser?.headline,
+          avatarUrl: userProfile.avatarUrl || cachedUser?.avatarUrl,
         };
         authStorage.setUser(merged);
         setCurrentUser((prev) => (JSON.stringify(prev) === JSON.stringify(merged) ? prev : merged));
@@ -116,6 +131,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const candidateLogin = async (email: string, password: string): Promise<UserDto> => {
+    setIsLoading(true);
+    try {
+      const response = await candidateAuthApi.login({ email, password });
+      authStorage.setAuth(response);
+      setCurrentUser(response.user);
+      setToken(response.token);
+      return response.user;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const candidateRegister = async (payload: RegisterCandidatePayload): Promise<UserDto> => {
+    setIsLoading(true);
+    try {
+      const response = await candidateAuthApi.register(payload);
+      authStorage.setAuth(response);
+      setCurrentUser(response.user);
+      setToken(response.token);
+      return response.user;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const setAuthData = (user: UserDto, jwtToken: string) => {
     authStorage.setUser(user);
     if (jwtToken) {
@@ -156,6 +197,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!token && !!currentUser,
         login,
         register,
+        candidateLogin,
+        candidateRegister,
         setAuthData,
         setUser,
         updateUser,

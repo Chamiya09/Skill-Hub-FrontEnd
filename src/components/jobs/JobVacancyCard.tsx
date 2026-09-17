@@ -1,9 +1,9 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { Sparkles } from 'lucide-react'
 import type { JobDto } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import {
-  SparkleIcon,
   MapPinIcon,
   ClockIcon,
   BriefcaseIcon,
@@ -15,11 +15,7 @@ interface JobVacancyCardProps {
   job: JobDto
   isBookmarked?: boolean
   onToggleBookmark?: (id: string) => void
-  onQuickApply?: (jobTitle: string) => void
   showBookmark?: boolean
-  showApplyButton?: boolean
-  showAiMatch?: boolean
-  matchPercentage?: number
   className?: string
 }
 
@@ -28,19 +24,19 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
   isBookmarked = false,
   onToggleBookmark,
   showBookmark = true,
-  showAiMatch = true,
-  matchPercentage = 95,
   className = '',
 }) => {
   const { currentUser } = useAuth()
+  const legacyUserType =
+    currentUser && 'type' in currentUser
+      ? (currentUser as { type?: string }).type
+      : undefined
 
   // Hide AI Match recommendation completely for employers (companies)
   const isEmployer =
     currentUser?.role === 'COMPANY' ||
     currentUser?.role === 'EMPLOYER' ||
-    (currentUser as any)?.type === 'EMPLOYER'
-
-  const shouldShowAiMatch = showAiMatch && !isEmployer
+    legacyUserType === 'EMPLOYER'
 
   // Check if current user is the employer/company owner of this job
   const isOwner =
@@ -107,10 +103,27 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
   }
 
   const salaryDisplay = formatSalary(job.salaryRange)
+  const hasMatchScore =
+    typeof job.matchPercentage === 'number' && Number.isFinite(job.matchPercentage)
+  const matchPercentage = hasMatchScore
+    ? Math.min(100, Math.max(0, job.matchPercentage as number))
+    : undefined
+  const isAiRecommended = !isEmployer && matchPercentage !== undefined && matchPercentage >= 70
+  const detailsState =
+    matchPercentage === undefined
+      ? undefined
+      : { recommendedMatch: { jobId: job.id, matchPercentage } }
 
   return (
-    <div className={`rich-job-card ${className}`}>
-      {/* Top Header Row: Company Info + AI Match Badge */}
+    <div className={`rich-job-card w-full ${className}`}>
+      {isAiRecommended && (
+        <div className="w-fit mb-2 flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] uppercase font-bold tracking-wider rounded-full">
+          <Sparkles size={12} aria-hidden="true" />
+          <span>AI Recommended</span>
+        </div>
+      )}
+
+      {/* Top Header Row: Company Info */}
       <div className="job-card-header">
         <Link
           to={`/company/${job.companyId || encodeURIComponent(dynamicCompanyName)}`}
@@ -140,18 +153,10 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
             <span className="job-post-date">{formattedDate}</span>
           </div>
         </Link>
-
-        {/* AI Match Pill Badge (Strictly visible only to Candidates) */}
-        {shouldShowAiMatch && (
-          <div className="job-ai-match-pill">
-            <SparkleIcon />
-            <span>{matchPercentage}% AI Match</span>
-          </div>
-        )}
       </div>
 
       {/* Job Title */}
-      <Link to={`/jobs/${job.id}`} className="job-title-link">
+      <Link to={`/jobs/${job.id}`} state={detailsState} className="job-title-link">
         <h3 className="job-card-title">{job.title}</h3>
       </Link>
 
@@ -225,7 +230,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
       )}
 
       {/* Footer Row: Salary & Action Buttons */}
-      <div className="job-card-footer">
+      <div className="job-card-footer flex justify-between">
         {/* Salary Information */}
         <div className="job-salary-stack">
           <span className="job-salary-amount">{salaryDisplay.main}</span>
@@ -249,7 +254,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
           )}
 
           {/* View Details Navigation Button */}
-          <Link to={`/jobs/${job.id}`} className="job-details-link-btn">
+          <Link to={`/jobs/${job.id}`} state={detailsState} className="job-details-link-btn">
             <span>View Details</span>
             <ArrowRightIcon />
           </Link>

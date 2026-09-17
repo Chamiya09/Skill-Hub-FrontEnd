@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { jobsApi, type JobDto } from '../services/api';
+import { jobsApi, jobApplicationsApi, type JobDto } from '../services/api';
 import { AIScreeningModal } from '../components/candidates/AIScreeningModal';
 import {
   SparkleIcon,
@@ -23,6 +23,7 @@ interface PipelineJobSelectorProps {
 export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSelectJob }) => {
   const navigate = useNavigate();
   const [jobs, setJobs] = useState<JobDto[]>([]);
+  const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -30,13 +31,29 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
   const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Closed'>('All');
   const [selectedJobForModal, setSelectedJobForModal] = useState<JobDto | null>(null);
 
-  // Fetch company jobs
+  // Fetch company jobs and applicant counts
   const fetchJobs = async () => {
     try {
       setLoading(true);
       setErrorMessage(null);
       const data = await jobsApi.getJobs();
       setJobs(data);
+
+      const published = (data || []).filter((j) => (j.status || 'Active').toLowerCase() !== 'draft');
+      const countsMap: Record<string, number> = {};
+
+      await Promise.allSettled(
+        published.map(async (job) => {
+          try {
+            const apps = await jobApplicationsApi.getJobApplicants(job.id);
+            countsMap[job.id] = apps.length;
+          } catch {
+            countsMap[job.id] = 0;
+          }
+        })
+      );
+
+      setApplicantCounts(countsMap);
     } catch (err: any) {
       console.error('Error fetching jobs for AI screening selector:', err);
       setErrorMessage(err.message || 'Failed to load company job requisitions.');
@@ -360,7 +377,7 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
                 <div className="pipeline-card-metrics">
                   <div className="pipeline-applicant-count">
                     <UsersIcon />
-                    <span>6 Applicants</span>
+                    <span>{applicantCounts[job.id] ?? 0} {applicantCounts[job.id] === 1 ? 'Applicant' : 'Applicants'}</span>
                   </div>
                   {isClosed ? (
                     <div

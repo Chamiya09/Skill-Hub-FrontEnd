@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -9,11 +9,13 @@ import {
   CheckIcon,
   ArrowRightIcon,
   ArrowLeftIcon,
+  BriefcaseIcon,
 } from '../components/common/Icons';
 
-export const Login = () => {
+export const CandidateLogin: React.FC = () => {
   const navigate = useNavigate();
-  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { candidateLogin, isAuthenticated, currentUser, isLoading: authLoading } = useAuth();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,24 +23,44 @@ export const Login = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // If already authenticated, redirect to dashboard
+  // If already authenticated, redirect
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      navigate('/dashboard', { replace: true });
+    if (!authLoading && isAuthenticated && currentUser) {
+      if (currentUser.role?.toUpperCase() === 'CANDIDATE') {
+        navigate('/candidate/profile', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, currentUser, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+
+    if (!email.trim()) {
+      setErrorMessage('Please enter your email address.');
+      return;
+    }
+
+    if (!password) {
+      setErrorMessage('Please enter your password.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const user = await login(email.trim(), password);
-      setSuccessMessage(`Welcome back, ${user.fullName || user.companyName}!`);
-      navigate('/dashboard', { replace: true });
+      const user = await candidateLogin(email.trim().toLowerCase(), password);
+      setSuccessMessage(`Welcome back, ${user.fullName || user.firstName || 'Candidate'}! Redirecting...`);
+      setTimeout(() => {
+        navigate('/candidate/profile', { replace: true });
+      }, 500);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to authenticate company user. Please verify your credentials.');
+      console.error('Candidate login error:', err);
+      setErrorMessage(
+        err.message || 'Authentication failed. Please verify your candidate credentials and try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -47,7 +69,7 @@ export const Login = () => {
   return (
     <div className="auth-viewport-wrapper">
       <div className="auth-card-premium">
-        {/* Top Navigation & Brand */}
+        {/* Top Navigation & Brand Header */}
         <div className="auth-top-nav">
           <Link to="/" className="auth-back-link">
             <ArrowLeftIcon />
@@ -63,48 +85,51 @@ export const Login = () => {
           </Link>
         </div>
 
-        {/* Header Branding */}
+        {/* Header Section */}
         <div className="auth-header">
           <div className="badge-tag" style={{ display: 'inline-flex', marginBottom: '12px' }}>
-            <SparkleIcon />
-            <span>EMPLOYER PORTAL</span>
+            <BriefcaseIcon />
+            <span>CANDIDATE PORTAL</span>
           </div>
-          <h1 className="auth-title">Company Login</h1>
+          <h1 className="auth-title">Candidate Sign In</h1>
           <p className="auth-subtitle">
-            Access your employer ATS portal, candidate pipelines, and vacancy manager.
+            Sign in to track applications, manage your career profile, and explore tailored job requisitions.
           </p>
         </div>
 
         {/* Alerts */}
         {errorMessage && (
-          <div className="auth-alert-error">
+          <div className="auth-alert-error" role="alert">
             <span>⚠️</span>
             <span>{errorMessage}</span>
           </div>
         )}
 
         {successMessage && (
-          <div className="auth-alert-success">
+          <div className="auth-alert-success" role="status">
             <CheckIcon />
             <span>{successMessage}</span>
           </div>
         )}
 
-        {/* Login Form */}
+        {/* Candidate Login Form */}
         <form onSubmit={handleSubmit} className="auth-form" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div className="form-group-item">
-            <label htmlFor="loginEmail" style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
-              Company / Business Email Address
+            <label
+              htmlFor="candidateLoginEmail"
+              style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}
+            >
+              Email Address
             </label>
             <div className="relative w-full auth-input-wrapper">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400 auth-input-icon">
                 <MailIcon />
               </span>
               <input
-                id="loginEmail"
+                id="candidateLoginEmail"
                 type="email"
                 required
-                placeholder="contact@company.com"
+                placeholder="your.email@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="input-field-standard pl-11 w-full"
@@ -115,14 +140,17 @@ export const Login = () => {
 
           <div className="form-group-item">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <label htmlFor="loginPassword" style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+              <label
+                htmlFor="candidateLoginPassword"
+                style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}
+              >
                 Password
               </label>
               <a
                 href="#forgot"
                 onClick={(e) => {
                   e.preventDefault();
-                  alert('Password reset instructions will be dispatched to your registered administrator email.');
+                  alert('Password reset instructions will be sent to your registered candidate email address.');
                 }}
                 style={{ fontSize: '12px', color: '#00b074', fontWeight: 600, textDecoration: 'none' }}
               >
@@ -134,7 +162,7 @@ export const Login = () => {
                 <LockIcon />
               </span>
               <input
-                id="loginPassword"
+                id="candidateLoginPassword"
                 type={showPassword ? 'text' : 'password'}
                 required
                 placeholder="••••••••••••"
@@ -184,10 +212,10 @@ export const Login = () => {
             }}
           >
             {loading ? (
-              <span>Authenticating Company Account...</span>
+              <span>Signing In...</span>
             ) : (
               <>
-                <span>Sign In to Company Portal</span>
+                <span>Sign In as Candidate</span>
                 <ArrowRightIcon />
               </>
             )}
@@ -197,30 +225,30 @@ export const Login = () => {
         {/* Card Footer with Clean Minimal Links */}
         <div className="auth-card-footer" style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', textAlign: 'center' }}>
           <p style={{ margin: 0, fontSize: '13.5px', color: '#64748b' }}>
-            New to our platform?{' '}
+            Don't have an account?{' '}
             <Link
-              to="/company-register"
+              to="/candidate-register"
               className="hover:text-primary-600 transition-colors"
               style={{ color: '#00b074', fontWeight: 600, textDecoration: 'none' }}
             >
-              Create Company Account
+              Sign Up
             </Link>
           </p>
 
           <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>
-            Are you a job seeker?{' '}
+            Are you an employer?{' '}
             <Link
-              to="/candidate-login"
+              to="/company-login"
               className="hover:text-primary-600 transition-colors"
               style={{ color: '#00b074', fontWeight: 600, textDecoration: 'none' }}
             >
-              Candidate Login
+              Company Login
             </Link>
           </p>
 
           <div className="auth-security-badge" style={{ marginTop: '8px' }}>
             <ShieldCheckIcon />
-            <span>SOC-2 Type II Certified • 256-Bit Enterprise SSL</span>
+            <span>Secure TLS 1.3 • Privacy Guaranteed</span>
           </div>
         </div>
       </div>

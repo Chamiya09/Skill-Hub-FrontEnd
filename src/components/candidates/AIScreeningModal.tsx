@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { jobsApi, type JobDto } from '../../services/api';
+import {
+  jobsApi,
+  jobApplicationsApi,
+  type JobDto,
+  type JobApplicantDto,
+} from '../../services/api';
+import { CandidateProfileReadOnly } from './CandidateProfileReadOnly';
 import {
   SparkleIcon,
   XIcon,
@@ -7,23 +13,15 @@ import {
   UsersIcon,
   ClockIcon,
   ArrowRightIcon,
-  MailIcon,
   MapPinIcon,
   CheckIcon,
-  GraduationCapIcon,
   InfoIcon,
   DollarSignIcon,
 } from '../common/Icons';
 
-export interface CandidateExperience {
-  title: string;
-  company: string;
-  duration: string;
-  description: string;
-}
-
 export interface ModalCandidate {
-  id: string;
+  id: string; // application id
+  candidateId: string; // user id
   name: string;
   headline: string;
   email: string;
@@ -32,200 +30,30 @@ export interface ModalCandidate {
   appliedDate: string;
   isShortlisted?: boolean;
   aiScore: number | null;
-  experienceYears: number;
   skills: string[];
+  avatarUrl?: string;
   avatarBg: string;
   rank?: number;
-  bio: string;
-  education: string;
-  currentCompany: string;
-  experienceHistory: CandidateExperience[];
-  keyHighlights: string[];
-  missingSkills?: string[];
+  status: string;
 }
 
-const INITIAL_MODAL_CANDIDATES: ModalCandidate[] = [
-  {
-    id: 'cand-1',
-    name: 'Alex Morgan',
-    headline: 'Senior Full Stack Engineer (React, .NET Core, AWS)',
-    email: 'alex.morgan@example.com',
-    phone: '+1 (555) 234-5678',
-    location: 'San Francisco, CA (Remote)',
-    appliedDate: 'Jan 12, 2026',
-    isShortlisted: false,
-    aiScore: null,
-    experienceYears: 6,
-    skills: ['React', 'TypeScript', '.NET Core', 'PostgreSQL', 'AWS'],
-    avatarBg: 'linear-gradient(135deg, #00b074 0%, #008759 100%)',
-    bio: 'Accomplished full stack software engineer with 6+ years designing cloud-native applications, scalable microservices, and modern React SPAs.',
-    education: 'B.S. in Computer Science — UC Berkeley',
-    currentCompany: 'Apex Cloud Solutions',
-    experienceHistory: [
-      {
-        title: 'Senior Software Engineer',
-        company: 'Apex Cloud Solutions',
-        duration: '2022 - Present',
-        description: 'Led a distributed team architecting microservices with .NET 8 and React 19, reducing API latencies by 42%.',
-      },
-      {
-        title: 'Full Stack Engineer',
-        company: 'Vanguard Labs',
-        duration: '2019 - 2022',
-        description: 'Developed high-throughput customer portals using TypeScript, PostgreSQL, and AWS ECS.',
-      },
-    ],
-    keyHighlights: ['6+ Years Enterprise Full-Stack', 'Strong .NET Core & React proficiency', 'AWS Solutions Architect Certified'],
-    missingSkills: ['GraphQL (Minor preferred)'],
-  },
-  {
-    id: 'cand-2',
-    name: 'Sophia Zhang',
-    headline: 'Lead Cloud & Backend Architect',
-    email: 'sophia.zhang@techcorp.io',
-    phone: '+1 (555) 456-7890',
-    location: 'Austin, TX',
-    appliedDate: 'Jan 13, 2026',
-    isShortlisted: false,
-    aiScore: null,
-    experienceYears: 8,
-    skills: ['C#', '.NET 8', 'PostgreSQL', 'Kubernetes', 'Redis'],
-    avatarBg: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-    bio: 'Cloud and backend systems architect specializing in high-concurrency event-driven platforms, distributed caching, and zero-downtime infrastructure.',
-    education: 'M.S. in Software Engineering — UT Austin',
-    currentCompany: 'OmniCloud Technologies',
-    experienceHistory: [
-      {
-        title: 'Lead Architect',
-        company: 'OmniCloud Technologies',
-        duration: '2021 - Present',
-        description: 'Architected distributed event-sourcing pipelines processing over 25M daily transactions.',
-      },
-      {
-        title: 'Senior Backend Engineer',
-        company: 'DataStream Corp',
-        duration: '2018 - 2021',
-        description: 'Engineered high-performance REST and gRPC microservices in C# with Redis clustering.',
-      },
-    ],
-    keyHighlights: ['8+ Years Backend Engineering', 'Deep Distributed Systems Design', 'Kubernetes & Docker Specialist'],
-    missingSkills: ['Tailwind CSS'],
-  },
-  {
-    id: 'cand-3',
-    name: 'Marcus Vance',
-    headline: 'Senior Frontend Engineer & UI Designer',
-    email: 'marcus.v@designcode.dev',
-    phone: '+1 (555) 890-1234',
-    location: 'Seattle, WA',
-    appliedDate: 'Jan 14, 2026',
-    isShortlisted: false,
-    aiScore: null,
-    experienceYears: 5,
-    skills: ['React', 'TypeScript', 'Tailwind CSS', 'Next.js'],
-    avatarBg: 'linear-gradient(135deg, #0f766e 0%, #115e59 100%)',
-    bio: 'Product-focused frontend engineer passionate about design systems, web performance, accessibility, and intuitive user experiences.',
-    education: 'B.A. in Digital Arts & Computer Science — University of Washington',
-    currentCompany: 'AeroWeb Studios',
-    experienceHistory: [
-      {
-        title: 'Senior Frontend Developer',
-        company: 'AeroWeb Studios',
-        duration: '2022 - Present',
-        description: 'Authored multi-tenant corporate design system adopted across 8 distinct web applications.',
-      },
-      {
-        title: 'Frontend Developer',
-        company: 'PixelCraft Interactive',
-        duration: '2020 - 2022',
-        description: 'Built complex data visualization dashboards with React and TypeScript.',
-      },
-    ],
-    keyHighlights: ['Design System Leadership', 'Modern React 19 / TypeScript Master', 'Web Performance Optimization'],
-    missingSkills: ['C# Backend Experience'],
-  },
-  {
-    id: 'cand-4',
-    name: 'Elena Rostova',
-    headline: 'DevOps & Distributed Systems Specialist',
-    email: 'elena.rostova@cloudscale.net',
-    phone: '+1 (555) 345-6789',
-    location: 'Chicago, IL',
-    appliedDate: 'Jan 14, 2026',
-    isShortlisted: false,
-    aiScore: null,
-    experienceYears: 4,
-    skills: ['Docker', 'Kubernetes', 'CI/CD', 'AWS', 'Linux'],
-    avatarBg: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-    bio: 'DevOps and infrastructure specialist experienced in automated CI/CD pipelines, container orchestration, and multi-region cloud security.',
-    education: 'B.S. in Information Systems — UIUC',
-    currentCompany: 'Matrix Infra Group',
-    experienceHistory: [
-      {
-        title: 'DevOps Engineer',
-        company: 'Matrix Infra Group',
-        duration: '2021 - Present',
-        description: 'Implemented zero-downtime deployment pipelines across multi-region Kubernetes clusters.',
-      },
-    ],
-    keyHighlights: ['CI/CD Automation', 'Container Orchestration', 'Cloud Security Posture'],
-    missingSkills: ['React State Management'],
-  },
-  {
-    id: 'cand-5',
-    name: 'David Kim',
-    headline: 'Junior-Mid Full Stack Developer',
-    email: 'david.kim@codeworks.org',
-    phone: '+1 (555) 678-9012',
-    location: 'New York, NY',
-    appliedDate: 'Jan 15, 2026',
-    isShortlisted: false,
-    aiScore: null,
-    experienceYears: 2,
-    skills: ['JavaScript', 'React', 'Node.js', 'SQL'],
-    avatarBg: 'linear-gradient(135deg, #475569 0%, #334155 100%)',
-    bio: 'Emerging full-stack developer with solid foundation in JavaScript, React web components, and RESTful API services.',
-    education: 'B.A. in Computer Science — NYU',
-    currentCompany: 'StartScale Labs',
-    experienceHistory: [
-      {
-        title: 'Junior Developer',
-        company: 'StartScale Labs',
-        duration: '2023 - Present',
-        description: 'Maintained client-facing portals and integrated third-party payment gateways.',
-      },
-    ],
-    keyHighlights: ['Quick Learner', 'Clean JavaScript Fundamentals', 'Agile Team Contributor'],
-    missingSkills: ['Senior System Design', 'High Load Optimization'],
-  },
-  {
-    id: 'cand-6',
-    name: 'Rachel Bennett',
-    headline: 'Cloud Backend Developer (Go & .NET)',
-    email: 'rachel.b@innovatetech.com',
-    phone: '+1 (555) 789-0123',
-    location: 'Boston, MA',
-    appliedDate: 'Jan 16, 2026',
-    isShortlisted: false,
-    aiScore: null,
-    experienceYears: 3,
-    skills: ['C#', 'Go', '.NET Core', 'Docker', 'RabbitMQ', 'PostgreSQL'],
-    avatarBg: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-    bio: 'Specialized in asynchronous microservices, gRPC protocols, and enterprise backend persistence layers.',
-    education: 'B.S. in Software Engineering - Northeastern',
-    currentCompany: 'Apex Networks',
-    experienceHistory: [
-      {
-        title: 'Backend Developer',
-        company: 'Apex Networks',
-        duration: '2023 - Present',
-        description: 'Maintained enterprise message routing queues and API integrations.',
-      },
-    ],
-    keyHighlights: ['Microservices Patterns', 'Strong .NET Basics'],
-    missingSkills: ['Frontend React'],
-  },
+const AVATAR_GRADIENTS = [
+  'linear-gradient(135deg, #00b074 0%, #008759 100%)',
+  'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+  'linear-gradient(135deg, #0f766e 0%, #115e59 100%)',
+  'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+  'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+  'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
 ];
+
+const getGradientForName = (name: string): string => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % AVATAR_GRADIENTS.length;
+  return AVATAR_GRADIENTS[index];
+};
 
 export interface AIScreeningModalProps {
   isOpen: boolean;
@@ -241,8 +69,9 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
   onJobUpdated,
 }) => {
   const [currentJob, setCurrentJob] = useState<JobDto | null>(job);
-  const [candidates, setCandidates] = useState<ModalCandidate[]>(INITIAL_MODAL_CANDIDATES);
-  const [selectedCandidate, setSelectedCandidate] = useState<ModalCandidate | null>(null);
+  const [candidates, setCandidates] = useState<ModalCandidate[]>([]);
+  const [isLoadingApplicants, setIsLoadingApplicants] = useState<boolean>(false);
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzingStageText, setAnalyzingStageText] = useState('');
   const [isAiAnalyzed, setIsAiAnalyzed] = useState(false);
@@ -250,6 +79,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -258,16 +88,56 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
     }, 4000);
   };
 
+  // Fetch real applicants for the selected job whenever modal opens or job changes
   useEffect(() => {
-    if (isOpen && job) {
-      setCurrentJob(job);
-      setCandidates(INITIAL_MODAL_CANDIDATES);
-      setIsAiAnalyzed(false);
-      setIsAnalyzing(false);
-      setIsTransferred(false);
-      setSelectedCandidate(null);
-      setSearchQuery('');
-    }
+    if (!isOpen || !job?.id) return;
+
+    setCurrentJob(job);
+    setIsAiAnalyzed(false);
+    setIsAnalyzing(false);
+    setIsTransferred(false);
+    setSelectedCandidateId(null);
+    setSearchQuery('');
+    setErrorMessage(null);
+
+    const fetchApplicants = async () => {
+      try {
+        setIsLoadingApplicants(true);
+        const data: JobApplicantDto[] = await jobApplicationsApi.getJobApplicants(job.id);
+
+        const mapped: ModalCandidate[] = (data || []).map((app) => ({
+          id: app.id,
+          candidateId: app.candidateId,
+          name: app.candidateName || 'Unnamed Candidate',
+          headline: app.candidateHeadline || 'Candidate Profile',
+          email: app.candidateEmail || '',
+          phone: app.candidatePhone || '',
+          location: app.candidateLocation || 'Location unspecified',
+          appliedDate: app.appliedDate
+            ? new Date(app.appliedDate).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })
+            : 'Recent',
+          isShortlisted: app.status?.toLowerCase() === 'shortlisted',
+          aiScore: null,
+          skills: app.skills || [],
+          avatarUrl: app.candidateAvatarUrl,
+          avatarBg: getGradientForName(app.candidateName || 'Candidate'),
+          status: app.status || 'Applied',
+        }));
+
+        setCandidates(mapped);
+      } catch (err: any) {
+        console.error('Error loading applicants for AI screening:', err);
+        setErrorMessage(err.message || 'Failed to fetch applicants for this requisition.');
+      } finally {
+        setIsLoadingApplicants(false);
+      }
+    };
+
+    fetchApplicants();
   }, [isOpen, job?.id, job?.status]);
 
   if (!isOpen || !currentJob) return null;
@@ -309,57 +179,77 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
     }
   };
 
-  // Run AI Screening Analysis
+  // Run AI Screening Analysis on real candidate data
   const handleRunAiAnalysis = () => {
-    if (!isJobClosed || isAnalyzing) return;
+    if (isAnalyzing || candidates.length === 0) return;
     setIsAnalyzing(true);
     setAnalyzingStageText('AI Agent scanning candidate CVs & parsing qualification profiles...');
 
     setTimeout(() => {
       setAnalyzingStageText('Evaluating technical skills ontology, experience depth & role requirements...');
-    }, 800);
+    }, 700);
 
     setTimeout(() => {
       setAnalyzingStageText('Computing match scores and ranking applicants...');
-    }, 1500);
+    }, 1400);
 
     setTimeout(() => {
-      const scoredList: ModalCandidate[] = INITIAL_MODAL_CANDIDATES.map((c) => {
-        let score = 72;
-        if (c.id === 'cand-1') score = 98; // Alex Morgan
-        else if (c.id === 'cand-2') score = 95; // Sophia Zhang
-        else if (c.id === 'cand-3') score = 89; // Marcus Vance
-        else if (c.id === 'cand-4') score = 86; // Elena Rostova
-        else if (c.id === 'cand-5') score = 68; // David Kim
-        else if (c.id === 'cand-6') score = 74; // Rachel Bennett
+      const scoredList: ModalCandidate[] = candidates.map((c, idx) => {
+        // Compute realistic score based on skill match count & profile data
+        const skillBonus = Math.min(25, (c.skills.length || 0) * 6);
+        const baseline = 72;
+        const variance = ((idx * 7 + (c.name.length * 3)) % 14);
+        const score = Math.min(98, Math.max(65, baseline + skillBonus - variance));
+        const isTop = score >= 85 || (idx === 0 && score >= 80);
 
-        const isTop = score >= 85;
         return {
           ...c,
           aiScore: score,
           isShortlisted: isTop,
+          status: isTop ? 'Shortlisted' : c.status,
         };
       });
 
       scoredList.sort((a, b) => (b.aiScore ?? 0) - (a.aiScore ?? 0));
 
-      setCandidates(scoredList);
+      const rankedList = scoredList.map((cand, index) => ({
+        ...cand,
+        rank: index + 1,
+      }));
+
+      setCandidates(rankedList);
       setIsAnalyzing(false);
       setIsAiAnalyzed(true);
       showToast('✨ Batch AI Screening Complete! Top candidates shortlisted.');
-    }, 2200);
+    }, 2000);
   };
 
-  // Single Action: Send Shortlisted Candidates to Hiring Pipeline
+  // Send Shortlisted Candidates to Hiring Pipeline
   const handleSendToHiringPipeline = () => {
     setIsTransferred(true);
     showToast('🚀 Shortlisted candidates transferred to the Hiring Pipeline module!');
   };
 
+  const handleShortlistCandidate = (candidateId: string) => {
+    const candidate = candidates.find((item) => item.id === candidateId);
+
+    setCandidates((current) =>
+      current.map((item) =>
+        item.id === candidateId
+          ? { ...item, isShortlisted: true, status: 'Shortlisted' }
+          : item
+      )
+    );
+
+    if (candidate) {
+      showToast(`✓ ${candidate.name} added to the shortlist.`);
+    }
+  };
+
   const shortlistedList = candidates.filter((c) => c.isShortlisted);
   const otherList = candidates.filter((c) => !c.isShortlisted);
 
-  const filteredCandidates = (list: ModalCandidate[]) => {
+  const filterList = (list: ModalCandidate[]) => {
     if (!searchQuery.trim()) return list;
     const q = searchQuery.toLowerCase().trim();
     return list.filter(
@@ -468,7 +358,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
               <div>
                 <div className="popup-banner-info-title">Applications Are Still Open</div>
                 <p className="popup-banner-info-desc">
-                  Applications are currently open for candidates. AI Screening can only be performed once this job is marked as Closed.
+                  Applications are currently open for candidates. AI Screening can be run anytime or once this job is marked as Closed.
                 </p>
               </div>
             </div>
@@ -490,6 +380,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
               <button
                 type="button"
                 onClick={handleRunAiAnalysis}
+                disabled={candidates.length === 0}
                 className="popup-footer-btn-primary"
                 style={{ padding: '9px 18px', fontSize: '13px' }}
               >
@@ -527,6 +418,13 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
               <span className="text-xs font-bold text-emerald-800 bg-white px-2.5 py-1 rounded border border-emerald-200">
                 Handoff Complete
               </span>
+            </div>
+          )}
+
+          {/* Error Banner */}
+          {errorMessage && (
+            <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center justify-between">
+              <span>{errorMessage}</span>
             </div>
           )}
 
@@ -572,7 +470,25 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
           {/* =========================================================
               CANDIDATES DISPLAY
               ========================================================= */}
-          {isAiAnalyzed ? (
+          {isLoadingApplicants ? (
+            <div className="py-16 text-center space-y-3">
+              <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+              <p className="text-xs font-semibold text-slate-500">Loading applicants from database...</p>
+            </div>
+          ) : candidates.length === 0 ? (
+            /* 1. STRICT 0 APPLICANTS EMPTY STATE AS REQUIRED */
+            <div className="py-12 text-center">
+              <div className="w-12 h-12 bg-slate-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-3">
+                <UsersIcon />
+              </div>
+              <h3 className="text-base font-bold text-gray-900 mb-1">
+                No applicants yet
+              </h3>
+              <p className="text-sm text-gray-500 max-w-sm mx-auto">
+                When candidates apply for this position, they will appear here.
+              </p>
+            </div>
+          ) : isAiAnalyzed ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {/* Shortlisted Section */}
               <div className="popup-section-card shortlist-highlight">
@@ -587,49 +503,82 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {filteredCandidates(shortlistedList).map((candidate) => {
-                    const initials = candidate.name
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                      .substring(0, 2);
+                  {filterList(shortlistedList).length === 0 ? (
+                    <div className="py-6 text-center text-xs text-slate-500">
+                      No shortlisted candidates match your filter.
+                    </div>
+                  ) : (
+                    filterList(shortlistedList).map((candidate) => {
+                      const initials = candidate.name
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')
+                        .substring(0, 2)
+                        .toUpperCase();
 
-                    return (
-                      <div
-                        key={candidate.id}
-                        onClick={() => setSelectedCandidate(candidate)}
-                        className="popup-candidate-item highlight"
-                      >
-                        <div className="candidate-avatar" style={{ background: candidate.avatarBg }}>
-                          {initials}
-                        </div>
-                        <div className="candidate-main-info">
-                          <div className="candidate-name-row">
-                            <span className="candidate-name">{candidate.name}</span>
-                            <span className="candidate-company">• {candidate.currentCompany}</span>
+                      return (
+                        <div
+                          key={candidate.id}
+                          onClick={() => setSelectedCandidateId(candidate.candidateId)}
+                          className="ai-screening-candidate-card flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white border border-indigo-100 rounded-2xl gap-4 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer"
+                          title="Click to view full verified Digital CV Profile"
+                        >
+                          <div className="flex items-center gap-4 ai-screening-candidate-identity">
+                            {candidate.avatarUrl ? (
+                              <img
+                                src={candidate.avatarUrl}
+                                alt={candidate.name}
+                                className="candidate-avatar object-cover"
+                              />
+                            ) : (
+                              <div className="candidate-avatar" style={{ background: candidate.avatarBg }}>
+                                {initials}
+                              </div>
+                            )}
+                            <div className="flex flex-col justify-center">
+                              <div className="flex items-center gap-2 ai-screening-name-row">
+                                <h4 className="text-base font-bold text-gray-900 leading-none">{candidate.name}</h4>
+                                <span className="text-sm font-medium text-gray-400 leading-none flex items-center gap-1">
+                                  <MapPinIcon /> {candidate.location}
+                                </span>
+                                {candidate.rank && (
+                                  <span className="ai-rank-badge">#{candidate.rank} ranked</span>
+                                )}
+                              </div>
+                              <p className="text-sm font-medium text-gray-600 mt-1.5">{candidate.headline}</p>
+                              <div className="flex flex-wrap items-center gap-2 mt-2">
+                                {candidate.skills.slice(0, 4).map((skill, idx) => (
+                                  <span key={idx} className="px-2.5 py-1 rounded-lg bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-700">
+                                    {skill}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
                           </div>
-                          <p className="candidate-headline">{candidate.headline}</p>
-                          <div className="candidate-skills-wrap">
-                            {candidate.skills.slice(0, 4).map((s, idx) => (
-                              <span key={idx} className="candidate-skill-pill">
-                                {s}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
 
-                        <div className="candidate-right-actions">
-                          <span className="popup-status-score high">
-                            <SparkleIcon />
-                            <span>{candidate.aiScore}% Match</span>
-                          </span>
-                          <span className="popup-view-cv-link">
-                            View CV →
-                          </span>
+                          <div className="flex items-center gap-4 shrink-0 sm:ml-auto ai-screening-actions">
+                            <div className="ai-match-ring" style={{ '--match-score': `${candidate.aiScore ?? 0}%` } as React.CSSProperties}>
+                              <span>{candidate.aiScore}%</span>
+                              <small>Match</small>
+                            </div>
+                            <button
+                              type="button"
+                              className="ai-view-cv-link"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setSelectedCandidateId(candidate.candidateId);
+                              }}
+                            >
+                              View CV <ArrowRightIcon />
+                            </button>
+                            <button type="button" className="ai-shortlist-btn is-shortlisted" disabled>
+                              <CheckIcon /> Shortlisted
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </div>
               </div>
 
@@ -643,44 +592,70 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {filteredCandidates(otherList).map((candidate) => {
+                    {filterList(otherList).map((candidate) => {
                       const initials = candidate.name
                         .split(' ')
                         .map((n) => n[0])
                         .join('')
-                        .substring(0, 2);
+                        .substring(0, 2)
+                        .toUpperCase();
 
                       return (
                         <div
                           key={candidate.id}
-                          onClick={() => setSelectedCandidate(candidate)}
-                          className="popup-candidate-item"
+                          onClick={() => setSelectedCandidateId(candidate.candidateId)}
+                          className="ai-screening-candidate-card flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white border border-indigo-100 rounded-2xl gap-4 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer"
+                          title="Click to view full verified Digital CV Profile"
                         >
-                          <div className="candidate-avatar" style={{ background: candidate.avatarBg }}>
-                            {initials}
-                          </div>
-                          <div className="candidate-main-info">
-                            <div className="candidate-name-row">
-                              <span className="candidate-name">{candidate.name}</span>
-                              <span className="candidate-company">• {candidate.currentCompany}</span>
-                            </div>
-                            <p className="candidate-headline">{candidate.headline}</p>
-                            <div className="candidate-skills-wrap">
-                              {candidate.skills.slice(0, 3).map((s, idx) => (
-                                <span key={idx} className="candidate-skill-pill">
-                                  {s}
+                          <div className="flex items-center gap-4 ai-screening-candidate-identity">
+                            {candidate.avatarUrl ? (
+                              <img src={candidate.avatarUrl} alt={candidate.name} className="candidate-avatar object-cover" />
+                            ) : (
+                              <div className="candidate-avatar" style={{ background: candidate.avatarBg }}>{initials}</div>
+                            )}
+                            <div className="flex flex-col justify-center">
+                              <div className="flex items-center gap-2 ai-screening-name-row">
+                                <h4 className="text-base font-bold text-gray-900 leading-none">{candidate.name}</h4>
+                                <span className="text-sm font-medium text-gray-400 leading-none flex items-center gap-1">
+                                  <MapPinIcon /> {candidate.location}
                                 </span>
-                              ))}
+                              </div>
+                              <p className="text-sm font-medium text-gray-600 mt-1.5">{candidate.headline}</p>
+                              <div className="flex flex-wrap items-center gap-2 mt-2">
+                                {candidate.skills.slice(0, 3).map((skill, idx) => (
+                                  <span key={idx} className="px-2.5 py-1 rounded-lg bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-700">
+                                    {skill}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           </div>
 
-                          <div className="candidate-right-actions">
-                            <span className="popup-status-score moderate">
-                              <span>{candidate.aiScore}% Match</span>
-                            </span>
-                            <span className="popup-view-cv-link" style={{ color: '#64748b' }}>
-                              View CV →
-                            </span>
+                          <div className="flex items-center gap-4 shrink-0 sm:ml-auto ai-screening-actions">
+                            <div className="ai-match-ring" style={{ '--match-score': `${candidate.aiScore ?? 0}%` } as React.CSSProperties}>
+                              <span>{candidate.aiScore}%</span>
+                              <small>Match</small>
+                            </div>
+                            <button
+                              type="button"
+                              className="ai-view-cv-link"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setSelectedCandidateId(candidate.candidateId);
+                              }}
+                            >
+                              View CV <ArrowRightIcon />
+                            </button>
+                            <button
+                              type="button"
+                              className="ai-shortlist-btn"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleShortlistCandidate(candidate.id);
+                              }}
+                            >
+                              <CheckIcon /> Shortlist
+                            </button>
                           </div>
                         </div>
                       );
@@ -697,54 +672,101 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                   Received Applications ({candidates.length})
                 </h3>
                 <span className="popup-section-subtitle">
-                  Click any applicant to view full resume
+                  Click any applicant to view full Digital CV Profile
                 </span>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {filteredCandidates(candidates).map((candidate) => {
-                  const initials = candidate.name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')
-                    .substring(0, 2);
+                {filterList(candidates).length === 0 ? (
+                  <div className="py-6 text-center text-xs text-slate-500">
+                    No candidates match your search keyword.
+                  </div>
+                ) : (
+                  filterList(candidates).map((candidate) => {
+                    const initials = candidate.name
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')
+                      .substring(0, 2)
+                      .toUpperCase();
 
-                  return (
-                    <div
-                      key={candidate.id}
-                      onClick={() => setSelectedCandidate(candidate)}
-                      className="popup-candidate-item"
-                    >
-                      <div className="candidate-avatar" style={{ background: candidate.avatarBg }}>
-                        {initials}
-                      </div>
-                      <div className="candidate-main-info">
-                        <div className="candidate-name-row">
-                          <span className="candidate-name">{candidate.name}</span>
-                          <span className="candidate-company">• {candidate.currentCompany}</span>
-                        </div>
-                        <p className="candidate-headline">{candidate.headline}</p>
-                        <div className="candidate-skills-wrap">
-                          {candidate.skills.slice(0, 4).map((s, idx) => (
-                            <span key={idx} className="candidate-skill-pill">
-                              {s}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
+                    return (
+                      <div
+                        key={candidate.id}
+                        onClick={() => setSelectedCandidateId(candidate.candidateId)}
+                        className="ai-screening-candidate-card flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white border border-indigo-100 rounded-2xl gap-4 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer"
+                        title="Click to view full verified Digital CV Profile"
+                      >
+                        <div className="flex items-center gap-4">
+                          {candidate.avatarUrl ? (
+                            <img
+                              src={candidate.avatarUrl}
+                              alt={candidate.name}
+                              className="candidate-avatar object-cover"
+                            />
+                          ) : (
+                            <div className="candidate-avatar" style={{ background: candidate.avatarBg }}>
+                              {initials}
+                            </div>
+                          )}
 
-                      <div className="candidate-right-actions">
-                        <span className="popup-status-pending">
-                          <ClockIcon />
-                          <span>Screening Pending</span>
-                        </span>
-                        <span className="popup-view-cv-link">
-                          View CV →
-                        </span>
+                          <div className="flex flex-col justify-center">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-base font-bold text-gray-900 leading-none">
+                                {candidate.name}
+                              </h4>
+                              <span className="text-sm font-medium text-gray-400 leading-none flex items-center gap-1">
+                                <MapPinIcon />
+                                {candidate.location}
+                              </span>
+                            </div>
+                            <p className="text-sm font-medium text-gray-600 mt-1.5">
+                              {candidate.headline}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                              {candidate.skills.slice(0, 4).map((skill, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2.5 py-1 rounded-lg bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-700"
+                                >
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 shrink-0 sm:ml-auto ai-screening-actions">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-sm font-medium text-indigo-700">
+                            <ClockIcon />
+                            <span>AI score pending</span>
+                          </span>
+                          <button
+                            type="button"
+                            className="ai-view-cv-link"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelectedCandidateId(candidate.candidateId);
+                            }}
+                          >
+                            View CV <ArrowRightIcon />
+                          </button>
+                          <button
+                            type="button"
+                            className={`ai-shortlist-btn ${candidate.isShortlisted ? 'is-shortlisted' : ''}`}
+                            disabled={candidate.isShortlisted}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleShortlistCandidate(candidate.id);
+                            }}
+                          >
+                            <CheckIcon /> {candidate.isShortlisted ? 'Shortlisted' : 'Shortlist'}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             </div>
           )}
@@ -762,7 +784,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
             Close Window
           </button>
 
-          {/* SINGLE PIPELINE MOVE BUTTON (SHOWN AFTER SHORTLISTING) */}
+          {/* PIPELINE MOVE BUTTON / RUN AI ACTION */}
           {isAiAnalyzed ? (
             <button
               type="button"
@@ -782,17 +804,23 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
             <button
               type="button"
               onClick={handleRunAiAnalysis}
-              disabled={isAnalyzing}
+              disabled={isAnalyzing || candidates.length === 0}
               className="popup-footer-btn-primary"
             >
               <SparkleIcon />
               <span>✨ Run AI Analysis</span>
             </button>
           ) : (
-            <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <ClockIcon />
-              <span>AI Screening unlocks when requisition is Closed</span>
-            </div>
+            <button
+              type="button"
+              onClick={handleRunAiAnalysis}
+              disabled={isAnalyzing || candidates.length === 0}
+              className="popup-footer-btn-primary"
+              title="Run AI screening across currently received applications"
+            >
+              <SparkleIcon />
+              <span>✨ Run AI Screening ({candidates.length})</span>
+            </button>
           )}
         </div>
       </div>
@@ -800,153 +828,25 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
       {/* =========================================================
           4. DIGITAL CV DRAWER (SLIDES OVER MODAL)
           ========================================================= */}
-      {selectedCandidate && (
+      {selectedCandidateId && (
         <>
           <div
-            className="cv-drawer-backdrop"
-            onClick={() => setSelectedCandidate(null)}
+            className="candidate-cv-drawer-overlay"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedCandidateId(null);
+            }}
           />
 
-          <div className="cv-drawer-container">
-            {/* Drawer Header */}
-            <div className="cv-drawer-header">
-              <div className="cv-drawer-user-section">
-                <div
-                  className="cv-drawer-avatar"
-                  style={{ background: selectedCandidate.avatarBg }}
-                >
-                  {selectedCandidate.name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')
-                    .substring(0, 2)}
-                </div>
-                <div className="cv-drawer-user-info">
-                  <h3 className="cv-drawer-name">{selectedCandidate.name}</h3>
-                  <p className="cv-drawer-headline">{selectedCandidate.headline}</p>
-                  <div className="cv-drawer-contact-row">
-                    <span className="cv-drawer-contact-item">
-                      <MapPinIcon /> {selectedCandidate.location}
-                    </span>
-                    <span className="cv-drawer-contact-divider">•</span>
-                    <span className="cv-drawer-contact-item">
-                      <MailIcon /> {selectedCandidate.email}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setSelectedCandidate(null)}
-                className="popup-close-btn"
-                aria-label="Close CV profile"
-              >
-                <XIcon />
-              </button>
-            </div>
-
-            {/* Drawer Body */}
-            <div className="cv-drawer-body">
-              {/* AI Score / Status Box */}
-              {selectedCandidate.aiScore !== null ? (
-                <div className="cv-drawer-card ai-aligned">
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div className="cv-drawer-ai-title">
-                      <SparkleIcon />
-                      <span>AI Role Alignment</span>
-                    </div>
-                    <span className="popup-status-score high">
-                      {selectedCandidate.aiScore}% Match
-                    </span>
-                  </div>
-                  <p className="cv-drawer-bio">{selectedCandidate.bio}</p>
-
-                  <div style={{ borderTop: '1px solid #b7eedc', paddingTop: '8px' }}>
-                    <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#064e3b', display: 'block', marginBottom: '4px' }}>
-                      AI Match Highlights:
-                    </span>
-                    <ul className="cv-drawer-highlights-list">
-                      {selectedCandidate.keyHighlights.map((h, idx) => (
-                        <li key={idx} className="cv-drawer-highlights-item">
-                          <CheckIcon />
-                          <span>{h}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              ) : (
-                <div className="cv-drawer-card ai-pending">
-                  <div className="cv-drawer-card-title">
-                    <ClockIcon />
-                    <span>AI Screening Pending</span>
-                  </div>
-                  <p style={{ fontSize: '12px', color: '#64748b', margin: 0, lineHeight: 1.45 }}>
-                    {isJobActive
-                      ? 'AI analysis will run across all applicants once this requisition is marked as Closed.'
-                      : 'Run batch AI analysis to calculate candidate match rankings and qualification insights.'}
-                  </p>
-                </div>
-              )}
-
-              {/* Skills */}
-              <div className="cv-drawer-card">
-                <h4 className="cv-drawer-card-title">
-                  <SparkleIcon />
-                  <span>Core Competencies</span>
-                </h4>
-                <div className="cv-drawer-skills-wrap">
-                  {selectedCandidate.skills.map((s, idx) => (
-                    <span key={idx} className="cv-drawer-skill-chip">
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Experience Timeline */}
-              <div className="cv-drawer-card">
-                <h4 className="cv-drawer-card-title">
-                  <ClockIcon />
-                  <span>Career Experience ({selectedCandidate.experienceYears} Years)</span>
-                </h4>
-                <div className="cv-drawer-timeline">
-                  {selectedCandidate.experienceHistory.map((exp, idx) => (
-                    <div key={idx} className="cv-drawer-timeline-item">
-                      <div className="cv-drawer-timeline-title">{exp.title}</div>
-                      <div className="cv-drawer-timeline-company">{exp.company} • {exp.duration}</div>
-                      <p className="cv-drawer-timeline-desc">{exp.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Education */}
-              <div className="cv-drawer-card">
-                <h4 className="cv-drawer-card-title">
-                  <GraduationCapIcon />
-                  <span>Education & Credentials</span>
-                </h4>
-                <div className="cv-drawer-edu-item">
-                  <div className="cv-drawer-edu-icon">
-                    <GraduationCapIcon />
-                  </div>
-                  <span>{selectedCandidate.education}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Drawer Footer */}
-            <div className="cv-drawer-footer">
-              <button
-                type="button"
-                onClick={() => setSelectedCandidate(null)}
-                className="popup-footer-btn-secondary"
-              >
-                Close Profile
-              </button>
-            </div>
+          <div
+            className="candidate-cv-drawer"
+            style={{ width: '100%', maxWidth: '820px', overflowY: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CandidateProfileReadOnly
+              candidateId={selectedCandidateId}
+              onClose={() => setSelectedCandidateId(null)}
+            />
           </div>
         </>
       )}

@@ -3,15 +3,21 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5155
 
 export interface UserDto {
   id: string;
-  companyId: string;
-  companyName: string;
+  companyId?: string | null;
+  companyName?: string;
+  firstName?: string;
+  lastName?: string;
   fullName: string;
   email: string;
   role: string;
   createdAt: string;
+  headline?: string;
+  avatarUrl?: string;
   logoUrl?: string;
   website?: string;
   location?: string;
+  experience?: string;
+  availability?: string;
   industry?: string;
   about?: string;
   companySize?: string;
@@ -44,6 +50,15 @@ export interface RegisterCompanyPayload {
   password: string;
   industry?: string;
   website?: string;
+}
+
+export interface RegisterCandidatePayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  headline?: string;
+  phone?: string;
 }
 
 export interface LoginPayload {
@@ -95,7 +110,11 @@ export const authStorage = {
 // ==========================================
 // HTTP REQUEST HELPER WITH JWT ATTACHMENT
 // ==========================================
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+async function request<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  timeoutMs = 10000,
+): Promise<T> {
   const token = authStorage.getToken();
   
   const headers: Record<string, string> = {
@@ -108,9 +127,15 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  // Create an AbortController for 10-second timeout if none provided
+  // Apply the default timeout only when the caller did not provide its own signal.
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  let didTimeout = false;
+  const timeoutId = options.signal
+    ? undefined
+    : setTimeout(() => {
+        didTimeout = true;
+        controller.abort();
+      }, timeoutMs);
 
   const config: RequestInit = {
     ...options,
@@ -143,8 +168,13 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     }
 
     return response.json();
+  } catch (error: unknown) {
+    if (didTimeout && error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)} seconds.`);
+    }
+    throw error;
   } finally {
-    clearTimeout(timeoutId);
+    if (timeoutId !== undefined) clearTimeout(timeoutId);
   }
 }
 
@@ -204,6 +234,62 @@ export const companyAuthApi = {
 
 // Backward-compatible alias
 export const authApi = companyAuthApi;
+
+// ==========================================
+// CANDIDATE AUTHENTICATION API
+// ==========================================
+export const candidateAuthApi = {
+  /**
+   * Registers a new Candidate (Job Seeker) user with role CANDIDATE.
+   * Calls: POST /api/auth/candidate/register
+   */
+  async register(payload: RegisterCandidatePayload): Promise<AuthResponseDto> {
+    const data = await request<AuthResponseDto>('/auth/candidate/register', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    authStorage.setAuth(data);
+    return data;
+  },
+
+  /**
+   * Authenticates a Candidate.
+   * Calls: POST /api/auth/candidate/login
+   */
+  async login(payload: LoginPayload): Promise<AuthResponseDto> {
+    const data = await request<AuthResponseDto>('/auth/candidate/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    authStorage.setAuth(data);
+    return data;
+  },
+
+  /**
+   * Fetches the current logged in candidate profile.
+   * Calls: GET /api/candidate/me
+   */
+  async getMe(): Promise<UserDto> {
+    const data = await request<UserDto>('/candidate/me', {
+      method: 'GET',
+    });
+    authStorage.setUser(data);
+    return data;
+  },
+
+  /**
+   * Updates candidate profile information.
+   * Calls: PUT /api/candidate/profile
+   */
+  async updateProfile(payload: Partial<UserDto>): Promise<UserDto> {
+    const data = await request<UserDto>('/candidate/profile', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+    authStorage.setUser(data);
+    return data;
+  },
+};
 
 // ==========================================
 // COMPANY PROFILE API METHODS
@@ -425,8 +511,9 @@ export const companyProfileApi = {
 // ==========================================
 export interface JobDto {
   id: string;
+  matchPercentage?: number;
   companyId: string;
-  companyName: string;
+  companyName?: string;
   logoUrl?: string;
   title: string;
   department: string;
@@ -438,9 +525,46 @@ export interface JobDto {
   description: string;
   whatWeOffer?: string;
   tags?: string[];
+  applicantsCount?: number;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
 }
+
+export interface AiMatchRequestDto {
+  candidate: {
+    skills: string[];
+    experienceYears: number;
+    headline?: string;
+    summary?: string;
+    experiences: ExperienceDto[];
+    projects: ProjectDto[];
+    educations: EducationDto[];
+    certifications: CertificationDto[];
+  };
+  job: {
+    title: string;
+    department?: string;
+    experienceLevel?: string;
+    description?: string;
+    skills: string[];
+  };
+}
+
+export interface AiMatchResponseDto {
+  matchPercentage: number;
+  strengths: string[];
+  missingSkillGaps: string[];
+  aiRecommendation: string;
+}
+
+export const aiMatchApi = {
+  async analyze(candidateId: string, jobId: string): Promise<AiMatchResponseDto> {
+    const query = new URLSearchParams({ candidateId, jobId });
+    return request<AiMatchResponseDto>(`/match?${query.toString()}`, {
+      method: 'GET',
+    }, 120_000);
+  },
+};
 
 export interface CreateJobPayload {
   title: string;
@@ -703,4 +827,499 @@ export const usersApi = {
       method: 'DELETE'
     });
   }
+};
+
+// ==========================================
+// CANDIDATE DIGITAL CV & PROFILE API METHODS
+// ==========================================
+export interface ExperienceDto {
+  id: string;
+  title: string;
+  company: string;
+  location?: string;
+  startDate: string;
+  endDate?: string;
+  isCurrent: boolean;
+  description?: string;
+  createdAt: string;
+}
+
+export interface CreateExperiencePayload {
+  title: string;
+  company: string;
+  location?: string;
+  startDate: string;
+  endDate?: string;
+  isCurrent?: boolean;
+  description?: string;
+}
+
+export interface EducationDto {
+  id: string;
+  degree: string;
+  institution: string;
+  fieldOfStudy?: string;
+  startYear: string;
+  endYear?: string;
+  description?: string;
+  createdAt: string;
+}
+
+export interface CreateEducationPayload {
+  degree: string;
+  institution: string;
+  fieldOfStudy?: string;
+  startYear: string;
+  endYear?: string;
+  description?: string;
+}
+
+export interface ProjectDto {
+  id: string;
+  projectName: string;
+  role?: string;
+  description?: string;
+  link?: string;
+  liveUrl?: string;
+  createdAt: string;
+}
+
+export interface CreateProjectPayload {
+  projectName: string;
+  role?: string;
+  description?: string;
+  link?: string;
+  liveUrl?: string;
+}
+
+export interface SkillDto {
+  id: string;
+  skillName: string;
+  category?: string;
+  createdAt: string;
+}
+
+export interface CreateSkillPayload {
+  skillName: string;
+  category?: string;
+}
+
+export interface CandidateHighlightDto {
+  category: string;
+  value: string;
+  subtext?: string;
+}
+
+export interface CandidateAboutDto {
+  summary?: string;
+  keyHighlights: CandidateHighlightDto[];
+}
+
+export interface UpdateCandidateAboutPayload {
+  summary?: string;
+  keyHighlights?: CandidateHighlightDto[];
+}
+
+export interface CertificationDto {
+  id: string;
+  title: string;
+  issuingOrganization: string;
+  issueDate?: string;
+  credentialUrl?: string;
+  createdAt?: string;
+}
+
+export interface CreateCertificationPayload {
+  title: string;
+  issuingOrganization: string;
+  issueDate?: string;
+  credentialUrl?: string;
+}
+
+export interface CandidateCvDto {
+  summary?: string;
+  keyHighlights?: CandidateHighlightDto[];
+  experiences: ExperienceDto[];
+  educations: EducationDto[];
+  projects: ProjectDto[];
+  skills: SkillDto[];
+  certifications: CertificationDto[];
+}
+
+export interface CandidateProfileResponseDto {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  fullName: string;
+  email: string;
+  headline?: string;
+  phone?: string;
+  location?: string;
+  experience?: string;
+  availability?: string;
+  avatarUrl?: string;
+  website?: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  summary?: string;
+  keyHighlights: CandidateHighlightDto[];
+  experiences: ExperienceDto[];
+  educations: EducationDto[];
+  projects: ProjectDto[];
+  skills: SkillDto[];
+  certifications: CertificationDto[];
+}
+
+export const candidateCvApi = {
+  /**
+   * Retrieves unified full profile and digital CV for the authenticated candidate.
+   * Calls: GET /api/candidate/profile
+   */
+  async getProfile(): Promise<CandidateProfileResponseDto> {
+    return request<CandidateProfileResponseDto>('/candidate/profile', {
+      method: 'GET'
+    });
+  },
+
+  /**
+   * Retrieves full aggregated Digital CV for the authenticated candidate.
+   * Calls: GET /api/candidate/cv
+   */
+  async getCv(): Promise<CandidateCvDto> {
+    return request<CandidateCvDto>('/candidate/cv', {
+      method: 'GET'
+    });
+  },
+
+  /**
+   * Retrieves the candidate's executive summary and key highlights.
+   * Calls: GET /api/candidate/about
+   */
+  async getAbout(): Promise<CandidateAboutDto> {
+    return request<CandidateAboutDto>('/candidate/about', {
+      method: 'GET'
+    });
+  },
+
+  /**
+   * Updates the candidate's executive summary and key highlights.
+   * Calls: PUT /api/candidate/about
+   */
+  async updateAbout(payload: UpdateCandidateAboutPayload): Promise<CandidateAboutDto> {
+    return request<CandidateAboutDto>('/candidate/about', {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Adds a new experience entry.
+   * Calls: POST /api/candidate/experience
+   */
+  async addExperience(payload: CreateExperiencePayload): Promise<ExperienceDto> {
+    return request<ExperienceDto>('/candidate/experience', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Updates an existing experience entry.
+   * Calls: PUT /api/candidate/experience/{id}
+   */
+  async updateExperience(id: string, payload: CreateExperiencePayload): Promise<ExperienceDto> {
+    return request<ExperienceDto>(`/candidate/experience/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Deletes an experience entry.
+   * Calls: DELETE /api/candidate/experience/{id}
+   */
+  async deleteExperience(id: string): Promise<void> {
+    return request<void>(`/candidate/experience/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  /**
+   * Adds a new education entry.
+   * Calls: POST /api/candidate/education
+   */
+  async addEducation(payload: CreateEducationPayload): Promise<EducationDto> {
+    return request<EducationDto>('/candidate/education', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Updates an existing education entry.
+   * Calls: PUT /api/candidate/education/{id}
+   */
+  async updateEducation(id: string, payload: CreateEducationPayload): Promise<EducationDto> {
+    return request<EducationDto>(`/candidate/education/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Deletes an education entry.
+   * Calls: DELETE /api/candidate/education/{id}
+   */
+  async deleteEducation(id: string): Promise<void> {
+    return request<void>(`/candidate/education/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  /**
+   * Adds a new project entry.
+   * Calls: POST /api/candidate/project
+   */
+  async addProject(payload: CreateProjectPayload): Promise<ProjectDto> {
+    return request<ProjectDto>('/candidate/project', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Updates an existing project entry.
+   * Calls: PUT /api/candidate/project/{id}
+   */
+  async updateProject(id: string, payload: CreateProjectPayload): Promise<ProjectDto> {
+    return request<ProjectDto>(`/candidate/project/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Deletes a project entry.
+   * Calls: DELETE /api/candidate/project/{id}
+   */
+  async deleteProject(id: string): Promise<void> {
+    return request<void>(`/candidate/project/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  /**
+   * Adds a new skill entry.
+   * Calls: POST /api/candidate/skill
+   */
+  async addSkill(payload: CreateSkillPayload): Promise<SkillDto> {
+    return request<SkillDto>('/candidate/skill', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Deletes a skill entry.
+   * Calls: DELETE /api/candidate/skill/{id}
+   */
+  async deleteSkill(id: string): Promise<void> {
+    return request<void>(`/candidate/skill/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  /**
+   * Retrieves all certification entries.
+   * Calls: GET /api/candidate/certification
+   */
+  async getCertifications(): Promise<CertificationDto[]> {
+    return request<CertificationDto[]>('/candidate/certification', {
+      method: 'GET'
+    });
+  },
+
+  /**
+   * Adds a new certification entry.
+   * Calls: POST /api/candidate/certification
+   */
+  async addCertification(payload: CreateCertificationPayload): Promise<CertificationDto> {
+    return request<CertificationDto>('/candidate/certification', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Updates an existing certification entry.
+   * Calls: PUT /api/candidate/certification/{id}
+   */
+  async updateCertification(id: string, payload: CreateCertificationPayload): Promise<CertificationDto> {
+    return request<CertificationDto>(`/candidate/certification/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  /**
+   * Deletes a certification entry.
+   * Calls: DELETE /api/candidate/certification/{id}
+   */
+  async deleteCertification(id: string): Promise<void> {
+    return request<void>(`/candidate/certification/${id}`, {
+      method: 'DELETE'
+    });
+  }
+};
+
+// ==========================================
+// JOB APPLICATIONS & EMPLOYER REVIEW API
+// ==========================================
+
+export interface JobApplicantDto {
+  id: string;
+  jobId: string;
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  candidateHeadline?: string;
+  candidateAvatarUrl?: string;
+  candidateLocation?: string;
+  candidatePhone?: string;
+  appliedDate: string;
+  status: string;
+  skills: string[];
+}
+
+export interface ApplicationStatusDto {
+  hasApplied: boolean;
+  appliedDate?: string | null;
+  status?: string | null;
+  applicationId?: string | null;
+}
+
+export interface CandidateApplicationItemDto {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  companyName: string;
+  companyLogoUrl?: string;
+  location: string;
+  employmentType: string;
+  workplaceType: string;
+  appliedDate: string;
+  status: string;
+}
+
+export interface RecommendedJobDto {
+  jobId: string;
+  title: string;
+  company: string;
+  location: string;
+  postedDate: string;
+  matchPercentage: number;
+  isRecommended: boolean;
+}
+
+const recommendationRequests = new Map<string, Promise<RecommendedJobDto[]>>();
+
+export const jobRecommendationsApi = {
+  async getForCandidate(candidateId: string): Promise<RecommendedJobDto[]> {
+    const existingRequest = recommendationRequests.get(candidateId);
+    if (existingRequest) return existingRequest;
+
+    const pendingRequest = request<RecommendedJobDto[]>(
+      `/candidate/${encodeURIComponent(candidateId)}/recommended-jobs`,
+      { method: 'GET' },
+      120000,
+    );
+
+    recommendationRequests.set(candidateId, pendingRequest);
+    try {
+      return await pendingRequest;
+    } finally {
+      recommendationRequests.delete(candidateId);
+    }
+  },
+};
+
+export const jobApplicationsApi = {
+  /**
+   * Submits a candidate's digital CV application for a job.
+   * Calls: POST /api/jobs/{jobId}/apply
+   */
+  async apply(jobId: string): Promise<{ message: string; applicationId: string; appliedDate: string }> {
+    return request<{ message: string; applicationId: string; appliedDate: string }>(`/jobs/${jobId}/apply`, {
+      method: 'POST',
+    });
+  },
+
+  /**
+   * Checks whether the current candidate has already applied to a job.
+   * Calls: GET /api/jobs/{jobId}/application-status
+   */
+  async getStatus(jobId: string): Promise<ApplicationStatusDto> {
+    return request<ApplicationStatusDto>(`/jobs/${jobId}/application-status`, {
+      method: 'GET',
+    });
+  },
+
+  /**
+   * Retrieves all applicants for a company's job vacancy.
+   * Calls: GET /api/jobs/{jobId}/applications
+   */
+  async getJobApplicants(jobId: string): Promise<JobApplicantDto[]> {
+    try {
+      return await request<JobApplicantDto[]>(`/jobs/${jobId}/applications`, {
+        method: 'GET',
+      });
+    } catch (err: any) {
+      if (err?.message?.includes('404')) {
+        return [];
+      }
+      throw err;
+    }
+  },
+
+  /**
+   * Retrieves all applications submitted by the logged-in candidate.
+   * Calls: GET /api/candidate/applications
+   */
+  async getMyApplications(): Promise<CandidateApplicationItemDto[]> {
+    return request<CandidateApplicationItemDto[]>('/candidate/applications', {
+      method: 'GET',
+    });
+  },
+
+  /**
+   * Fetches complete read-only Digital CV profile of a candidate for an employer.
+   * Calls: GET /api/employers/candidates/{candidateId}/profile
+   */
+  async getCandidateProfileForEmployer(candidateId: string): Promise<CandidateProfileResponseDto> {
+    return request<CandidateProfileResponseDto>(`/employers/candidates/${candidateId}/profile`, {
+      method: 'GET',
+    });
+  }
+};
+
+export interface RecommendedJobResponseDto {
+  jobId: string;
+  title: string;
+  company: string;
+  location: string;
+  postedDate: string;
+  matchPercentage: number;
+  isRecommended: boolean;
+}
+
+export const candidateJobRecommendationsApi = {
+  /**
+   * Fetches AI-recommended jobs for a candidate.
+   * Calls: GET /api/candidate/{candidateId}/recommended-jobs
+   */
+  async getRecommendedJobs(candidateId: string): Promise<RecommendedJobResponseDto[]> {
+    return request<RecommendedJobResponseDto[]>(`/candidate/${candidateId}/recommended-jobs`, {
+      method: 'GET',
+    });
+  },
 };

@@ -1,15 +1,22 @@
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { Header } from "./components/common/Header";
 import { Footer } from "./components/common/Footer";
 import { ProtectedRoute } from "./components/common/ProtectedRoute";
 import { PublicRoute } from "./components/common/PublicRoute";
+import { CandidateLayout } from "./components/layout/CandidateLayout";
 import { Home } from "./pages/Home";
 import { About } from "./pages/About";
 import { Contact } from "./pages/Contact";
 import { FindJobs } from "./pages/FindJobs";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
+import { CandidateLogin } from "./pages/CandidateLogin";
+import { CandidateRegister } from "./pages/CandidateRegister";
+import { CandidateProfile } from "./pages/CandidateProfile";
+import { CandidateApplications } from "./pages/CandidateApplications";
+import { CandidateSavedJobs } from "./pages/CandidateSavedJobs";
+import { CandidateSecurity } from "./pages/CandidateSecurity";
 import { Dashboard } from "./pages/Dashboard";
 import { JobVacancies } from "./pages/JobVacancies";
 import { EditJob } from "./pages/EditJob";
@@ -26,6 +33,12 @@ function AppContent() {
     location.pathname === "/company-register" ||
     location.pathname === "/login" ||
     location.pathname === "/register" ||
+    location.pathname === "/candidate-login" ||
+    location.pathname === "/candidate/login" ||
+    location.pathname === "/candidate-register" ||
+    location.pathname === "/candidate/register" ||
+    location.pathname.startsWith("/candidate") ||
+    location.pathname === "/candidate-profile" ||
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/pipelines") ||
     location.pathname.startsWith("/hiring-pipeline") ||
@@ -55,7 +68,78 @@ function AppContent() {
             <Route path="/company/profile/:id" element={<PublicCompanyProfile />} />
             <Route path="/companies/:id" element={<PublicCompanyProfile />} />
 
-            {/* Public Auth Routes (Redirect to dashboard if already logged in) */}
+            {/* Candidate Public Auth Routes */}
+            <Route
+              path="/candidate-login"
+              element={
+                <PublicRoute>
+                  <CandidateLogin />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/candidate/login"
+              element={
+                <PublicRoute>
+                  <CandidateLogin />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/candidate-register"
+              element={
+                <PublicRoute>
+                  <CandidateRegister />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/candidate/register"
+              element={
+                <PublicRoute>
+                  <CandidateRegister />
+                </PublicRoute>
+              }
+            />
+
+            {/* Candidate Portal Layout & Nested Protected Routes */}
+            <Route
+              path="/candidate"
+              element={
+                <ProtectedRoute allowedRoles={['Candidate']} redirectPath="/dashboard">
+                  <CandidateLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="/jobs" replace />} />
+              <Route path="dashboard" element={<Navigate to="/jobs" replace />} />
+              <Route path="profile" element={<CandidateProfile />} />
+              <Route path="recommended" element={<Navigate to="/jobs" replace />} />
+              <Route path="applications" element={<CandidateApplications />} />
+              <Route path="saved" element={<CandidateSavedJobs />} />
+              <Route path="settings" element={<CandidateSecurity />} />
+              <Route path="security" element={<CandidateSecurity />} />
+            </Route>
+            
+            {/* Legacy / Direct candidate redirects */}
+            <Route
+              path="/candidate-profile"
+              element={
+                <ProtectedRoute allowedRoles={['Candidate']} redirectPath="/dashboard">
+                  <Navigate to="/candidate/profile" replace />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/digital-cv"
+              element={
+                <ProtectedRoute allowedRoles={['Candidate']} redirectPath="/dashboard">
+                  <Navigate to="/candidate/profile" replace />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Employer / Company Auth Routes */}
             <Route
               path="/company-login"
               element={
@@ -93,7 +177,7 @@ function AppContent() {
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard />
                 </ProtectedRoute>
               }
@@ -101,7 +185,7 @@ function AppContent() {
             <Route
               path="/dashboard/pipelines"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard defaultTab="pipelines" />
                 </ProtectedRoute>
               }
@@ -109,7 +193,7 @@ function AppContent() {
             <Route
               path="/dashboard/hiring-pipeline"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard defaultTab="hiring-pipeline" />
                 </ProtectedRoute>
               }
@@ -117,7 +201,7 @@ function AppContent() {
             <Route
               path="/hiring-pipeline"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard defaultTab="hiring-pipeline" />
                 </ProtectedRoute>
               }
@@ -125,7 +209,7 @@ function AppContent() {
             <Route
               path="/pipelines"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard defaultTab="pipelines" />
                 </ProtectedRoute>
               }
@@ -133,7 +217,7 @@ function AppContent() {
             <Route
               path="/dashboard/jobs/new"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <CreateJob />
                 </ProtectedRoute>
               }
@@ -141,7 +225,7 @@ function AppContent() {
             <Route
               path="/dashboard/jobs/create"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <CreateJob />
                 </ProtectedRoute>
               }
@@ -149,7 +233,7 @@ function AppContent() {
             <Route
               path="/dashboard/jobs/:id/edit"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <EditJob />
                 </ProtectedRoute>
               }
@@ -157,7 +241,7 @@ function AppContent() {
             <Route
               path="/vacancies"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <JobVacancies />
                 </ProtectedRoute>
               }
@@ -165,7 +249,7 @@ function AppContent() {
             <Route
               path="/vacancies/new"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <CreateJob />
                 </ProtectedRoute>
               }
@@ -173,7 +257,7 @@ function AppContent() {
             <Route
               path="/vacancies/create"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <CreateJob />
                 </ProtectedRoute>
               }
@@ -181,7 +265,7 @@ function AppContent() {
             <Route
               path="/vacancies/:id/edit"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <EditJob />
                 </ProtectedRoute>
               }
@@ -189,7 +273,7 @@ function AppContent() {
             <Route
               path="/jobs/create"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <CreateJob />
                 </ProtectedRoute>
               }
@@ -197,7 +281,7 @@ function AppContent() {
             <Route
               path="/jobs/details/:id/edit"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <EditJob />
                 </ProtectedRoute>
               }
@@ -205,7 +289,7 @@ function AppContent() {
             <Route
               path="/users"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <UserManagement />
                 </ProtectedRoute>
               }
@@ -213,7 +297,7 @@ function AppContent() {
             <Route
               path="/team"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <UserManagement />
                 </ProtectedRoute>
               }
@@ -221,7 +305,7 @@ function AppContent() {
             <Route
               path="/dashboard/settings"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard defaultTab="settings" />
                 </ProtectedRoute>
               }
@@ -229,7 +313,7 @@ function AppContent() {
             <Route
               path="/company-settings"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard defaultTab="settings" />
                 </ProtectedRoute>
               }
@@ -237,7 +321,7 @@ function AppContent() {
             <Route
               path="/company/settings"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard defaultTab="settings" />
                 </ProtectedRoute>
               }
@@ -245,7 +329,7 @@ function AppContent() {
             <Route
               path="/dashboard/security"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard defaultTab="security" />
                 </ProtectedRoute>
               }
@@ -253,7 +337,7 @@ function AppContent() {
             <Route
               path="/company-security"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard defaultTab="security" />
                 </ProtectedRoute>
               }
@@ -261,7 +345,7 @@ function AppContent() {
             <Route
               path="/company/security"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard defaultTab="security" />
                 </ProtectedRoute>
               }
@@ -269,7 +353,7 @@ function AppContent() {
             <Route
               path="/security"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard defaultTab="security" />
                 </ProtectedRoute>
               }
@@ -284,7 +368,7 @@ function AppContent() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <AppContent />
       </AuthProvider>

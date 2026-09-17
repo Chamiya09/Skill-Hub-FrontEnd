@@ -1,24 +1,27 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { publicJobsApi, type JobDto } from '../services/api'
+import { jobRecommendationsApi } from '../services/api'
 import { JobVacancyCard } from '../components/jobs/JobVacancyCard'
 import { SkeletonGrid } from '../components/common/SkeletonCard'
+import { useAuth } from '../context/AuthContext'
 import {
   SparkleIcon,
   SearchIcon,
   ClockIcon,
   BriefcaseIcon,
-  CheckIcon,
   FilterIcon,
 } from '../components/common/Icons'
 
 export const FindJobs = () => {
+  const { currentUser } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const initialSearch = searchParams.get('search') || ''
 
   const [jobs, setJobs] = useState<JobDto[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [matchScores, setMatchScores] = useState<Record<string, number>>({})
 
   const [searchTerm, setSearchTerm] = useState(initialSearch)
   const [selectedCategory, setSelectedCategory] = useState('All Roles')
@@ -26,7 +29,6 @@ export const FindJobs = () => {
   const [selectedExperience, setSelectedExperience] = useState('All')
   const [sortBy, setSortBy] = useState<'match' | 'recent'>('match')
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([])
-  const [appliedJobTitle, setAppliedJobTitle] = useState<string | null>(null)
 
   // Fetch real public jobs from backend
   const fetchPublicJobs = async () => {
@@ -58,6 +60,39 @@ export const FindJobs = () => {
     }
   }, [])
 
+  const isCandidate = currentUser?.role?.toLowerCase() === 'candidate'
+
+  useEffect(() => {
+    if (!isCandidate || !currentUser?.id) {
+      return
+    }
+
+    let isCurrent = true
+    Promise.resolve()
+      .then(() => {
+        return jobRecommendationsApi.getForCandidate(currentUser.id)
+      })
+      .then((recommendations) => {
+        if (!isCurrent) return
+        setMatchScores(
+          Object.fromEntries(
+            recommendations.map((job) => [
+              job.jobId,
+              Math.min(100, Math.max(0, job.matchPercentage)),
+            ]),
+          ),
+        )
+      })
+      .catch((error: unknown) => {
+        if (!isCurrent) return
+        console.error('Unable to load AI job recommendations:', error)
+      })
+
+    return () => {
+      isCurrent = false
+    }
+  }, [currentUser?.id, isCandidate])
+
   // Sync search input if query param changes
   useEffect(() => {
     const q = searchParams.get('search')
@@ -78,15 +113,13 @@ export const FindJobs = () => {
     )
   }
 
-  const handleApply = (jobTitle: string) => {
-    setAppliedJobTitle(jobTitle)
-    setTimeout(() => {
-      setAppliedJobTitle(null)
-    }, 3500)
-  }
+  const scoredJobs = useMemo(
+    () => jobs.map((job) => ({ ...job, matchPercentage: matchScores[job.id] })),
+    [jobs, matchScores],
+  )
 
   const filteredJobs = useMemo(() => {
-    return jobs
+    return scoredJobs
       .filter((job) => {
         const term = searchTerm.toLowerCase().trim()
         const matchesTags = (job.tags || []).some((tag) =>
@@ -96,7 +129,7 @@ export const FindJobs = () => {
         const matchesSearch =
           !term ||
           job.title.toLowerCase().includes(term) ||
-          job.companyName.toLowerCase().includes(term) ||
+          (job.companyName || '').toLowerCase().includes(term) ||
           job.department.toLowerCase().includes(term) ||
           job.location.toLowerCase().includes(term) ||
           matchesTags
@@ -119,9 +152,9 @@ export const FindJobs = () => {
         if (sortBy === 'recent') {
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         }
-        return 0
+        return (b.matchPercentage ?? -1) - (a.matchPercentage ?? -1)
       })
-  }, [jobs, searchTerm, selectedCategory, selectedWorkType, selectedExperience, sortBy])
+  }, [scoredJobs, searchTerm, selectedCategory, selectedWorkType, selectedExperience, sortBy])
 
   const clearAllFilters = () => {
     setSearchTerm('')
@@ -133,48 +166,6 @@ export const FindJobs = () => {
 
   return (
     <div className="findjobs-container">
-      {/* Toast Notification (Light Theme) */}
-      {appliedJobTitle && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '24px',
-            right: '24px',
-            zIndex: 9999,
-            background: '#ffffff',
-            color: '#0f172a',
-            padding: '16px 24px',
-            borderRadius: '16px',
-            boxShadow: '0 12px 30px rgba(0,0,0,0.12)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            border: '1px solid #b7eedc',
-          }}
-        >
-          <div
-            style={{
-              width: '28px',
-              height: '28px',
-              borderRadius: '50%',
-              background: '#e6f9f2',
-              color: '#00b074',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <CheckIcon />
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>Application Dispatched!</div>
-            <div style={{ fontSize: '13px', color: '#64748b' }}>
-              Your profile was submitted to <strong>{appliedJobTitle}</strong>.
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Hero Section */}
       <div className="findjobs-hero">
         <div className="badge-tag">
@@ -378,9 +369,7 @@ export const FindJobs = () => {
                 job={job}
                 isBookmarked={isBookmarked}
                 onToggleBookmark={toggleBookmark}
-                onQuickApply={handleApply}
                 showBookmark={true}
-                matchPercentage={95}
               />
             )
           })}

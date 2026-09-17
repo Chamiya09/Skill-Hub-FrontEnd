@@ -70,7 +70,7 @@ export const CompanyOverview: React.FC<CompanyOverviewProps> = ({
             <div className="overview-table-scroll"><table className="overview-table"><thead><tr><th>Candidate</th><th>Target Role</th><th>AI Score</th><th /></tr></thead>
               <tbody>{topMatches.map((candidate, index) => {
                 const initials = candidate.candidateName.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
-                return <tr key={`${candidate.candidateId}-${candidate.jobId}`}><td><div className="overview-candidate"><span>{initials || 'CA'}</span><div><strong>{candidate.candidateName}</strong><small>{candidate.headline || `Rank #${index + 1}`}</small></div></div></td><td>{candidate.jobTitle}</td><td><b className="overview-score">{candidate.matchPercentage}% Match</b></td><td><Link to={`/dashboard/jobs/${candidate.jobId}/screening`} className="overview-ghost-action">Quick Review</Link></td></tr>;
+                return <tr key={`${candidate.candidateId}-${candidate.jobId}`}><td><div className="overview-candidate"><span>{initials || 'CA'}</span><div><strong>{candidate.candidateName}</strong><small>{candidate.headline || `Rank #${index + 1}`}</small></div></div></td><td>{candidate.jobTitle}</td><td><b className="overview-score">{candidate.matchPercentage}% Match</b></td><td><Link to="/pipelines" className="overview-ghost-action">Open AI Screening</Link></td></tr>;
               })}{!loading && topMatches.length === 0 && <tr><td colSpan={4} className="overview-empty">No AI-scored candidates yet. Run AI Screening to populate this list.</td></tr>}</tbody>
             </table></div>
           </section>

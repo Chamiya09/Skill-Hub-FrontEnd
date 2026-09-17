@@ -24,7 +24,7 @@ import { CreateJob } from "./pages/CreateJob";
 import { UserManagement } from "./pages/UserManagement";
 import { JobDetailsPublic } from "./pages/JobDetailsPublic";
 import { PublicCompanyProfile } from "./pages/PublicCompanyProfile";
-import { ApplicantScreeningView } from "./pages/ApplicantScreeningView";
+
 import "./App.css";
 
 function AppContent() {
@@ -239,14 +239,7 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/dashboard/jobs/:jobId/screening"
-              element={
-                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
-                  <ApplicantScreeningView />
-                </ProtectedRoute>
-              }
-            />
+
             <Route
               path="/vacancies"
               element={

@@ -1192,6 +1192,14 @@ export interface JobApplicantDto {
   aiMatchScore?: number | null;
 }
 
+export interface ScoreBreakdown {
+  skills: number;
+  experience: number;
+  projects: number;
+  education: number;
+  certifications: number;
+}
+
 export interface ScreenedApplicantDto {
   applicationId: string;
   candidateId: string;
@@ -1202,6 +1210,8 @@ export interface ScreenedApplicantDto {
   appliedDate: string;
   status: string;
   aiMatchScore: number | null;
+  /** Per-category score breakdown. Present only after AI screening has run. */
+  scoreBreakdown?: ScoreBreakdown | null;
 }
 
 export interface ApplicationStatusDto {
@@ -1294,8 +1304,12 @@ export const jobApplicationsApi = {
     }
   },
 
-  async runAiScreen(jobId: string): Promise<ScreenedApplicantDto[]> {
-    return request<ScreenedApplicantDto[]>(`/jobs/${jobId}/run-ai-screen`, {
+  async runAiScreen(
+    jobId: string,
+    options?: { forceRefresh?: boolean },
+  ): Promise<ScreenedApplicantDto[]> {
+    const qs = options?.forceRefresh ? '?forceRefresh=true' : '';
+    return request<ScreenedApplicantDto[]>(`/jobs/${jobId}/run-ai-screen${qs}`, {
       method: 'POST',
     }, 120_000);
   },

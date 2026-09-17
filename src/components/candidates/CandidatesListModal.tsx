@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   jobApplicationsApi,
   type JobDto,
-  type JobApplicantDto,
 } from '../../services/api';
 import { CandidateProfileReadOnly } from './CandidateProfileReadOnly';
 import {
@@ -93,16 +92,17 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
         setIsAnalyzing(false);
         setSelectedCandidateId(null);
 
-        const data: JobApplicantDto[] = await jobApplicationsApi.getJobApplicants(job.id);
+        setAnalyzingStageText('AI is analyzing candidate profiles... This may take a few seconds.');
+        const data = await jobApplicationsApi.getRankedApplicants(job.id);
         
         const mapped: DisplayApplicant[] = (data || []).map((app) => ({
-          id: app.id,
+          id: app.applicationId,
           candidateId: app.candidateId,
-          name: app.candidateName || 'Unnamed Candidate',
-          headline: app.candidateHeadline || 'Candidate Profile',
-          email: app.candidateEmail || '',
-          phone: app.candidatePhone || '',
-          location: app.candidateLocation || 'Location not specified',
+          name: app.fullName || 'Unnamed Candidate',
+          headline: app.headline || 'Candidate Profile',
+          email: app.email || '',
+          phone: '',
+          location: 'Location not specified',
           appliedDate: app.appliedDate
             ? new Date(app.appliedDate).toLocaleDateString('en-US', {
                 month: 'short',
@@ -111,10 +111,9 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
               })
             : 'Recent',
           stage: app.status || 'Applied',
-          aiScore: null,
+          aiScore: app.aiMatchScore,
           skills: app.skills || [],
-          avatarUrl: app.candidateAvatarUrl,
-          avatarBg: getGradientForName(app.candidateName || 'Candidate'),
+          avatarBg: getGradientForName(app.fullName || 'Candidate'),
         }));
 
         setApplicants(mapped);
@@ -130,48 +129,41 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
     fetchApplicants();
   }, [isOpen, job?.id]);
 
-  // AI Agent Simulation Handler -> Transitions directly to Step 2
-  const handleRunAiAnalysis = () => {
+  // Calls the real Skill Hu AI endpoint and displays persisted LangGraph scores.
+  const handleRunAiAnalysis = async () => {
     if (isAnalyzing || applicants.length === 0) return;
     setIsAnalyzing(true);
-    setAnalyzingStageText('AI Agent scanning candidate CVs & parsing skill competencies...');
-
-    setTimeout(() => {
-      setAnalyzingStageText('Evaluating qualification alignment, experience tier & role relevance...');
-    }, 700);
-
-    setTimeout(() => {
-      // Calculate scores based on skill matches and ranking
-      const scoredList: DisplayApplicant[] = applicants.map((cand, idx) => {
-        // Base score calculated with dynamic variance
-        const skillScore = Math.min(30, (cand.skills?.length || 0) * 8);
-        const randomVariance = ((idx * 7) % 15);
-        const score = Math.min(99, Math.max(65, 75 + skillScore - randomVariance));
-
+    setAnalyzingStageText('AI is analyzing candidate profiles... This may take a few seconds.');
+    setError(null);
+    try {
+      const ranked = await jobApplicationsApi.runAiScreen(job!.id);
+      const updated: DisplayApplicant[] = ranked.map((result, index) => {
+        const existing = applicants.find(candidate => candidate.candidateId === result.candidateId);
         return {
-          ...cand,
-          aiScore: score,
-        };
-      });
-
-      // Sort descending by AI score (highest at top)
-      scoredList.sort((a, b) => (b.aiScore ?? 0) - (a.aiScore ?? 0));
-
-      // Differentiate the Top N candidates
-      const updated = scoredList.map((cand, index) => {
-        const isTopN = index < topCount;
-        return {
-          ...cand,
+          ...existing!,
+          id: result.applicationId,
+          candidateId: result.candidateId,
+          name: result.fullName,
+          headline: result.headline || existing?.headline || 'Candidate Profile',
+          email: result.email,
+          skills: result.skills,
+          aiScore: result.aiMatchScore,
+          stage: result.status,
           rank: index + 1,
-          isTopMatch: isTopN,
-          stage: isTopN ? 'AI Shortlisted' : 'Applied',
+          isTopMatch: index < topCount,
+          phone: existing?.phone || '',
+          location: existing?.location || 'Location not specified',
+          appliedDate: existing?.appliedDate || new Date(result.appliedDate).toLocaleDateString(),
+          avatarBg: existing?.avatarBg || getGradientForName(result.fullName),
         };
       });
-
       setApplicants(updated);
-      setIsAnalyzing(false);
       setCurrentStep(2);
-    }, 1400);
+    } catch (requestError: any) {
+      setError(requestError.message || 'The Skill Hu AI screening service is unavailable.');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   // Pipeline Board Navigation
@@ -405,7 +397,7 @@ export const CandidatesListModal: React.FC<CandidatesListModalProps> = ({
           {isLoading ? (
             <div className="py-16 text-center space-y-3">
               <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="text-xs font-semibold text-slate-500">Loading applicants from database...</p>
+              <p className="text-xs font-semibold text-slate-500">AI is analyzing candidate profiles... This may take a few seconds.</p>
             </div>
           ) : filteredCandidates.length === 0 ? (
             <div className="py-12 text-center">

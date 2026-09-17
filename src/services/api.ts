@@ -1189,6 +1189,19 @@ export interface JobApplicantDto {
   appliedDate: string;
   status: string;
   skills: string[];
+  aiMatchScore?: number | null;
+}
+
+export interface ScreenedApplicantDto {
+  applicationId: string;
+  candidateId: string;
+  fullName: string;
+  email: string;
+  headline?: string;
+  skills: string[];
+  appliedDate: string;
+  status: string;
+  aiMatchScore: number | null;
 }
 
 export interface ApplicationStatusDto {
@@ -1279,6 +1292,28 @@ export const jobApplicationsApi = {
       }
       throw err;
     }
+  },
+
+  async runAiScreen(jobId: string): Promise<ScreenedApplicantDto[]> {
+    return request<ScreenedApplicantDto[]>(`/jobs/${jobId}/run-ai-screen`, {
+      method: 'POST',
+    }, 120_000);
+  },
+
+  async getRankedApplicants(jobId: string): Promise<ScreenedApplicantDto[]> {
+    return request<ScreenedApplicantDto[]>(`/jobs/${jobId}/applicants`, {
+      method: 'GET',
+    }, 120_000);
+  },
+
+  async moveToShortlist(jobId: string, candidateIds: string[]): Promise<{
+    message: string;
+    updatedCount: number;
+  }> {
+    return request(`/jobs/${jobId}/move-to-shortlist`, {
+      method: 'POST',
+      body: JSON.stringify(candidateIds),
+    });
   },
 
   /**

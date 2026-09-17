@@ -3,7 +3,6 @@ import {
   jobsApi,
   jobApplicationsApi,
   type JobDto,
-  type JobApplicantDto,
 } from '../../services/api';
 import { CandidateProfileReadOnly } from './CandidateProfileReadOnly';
 import {
@@ -103,16 +102,17 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
     const fetchApplicants = async () => {
       try {
         setIsLoadingApplicants(true);
-        const data: JobApplicantDto[] = await jobApplicationsApi.getJobApplicants(job.id);
+        setAnalyzingStageText('AI is analyzing candidate profiles... This may take a few seconds.');
+        const data = await jobApplicationsApi.getRankedApplicants(job.id);
 
         const mapped: ModalCandidate[] = (data || []).map((app) => ({
-          id: app.id,
+          id: app.applicationId,
           candidateId: app.candidateId,
-          name: app.candidateName || 'Unnamed Candidate',
-          headline: app.candidateHeadline || 'Candidate Profile',
-          email: app.candidateEmail || '',
-          phone: app.candidatePhone || '',
-          location: app.candidateLocation || 'Location unspecified',
+          name: app.fullName || 'Unnamed Candidate',
+          headline: app.headline || 'Candidate Profile',
+          email: app.email || '',
+          phone: '',
+          location: 'Location unspecified',
           appliedDate: app.appliedDate
             ? new Date(app.appliedDate).toLocaleDateString('en-US', {
                 month: 'short',
@@ -120,15 +120,15 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                 year: 'numeric',
               })
             : 'Recent',
-          isShortlisted: app.status?.toLowerCase() === 'shortlisted',
-          aiScore: null,
+          isShortlisted: false,
+          aiScore: app.aiMatchScore,
           skills: app.skills || [],
-          avatarUrl: app.candidateAvatarUrl,
-          avatarBg: getGradientForName(app.candidateName || 'Candidate'),
+          avatarBg: getGradientForName(app.fullName || 'Candidate'),
           status: app.status || 'Applied',
         }));
 
         setCandidates(mapped);
+        setIsAiAnalyzed(mapped.length > 0);
       } catch (err: any) {
         console.error('Error loading applicants for AI screening:', err);
         setErrorMessage(err.message || 'Failed to fetch applicants for this requisition.');
@@ -180,48 +180,40 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
   };
 
   // Run AI Screening Analysis on real candidate data
-  const handleRunAiAnalysis = () => {
+  const handleRunAiAnalysis = async () => {
     if (isAnalyzing || candidates.length === 0) return;
     setIsAnalyzing(true);
-    setAnalyzingStageText('AI Agent scanning candidate CVs & parsing qualification profiles...');
-
-    setTimeout(() => {
-      setAnalyzingStageText('Evaluating technical skills ontology, experience depth & role requirements...');
-    }, 700);
-
-    setTimeout(() => {
-      setAnalyzingStageText('Computing match scores and ranking applicants...');
-    }, 1400);
-
-    setTimeout(() => {
-      const scoredList: ModalCandidate[] = candidates.map((c, idx) => {
-        // Compute realistic score based on skill match count & profile data
-        const skillBonus = Math.min(25, (c.skills.length || 0) * 6);
-        const baseline = 72;
-        const variance = ((idx * 7 + (c.name.length * 3)) % 14);
-        const score = Math.min(98, Math.max(65, baseline + skillBonus - variance));
-        const isTop = score >= 85 || (idx === 0 && score >= 80);
-
+    setAnalyzingStageText('AI is analyzing candidate profiles... This may take a few seconds.');
+    setErrorMessage(null);
+    try {
+      const ranked = await jobApplicationsApi.runAiScreen(currentJob.id);
+      setCandidates(ranked.map((result, index) => {
+        const existing = candidates.find(candidate => candidate.candidateId === result.candidateId);
         return {
-          ...c,
-          aiScore: score,
-          isShortlisted: isTop,
-          status: isTop ? 'Shortlisted' : c.status,
+          ...existing!,
+          id: result.applicationId,
+          candidateId: result.candidateId,
+          name: result.fullName,
+          headline: result.headline || existing?.headline || 'Candidate Profile',
+          email: result.email,
+          skills: result.skills,
+          aiScore: result.aiMatchScore,
+          status: result.status,
+          isShortlisted: result.status.toLowerCase() === 'shortlisted',
+          rank: index + 1,
+          phone: existing?.phone || '',
+          location: existing?.location || 'Location unspecified',
+          appliedDate: existing?.appliedDate || new Date(result.appliedDate).toLocaleDateString(),
+          avatarBg: existing?.avatarBg || getGradientForName(result.fullName),
         };
-      });
-
-      scoredList.sort((a, b) => (b.aiScore ?? 0) - (a.aiScore ?? 0));
-
-      const rankedList = scoredList.map((cand, index) => ({
-        ...cand,
-        rank: index + 1,
       }));
-
-      setCandidates(rankedList);
-      setIsAnalyzing(false);
       setIsAiAnalyzed(true);
       showToast('✨ Batch AI Screening Complete! Top candidates shortlisted.');
-    }, 2000);
+    } catch (error: any) {
+      setErrorMessage(error.message || 'The Skill Hu AI screening service is unavailable.');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   // Send Shortlisted Candidates to Hiring Pipeline
@@ -473,7 +465,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
           {isLoadingApplicants ? (
             <div className="py-16 text-center space-y-3">
               <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="text-xs font-semibold text-slate-500">Loading applicants from database...</p>
+              <p className="text-xs font-semibold text-slate-500">AI is analyzing candidate profiles... This may take a few seconds.</p>
             </div>
           ) : candidates.length === 0 ? (
             /* 1. STRICT 0 APPLICANTS EMPTY STATE AS REQUIRED */

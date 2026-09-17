@@ -182,15 +182,12 @@ export const HiringPipeline: React.FC = () => {
 
       // Filter STRICTLY shortlisted candidates (or top tier AI candidates)
       const mapped: ShortlistedCandidate[] = (apps || [])
-        .map((app, idx) => {
+        .map((app) => {
           const rawStatus = (app.status || 'Applied').trim();
           const isExplicitlyShortlisted =
             rawStatus.toLowerCase().includes('shortlist') ||
             rawStatus.toLowerCase().includes('screen') ||
             rawStatus.toLowerCase().includes('interview');
-
-          const skillBonus = Math.min(20, (app.skills?.length || 0) * 5);
-          const score = Math.min(99, Math.max(78, 84 + skillBonus - ((idx * 6) % 12)));
 
           return {
             id: app.id,
@@ -208,7 +205,7 @@ export const HiringPipeline: React.FC = () => {
                 })
               : 'Recent',
             status: isExplicitlyShortlisted ? 'Shortlisted' : rawStatus,
-            aiScore: score,
+            aiScore: app.aiMatchScore ?? 0,
             skills: app.skills || [],
             avatarUrl: app.candidateAvatarUrl,
             avatarBg: getGradientForName(app.candidateName || 'Candidate'),
@@ -218,7 +215,7 @@ export const HiringPipeline: React.FC = () => {
             interviewStatus: 'None',
           } as ShortlistedCandidate;
         })
-        .filter((c) => c.status.toLowerCase() === 'shortlisted' || c.aiScore >= 85);
+        .filter((c) => c.status.toLowerCase() === 'shortlisted');
 
       // Sort by AI score descending
       mapped.sort((a, b) => b.aiScore - a.aiScore);

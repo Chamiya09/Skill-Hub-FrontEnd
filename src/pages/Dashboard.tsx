@@ -30,6 +30,7 @@ import { JobVacancies } from './JobVacancies'
 import { CompanySettings } from './CompanySettings'
 import { SecuritySettings } from './SecuritySettings'
 import { MetricCardSkeleton, TableRowSkeleton } from '../components/common/SkeletonCard'
+import { CompanyOverview } from '../components/dashboard/CompanyOverview'
 
 interface DashboardProps {
   defaultTab?: 'overview' | 'vacancies' | 'pipelines' | 'hiring-pipeline' | 'settings' | 'security'
@@ -420,6 +421,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             <CompanySettings />
           ) : activeTab === 'security' ? (
             <SecuritySettings />
+          ) : activeTab === 'overview' ? (
+            <CompanyOverview
+              companyName={companyDisplayName}
+              stats={stats}
+              jobs={jobs}
+              loading={dataLoading}
+              error={errorMessage}
+              onRetry={fetchDashboardData}
+              onOpenVacancies={() => setActiveTab('vacancies')}
+            />
           ) : (
             <>
               {/* Error Banner */}

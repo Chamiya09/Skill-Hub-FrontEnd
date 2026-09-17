@@ -24,6 +24,8 @@ import { CreateJob } from "./pages/CreateJob";
 import { UserManagement } from "./pages/UserManagement";
 import { JobDetailsPublic } from "./pages/JobDetailsPublic";
 import { PublicCompanyProfile } from "./pages/PublicCompanyProfile";
+import { CandidateExam } from "./pages/CandidateExam";
+import { CandidateAssessments } from "./pages/CandidateAssessments";
 
 import "./App.css";
 
@@ -43,6 +45,8 @@ function AppContent() {
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/pipelines") ||
     location.pathname.startsWith("/hiring-pipeline") ||
+    location.pathname.startsWith("/assessments") ||
+    location.pathname.startsWith("/exam") ||
     location.pathname.startsWith("/vacancies") ||
     location.pathname.startsWith("/users") ||
     location.pathname.startsWith("/team") ||
@@ -118,6 +122,7 @@ function AppContent() {
               <Route path="recommended" element={<Navigate to="/jobs" replace />} />
               <Route path="applications" element={<CandidateApplications />} />
               <Route path="saved" element={<CandidateSavedJobs />} />
+              <Route path="assessments" element={<CandidateAssessments />} />
               <Route path="settings" element={<CandidateSecurity />} />
               <Route path="security" element={<CandidateSecurity />} />
             </Route>
@@ -214,6 +219,26 @@ function AppContent() {
                   <Dashboard defaultTab="pipelines" />
                 </ProtectedRoute>
               }
+            />
+            <Route
+              path="/dashboard/assessments"
+              element={
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
+                  <Dashboard defaultTab="assessments" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/assessments"
+              element={
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
+                  <Dashboard defaultTab="assessments" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/exam/take/:submissionId"
+              element={<CandidateExam />}
             />
             <Route
               path="/dashboard/jobs/new"

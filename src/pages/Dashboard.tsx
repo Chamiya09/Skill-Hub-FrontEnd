@@ -23,9 +23,11 @@ import {
   UsersIcon,
   FunnelIcon,
   ShieldCheckIcon,
+  TrophyIcon,
 } from '../components/common/Icons'
 import { PipelineJobSelector } from './PipelineJobSelector'
 import { HiringPipeline } from './HiringPipeline'
+import { TechnicalAssessments } from './TechnicalAssessments'
 import { JobVacancies } from './JobVacancies'
 import { CompanySettings } from './CompanySettings'
 import { SecuritySettings } from './SecuritySettings'
@@ -33,14 +35,14 @@ import { MetricCardSkeleton, TableRowSkeleton } from '../components/common/Skele
 import { CompanyOverview } from '../components/dashboard/CompanyOverview'
 
 interface DashboardProps {
-  defaultTab?: 'overview' | 'vacancies' | 'pipelines' | 'hiring-pipeline' | 'settings' | 'security'
+  defaultTab?: 'overview' | 'vacancies' | 'pipelines' | 'hiring-pipeline' | 'assessments' | 'settings' | 'security'
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' }) => {
   const navigate = useNavigate()
   const { currentUser, logout, isAuthenticated, isLoading: authLoading } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'vacancies' | 'pipelines' | 'hiring-pipeline' | 'settings' | 'security'>(defaultTab)
+  const [activeTab, setActiveTab] = useState<'overview' | 'vacancies' | 'pipelines' | 'hiring-pipeline' | 'assessments' | 'settings' | 'security'>(defaultTab)
   const [selectedFilter, setSelectedFilter] = useState('All')
 
   useEffect(() => {
@@ -305,6 +307,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             <span className="nav-badge-count" style={{ background: '#e6f9f2', color: '#009e67' }}>Ready</span>
           </button>
 
+          <button
+            type="button"
+            className={`dashboard-nav-item ${activeTab === 'assessments' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('assessments')
+              setSidebarOpen(false)
+            }}
+          >
+            <TrophyIcon />
+            <span>Coding Assessments</span>
+            <span className="nav-badge-count" style={{ background: '#e0e7ff', color: '#4338ca' }}>Top 5</span>
+          </button>
+
           <div className="nav-group-label" style={{ marginTop: '16px' }}>SYSTEM</div>
 
           <button
@@ -394,7 +409,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
                 {activeTab === 'vacancies' && 'Job Vacancies'}
                 {activeTab === 'pipelines' && 'AI Screening'}
                 {activeTab === 'hiring-pipeline' && 'Hiring Pipeline'}
+                {activeTab === 'assessments' && 'Technical Assessments'}
                 {activeTab === 'settings' && 'Settings'}
+                {activeTab === 'security' && 'Security'}
               </span>
             </div>
           </div>
@@ -417,6 +434,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             <PipelineJobSelector />
           ) : activeTab === 'hiring-pipeline' ? (
             <HiringPipeline />
+          ) : activeTab === 'assessments' ? (
+            <TechnicalAssessments />
           ) : activeTab === 'settings' ? (
             <CompanySettings />
           ) : activeTab === 'security' ? (

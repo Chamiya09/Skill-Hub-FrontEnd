@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { JobForm, type JobFormData } from '../components/jobs/JobForm';
-import { CheckIcon } from '../components/common/Icons';
 import { jobsApi } from '../services/api';
 
 export const CreateJob = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [, setToastMessage] = useState<string | null>(null);
 
   const initialData: Partial<JobFormData> = {
     title: '',
@@ -51,14 +50,6 @@ export const CreateJob = () => {
 
   return (
     <div className="create-job-page-container">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="job-details-toast">
-          <CheckIcon />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
       <JobForm
         initialData={initialData}
         onSubmit={handleCreateSubmit}

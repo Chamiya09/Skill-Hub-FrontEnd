@@ -13,7 +13,6 @@ import {
   ClockIcon,
   DollarSignIcon,
   MailIcon,
-  CheckIcon,
   CalendarIcon,
   UserCheckIcon,
   UsersIcon,
@@ -77,7 +76,7 @@ export const ShortlistedPipelineModal: React.FC<ShortlistedPipelineModalProps> =
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeView, setActiveView] = useState<'kanban' | 'list'>('kanban');
-  const [notification, setNotification] = useState<string | null>(null);
+  const [, setNotification] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Fetch real applicants from database for this specific job
@@ -184,14 +183,6 @@ export const ShortlistedPipelineModal: React.FC<ShortlistedPipelineModalProps> =
 
   return (
     <div className="popup-backdrop" onClick={onClose}>
-      {/* Action Toast Notification */}
-      {notification && (
-        <div className="job-details-toast" style={{ zIndex: 999999 }}>
-          <CheckIcon />
-          <span>{notification}</span>
-        </div>
-      )}
-
       {/* Modal Card */}
       <div className="popup-card" style={{ maxWidth: '1200px' }} onClick={(e) => e.stopPropagation()}>
         {/* =========================================================

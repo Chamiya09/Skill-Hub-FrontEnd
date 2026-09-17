@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { JobForm, type JobFormData } from '../components/jobs/JobForm';
-import { CheckIcon } from '../components/common/Icons';
 import { SleekSpinner } from '../components/common/SkeletonCard';
 import { jobsApi } from '../services/api';
 
@@ -12,7 +11,7 @@ export const EditJob = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [, setToastMessage] = useState<string | null>(null);
   const [jobData, setJobData] = useState<JobFormData | null>(null);
 
   // Load existing vacancy data from API
@@ -107,14 +106,6 @@ export const EditJob = () => {
 
   return (
     <div className="edit-job-page-container">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="job-details-toast">
-          <CheckIcon />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
       <JobForm
         initialData={jobData}
         onSubmit={handleEditSubmit}

@@ -7898,6 +7898,11 @@ select.w-full {
   }
 }
 
+/* Action popups are intentionally disabled application-wide. */
+.job-details-toast {
+  display: none !important;
+}
+
 /* =========================================================
    SKILL HUB - CANDIDATES LIST MODAL DESIGN SYSTEM
    ========================================================= */

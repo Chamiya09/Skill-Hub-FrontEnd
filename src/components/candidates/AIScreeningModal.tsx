@@ -77,7 +77,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
   const [isTransferred, setIsTransferred] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [, setToastMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -254,14 +254,6 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
 
   return (
     <div className="popup-backdrop" onClick={onClose}>
-      {/* Toast Alert */}
-      {toastMessage && (
-        <div className="job-details-toast" style={{ zIndex: 999999 }}>
-          <CheckIcon />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
       {/* Modal Card */}
       <div className="popup-card" onClick={(e) => e.stopPropagation()}>
         {/* =========================================================

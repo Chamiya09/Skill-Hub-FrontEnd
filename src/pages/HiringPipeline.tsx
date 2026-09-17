@@ -17,7 +17,6 @@ import {
   ArrowRightIcon,
   BuildingIcon,
   PlusIcon,
-  CheckIcon,
   XIcon,
   MailIcon,
   PhoneIcon,
@@ -121,7 +120,7 @@ export const HiringPipeline: React.FC = () => {
   const [interviewFormat, setInterviewFormat] = useState<string>('Google Meet / Video Call');
 
   // 5. Toast Feedback State
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [, setToastMessage] = useState<string | null>(null);
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -309,14 +308,6 @@ export const HiringPipeline: React.FC = () => {
 
   return (
     <div className="pipeline-selector-container">
-      {/* Action Toast Alert */}
-      {toastMessage && (
-        <div className="job-details-toast" style={{ zIndex: 999999 }}>
-          <CheckIcon />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
       {/* =========================================================
           1. INITIAL VIEW: JOBS LIST (AISCREEN MIRROR)
           ========================================================= */}

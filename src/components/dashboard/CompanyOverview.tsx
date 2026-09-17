@@ -21,30 +21,28 @@ interface CompanyOverviewProps {
   onOpenVacancies: () => void;
 }
 
-const TALENT_MATCHES = [
-  { initials: 'CI', name: 'Chedima Imashi', role: 'Lead Full-Stack Engineer', score: 94 },
-  { initials: 'AK', name: 'Aarav Kumar', role: 'Senior Backend Engineer', score: 91 },
-  { initials: 'SN', name: 'Sara Nadeem', role: 'Cloud Platform Engineer', score: 89 },
-  { initials: 'DM', name: 'Daniel Mensah', role: 'React Engineer', score: 87 },
-];
-
-const FUNNEL = [
-  { label: 'Applied', value: 142, width: 100 },
-  { label: 'AI Screened', value: 80, width: 56 },
-  { label: 'Shortlisted', value: 24, width: 30 },
-  { label: 'Pipeline', value: 5, width: 14 },
-];
-
 export const CompanyOverview: React.FC<CompanyOverviewProps> = ({
   companyName, stats, jobs, loading, error, onRetry, onOpenVacancies,
 }) => {
   const activeJobs = jobs.filter((job) => job.status.toLowerCase() === 'active');
-  const candidates = jobs.reduce((sum, job) => sum + (job.applicantsCount || 0), 0) || 142;
+  const candidates = stats?.totalCandidatesCount ?? 0;
+  const topMatches = stats?.topTalentMatches ?? [];
+  const vacancyMetrics = stats?.vacancyMetrics ?? [];
+  const funnel = [
+    { label: 'Applied', value: candidates },
+    { label: 'AI Screened', value: stats?.aiScreenedCount ?? 0 },
+    { label: 'Shortlisted', value: stats?.shortlistedCount ?? 0 },
+    { label: 'Pipeline', value: stats?.pendingInterviewsCount ?? 0 },
+  ];
+  const funnelMaximum = Math.max(1, ...funnel.map((stage) => stage.value));
+  const shortlistConversion = candidates > 0
+    ? Math.round(((stats?.shortlistedCount ?? 0) / candidates) * 100)
+    : 0;
   const kpis = [
     { label: 'Active Vacancies', value: stats?.activeVacanciesCount ?? activeJobs.length, suffix: 'Live', icon: <BriefcaseIcon /> },
-    { label: 'Total Candidates', value: candidates, suffix: 'in Pool', note: '+12 this week', icon: <UsersIcon /> },
-    { label: 'AI Shortlisted', value: 24, suffix: 'High Matches', accent: true, icon: <SparkleIcon /> },
-    { label: 'Pending Interviews', value: 5, suffix: 'Scheduled', icon: <ClockIcon /> },
+    { label: 'Total Candidates', value: candidates, suffix: 'in Pool', note: `+${stats?.candidatesThisWeekCount ?? 0} this week`, icon: <UsersIcon /> },
+    { label: 'AI Shortlisted', value: stats?.aiShortlistedCount ?? 0, suffix: 'High Matches', accent: true, icon: <SparkleIcon /> },
+    { label: 'Pending Interviews', value: stats?.pendingInterviewsCount ?? 0, suffix: 'Scheduled', icon: <ClockIcon /> },
   ];
 
   return (
@@ -70,17 +68,17 @@ export const CompanyOverview: React.FC<CompanyOverviewProps> = ({
           <section className="overview-panel">
             <div className="overview-panel-heading"><div><h2>Top AI Talent Matches</h2><p>Highest recent match scores across active roles</p></div><span className="overview-live-badge">Live Intelligence</span></div>
             <div className="overview-table-scroll"><table className="overview-table"><thead><tr><th>Candidate</th><th>Target Role</th><th>AI Score</th><th /></tr></thead>
-              <tbody>{TALENT_MATCHES.map((candidate, index) => <tr key={candidate.name}><td><div className="overview-candidate"><span>{candidate.initials}</span><div><strong>{candidate.name}</strong><small>Rank #{index + 1}</small></div></div></td><td>{candidate.role}</td><td><b className="overview-score">{candidate.score}% Match</b></td><td><button type="button" className="overview-ghost-action">Quick Review</button></td></tr>)}</tbody>
+              <tbody>{topMatches.map((candidate, index) => {
+                const initials = candidate.candidateName.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
+                return <tr key={`${candidate.candidateId}-${candidate.jobId}`}><td><div className="overview-candidate"><span>{initials || 'CA'}</span><div><strong>{candidate.candidateName}</strong><small>{candidate.headline || `Rank #${index + 1}`}</small></div></div></td><td>{candidate.jobTitle}</td><td><b className="overview-score">{candidate.matchPercentage}% Match</b></td><td><Link to={`/dashboard/jobs/${candidate.jobId}/screening`} className="overview-ghost-action">Quick Review</Link></td></tr>;
+              })}{!loading && topMatches.length === 0 && <tr><td colSpan={4} className="overview-empty">No AI-scored candidates yet. Run AI Screening to populate this list.</td></tr>}</tbody>
             </table></div>
           </section>
 
           <section className="overview-panel">
             <div className="overview-panel-heading"><div><h2>Active Job Vacancies</h2><p>Applicant volume and AI screening coverage</p></div><button type="button" className="overview-text-action" onClick={onOpenVacancies}>View all →</button></div>
             <div className="overview-table-scroll"><table className="overview-table vacancies-compact"><thead><tr><th>Role</th><th>Applicants</th><th>AI Screened</th><th>Status</th></tr></thead>
-              <tbody>{(activeJobs.length ? activeJobs.slice(0, 5) : jobs.slice(0, 5)).map((job) => {
-                const applicants = job.applicantsCount || 0;
-                return <tr key={job.id}><td><div className="overview-role"><strong>{job.title}</strong><small>{job.department}</small></div></td><td>{applicants}</td><td>{Math.round(applicants * .72)}</td><td><span className="overview-status"><i />{job.status}</span></td></tr>;
-              })}{!loading && jobs.length === 0 && <tr><td colSpan={4} className="overview-empty">No vacancies created yet.</td></tr>}</tbody>
+              <tbody>{vacancyMetrics.map((job) => <tr key={job.jobId}><td><div className="overview-role"><strong>{job.title}</strong><small>{job.department}</small></div></td><td>{job.applicantsCount}</td><td>{job.aiScreenedCount}</td><td><span className="overview-status"><i />{job.status}</span></td></tr>)}{!loading && vacancyMetrics.length === 0 && <tr><td colSpan={4} className="overview-empty">No active vacancies created yet.</td></tr>}</tbody>
             </table></div>
           </section>
         </div>
@@ -88,14 +86,14 @@ export const CompanyOverview: React.FC<CompanyOverviewProps> = ({
         <aside className="overview-insights-column">
           <section className="overview-panel funnel-panel">
             <div className="overview-panel-heading"><div><h2>Hiring Pipeline Health</h2><p>Overall funnel conversion</p></div><FunnelIcon /></div>
-            <div className="overview-funnel">{FUNNEL.map((stage, index) => <div className="funnel-stage" key={stage.label}><div className="funnel-stage-label"><span>{stage.label}</span><strong>{stage.value}</strong></div><div className="funnel-track"><span style={{ width: `${stage.width}%` }} /></div>{index < FUNNEL.length - 1 && <small>{Math.round((FUNNEL[index + 1].value / stage.value) * 100)}% advance</small>}</div>)}</div>
-            <div className="funnel-summary"><strong>17%</strong><span>Applied-to-shortlist conversion</span></div>
+            <div className="overview-funnel">{funnel.map((stage, index) => <div className="funnel-stage" key={stage.label}><div className="funnel-stage-label"><span>{stage.label}</span><strong>{stage.value}</strong></div><div className="funnel-track"><span style={{ width: `${Math.round((stage.value / funnelMaximum) * 100)}%` }} /></div>{index < funnel.length - 1 && <small>{stage.value > 0 ? Math.round((funnel[index + 1].value / stage.value) * 100) : 0}% advance</small>}</div>)}</div>
+            <div className="funnel-summary"><strong>{shortlistConversion}%</strong><span>Applied-to-shortlist conversion</span></div>
           </section>
 
           <section className="overview-panel activity-panel">
             <div className="overview-panel-heading"><div><h2>Recent AI Activity</h2><p>Signals requiring attention</p></div></div>
-            <div className="ai-alert success"><i>✨</i><div><strong>AI screening completed</strong><p>Lead Full-Stack Engineer has 4 new high-confidence matches.</p><small>8 minutes ago</small></div></div>
-            <div className="ai-alert warning"><i>!</i><div><strong>Evaluation queue</strong><p>15 pending applications still require AI evaluation.</p><small>Review screening queue</small></div></div>
+            {stats?.recentAiActivity ? <div className="ai-alert success"><i>✨</i><div><strong>AI screening completed</strong><p>{stats.recentAiActivity.jobTitle} produced a {stats.recentAiActivity.matchPercentage}% candidate match.</p><small>{new Date(stats.recentAiActivity.occurredAt).toLocaleString()}</small></div></div> : <div className="ai-alert success"><i>✨</i><div><strong>No AI activity yet</strong><p>Run a candidate screen to generate live matching insights.</p></div></div>}
+            <div className="ai-alert warning"><i>!</i><div><strong>Evaluation queue</strong><p>{stats?.pendingAiEvaluationsCount ?? 0} pending applications require AI evaluation.</p><small>Review screening queue</small></div></div>
             <Link to="/dashboard/pipelines" className="activity-link">Open AI Screening <span>→</span></Link>
           </section>
         </aside>

@@ -779,7 +779,43 @@ export interface DashboardStatsDto {
   closedVacanciesCount: number;
   totalVacanciesCount: number;
   totalDepartmentsCount: number;
+  totalCandidatesCount?: number;
+  candidatesThisWeekCount?: number;
+  aiScreenedCount?: number;
+  aiShortlistedCount?: number;
+  shortlistedCount?: number;
+  pendingInterviewsCount?: number;
+  pendingAiEvaluationsCount?: number;
+  topTalentMatches?: TopTalentMatchDto[];
+  vacancyMetrics?: OverviewVacancyDto[];
+  recentAiActivity?: RecentAiActivityDto | null;
   recentVacancies: JobDto[];
+}
+
+export interface TopTalentMatchDto {
+  candidateId: string;
+  candidateName: string;
+  headline?: string | null;
+  jobId: string;
+  jobTitle: string;
+  matchPercentage: number;
+  evaluatedAt: string;
+}
+
+export interface OverviewVacancyDto {
+  jobId: string;
+  title: string;
+  department: string;
+  status: string;
+  applicantsCount: number;
+  aiScreenedCount: number;
+}
+
+export interface RecentAiActivityDto {
+  jobId: string;
+  jobTitle: string;
+  matchPercentage: number;
+  occurredAt: string;
 }
 
 export const dashboardApi = {

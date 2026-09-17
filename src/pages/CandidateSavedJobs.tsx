@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom';
 import { savedJobsApi, type SavedJobDto } from '../services/api';
 import {
   ArrowRightIcon,
-  BriefcaseIcon,
-  BuildingIcon,
   ClockIcon,
   MapPinIcon,
   SearchIcon,
@@ -86,45 +84,32 @@ export const CandidateSavedJobs: React.FC = () => {
           <Link to="/jobs" className="saved-jobs-primary">Explore Job Directory <ArrowRightIcon /></Link>
         </div>
       ) : (
-        <>
+        <div className="saved-jobs-table-card">
           <div className="saved-jobs-summary">
             <span><strong>{savedJobs.length}</strong> saved {savedJobs.length === 1 ? 'opportunity' : 'opportunities'}</span>
             <span>Private to your candidate account</span>
           </div>
-          <div className="saved-jobs-grid">
-            {savedJobs.map((saved) => {
-              const initials = saved.companyName.split(' ').map((word) => word[0]).join('').slice(0, 2).toUpperCase();
-              const savedDate = new Date(saved.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-              return (
-                <article className="saved-job-card" key={saved.id}>
-                  <header>
-                    <div className="saved-job-logo">
-                      {saved.companyLogoUrl ? <img src={saved.companyLogoUrl} alt={`${saved.companyName} logo`} /> : initials}
-                    </div>
+          <div className="saved-jobs-table-scroll">
+            <table className="saved-jobs-table">
+              <thead><tr><th>Position &amp; Company</th><th>Location &amp; Type</th><th>Experience</th><th>Date Saved</th><th><span className="saved-sr-only">Actions</span></th></tr></thead>
+              <tbody>{savedJobs.map((saved) => {
+                const initials = saved.companyName.split(' ').map((word) => word[0]).join('').slice(0, 2).toUpperCase();
+                const savedDate = new Date(saved.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                return <tr key={saved.id}>
+                  <td><div className="saved-table-position"><span className="saved-table-avatar">
+                    {saved.companyLogoUrl ? <img src={saved.companyLogoUrl} alt="" /> : initials}
+                  </span><div><Link to={`/jobs/${saved.jobId}`}>{saved.jobTitle}</Link><span>{saved.companyName}</span></div></div></td>
+                  <td><div className="saved-table-meta"><strong><MapPinIcon /> {saved.location}</strong><span><ClockIcon /> {saved.employmentType}</span></div></td>
+                  <td><span className="saved-table-level">{saved.experienceLevel}</span></td>
+                  <td><div className="saved-table-date"><strong>{savedDate}</strong>{saved.salaryRange && <span>{saved.salaryRange}</span>}</div></td>
+                  <td><div className="saved-table-actions"><Link to={`/jobs/${saved.jobId}`} className="saved-view-button">View Job <ArrowRightIcon /></Link>
                     <button type="button" className="saved-job-remove" disabled={removingId === saved.jobId}
-                      onClick={() => void removeSavedJob(saved.jobId)} aria-label={`Remove ${saved.jobTitle} from saved jobs`}>
-                      <TrashIcon />
-                    </button>
-                  </header>
-                  <div className="saved-job-body">
-                    <span className="saved-job-level"><BriefcaseIcon /> {saved.experienceLevel}</span>
-                    <Link to={`/jobs/${saved.jobId}`} className="saved-job-title">{saved.jobTitle}</Link>
-                    <div className="saved-job-company"><BuildingIcon /> {saved.companyName}</div>
-                    <div className="saved-job-meta">
-                      <span><MapPinIcon /> {saved.location}</span>
-                      <span><ClockIcon /> {saved.employmentType}</span>
-                    </div>
-                    {saved.salaryRange && <div className="saved-job-salary">{saved.salaryRange}</div>}
-                  </div>
-                  <footer>
-                    <span>Saved {savedDate}</span>
-                    <Link to={`/jobs/${saved.jobId}`}>View Job <ArrowRightIcon /></Link>
-                  </footer>
-                </article>
-              );
-            })}
+                      onClick={() => void removeSavedJob(saved.jobId)} aria-label={`Remove ${saved.jobTitle} from saved jobs`}><TrashIcon /></button></div></td>
+                </tr>;
+              })}</tbody>
+            </table>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

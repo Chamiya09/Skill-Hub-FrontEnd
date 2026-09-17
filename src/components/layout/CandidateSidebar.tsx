@@ -4,7 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import {
   SparkleIcon,
   LogOutIcon,
-  SearchIcon,
   XIcon,
 } from '../common/Icons';
 
@@ -117,15 +116,6 @@ export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onCl
         <div className="nav-group-label">CAREER PLATFORM</div>
 
         <NavLink
-          to="/jobs"
-          onClick={onClose}
-          className={({ isActive }) => `dashboard-nav-item ${isActive ? 'active' : ''}`}
-        >
-          <SparkleIcon />
-          <span>Explore Jobs</span>
-        </NavLink>
-
-        <NavLink
           to="/candidate/profile"
           onClick={onClose}
           className={({ isActive }) => `dashboard-nav-item ${isActive ? 'active' : ''}`}
@@ -163,14 +153,6 @@ export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onCl
           <span>Account & Security</span>
         </NavLink>
 
-        <Link
-          to="/jobs"
-          onClick={onClose}
-          className="dashboard-nav-item"
-        >
-          <SearchIcon />
-          <span>Find New Jobs</span>
-        </Link>
       </nav>
 
       {/* 4. Sidebar Footer with User Info & Sign Out */}

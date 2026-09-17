@@ -1,57 +1,131 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { SearchIcon, ArrowRightIcon } from '../components/common/Icons';
+import { savedJobsApi, type SavedJobDto } from '../services/api';
+import {
+  ArrowRightIcon,
+  BriefcaseIcon,
+  BuildingIcon,
+  ClockIcon,
+  MapPinIcon,
+  SearchIcon,
+} from '../components/common/Icons';
+import './CandidateSavedJobs.css';
 
-const BookmarkLargeIcon: React.FC = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+const BookmarkIcon: React.FC = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
   </svg>
 );
 
+const TrashIcon: React.FC = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 11v5m4-5v5" />
+  </svg>
+);
+
 export const CandidateSavedJobs: React.FC = () => {
+  const [savedJobs, setSavedJobs] = useState<SavedJobDto[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadSavedJobs = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      setSavedJobs(await savedJobsApi.getAll());
+    } catch (err: unknown) {
+      console.error('Unable to load saved jobs:', err);
+      setError(err instanceof Error ? err.message : 'Unable to load your saved jobs.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void Promise.resolve().then(loadSavedJobs);
+  }, []);
+
+  const removeSavedJob = async (jobId: string) => {
+    const previous = savedJobs;
+    setRemovingId(jobId);
+    setSavedJobs((current) => current.filter((saved) => saved.jobId !== jobId));
+    try {
+      await savedJobsApi.remove(jobId);
+    } catch (err: unknown) {
+      setSavedJobs(previous);
+      setError(err instanceof Error ? err.message : 'Unable to remove the saved job.');
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Top Header */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="saved-jobs-page">
+      <section className="saved-jobs-hero">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-[#00b074] text-xs font-bold tracking-wider mb-2 border border-emerald-100/60">
-            <span className="text-sm">★</span>
-            <span>SAVED BOOKMARKS</span>
+          <div className="saved-jobs-eyebrow"><BookmarkIcon /> SAVED BOOKMARKS</div>
+          <h1>Saved Jobs</h1>
+          <p>Keep promising opportunities organised and return when you are ready to apply.</p>
+        </div>
+        <Link to="/jobs" className="saved-jobs-primary"><SearchIcon /> Browse Available Jobs</Link>
+      </section>
+
+      {error && <div className="saved-jobs-error" role="alert"><span>{error}</span>
+        <button type="button" onClick={() => void loadSavedJobs()}>Retry</button></div>}
+
+      {isLoading ? (
+        <div className="saved-jobs-state" aria-live="polite">
+          <div className="saved-jobs-spinner" /><p>Loading your saved opportunities...</p>
+        </div>
+      ) : savedJobs.length === 0 ? (
+        <div className="saved-jobs-state saved-jobs-empty">
+          <div className="saved-jobs-empty-icon"><BookmarkIcon /></div>
+          <h2>No Bookmarked Jobs</h2>
+          <p>Use the bookmark button on any vacancy to build your personal opportunity shortlist.</p>
+          <Link to="/jobs" className="saved-jobs-primary">Explore Job Directory <ArrowRightIcon /></Link>
+        </div>
+      ) : (
+        <>
+          <div className="saved-jobs-summary">
+            <span><strong>{savedJobs.length}</strong> saved {savedJobs.length === 1 ? 'opportunity' : 'opportunities'}</span>
+            <span>Private to your candidate account</span>
           </div>
-          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Saved Jobs</h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1">
-            Access job openings you've bookmarked to review or apply at your convenience.
-          </p>
-        </div>
-
-        <Link
-          to="/jobs"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00b074] hover:bg-[#009663] text-white font-semibold text-xs sm:text-sm transition-all shadow-none self-start sm:self-auto"
-        >
-          <SearchIcon />
-          <span>Browse Available Jobs</span>
-        </Link>
-      </div>
-
-      {/* Empty State Card */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center max-w-xl mx-auto space-y-4">
-        <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-[#00b074] border border-emerald-100 flex items-center justify-center mx-auto text-2xl">
-          <BookmarkLargeIcon />
-        </div>
-        <div>
-          <h3 className="text-base font-bold text-gray-900">No Bookmarked Jobs</h3>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-md mx-auto">
-            When you find roles you like in the job board, click the bookmark icon to save them here for quick access.
-          </p>
-        </div>
-        <Link
-          to="/jobs"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00b074] text-white font-bold text-xs sm:text-sm hover:bg-[#009663] transition-all"
-        >
-          <span>Explore Job Directory</span>
-          <ArrowRightIcon />
-        </Link>
-      </div>
+          <div className="saved-jobs-grid">
+            {savedJobs.map((saved) => {
+              const initials = saved.companyName.split(' ').map((word) => word[0]).join('').slice(0, 2).toUpperCase();
+              const savedDate = new Date(saved.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+              return (
+                <article className="saved-job-card" key={saved.id}>
+                  <header>
+                    <div className="saved-job-logo">
+                      {saved.companyLogoUrl ? <img src={saved.companyLogoUrl} alt={`${saved.companyName} logo`} /> : initials}
+                    </div>
+                    <button type="button" className="saved-job-remove" disabled={removingId === saved.jobId}
+                      onClick={() => void removeSavedJob(saved.jobId)} aria-label={`Remove ${saved.jobTitle} from saved jobs`}>
+                      <TrashIcon />
+                    </button>
+                  </header>
+                  <div className="saved-job-body">
+                    <span className="saved-job-level"><BriefcaseIcon /> {saved.experienceLevel}</span>
+                    <Link to={`/jobs/${saved.jobId}`} className="saved-job-title">{saved.jobTitle}</Link>
+                    <div className="saved-job-company"><BuildingIcon /> {saved.companyName}</div>
+                    <div className="saved-job-meta">
+                      <span><MapPinIcon /> {saved.location}</span>
+                      <span><ClockIcon /> {saved.employmentType}</span>
+                    </div>
+                    {saved.salaryRange && <div className="saved-job-salary">{saved.salaryRange}</div>}
+                  </div>
+                  <footer>
+                    <span>Saved {savedDate}</span>
+                    <Link to={`/jobs/${saved.jobId}`}>View Job <ArrowRightIcon /></Link>
+                  </footer>
+                </article>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 };

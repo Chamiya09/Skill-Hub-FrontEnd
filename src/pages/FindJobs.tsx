@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { publicJobsApi, type JobDto } from '../services/api'
+import { publicJobsApi, savedJobsApi, type JobDto } from '../services/api'
 import { jobRecommendationsApi } from '../services/api'
 import { JobVacancyCard } from '../components/jobs/JobVacancyCard'
 import { SkeletonGrid } from '../components/common/SkeletonCard'
@@ -93,6 +93,14 @@ export const FindJobs = () => {
     }
   }, [currentUser?.id, isCandidate])
 
+  useEffect(() => {
+    if (!isCandidate) return
+
+    savedJobsApi.getIds()
+      .then(setBookmarkedIds)
+      .catch((error: unknown) => console.error('Unable to load saved jobs:', error))
+  }, [isCandidate])
+
   // Sync search input if query param changes
   useEffect(() => {
     const q = searchParams.get('search')
@@ -107,10 +115,23 @@ export const FindJobs = () => {
     return ['All Roles', ...Array.from(depts)]
   }, [jobs])
 
-  const toggleBookmark = (id: string) => {
-    setBookmarkedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    )
+  const toggleBookmark = async (id: string) => {
+    if (!isCandidate) return
+
+    const wasSaved = bookmarkedIds.includes(id)
+    setBookmarkedIds((current) => wasSaved
+      ? current.filter((item) => item !== id)
+      : [...current, id])
+
+    try {
+      if (wasSaved) await savedJobsApi.remove(id)
+      else await savedJobsApi.save(id)
+    } catch (error) {
+      setBookmarkedIds((current) => wasSaved
+        ? [...new Set([...current, id])]
+        : current.filter((item) => item !== id))
+      console.error('Unable to update saved job:', error)
+    }
   }
 
   const scoredJobs = useMemo(

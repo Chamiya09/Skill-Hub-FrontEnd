@@ -1236,6 +1236,38 @@ export interface CandidateApplicationItemDto {
   status: string;
 }
 
+export interface SavedJobDto {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  companyName: string;
+  companyLogoUrl?: string | null;
+  location: string;
+  employmentType: string;
+  experienceLevel: string;
+  salaryRange?: string | null;
+  postedAt: string;
+  savedAt: string;
+}
+
+export const savedJobsApi = {
+  getAll(): Promise<SavedJobDto[]> {
+    return request<SavedJobDto[]>('/candidate/saved-jobs', { method: 'GET' });
+  },
+
+  getIds(): Promise<string[]> {
+    return request<string[]>('/candidate/saved-jobs/ids', { method: 'GET' });
+  },
+
+  save(jobId: string): Promise<{ message: string; jobId: string }> {
+    return request(`/candidate/saved-jobs/${jobId}`, { method: 'PUT' });
+  },
+
+  remove(jobId: string): Promise<null> {
+    return request<null>(`/candidate/saved-jobs/${jobId}`, { method: 'DELETE' });
+  },
+};
+
 export interface RecommendedJobDto {
   jobId: string;
   title: string;

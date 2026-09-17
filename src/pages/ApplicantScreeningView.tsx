@@ -189,6 +189,9 @@ export function ApplicantScreeningView() {
     (right.aiMatchScore ?? -1) - (left.aiMatchScore ?? -1) || left.fullName.localeCompare(right.fullName)
   ), [applicants])
 
+  const alreadyShortlisted = useMemo(() => sortedApplicants.filter(c => c.status === 'Shortlisted'), [sortedApplicants])
+  const pendingApplicants = useMemo(() => sortedApplicants.filter(c => c.status !== 'Shortlisted'), [sortedApplicants])
+
   const toggleCandidate = (candidateId: string) => setSelectedIds(previous => {
     const next = new Set(previous)
     next.has(candidateId) ? next.delete(candidateId) : next.add(candidateId)
@@ -245,7 +248,10 @@ export function ApplicantScreeningView() {
     try {
       const ids = [...selectedIds]
       const result = await jobApplicationsApi.moveToShortlist(jobId, ids)
-      setApplicants(previous => previous.filter(candidate => !selectedIds.has(candidate.candidateId)))
+      
+      // Explicitly re-fetch the list from backend to sync DB state
+      await loadAppliedCandidates()
+      
       setSelectedIds(new Set())
       setNotice(result.message)
     } catch (requestError: unknown) {
@@ -337,11 +343,18 @@ export function ApplicantScreeningView() {
                 <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-600">
                   <tr>
                     <th className="w-14 px-5 py-4">
+                      {/* Only toggle pending applicants */}
                       <input
                         type="checkbox"
                         aria-label="Select all candidates"
-                        checked={selectedIds.size === sortedApplicants.length && sortedApplicants.length > 0}
-                        onChange={toggleAll}
+                        checked={selectedIds.size === pendingApplicants.length && pendingApplicants.length > 0}
+                        onChange={() => {
+                          if (selectedIds.size === pendingApplicants.length) {
+                            setSelectedIds(new Set())
+                          } else {
+                            setSelectedIds(new Set(pendingApplicants.map(c => c.candidateId)))
+                          }
+                        }}
                       />
                     </th>
                     <th className="px-5 py-4">Candidate</th>
@@ -357,67 +370,112 @@ export function ApplicantScreeningView() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {sortedApplicants.map(candidate => (
-                    <tr
-                      key={candidate.candidateId}
-                      className={`transition hover:bg-slate-50 ${
-                        selectedIds.has(candidate.candidateId) ? 'bg-blue-50/60' : ''
-                      }`}
-                    >
-                      <td className="px-5 py-4">
-                        <input
-                          type="checkbox"
-                          aria-label={`Select ${candidate.fullName}`}
-                          checked={selectedIds.has(candidate.candidateId)}
-                          onChange={() => toggleCandidate(candidate.candidateId)}
-                        />
-                      </td>
-
-                      <td className="px-5 py-4">
-                        <p className="font-bold text-slate-900">{candidate.fullName}</p>
-                        <p className="text-sm text-slate-500">{candidate.headline || candidate.email}</p>
-                      </td>
-
-                      <td className="px-5 py-4">
-                        <div className="flex max-w-md flex-wrap gap-1.5">
-                          {candidate.skills.slice(0, 4).map(skill => (
-                            <span key={skill} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
-                              {skill}
-                            </span>
-                          ))}
-                          {candidate.skills.length === 0 && (
-                            <span className="text-sm text-slate-400">No skills listed</span>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="px-5 py-4 text-sm text-slate-600">
-                        {new Date(candidate.appliedDate).toLocaleDateString()}
-                      </td>
-
-                      <td className="px-5 py-4">
-                        <div className="flex items-center justify-center gap-1">
-                          <ScoreBadge
-                            score={candidate.aiMatchScore}
-                            breakdown={candidate.scoreBreakdown}
-                          />
-                          {/* Per-row Re-analyze button — only visible when a score exists */}
-                          {candidate.aiMatchScore != null && jobId && (
-                            <ReanalyzeRowButton
-                              jobId={jobId}
-                              onComplete={updated => {
-                                setApplicants(updated)
-                                setNotice(
-                                  `Re-analysis complete. If the LLM is deterministic (temperature=0), ` +
-                                  `scores should match the previous run.`
-                                )
-                              }}
+                  {alreadyShortlisted.length > 0 && (
+                    <>
+                      <tr className="bg-slate-50">
+                        <td colSpan={5} className="px-5 py-3 font-semibold text-emerald-700">
+                          ✅ Already Shortlisted
+                        </td>
+                      </tr>
+                      {alreadyShortlisted.map(candidate => (
+                        <tr key={candidate.candidateId} className="bg-slate-50/50 opacity-70">
+                          <td className="px-5 py-4 text-center">
+                            <span className="text-xs font-bold text-emerald-600">✓</span>
+                          </td>
+                          <td className="px-5 py-4">
+                            <p className="font-bold text-slate-900">{candidate.fullName}</p>
+                            <p className="text-sm text-slate-500">{candidate.headline || candidate.email}</p>
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="flex max-w-md flex-wrap gap-1.5">
+                              {candidate.skills.slice(0, 4).map(skill => (
+                                <span key={skill} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-5 py-4 text-sm text-slate-600">
+                            {new Date(candidate.appliedDate).toLocaleDateString()}
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="flex items-center justify-center gap-1">
+                              <ScoreBadge score={candidate.aiMatchScore} breakdown={candidate.scoreBreakdown} />
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </>
+                  )}
+                  {pendingApplicants.length > 0 && (
+                    <>
+                      <tr className="bg-slate-50 border-t border-slate-200">
+                        <td colSpan={5} className="px-5 py-3 font-semibold text-amber-700">
+                          ⏳ Pending Review
+                        </td>
+                      </tr>
+                      {pendingApplicants.map(candidate => (
+                        <tr
+                          key={candidate.candidateId}
+                          className={`transition hover:bg-slate-50 ${
+                            selectedIds.has(candidate.candidateId) ? 'bg-blue-50/60' : ''
+                          }`}
+                        >
+                          <td className="px-5 py-4">
+                            <input
+                              type="checkbox"
+                              aria-label={`Select ${candidate.fullName}`}
+                              checked={selectedIds.has(candidate.candidateId)}
+                              onChange={() => toggleCandidate(candidate.candidateId)}
                             />
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <p className="font-bold text-slate-900">{candidate.fullName}</p>
+                            <p className="text-sm text-slate-500">{candidate.headline || candidate.email}</p>
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <div className="flex max-w-md flex-wrap gap-1.5">
+                              {candidate.skills.slice(0, 4).map(skill => (
+                                <span key={skill} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                                  {skill}
+                                </span>
+                              ))}
+                              {candidate.skills.length === 0 && (
+                                <span className="text-sm text-slate-400">No skills listed</span>
+                              )}
+                            </div>
+                          </td>
+
+                          <td className="px-5 py-4 text-sm text-slate-600">
+                            {new Date(candidate.appliedDate).toLocaleDateString()}
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <div className="flex items-center justify-center gap-1">
+                              <ScoreBadge
+                                score={candidate.aiMatchScore}
+                                breakdown={candidate.scoreBreakdown}
+                              />
+                              {candidate.aiMatchScore != null && jobId && (
+                                <ReanalyzeRowButton
+                                  jobId={jobId}
+                                  onComplete={updated => {
+                                    setApplicants(updated)
+                                    setNotice(
+                                      `Re-analysis complete. If the LLM is deterministic (temperature=0), ` +
+                                      `scores should match the previous run.`
+                                    )
+                                  }}
+                                />
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </>
+                  )}
                 </tbody>
               </table>
             </div>

@@ -87,6 +87,44 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
     }, 4000);
   };
 
+  const fetchApplicants = async (jobId: string) => {
+    try {
+      setIsLoadingApplicants(true);
+      setAnalyzingStageText('AI is analyzing candidate profiles... This may take a few seconds.');
+      const data = await jobApplicationsApi.getRankedApplicants(jobId);
+
+      const mapped: ModalCandidate[] = (data || []).map((app) => ({
+        id: app.applicationId,
+        candidateId: app.candidateId,
+        name: app.fullName || 'Unnamed Candidate',
+        headline: app.headline || 'Candidate Profile',
+        email: app.email || '',
+        phone: '',
+        location: 'Location unspecified',
+        appliedDate: app.appliedDate
+          ? new Date(app.appliedDate).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })
+          : 'Recent',
+        isShortlisted: (app.status || '').toLowerCase() === 'shortlisted',
+        aiScore: app.aiMatchScore,
+        skills: app.skills || [],
+        avatarBg: getGradientForName(app.fullName || 'Candidate'),
+        status: app.status || 'Applied',
+      }));
+
+      setCandidates(mapped);
+      setIsAiAnalyzed(mapped.length > 0);
+    } catch (err: any) {
+      console.error('Error loading applicants for AI screening:', err);
+      setErrorMessage(err.message || 'Failed to fetch applicants for this requisition.');
+    } finally {
+      setIsLoadingApplicants(false);
+    }
+  };
+
   // Fetch real applicants for the selected job whenever modal opens or job changes
   useEffect(() => {
     if (!isOpen || !job?.id) return;
@@ -99,45 +137,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
     setSearchQuery('');
     setErrorMessage(null);
 
-    const fetchApplicants = async () => {
-      try {
-        setIsLoadingApplicants(true);
-        setAnalyzingStageText('AI is analyzing candidate profiles... This may take a few seconds.');
-        const data = await jobApplicationsApi.getRankedApplicants(job.id);
-
-        const mapped: ModalCandidate[] = (data || []).map((app) => ({
-          id: app.applicationId,
-          candidateId: app.candidateId,
-          name: app.fullName || 'Unnamed Candidate',
-          headline: app.headline || 'Candidate Profile',
-          email: app.email || '',
-          phone: '',
-          location: 'Location unspecified',
-          appliedDate: app.appliedDate
-            ? new Date(app.appliedDate).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })
-            : 'Recent',
-          isShortlisted: false,
-          aiScore: app.aiMatchScore,
-          skills: app.skills || [],
-          avatarBg: getGradientForName(app.fullName || 'Candidate'),
-          status: app.status || 'Applied',
-        }));
-
-        setCandidates(mapped);
-        setIsAiAnalyzed(mapped.length > 0);
-      } catch (err: any) {
-        console.error('Error loading applicants for AI screening:', err);
-        setErrorMessage(err.message || 'Failed to fetch applicants for this requisition.');
-      } finally {
-        setIsLoadingApplicants(false);
-      }
-    };
-
-    fetchApplicants();
+    fetchApplicants(job.id);
   }, [isOpen, job?.id, job?.status]);
 
   if (!isOpen || !currentJob) return null;
@@ -222,19 +222,17 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
     showToast('🚀 Shortlisted candidates transferred to the Hiring Pipeline module!');
   };
 
-  const handleShortlistCandidate = (candidateId: string) => {
+  const handleShortlistCandidate = async (candidateId: string) => {
+    if (!currentJob) return;
     const candidate = candidates.find((item) => item.id === candidateId);
+    if (!candidate) return;
 
-    setCandidates((current) =>
-      current.map((item) =>
-        item.id === candidateId
-          ? { ...item, isShortlisted: true, status: 'Shortlisted' }
-          : item
-      )
-    );
-
-    if (candidate) {
+    try {
+      await jobApplicationsApi.moveToShortlist(currentJob.id, [candidate.candidateId]);
       showToast(`✓ ${candidate.name} added to the shortlist.`);
+      await fetchApplicants(currentJob.id); // Refetch from DB to ensure sync
+    } catch (err: any) {
+      showToast(`Failed to shortlist ${candidate.name}: ${err.message}`);
     }
   };
 

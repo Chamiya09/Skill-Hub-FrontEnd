@@ -1331,6 +1331,21 @@ export const jobApplicationsApi = {
   },
 
   /**
+   * Returns all shortlisted candidates for a job from the dedicated pipeline endpoint.
+   * Calls: GET /api/jobs/{jobId}/shortlisted
+   */
+  async getShortlisted(jobId: string): Promise<ShortlistedApplicantDto[]> {
+    try {
+      return await request<ShortlistedApplicantDto[]>(`/jobs/${jobId}/shortlisted`, {
+        method: 'GET',
+      });
+    } catch (err: any) {
+      if (err?.message?.includes('404')) return [];
+      throw err;
+    }
+  },
+
+  /**
    * Retrieves all applications submitted by the logged-in candidate.
    * Calls: GET /api/candidate/applications
    */
@@ -1359,6 +1374,21 @@ export interface RecommendedJobResponseDto {
   postedDate: string;
   matchPercentage: number;
   isRecommended: boolean;
+}
+
+export interface ShortlistedApplicantDto {
+  applicationId: string;
+  candidateId: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  headline?: string;
+  location: string;
+  avatarUrl?: string;
+  skills: string[];
+  appliedDate: string;
+  shortlistedAt?: string;
+  aiMatchScore?: number;
 }
 
 export const candidateJobRecommendationsApi = {

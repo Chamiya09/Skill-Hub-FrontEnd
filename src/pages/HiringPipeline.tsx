@@ -5,6 +5,7 @@ import {
   jobApplicationsApi,
   type JobDto,
   type JobApplicantDto,
+  type ShortlistedApplicantDto,
 } from '../services/api';
 import { CandidateProfileReadOnly } from '../components/candidates/CandidateProfileReadOnly';
 import {
@@ -143,13 +144,10 @@ export const HiringPipeline: React.FC = () => {
       await Promise.allSettled(
         published.map(async (job) => {
           try {
+            // Use the lightweight shortlisted endpoint just for count
+            const shortlistedApps: ShortlistedApplicantDto[] = await jobApplicationsApi.getShortlisted(job.id);
             const apps: JobApplicantDto[] = await jobApplicationsApi.getJobApplicants(job.id);
-            const total = apps.length;
-            const shortlisted = apps.filter((a) => {
-              const st = (a.status || '').toLowerCase();
-              return st.includes('shortlist') || st.includes('screen');
-            }).length;
-            counts[job.id] = { total, shortlisted };
+            counts[job.id] = { total: apps.length, shortlisted: shortlistedApps.length };
           } catch {
             counts[job.id] = { total: 0, shortlisted: 0 };
           }
@@ -169,7 +167,7 @@ export const HiringPipeline: React.FC = () => {
     fetchJobs();
   }, []);
 
-  // Fetch Shortlisted Candidates for the selected job
+  // Fetch Shortlisted Candidates for the selected job using the dedicated endpoint
   const fetchShortlistedForJob = async (job: JobDto) => {
     try {
       setLoadingApplicants(true);
@@ -177,44 +175,39 @@ export const HiringPipeline: React.FC = () => {
       setIsShortlistModalOpen(true);
       setModalSearchQuery('');
 
-      const apps: JobApplicantDto[] = await jobApplicationsApi.getJobApplicants(job.id);
+      const apps: ShortlistedApplicantDto[] = await jobApplicationsApi.getShortlisted(job.id);
 
-      // Filter STRICTLY shortlisted candidates (or top tier AI candidates)
-      const mapped: ShortlistedCandidate[] = (apps || [])
-        .map((app) => {
-          const rawStatus = (app.status || 'Applied').trim();
-          const isExplicitlyShortlisted =
-            rawStatus.toLowerCase().includes('shortlist') ||
-            rawStatus.toLowerCase().includes('screen') ||
-            rawStatus.toLowerCase().includes('interview');
-
-          return {
-            id: app.id,
-            candidateId: app.candidateId,
-            name: app.candidateName || 'Candidate',
-            headline: app.candidateHeadline || 'Specialist Profile',
-            location: app.candidateLocation || 'Remote / Unspecified',
-            email: app.candidateEmail || 'candidate@example.com',
-            phone: app.candidatePhone || 'Not provided',
-            appliedDate: app.appliedDate
-              ? new Date(app.appliedDate).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })
-              : 'Recent',
-            status: isExplicitlyShortlisted ? 'Shortlisted' : rawStatus,
-            aiScore: app.aiMatchScore ?? 0,
-            skills: app.skills || [],
-            avatarUrl: app.candidateAvatarUrl,
-            avatarBg: getGradientForName(app.candidateName || 'Candidate'),
-            jobId: job.id,
-            jobTitle: job.title,
-            assessmentStatus: 'None',
-            interviewStatus: 'None',
-          } as ShortlistedCandidate;
-        })
-        .filter((c) => c.status.toLowerCase() === 'shortlisted');
+      const mapped: ShortlistedCandidate[] = (apps || []).map((app) => ({
+        id: app.applicationId,
+        candidateId: app.candidateId,
+        name: app.fullName || 'Candidate',
+        headline: app.headline || 'Specialist Profile',
+        location: app.location || 'Remote / Unspecified',
+        email: app.email || 'candidate@example.com',
+        phone: app.phone || 'Not provided',
+        appliedDate: app.shortlistedAt
+          ? new Date(app.shortlistedAt).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })
+          : app.appliedDate
+          ? new Date(app.appliedDate).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })
+          : 'Recent',
+        status: 'Shortlisted',
+        aiScore: app.aiMatchScore ?? 0,
+        skills: app.skills || [],
+        avatarUrl: app.avatarUrl,
+        avatarBg: getGradientForName(app.fullName || 'Candidate'),
+        jobId: job.id,
+        jobTitle: job.title,
+        assessmentStatus: 'None',
+        interviewStatus: 'None',
+      }));
 
       // Sort by AI score descending
       mapped.sort((a, b) => b.aiScore - a.aiScore);

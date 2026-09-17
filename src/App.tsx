@@ -24,6 +24,7 @@ import { CreateJob } from "./pages/CreateJob";
 import { UserManagement } from "./pages/UserManagement";
 import { JobDetailsPublic } from "./pages/JobDetailsPublic";
 import { PublicCompanyProfile } from "./pages/PublicCompanyProfile";
+
 import "./App.css";
 
 function AppContent() {
@@ -238,6 +239,7 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/vacancies"
               element={

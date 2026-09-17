@@ -3,7 +3,6 @@ import {
   jobsApi,
   jobApplicationsApi,
   type JobDto,
-  type JobApplicantDto,
 } from '../../services/api';
 import { CandidateProfileReadOnly } from './CandidateProfileReadOnly';
 import {
@@ -78,14 +77,54 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
   const [isTransferred, setIsTransferred] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [, setToastMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
+  const [topCount, setTopCount] = useState<number>(5);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage(null);
     }, 4000);
+  };
+
+  const fetchApplicants = async (jobId: string) => {
+    try {
+      setIsLoadingApplicants(true);
+      setAnalyzingStageText('AI is analyzing candidate profiles... This may take a few seconds.');
+      const data = await jobApplicationsApi.getRankedApplicants(jobId);
+
+      const mapped: ModalCandidate[] = (data || []).map((app) => ({
+        id: app.applicationId,
+        candidateId: app.candidateId,
+        name: app.fullName || 'Unnamed Candidate',
+        headline: app.headline || 'Candidate Profile',
+        email: app.email || '',
+        phone: app.phone || '',
+        location: app.location || 'Location unspecified',
+        appliedDate: app.appliedDate
+          ? new Date(app.appliedDate).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })
+          : 'Recent',
+        isShortlisted: (app.status || '').toLowerCase() === 'shortlisted',
+        aiScore: app.aiMatchScore,
+        skills: app.skills || [],
+        avatarBg: getGradientForName(app.fullName || 'Candidate'),
+        status: app.status || 'Applied',
+      }));
+
+      setCandidates(mapped);
+      setIsAiAnalyzed(mapped.length > 0);
+    } catch (err: any) {
+      console.error('Error loading applicants for AI screening:', err);
+      setErrorMessage(err.message || 'Failed to fetch applicants for this requisition.');
+    } finally {
+      setIsLoadingApplicants(false);
+    }
   };
 
   // Fetch real applicants for the selected job whenever modal opens or job changes
@@ -100,44 +139,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
     setSearchQuery('');
     setErrorMessage(null);
 
-    const fetchApplicants = async () => {
-      try {
-        setIsLoadingApplicants(true);
-        const data: JobApplicantDto[] = await jobApplicationsApi.getJobApplicants(job.id);
-
-        const mapped: ModalCandidate[] = (data || []).map((app) => ({
-          id: app.id,
-          candidateId: app.candidateId,
-          name: app.candidateName || 'Unnamed Candidate',
-          headline: app.candidateHeadline || 'Candidate Profile',
-          email: app.candidateEmail || '',
-          phone: app.candidatePhone || '',
-          location: app.candidateLocation || 'Location unspecified',
-          appliedDate: app.appliedDate
-            ? new Date(app.appliedDate).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })
-            : 'Recent',
-          isShortlisted: app.status?.toLowerCase() === 'shortlisted',
-          aiScore: null,
-          skills: app.skills || [],
-          avatarUrl: app.candidateAvatarUrl,
-          avatarBg: getGradientForName(app.candidateName || 'Candidate'),
-          status: app.status || 'Applied',
-        }));
-
-        setCandidates(mapped);
-      } catch (err: any) {
-        console.error('Error loading applicants for AI screening:', err);
-        setErrorMessage(err.message || 'Failed to fetch applicants for this requisition.');
-      } finally {
-        setIsLoadingApplicants(false);
-      }
-    };
-
-    fetchApplicants();
+    fetchApplicants(job.id);
   }, [isOpen, job?.id, job?.status]);
 
   if (!isOpen || !currentJob) return null;
@@ -180,69 +182,92 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
   };
 
   // Run AI Screening Analysis on real candidate data
-  const handleRunAiAnalysis = () => {
+  const handleRunAiAnalysis = async () => {
     if (isAnalyzing || candidates.length === 0) return;
     setIsAnalyzing(true);
-    setAnalyzingStageText('AI Agent scanning candidate CVs & parsing qualification profiles...');
-
-    setTimeout(() => {
-      setAnalyzingStageText('Evaluating technical skills ontology, experience depth & role requirements...');
-    }, 700);
-
-    setTimeout(() => {
-      setAnalyzingStageText('Computing match scores and ranking applicants...');
-    }, 1400);
-
-    setTimeout(() => {
-      const scoredList: ModalCandidate[] = candidates.map((c, idx) => {
-        // Compute realistic score based on skill match count & profile data
-        const skillBonus = Math.min(25, (c.skills.length || 0) * 6);
-        const baseline = 72;
-        const variance = ((idx * 7 + (c.name.length * 3)) % 14);
-        const score = Math.min(98, Math.max(65, baseline + skillBonus - variance));
-        const isTop = score >= 85 || (idx === 0 && score >= 80);
-
+    setAnalyzingStageText('AI is analyzing candidate profiles... This may take a few seconds.');
+    setErrorMessage(null);
+    try {
+      const ranked = await jobApplicationsApi.runAiScreen(currentJob.id, { forceRefresh: true });
+      setCandidates(ranked.map((result, index) => {
+        const existing = candidates.find(candidate => candidate.candidateId === result.candidateId);
         return {
-          ...c,
-          aiScore: score,
-          isShortlisted: isTop,
-          status: isTop ? 'Shortlisted' : c.status,
+          ...existing!,
+          id: result.applicationId,
+          candidateId: result.candidateId,
+          name: result.fullName,
+          headline: result.headline || existing?.headline || 'Candidate Profile',
+          email: result.email,
+          skills: result.skills,
+          aiScore: result.aiMatchScore,
+          status: result.status,
+          isShortlisted: result.status.toLowerCase() === 'shortlisted',
+          rank: index + 1,
+          phone: existing?.phone || '',
+          location: existing?.location || 'Location unspecified',
+          appliedDate: existing?.appliedDate || new Date(result.appliedDate).toLocaleDateString(),
+          avatarBg: existing?.avatarBg || getGradientForName(result.fullName),
         };
-      });
-
-      scoredList.sort((a, b) => (b.aiScore ?? 0) - (a.aiScore ?? 0));
-
-      const rankedList = scoredList.map((cand, index) => ({
-        ...cand,
-        rank: index + 1,
       }));
-
-      setCandidates(rankedList);
-      setIsAnalyzing(false);
       setIsAiAnalyzed(true);
       showToast('✨ Batch AI Screening Complete! Top candidates shortlisted.');
-    }, 2000);
+    } catch (error: any) {
+      setErrorMessage(error.message || 'The Skill Hu AI screening service is unavailable.');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
-  // Send Shortlisted Candidates to Hiring Pipeline
-  const handleSendToHiringPipeline = () => {
-    setIsTransferred(true);
-    showToast('🚀 Shortlisted candidates transferred to the Hiring Pipeline module!');
-  };
 
-  const handleShortlistCandidate = (candidateId: string) => {
+
+  const handleShortlistCandidate = async (candidateId: string) => {
+    if (!currentJob) return;
     const candidate = candidates.find((item) => item.id === candidateId);
+    if (!candidate) return;
 
-    setCandidates((current) =>
-      current.map((item) =>
-        item.id === candidateId
-          ? { ...item, isShortlisted: true, status: 'Shortlisted' }
-          : item
-      )
-    );
-
-    if (candidate) {
+    try {
+      await jobApplicationsApi.moveToShortlist(currentJob.id, [candidate.candidateId]);
       showToast(`✓ ${candidate.name} added to the shortlist.`);
+      await fetchApplicants(currentJob.id); // Refetch from DB to ensure sync
+    } catch (err: any) {
+      showToast(`Failed to shortlist ${candidate.name}: ${err.message}`);
+    }
+  };
+
+  const handleShortlist = async () => {
+    if (!currentJob || selectedCandidateIds.length === 0) return;
+    
+    const candidateIdsToShortlist = candidates
+      .filter((c) => selectedCandidateIds.includes(c.id))
+      .map((c) => c.candidateId);
+
+    try {
+      await jobApplicationsApi.moveToShortlist(currentJob.id, candidateIdsToShortlist);
+      showToast(`✓ ${selectedCandidateIds.length} candidate(s) added to the shortlist.`);
+      setSelectedCandidateIds([]);
+      await fetchApplicants(currentJob.id); // Refetch from DB to ensure sync
+    } catch (err: any) {
+      showToast(`Failed to shortlist candidates: ${err.message}`);
+    }
+  };
+
+  const handleAutoSelect = () => {
+    const sorted = [...otherList].sort((a, b) => (b.aiScore ?? 0) - (a.aiScore ?? 0));
+    const topIds = sorted.slice(0, topCount).map(c => c.id);
+    setSelectedCandidateIds(topIds);
+  };
+
+  const handleRemoveFromShortlist = async (candidateId: string) => {
+    if (!currentJob) return;
+    const candidate = candidates.find((item) => item.id === candidateId);
+    if (!candidate) return;
+
+    try {
+      await jobApplicationsApi.removeFromShortlist(currentJob.id, [candidate.candidateId]);
+      showToast(`✕ ${candidate.name} removed from the shortlist.`);
+      await fetchApplicants(currentJob.id); // Refetch from DB to ensure sync
+    } catch (err: any) {
+      showToast(`Failed to unshortlist ${candidate.name}: ${err.message}`);
     }
   };
 
@@ -262,14 +287,6 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
 
   return (
     <div className="popup-backdrop" onClick={onClose}>
-      {/* Toast Alert */}
-      {toastMessage && (
-        <div className="job-details-toast" style={{ zIndex: 999999 }}>
-          <CheckIcon />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
       {/* Modal Card */}
       <div className="popup-card" onClick={(e) => e.stopPropagation()}>
         {/* =========================================================
@@ -473,7 +490,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
           {isLoadingApplicants ? (
             <div className="py-16 text-center space-y-3">
               <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="text-xs font-semibold text-slate-500">Loading applicants from database...</p>
+              <p className="text-xs font-semibold text-slate-500">AI is analyzing candidate profiles... This may take a few seconds.</p>
             </div>
           ) : candidates.length === 0 ? (
             /* 1. STRICT 0 APPLICANTS EMPTY STATE AS REQUIRED */
@@ -571,8 +588,16 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                             >
                               View CV <ArrowRightIcon />
                             </button>
-                            <button type="button" className="ai-shortlist-btn is-shortlisted" disabled>
-                              <CheckIcon /> Shortlisted
+                            <button
+                              type="button"
+                              className="ai-shortlist-btn is-shortlisted"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleRemoveFromShortlist(candidate.id);
+                              }}
+                              title="Click to remove from shortlist"
+                            >
+                              <CheckIcon /> Unshortlist
                             </button>
                           </div>
                         </div>
@@ -585,10 +610,29 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
               {/* Other Applicants Section */}
               {otherList.length > 0 && (
                 <div className="popup-section-card">
-                  <div className="popup-section-header">
+                  <div className="popup-section-header flex justify-between items-center">
                     <h3 className="popup-section-title">
                       Other Applicants ({otherList.length})
                     </h3>
+                    <div className="flex items-center gap-3">
+                      <label className="text-sm font-medium text-slate-600 flex items-center gap-2">
+                        Quick Select Top:
+                        <input
+                          type="number"
+                          min="1"
+                          className="ai-auto-select-input"
+                          value={topCount}
+                          onChange={(e) => setTopCount(Math.max(1, parseInt(e.target.value) || 1))}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleAutoSelect}
+                        className="ai-auto-select-btn"
+                      >
+                        ⚡ Auto-Select
+                      </button>
+                    </div>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -608,6 +652,20 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                           title="Click to view full verified Digital CV Profile"
                         >
                           <div className="flex items-center gap-4 ai-screening-candidate-identity">
+                            <input
+                              type="checkbox"
+                              className="ai-screening-checkbox"
+                              checked={selectedCandidateIds.includes(candidate.id)}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                setSelectedCandidateIds((prev) =>
+                                  e.target.checked
+                                    ? [...prev, candidate.id]
+                                    : prev.filter((id) => id !== candidate.id)
+                                );
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            />
                             {candidate.avatarUrl ? (
                               <img src={candidate.avatarUrl} alt={candidate.name} className="candidate-avatar object-cover" />
                             ) : (
@@ -698,6 +756,20 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                         title="Click to view full verified Digital CV Profile"
                       >
                         <div className="flex items-center gap-4">
+                          <input
+                            type="checkbox"
+                            className="ai-screening-checkbox"
+                            checked={selectedCandidateIds.includes(candidate.id)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              setSelectedCandidateIds((prev) =>
+                                e.target.checked
+                                  ? [...prev, candidate.id]
+                                  : prev.filter((id) => id !== candidate.id)
+                              );
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          />
                           {candidate.avatarUrl ? (
                             <img
                               src={candidate.avatarUrl}
@@ -784,20 +856,18 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
             Close Window
           </button>
 
-          {/* PIPELINE MOVE BUTTON / RUN AI ACTION */}
+          {/* PIPELINE MOVE BUTTON / RUN AI ACTION / BULK SHORTLIST */}
           {isAiAnalyzed ? (
             <button
               type="button"
-              onClick={handleSendToHiringPipeline}
-              disabled={isTransferred}
+              onClick={handleShortlist}
+              disabled={selectedCandidateIds.length === 0}
               className="popup-footer-btn-primary"
               title="Transfer all shortlisted candidates to the next hiring pipeline module"
             >
               <ArrowRightIcon />
               <span>
-                {isTransferred
-                  ? '✓ Shortlisted Sent to Hiring Pipeline'
-                  : `Send Shortlisted (${shortlistedList.length}) to Hiring Pipeline`}
+                Send Shortlisted ({selectedCandidateIds.length}) to Hiring Pipeline
               </span>
             </button>
           ) : isJobClosed ? (

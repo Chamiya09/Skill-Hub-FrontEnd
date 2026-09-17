@@ -779,7 +779,43 @@ export interface DashboardStatsDto {
   closedVacanciesCount: number;
   totalVacanciesCount: number;
   totalDepartmentsCount: number;
+  totalCandidatesCount?: number;
+  candidatesThisWeekCount?: number;
+  aiScreenedCount?: number;
+  aiShortlistedCount?: number;
+  shortlistedCount?: number;
+  pendingInterviewsCount?: number;
+  pendingAiEvaluationsCount?: number;
+  topTalentMatches?: TopTalentMatchDto[];
+  vacancyMetrics?: OverviewVacancyDto[];
+  recentAiActivity?: RecentAiActivityDto | null;
   recentVacancies: JobDto[];
+}
+
+export interface TopTalentMatchDto {
+  candidateId: string;
+  candidateName: string;
+  headline?: string | null;
+  jobId: string;
+  jobTitle: string;
+  matchPercentage: number;
+  evaluatedAt: string;
+}
+
+export interface OverviewVacancyDto {
+  jobId: string;
+  title: string;
+  department: string;
+  status: string;
+  applicantsCount: number;
+  aiScreenedCount: number;
+}
+
+export interface RecentAiActivityDto {
+  jobId: string;
+  jobTitle: string;
+  matchPercentage: number;
+  occurredAt: string;
 }
 
 export const dashboardApi = {
@@ -1189,6 +1225,31 @@ export interface JobApplicantDto {
   appliedDate: string;
   status: string;
   skills: string[];
+  aiMatchScore?: number | null;
+}
+
+export interface ScoreBreakdown {
+  skills: number;
+  experience: number;
+  projects: number;
+  education: number;
+  certifications: number;
+}
+
+export interface ScreenedApplicantDto {
+  applicationId: string;
+  candidateId: string;
+  fullName: string;
+  email: string;
+  headline?: string;
+  location?: string;
+  phone?: string;
+  skills: string[];
+  appliedDate: string;
+  status: string;
+  aiMatchScore: number | null;
+  /** Per-category score breakdown. Present only after AI screening has run. */
+  scoreBreakdown?: ScoreBreakdown | null;
 }
 
 export interface ApplicationStatusDto {
@@ -1210,6 +1271,38 @@ export interface CandidateApplicationItemDto {
   appliedDate: string;
   status: string;
 }
+
+export interface SavedJobDto {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  companyName: string;
+  companyLogoUrl?: string | null;
+  location: string;
+  employmentType: string;
+  experienceLevel: string;
+  salaryRange?: string | null;
+  postedAt: string;
+  savedAt: string;
+}
+
+export const savedJobsApi = {
+  getAll(): Promise<SavedJobDto[]> {
+    return request<SavedJobDto[]>('/candidate/saved-jobs', { method: 'GET' });
+  },
+
+  getIds(): Promise<string[]> {
+    return request<string[]>('/candidate/saved-jobs/ids', { method: 'GET' });
+  },
+
+  save(jobId: string): Promise<{ message: string; jobId: string }> {
+    return request(`/candidate/saved-jobs/${jobId}`, { method: 'PUT' });
+  },
+
+  remove(jobId: string): Promise<null> {
+    return request<null>(`/candidate/saved-jobs/${jobId}`, { method: 'DELETE' });
+  },
+};
 
 export interface RecommendedJobDto {
   jobId: string;
@@ -1281,6 +1374,57 @@ export const jobApplicationsApi = {
     }
   },
 
+  async runAiScreen(
+    jobId: string,
+    options?: { forceRefresh?: boolean },
+  ): Promise<ScreenedApplicantDto[]> {
+    const qs = options?.forceRefresh ? '?forceRefresh=true' : '';
+    return request<ScreenedApplicantDto[]>(`/jobs/${jobId}/run-ai-screen${qs}`, {
+      method: 'POST',
+    }, 120_000);
+  },
+
+  async getRankedApplicants(jobId: string): Promise<ScreenedApplicantDto[]> {
+    return request<ScreenedApplicantDto[]>(`/jobs/${jobId}/applicants`, {
+      method: 'GET',
+    }, 120_000);
+  },
+
+  async moveToShortlist(jobId: string, candidateIds: string[]): Promise<{
+    message: string;
+    updatedCount: number;
+  }> {
+    return request(`/jobs/${jobId}/move-to-shortlist`, {
+      method: 'POST',
+      body: JSON.stringify(candidateIds),
+    });
+  },
+
+  async removeFromShortlist(jobId: string, candidateIds: string[]): Promise<{
+    message: string;
+    updatedCount: number;
+  }> {
+    return request(`/jobs/${jobId}/remove-from-shortlist`, {
+      method: 'POST',
+      body: JSON.stringify(candidateIds),
+    });
+  },
+
+  /**
+   * Returns all shortlisted candidates for a job from the dedicated pipeline endpoint.
+   * Calls: GET /api/jobs/{jobId}/shortlisted
+   */
+  async getShortlisted(jobId: string): Promise<ShortlistedApplicantDto[]> {
+    try {
+      return await request<ShortlistedApplicantDto[]>(`/jobs/${jobId}/shortlisted`, {
+        method: 'GET',
+      });
+    } catch (err: any) {
+      if (err?.message?.includes('404')) return [];
+      throw err;
+    }
+  },
+
   /**
    * Retrieves all applications submitted by the logged-in candidate.
    * Calls: GET /api/candidate/applications
@@ -1310,6 +1454,21 @@ export interface RecommendedJobResponseDto {
   postedDate: string;
   matchPercentage: number;
   isRecommended: boolean;
+}
+
+export interface ShortlistedApplicantDto {
+  applicationId: string;
+  candidateId: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  headline?: string;
+  location: string;
+  avatarUrl?: string;
+  skills: string[];
+  appliedDate: string;
+  shortlistedAt?: string;
+  aiMatchScore?: number;
 }
 
 export const candidateJobRecommendationsApi = {

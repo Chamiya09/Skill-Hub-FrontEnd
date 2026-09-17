@@ -236,6 +236,20 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
     }
   };
 
+  const handleRemoveFromShortlist = async (candidateId: string) => {
+    if (!currentJob) return;
+    const candidate = candidates.find((item) => item.id === candidateId);
+    if (!candidate) return;
+
+    try {
+      await jobApplicationsApi.removeFromShortlist(currentJob.id, [candidate.candidateId]);
+      showToast(`✕ ${candidate.name} removed from the shortlist.`);
+      await fetchApplicants(currentJob.id); // Refetch from DB to ensure sync
+    } catch (err: any) {
+      showToast(`Failed to unshortlist ${candidate.name}: ${err.message}`);
+    }
+  };
+
   const shortlistedList = candidates.filter((c) => c.isShortlisted);
   const otherList = candidates.filter((c) => !c.isShortlisted);
 
@@ -553,8 +567,16 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                             >
                               View CV <ArrowRightIcon />
                             </button>
-                            <button type="button" className="ai-shortlist-btn is-shortlisted" disabled>
-                              <CheckIcon /> Shortlisted
+                            <button
+                              type="button"
+                              className="ai-shortlist-btn is-shortlisted"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleRemoveFromShortlist(candidate.id);
+                              }}
+                              title="Click to remove from shortlist"
+                            >
+                              <CheckIcon /> Unshortlist
                             </button>
                           </div>
                         </div>

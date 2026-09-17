@@ -79,67 +79,78 @@ export const ShortlistedPipelineModal: React.FC<ShortlistedPipelineModalProps> =
   const [, setNotification] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Fetch real applicants from database for this specific job
+  const fetchApplicants = useCallback(async () => {
+    if (!job?.id) return;
+    try {
+      setIsLoading(true);
+      setErrorMessage(null);
+      setSelectedCandidateId(null);
+      setSearchQuery('');
+
+      const data: JobApplicantDto[] = await jobApplicationsApi.getJobApplicants(job.id);
+
+      const mapped: PipelineCandidate[] = (data || []).map((app, idx) => {
+        // Normalize status
+        const rawStatus = (app.status || 'Applied').trim();
+        let status = 'Applied';
+        const lower = rawStatus.toLowerCase();
+        if (lower.includes('interview')) status = 'Interview';
+        else if (lower.includes('offer') || lower.includes('hired')) status = 'Offered';
+        else if (lower.includes('shortlist') || lower.includes('screen')) status = 'Shortlisted';
+        else status = 'Applied';
+
+        // Baseline calculated match score
+        const skillScore = Math.min(25, (app.skills?.length || 0) * 6);
+        const score = Math.min(98, Math.max(65, 75 + skillScore - ((idx * 5) % 12)));
+
+        return {
+          id: app.id,
+          candidateId: app.candidateId,
+          name: app.candidateName || 'Unnamed Candidate',
+          headline: app.candidateHeadline || 'Candidate Profile',
+          location: app.candidateLocation || 'Location unspecified',
+          email: app.candidateEmail || '',
+          phone: app.candidatePhone || '',
+          appliedDate: app.appliedDate
+            ? new Date(app.appliedDate).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })
+            : 'Recent',
+          status,
+          aiScore: score,
+          skills: app.skills || [],
+          avatarUrl: app.candidateAvatarUrl,
+          avatarBg: getGradientForName(app.candidateName || 'Candidate'),
+        };
+      });
+
+      setCandidates(mapped);
+    } catch (err: any) {
+      console.error('Error fetching pipeline applicants:', err);
+      setErrorMessage(err.message || 'Failed to fetch applicants for this requisition.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [job?.id]);
+
   useEffect(() => {
-    if (!isOpen || !job?.id) return;
+    if (isOpen) {
+      fetchApplicants();
+    }
+  }, [isOpen, fetchApplicants]);
 
-    const fetchApplicants = async () => {
-      try {
-        setIsLoading(true);
-        setErrorMessage(null);
-        setSelectedCandidateId(null);
-        setSearchQuery('');
-
-        const data: JobApplicantDto[] = await jobApplicationsApi.getJobApplicants(job.id);
-
-        const mapped: PipelineCandidate[] = (data || []).map((app, idx) => {
-          // Normalize status
-          const rawStatus = (app.status || 'Applied').trim();
-          let status = 'Applied';
-          const lower = rawStatus.toLowerCase();
-          if (lower.includes('interview')) status = 'Interview';
-          else if (lower.includes('offer') || lower.includes('hired')) status = 'Offered';
-          else if (lower.includes('shortlist') || lower.includes('screen')) status = 'Shortlisted';
-          else status = 'Applied';
-
-          // Baseline calculated match score
-          const skillScore = Math.min(25, (app.skills?.length || 0) * 6);
-          const score = Math.min(98, Math.max(65, 75 + skillScore - ((idx * 5) % 12)));
-
-          return {
-            id: app.id,
-            candidateId: app.candidateId,
-            name: app.candidateName || 'Unnamed Candidate',
-            headline: app.candidateHeadline || 'Candidate Profile',
-            location: app.candidateLocation || 'Location unspecified',
-            email: app.candidateEmail || '',
-            phone: app.candidatePhone || '',
-            appliedDate: app.appliedDate
-              ? new Date(app.appliedDate).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })
-              : 'Recent',
-            status,
-            aiScore: score,
-            skills: app.skills || [],
-            avatarUrl: app.candidateAvatarUrl,
-            avatarBg: getGradientForName(app.candidateName || 'Candidate'),
-          };
-        });
-
-        setCandidates(mapped);
-      } catch (err: any) {
-        console.error('Error fetching pipeline applicants:', err);
-        setErrorMessage(err.message || 'Failed to fetch applicants for this requisition.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchApplicants();
-  }, [isOpen, job?.id]);
+  const handleRemoveFromShortlist = async (candidate: PipelineCandidate) => {
+    if (!job) return;
+    try {
+      await jobApplicationsApi.removeFromShortlist(job.id, [candidate.candidateId]);
+      triggerPlaceholderAction('Unshortlist', candidate.name);
+      await fetchApplicants();
+    } catch (err: any) {
+      setErrorMessage(err.message || `Failed to unshortlist ${candidate.name}`);
+    }
+  };
 
   if (!isOpen || !job) return null;
 
@@ -428,11 +439,11 @@ export const ShortlistedPipelineModal: React.FC<ShortlistedPipelineModalProps> =
                               >
                                 <button
                                   type="button"
-                                  onClick={() => triggerPlaceholderAction('Schedule Round', candidate.name)}
-                                  className="text-[11px] font-semibold text-slate-700 hover:text-emerald-700 flex items-center gap-1 p-1"
+                                  onClick={() => handleRemoveFromShortlist(candidate)}
+                                  className="text-[11px] font-semibold text-slate-700 hover:text-red-600 flex items-center gap-1 p-1"
+                                  title="Remove from pipeline"
                                 >
-                                  <CalendarIcon />
-                                  <span>Schedule</span>
+                                  <span>✕ Unshortlist</span>
                                 </button>
                                 <button
                                   type="button"
@@ -506,6 +517,14 @@ export const ShortlistedPipelineModal: React.FC<ShortlistedPipelineModalProps> =
                       <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                         {candidate.status}
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFromShortlist(candidate)}
+                        className="text-xs font-bold text-slate-700 hover:text-red-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50"
+                        title="Remove from pipeline"
+                      >
+                        Unshortlist
+                      </button>
                       <button
                         type="button"
                         onClick={() => setSelectedCandidateId(candidate.candidateId)}

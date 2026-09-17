@@ -1330,6 +1330,16 @@ export const jobApplicationsApi = {
     });
   },
 
+  async removeFromShortlist(jobId: string, candidateIds: string[]): Promise<{
+    message: string;
+    updatedCount: number;
+  }> {
+    return request(`/jobs/${jobId}/remove-from-shortlist`, {
+      method: 'POST',
+      body: JSON.stringify(candidateIds),
+    });
+  },
+
   /**
    * Returns all shortlisted candidates for a job from the dedicated pipeline endpoint.
    * Calls: GET /api/jobs/{jobId}/shortlisted

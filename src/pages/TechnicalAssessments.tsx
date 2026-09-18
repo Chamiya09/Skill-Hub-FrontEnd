@@ -20,6 +20,63 @@ import {
   ShieldCheckIcon,
 } from '../components/common/Icons';
 
+const LANGUAGE_STARTER_TEMPLATES: Record<string, string> = {
+  csharp: `using System;
+using System.Collections.Generic;
+
+public class Solution
+{
+    public static void Main(string[] args)
+    {
+        // Write your solution here
+    }
+}`,
+  python: `def solution():
+    # Write your solution here
+    pass
+
+if __name__ == "__main__":
+    solution()`,
+  javascript: `function solution() {
+    // Write your solution here
+}
+
+// Call solution
+solution();`,
+  typescript: `function solution(): void {
+    // Write your solution here
+}
+
+solution();`,
+  java: `import java.util.*;
+
+public class Solution {
+    public static void main(String[] args) {
+        // Write your solution here
+    }
+}`,
+  cpp: `#include <iostream>
+#include <vector>
+
+using namespace std;
+
+int main() {
+    // Write your solution here
+    return 0;
+}`,
+  go: `package main
+
+import "fmt"
+
+func main() {
+    // Write your solution here
+    fmt.Println("Solution output")
+}`,
+  sql: `-- Write your SQL query here
+SELECT *
+FROM table_name;`,
+};
+
 export const TechnicalAssessments: React.FC = () => {
   // 1. Requisition selection state
   const [jobs, setJobs] = useState<JobDto[]>([]);
@@ -68,10 +125,12 @@ export const TechnicalAssessments: React.FC = () => {
   const [curQStatement, setCurQStatement] = useState<string>('');
   const [curQLanguage, setCurQLanguage] = useState<string>('csharp');
   const [curQDifficulty, setCurQDifficulty] = useState<string>('Medium');
-  const [curQStarter, setCurQStarter] = useState<string>('public class Solution {\n    // Write your code here\n}');
-  const [curQSampleIn, setCurQSampleIn] = useState<string>('input=5');
-  const [curQSampleOut, setCurQSampleOut] = useState<string>('output=10');
-  const [curQPoints, setCurQPoints] = useState<number>(10);
+  const [curQStarter, setCurQStarter] = useState<string>(LANGUAGE_STARTER_TEMPLATES['csharp']);
+
+  const handleLanguageChange = (lang: string) => {
+    setCurQLanguage(lang);
+    setCurQStarter(LANGUAGE_STARTER_TEMPLATES[lang] || LANGUAGE_STARTER_TEMPLATES['csharp']);
+  };
 
   // Toast feedback
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -101,22 +160,9 @@ export const TechnicalAssessments: React.FC = () => {
   }, []);
 
   // Fetch assessments and leaderboard whenever selected job changes
-  const loadJobAssessments = useCallback(async (jobId: string) => {
-    try {
-      setLoadingAssessments(true);
-      const res = await assessmentsApi.getAssessmentsByJob(jobId);
-      setAssessments(res || []);
-    } catch (err) {
-      console.error('Failed to load assessments:', err);
-      setAssessments([]);
-    } finally {
-      setLoadingAssessments(false);
-    }
-  }, []);
 
   const loadJobLeaderboard = useCallback(async (jobId: string) => {
     try {
-      setLoadingLeaderboard(true);
       const res = await assessmentsApi.getLeaderboard(jobId);
       setLeaderboard(res || []);
     } catch (err) {
@@ -129,7 +175,6 @@ export const TechnicalAssessments: React.FC = () => {
 
   const loadJobSubmissions = useCallback(async (jobId: string) => {
     try {
-      setLoadingSubmissions(true);
       const res = await assessmentsApi.getSubmissionsByJob(jobId);
       setSubmissions(res || []);
     } catch (err) {
@@ -141,12 +186,38 @@ export const TechnicalAssessments: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedJob) {
-      loadJobAssessments(selectedJob.id);
-      loadJobSubmissions(selectedJob.id);
-      loadJobLeaderboard(selectedJob.id);
-    }
-  }, [selectedJob, loadJobAssessments, loadJobSubmissions, loadJobLeaderboard]);
+    if (!selectedJob) return;
+    const jobId = selectedJob.id;
+    let isMounted = true;
+
+    const fetchAll = async () => {
+      try {
+        const [assessmentsData, submissionsData, leaderboardData] = await Promise.all([
+          assessmentsApi.getAssessmentsByJob(jobId),
+          assessmentsApi.getSubmissionsByJob(jobId),
+          assessmentsApi.getLeaderboard(jobId),
+        ]);
+        if (isMounted) {
+          setAssessments(assessmentsData || []);
+          setSubmissions(submissionsData || []);
+          setLeaderboard(leaderboardData || []);
+        }
+      } catch (err) {
+        console.error('Failed to load job assessment data:', err);
+      } finally {
+        if (isMounted) {
+          setLoadingAssessments(false);
+          setLoadingSubmissions(false);
+          setLoadingLeaderboard(false);
+        }
+      }
+    };
+
+    fetchAll();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedJob]);
 
   const handleOpenReview = (sub: SubmissionDetailDto) => {
     setReviewingSubmission(sub);
@@ -194,9 +265,10 @@ export const TechnicalAssessments: React.FC = () => {
         loadJobSubmissions(selectedJob.id);
         loadJobLeaderboard(selectedJob.id);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving review:', err);
-      showToast(err?.message || 'Failed to save candidate code review.');
+      const errorObj = err as { message?: string };
+      showToast(errorObj?.message || 'Failed to save candidate code review.');
     } finally {
       setIsSavingReview(false);
     }
@@ -205,7 +277,7 @@ export const TechnicalAssessments: React.FC = () => {
   // Handle Manual Question Add
   const handleAddQuestionToManual = () => {
     if (!curQTitle.trim() || !curQStatement.trim()) {
-      showToast('Please provide a title and problem statement.');
+      showToast('Please provide a problem title and description.');
       return;
     }
 
@@ -216,18 +288,16 @@ export const TechnicalAssessments: React.FC = () => {
       language: curQLanguage,
       difficulty: curQDifficulty,
       starterCode: curQStarter,
-      sampleTestCases: [
-        { input: curQSampleIn, expectedOutput: curQSampleOut, isHidden: false }
-      ],
-      points: curQPoints,
+      sampleTestCases: [],
+      points: 100,
       order: manualQuestions.length + 1,
     };
 
     setManualQuestions([...manualQuestions, newQ]);
     setCurQTitle('');
     setCurQStatement('');
-    setCurQStarter('public class Solution {\n    // Write your code here\n}');
-    showToast('✓ Question added to template!');
+    setCurQStarter(LANGUAGE_STARTER_TEMPLATES[curQLanguage] || LANGUAGE_STARTER_TEMPLATES['csharp']);
+    showToast('✓ Coding problem added to assessment template!');
   };
 
   // Save Manual Assessment
@@ -258,9 +328,10 @@ export const TechnicalAssessments: React.FC = () => {
       setManualTitle('');
       setManualQuestions([]);
       showToast(`✓ Assessment "${created.title}" created successfully!`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to create assessment:', err);
-      showToast(err.message || 'Error creating assessment.');
+      const errorObj = err as { message?: string };
+      showToast(errorObj?.message || 'Error creating assessment.');
     } finally {
       setIsSavingManual(false);
     }
@@ -273,8 +344,9 @@ export const TechnicalAssessments: React.FC = () => {
       setAssessments(assessments.map((a) => (a.id === id ? published : a)));
       if (previewAssessment?.id === id) setPreviewAssessment(published);
       showToast('✓ Assessment template published successfully!');
-    } catch (err: any) {
-      showToast(err.message || 'Failed to publish assessment.');
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      showToast(errorObj?.message || 'Failed to publish assessment.');
     }
   };
 
@@ -286,8 +358,9 @@ export const TechnicalAssessments: React.FC = () => {
       setAssessments(assessments.filter((a) => a.id !== id));
       if (previewAssessment?.id === id) setPreviewAssessment(null);
       showToast('✓ Assessment deleted.');
-    } catch (err: any) {
-      showToast(err.message || 'Failed to delete assessment.');
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      showToast(errorObj?.message || 'Failed to delete assessment.');
     }
   };
 
@@ -305,9 +378,10 @@ export const TechnicalAssessments: React.FC = () => {
       setFinalizedModalData(res);
       await loadJobLeaderboard(selectedJob.id);
       showToast(`🏆 Top 5 finalized! Handed off to Student 3.`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to finalize Top 5:', err);
-      showToast(err.message || 'Error finalizing Top 5.');
+      const errorObj = err as { message?: string };
+      showToast(errorObj?.message || 'Error finalizing Top 5.');
     } finally {
       setIsFinalizing(false);
     }
@@ -475,6 +549,11 @@ export const TechnicalAssessments: React.FC = () => {
                 onClick={() => {
                   setManualTitle(`${selectedJob?.title || 'Technical'} Skill Assessment`);
                   setManualQuestions([]);
+                  setCurQTitle('');
+                  setCurQStatement('');
+                  setCurQLanguage('csharp');
+                  setCurQDifficulty('Medium');
+                  setCurQStarter(LANGUAGE_STARTER_TEMPLATES['csharp']);
                   setIsManualModalOpen(true);
                 }}
                 className="btn-primary"
@@ -513,6 +592,11 @@ export const TechnicalAssessments: React.FC = () => {
                 onClick={() => {
                   setManualTitle(`${selectedJob?.title || 'Technical'} Skill Assessment`);
                   setManualQuestions([]);
+                  setCurQTitle('');
+                  setCurQStatement('');
+                  setCurQLanguage('csharp');
+                  setCurQDifficulty('Medium');
+                  setCurQStarter(LANGUAGE_STARTER_TEMPLATES['csharp']);
                   setIsManualModalOpen(true);
                 }}
                 className="btn-primary"
@@ -1079,67 +1163,167 @@ export const TechnicalAssessments: React.FC = () => {
           ========================================================= */}
       {isManualModalOpen && (
         <div className="popup-backdrop" style={{ zIndex: 1200 }} onClick={() => setIsManualModalOpen(false)}>
-          <div className="popup-card" style={{ maxWidth: '680px', width: '100%', padding: '24px', borderRadius: '16px', maxHeight: '90vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                Create Technical Assessment (Manual Option)
-              </h3>
-              <button type="button" onClick={() => setIsManualModalOpen(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><XIcon /></button>
+          <div
+            className="popup-card"
+            style={{
+              maxWidth: '760px',
+              width: '100%',
+              padding: '26px',
+              borderRadius: '18px',
+              maxHeight: '92vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px', borderBottom: '1px solid #f1f5f9', paddingBottom: '14px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: '#eff6ff', color: '#1d4ed8', textTransform: 'uppercase' }}>
+                    Assessment Track Builder
+                  </span>
+                  <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: '#f1f5f9', color: '#475569' }}>
+                    Manual Question Authoring
+                  </span>
+                </div>
+                <h3 style={{ fontSize: '19px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  Create Technical Assessment (Manual Option)
+                </h3>
+                <p style={{ fontSize: '12.5px', color: '#64748b', margin: '4px 0 0 0' }}>
+                  Configure custom coding problems, runtime environments, and passing benchmarks for candidates.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsManualModalOpen(false)}
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '6px',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <XIcon />
+              </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Assessment Title:</label>
-                <input
-                  type="text"
-                  value={manualTitle}
-                  onChange={(e) => setManualTitle(e.target.value)}
-                  placeholder="e.g. Senior C# & Distributed Systems Assessment"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Time Limit (Minutes):</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
+              {/* General Parameters Card */}
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '5px' }}>
+                    Assessment Title <span style={{ color: '#ef4444' }}>*</span>:
+                  </label>
                   <input
-                    type="number"
-                    value={manualTimeLimit}
-                    onChange={(e) => setManualTimeLimit(Number(e.target.value))}
-                    min={15}
-                    max={180}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                    type="text"
+                    value={manualTitle}
+                    onChange={(e) => setManualTitle(e.target.value)}
+                    placeholder="e.g. Lead Full-Stack Engineer (AI & Enterprise Systems) Skill Assessment"
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a' }}
                   />
                 </div>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Passing Threshold (%):</label>
-                  <input
-                    type="number"
-                    value={manualPassingThreshold}
-                    onChange={(e) => setManualPassingThreshold(Number(e.target.value))}
-                    min={0}
-                    max={100}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
-                  />
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '5px' }}>
+                      Time Limit (Minutes):
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="number"
+                        value={manualTimeLimit}
+                        onChange={(e) => setManualTimeLimit(Number(e.target.value))}
+                        min={15}
+                        max={240}
+                        style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a' }}
+                      />
+                      <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '11.5px', color: '#94a3b8', fontWeight: 600, pointerEvents: 'none' }}>
+                        Mins
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '5px' }}>
+                      Passing Benchmark (%):
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="number"
+                        value={manualPassingThreshold}
+                        onChange={(e) => setManualPassingThreshold(Number(e.target.value))}
+                        min={0}
+                        max={100}
+                        style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a' }}
+                      />
+                      <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#94a3b8', fontWeight: 700, pointerEvents: 'none' }}>
+                        %
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Added Questions List */}
               {manualQuestions.length > 0 && (
-                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: '8px' }}>
-                    Configured Questions ({manualQuestions.length}):
-                  </span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ background: '#f8fafc', padding: '14px 16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0f172a' }}>
+                      Configured Problems ({manualQuestions.length}):
+                    </span>
+                    <span style={{ fontSize: '11px', color: '#64748b' }}>
+                      Candidate will solve these questions in sequence
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {manualQuestions.map((q, idx) => (
-                      <div key={q.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ffffff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12.5px' }}>
-                        <div>
-                          <strong>{idx + 1}. {q.title}</strong> <span style={{ color: '#64748b' }}>({q.language} • {q.difficulty})</span>
+                      <div
+                        key={q.id}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          background: '#ffffff',
+                          padding: '10px 14px',
+                          borderRadius: '8px',
+                          border: '1px solid #cbd5e1',
+                          fontSize: '12.5px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ width: '24px', height: '24px', borderRadius: '6px', background: '#0f172a', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700 }}>
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <strong style={{ color: '#0f172a' }}>{q.title}</strong>
+                            <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
+                              <span style={{ fontSize: '10.5px', padding: '1px 6px', borderRadius: '4px', background: '#eff6ff', color: '#1d4ed8', fontWeight: 700, textTransform: 'uppercase' }}>
+                                {q.language}
+                              </span>
+                              <span
+                                style={{
+                                  fontSize: '10.5px',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  fontWeight: 600,
+                                  background: q.difficulty === 'Easy' ? '#ecfdf5' : q.difficulty === 'Hard' ? '#fef2f2' : '#fffbeb',
+                                  color: q.difficulty === 'Easy' ? '#047857' : q.difficulty === 'Hard' ? '#b91c1c' : '#b45309',
+                                }}
+                              >
+                                {q.difficulty}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                         <button
                           type="button"
                           onClick={() => setManualQuestions(manualQuestions.filter((item) => item.id !== q.id))}
-                          style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                          style={{ background: '#fee2e2', border: '1px solid #fecaca', color: '#ef4444', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '11.5px', fontWeight: 700 }}
                         >
                           Remove
                         </button>
@@ -1150,114 +1334,175 @@ export const TechnicalAssessments: React.FC = () => {
               )}
 
               {/* Add New Coding Question Sub-Form */}
-              <div style={{ border: '1px solid #cbd5e1', borderRadius: '10px', padding: '14px', background: '#fafafa' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: '10px' }}>
-                  + Add Coding Problem:
-                </span>
+              <div style={{ border: '1.5px solid #cbd5e1', borderRadius: '12px', padding: '18px', background: '#fcfcfd', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                  <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <PlusIcon />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a', display: 'block' }}>
+                      Add Coding Problem
+                    </span>
+                    <span style={{ fontSize: '11.5px', color: '#64748b' }}>
+                      Write the problem statement and starter template for candidates
+                    </span>
+                  </div>
+                </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <input
-                    type="text"
-                    value={curQTitle}
-                    onChange={(e) => setCurQTitle(e.target.value)}
-                    placeholder="Problem Title (e.g. Reverse Linked List, LRU Cache)"
-                    style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12.5px' }}
-                  />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                      Problem Title <span style={{ color: '#ef4444' }}>*</span>:
+                    </label>
+                    <input
+                      type="text"
+                      value={curQTitle}
+                      onChange={(e) => setCurQTitle(e.target.value)}
+                      placeholder="e.g. Reverse Linked List, LRU Cache, Distributed Lock"
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12.5px', color: '#0f172a' }}
+                    />
+                  </div>
 
-                  <textarea
-                    rows={3}
-                    value={curQStatement}
-                    onChange={(e) => setCurQStatement(e.target.value)}
-                    placeholder="Problem description, inputs, outputs, constraints..."
-                    style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12.5px' }}
-                  />
+                  <div>
+                    <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                      Problem Description &amp; Requirements <span style={{ color: '#ef4444' }}>*</span>:
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={curQStatement}
+                      onChange={(e) => setCurQStatement(e.target.value)}
+                      placeholder="Describe the task, expected inputs/outputs, performance constraints, and edge cases..."
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12.5px', color: '#0f172a', fontFamily: 'inherit', lineHeight: 1.5 }}
+                    />
+                  </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                  {/* Language and Difficulty (Points field removed!) */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '11px', color: '#64748b' }}>Language:</label>
-                      <select value={curQLanguage} onChange={(e) => setCurQLanguage(e.target.value)} style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}>
+                      <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                        Programming Language <span style={{ color: '#ef4444' }}>*</span>:
+                      </label>
+                      <select
+                        value={curQLanguage}
+                        onChange={(e) => handleLanguageChange(e.target.value)}
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12.5px', fontWeight: 600, color: '#0f172a', background: '#ffffff' }}
+                      >
                         <option value="csharp">C# (.NET)</option>
-                        <option value="python">Python</option>
-                        <option value="javascript">JavaScript / TS</option>
+                        <option value="python">Python 3</option>
+                        <option value="javascript">JavaScript (Node.js)</option>
+                        <option value="typescript">TypeScript</option>
+                        <option value="java">Java</option>
+                        <option value="cpp">C++</option>
+                        <option value="go">Go</option>
                         <option value="sql">SQL</option>
                       </select>
                     </div>
 
                     <div>
-                      <label style={{ fontSize: '11px', color: '#64748b' }}>Difficulty:</label>
-                      <select value={curQDifficulty} onChange={(e) => setCurQDifficulty(e.target.value)} style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}>
-                        <option value="Easy">Easy</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Hard">Hard</option>
+                      <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                        Difficulty Level <span style={{ color: '#ef4444' }}>*</span>:
+                      </label>
+                      <select
+                        value={curQDifficulty}
+                        onChange={(e) => setCurQDifficulty(e.target.value)}
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12.5px', fontWeight: 600, color: '#0f172a', background: '#ffffff' }}
+                      >
+                        <option value="Easy">🟢 Easy</option>
+                        <option value="Medium">🟡 Medium</option>
+                        <option value="Hard">🔴 Hard</option>
                       </select>
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: '11px', color: '#64748b' }}>Points:</label>
-                      <input
-                        type="number"
-                        value={curQPoints}
-                        onChange={(e) => setCurQPoints(Number(e.target.value))}
-                        style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}
-                      />
                     </div>
                   </div>
 
+                  {/* Starter Code Stub (Auto-populated on Language Selection) */}
                   <div>
-                    <label style={{ fontSize: '11px', color: '#64748b' }}>Starter Code Stub:</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#334155' }}>
+                        Starter Code Stub (Auto-populated for {curQLanguage.toUpperCase()}):
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCurQStarter(LANGUAGE_STARTER_TEMPLATES[curQLanguage] || LANGUAGE_STARTER_TEMPLATES['csharp']);
+                          showToast(`✓ Reset code template for ${curQLanguage.toUpperCase()}`);
+                        }}
+                        style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '11px', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}
+                      >
+                        ↺ Reset Template
+                      </button>
+                    </div>
                     <textarea
-                      rows={3}
+                      rows={6}
                       value={curQStarter}
                       onChange={(e) => setCurQStarter(e.target.value)}
-                      style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', fontFamily: 'monospace' }}
+                      spellCheck={false}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid #334155',
+                        backgroundColor: '#0f172a',
+                        color: '#4ade80',
+                        fontSize: '12px',
+                        fontFamily: '"Fira Code", Consolas, Monaco, "Courier New", monospace',
+                        lineHeight: 1.5,
+                        tabSize: 4,
+                        outline: 'none',
+                      }}
                     />
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <div>
-                      <label style={{ fontSize: '11px', color: '#64748b' }}>Sample Input:</label>
-                      <input type="text" value={curQSampleIn} onChange={(e) => setCurQSampleIn(e.target.value)} style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '11px', color: '#64748b' }}>Expected Output:</label>
-                      <input type="text" value={curQSampleOut} onChange={(e) => setCurQSampleOut(e.target.value)} style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }} />
-                    </div>
-                  </div>
+                  {/* Sample Input & Expected Output sections REMOVED as requested */}
 
-                  <button
-                    type="button"
-                    onClick={handleAddQuestionToManual}
-                    className="btn-secondary"
-                    style={{ alignSelf: 'flex-start', padding: '6px 14px', fontSize: '12px' }}
-                  >
-                    + Add Question to Template
-                  </button>
+                  <div style={{ display: 'flex', justifyContent: 'flex-start', paddingTop: '4px' }}>
+                    <button
+                      type="button"
+                      onClick={handleAddQuestionToManual}
+                      className="btn-primary"
+                      style={{ padding: '8px 18px', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px' }}
+                    >
+                      <PlusIcon />
+                      <span>Add Problem to Assessment</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button type="button" onClick={() => setIsManualModalOpen(false)} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '13px' }}>
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSaveManualAssessment(false)}
-                disabled={isSavingManual}
-                className="btn-secondary"
-                style={{ padding: '8px 16px', fontSize: '13px' }}
-              >
-                Save as Draft
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSaveManualAssessment(true)}
-                disabled={isSavingManual}
-                className="btn-primary"
-                style={{ padding: '8px 18px', fontSize: '13px' }}
-              >
-                Publish Template
-              </button>
+            {/* Modal Actions */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
+              <span style={{ fontSize: '12px', color: '#64748b' }}>
+                Problems Configured: <strong>{manualQuestions.length}</strong>
+              </span>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsManualModalOpen(false)}
+                  className="btn-secondary"
+                  style={{ padding: '8px 16px', fontSize: '13px' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSaveManualAssessment(false)}
+                  disabled={isSavingManual}
+                  className="btn-secondary"
+                  style={{ padding: '8px 16px', fontSize: '13px' }}
+                >
+                  {isSavingManual ? 'Saving...' : 'Save as Draft'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSaveManualAssessment(true)}
+                  disabled={isSavingManual}
+                  className="btn-primary"
+                  style={{ padding: '8px 20px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <CheckIcon />
+                  <span>{isSavingManual ? 'Publishing...' : 'Publish Template'}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1289,7 +1534,7 @@ export const TechnicalAssessments: React.FC = () => {
                       {idx + 1}. {q.title}
                     </span>
                     <span style={{ fontSize: '12px', fontWeight: 600, color: '#0284c7' }}>
-                      {q.points} Points • {q.language}
+                      {q.difficulty} • {q.language}
                     </span>
                   </div>
 

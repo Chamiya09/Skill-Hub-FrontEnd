@@ -31,8 +31,10 @@ export const CandidateExam: React.FC = () => {
   const navigate = useNavigate();
 
   // Primary Exam State
-  const [phase, setPhase] = useState<ExamPhase>('loading');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [phase, setPhase] = useState<ExamPhase>(submissionId ? 'loading' : 'error');
+  const [errorMessage, setErrorMessage] = useState<string | null>(
+    submissionId ? null : 'No assessment submission ID provided in the URL.'
+  );
   const [examPaper, setExamPaper] = useState<StartExamResponseDto | null>(null);
   const [currentQIndex, setCurrentQIndex] = useState<number>(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -40,7 +42,7 @@ export const CandidateExam: React.FC = () => {
 
   // Timer state
   const [remainingSeconds, setRemainingSeconds] = useState<number>(0);
-  const timerRef = useRef<any>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Proctoring & Anti-cheat telemetry
   const [tabSwitches, setTabSwitches] = useState<number>(0);
@@ -60,14 +62,11 @@ export const CandidateExam: React.FC = () => {
   // -------------------------------------------------------------
   useEffect(() => {
     if (!submissionId) {
-      setErrorMessage('No assessment submission ID provided in the URL.');
-      setPhase('error');
       return;
     }
 
     const fetchPaper = async () => {
       try {
-        setPhase('loading');
         const paper = await assessmentsApi.getExamPaper(submissionId);
         setExamPaper(paper);
 
@@ -96,11 +95,12 @@ export const CandidateExam: React.FC = () => {
           setRemainingSeconds(paper.timeLimitMinutes * 60);
           setPhase('briefing');
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to load exam paper:', err);
+        const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
         setErrorMessage(
-          err?.response?.data?.message ||
-            err?.message ||
+          errorObj?.response?.data?.message ||
+            errorObj?.message ||
             'Could not load assessment paper. It may have expired or already been completed.'
         );
         setPhase('error');
@@ -176,7 +176,7 @@ export const CandidateExam: React.FC = () => {
       const res = await assessmentsApi.submitExam(submissionId, { answers: payloadAnswers });
       setFinalResult(res);
       setPhase('completed');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Auto-submit error:', err);
       setErrorMessage('Assessment time expired. An error occurred while submitting answers.');
       setPhase('error');
@@ -225,7 +225,7 @@ export const CandidateExam: React.FC = () => {
       setExamPaper(paper);
       setRemainingSeconds(paper.timeLimitMinutes * 60);
       setPhase('in_progress');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to start exam:', err);
       // Fallback: proceed to in_progress if already started
       setPhase('in_progress');
@@ -285,6 +285,15 @@ export const CandidateExam: React.FC = () => {
       const currentCode = answers[currentQuestion.id] || '';
       const sampleCases: TestCaseDto[] = currentQuestion.sampleTestCases || [];
 
+      if (sampleCases.length === 0) {
+        setSampleTestResults([]);
+        setConsoleLog(
+          `Code captured successfully.\n[Manual Review Mode]: No sample test cases configured for this problem.\nYour submitted solution will be evaluated and scored manually by the engineering hiring panel.`
+        );
+        setIsRunningTests(false);
+        return;
+      }
+
       // Check if code contains basic expected return logic or is non-empty
       const results: SampleTestRunResult[] = sampleCases.map((tc) => {
         const isNonEmpty = currentCode.trim().length > (currentQuestion.starterCode?.trim().length || 0);
@@ -324,11 +333,12 @@ export const CandidateExam: React.FC = () => {
       const res = await assessmentsApi.submitExam(submissionId, { answers: payloadAnswers });
       setFinalResult(res);
       setPhase('completed');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to submit exam:', err);
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
       setErrorMessage(
-        err?.response?.data?.message ||
-          err?.message ||
+        errorObj?.response?.data?.message ||
+          errorObj?.message ||
           'Failed to submit assessment answers. Please try again.'
       );
       setPhase('in_progress');
@@ -1261,7 +1271,19 @@ export const CandidateExam: React.FC = () => {
                   </div>
                 ))
               ) : (
-                <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>No sample test cases provided.</div>
+                <div
+                  style={{
+                    backgroundColor: '#1e293b',
+                    border: '1px dashed #334155',
+                    borderRadius: '10px',
+                    padding: '16px',
+                    color: '#94a3b8',
+                    fontSize: '0.85rem',
+                    lineHeight: 1.6,
+                  }}
+                >
+                  💡 <strong>Manual Evaluation:</strong> This problem is evaluated directly by the engineering review panel. Write and verify your code solution in the editor before submitting.
+                </div>
               )}
             </div>
           </div>

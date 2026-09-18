@@ -24,6 +24,7 @@ import {
   FunnelIcon,
   ShieldCheckIcon,
   TrophyIcon,
+  ClipboardCheckIcon,
 } from '../components/common/Icons'
 import { PipelineJobSelector } from './PipelineJobSelector'
 import { HiringPipeline } from './HiringPipeline'
@@ -34,22 +35,35 @@ import { SecuritySettings } from './SecuritySettings'
 import { MetricCardSkeleton, TableRowSkeleton } from '../components/common/SkeletonCard'
 import { CompanyOverview } from '../components/dashboard/CompanyOverview'
 
+export type DashboardTab =
+  | 'overview'
+  | 'vacancies'
+  | 'pipelines'
+  | 'hiring-pipeline'
+  | 'assessments'
+  | 'assessment-templates'
+  | 'assessment-submissions'
+  | 'assessment-leaderboard'
+  | 'settings'
+  | 'security';
+
 interface DashboardProps {
-  defaultTab?: 'overview' | 'vacancies' | 'pipelines' | 'hiring-pipeline' | 'assessments' | 'settings' | 'security'
+  defaultTab?: DashboardTab;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' }) => {
   const navigate = useNavigate()
   const { currentUser, logout, isAuthenticated, isLoading: authLoading } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'vacancies' | 'pipelines' | 'hiring-pipeline' | 'assessments' | 'settings' | 'security'>(defaultTab)
+  const [activeTab, setActiveTab] = useState<DashboardTab>(
+    defaultTab === 'assessments' ? 'assessment-templates' : defaultTab
+  )
+  const [prevDefaultTab, setPrevDefaultTab] = useState<DashboardTab>(defaultTab)
+  if (defaultTab !== prevDefaultTab) {
+    setPrevDefaultTab(defaultTab)
+    setActiveTab(defaultTab === 'assessments' ? 'assessment-templates' : defaultTab)
+  }
   const [selectedFilter, setSelectedFilter] = useState('All')
-
-  useEffect(() => {
-    if (defaultTab) {
-      setActiveTab(defaultTab)
-    }
-  }, [defaultTab])
 
   // Data fetching state
   const [stats, setStats] = useState<DashboardStatsDto | null>(null)
@@ -92,48 +106,62 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
   }, [authLoading, isAuthenticated, currentUser, navigate])
 
   // Fetch real company stats and jobs
-  const fetchDashboardData = useCallback(async () => {
-    try {
-      setDataLoading(true);
-      setErrorMessage(null);
-      const [statsData, jobsData] = await Promise.all([
-        dashboardApi.getStats().catch(() => null),
-        jobsApi.getJobs().catch(() => []),
-      ]);
-
-      if (statsData) {
-        setStats(statsData);
-      } else {
-        // Fallback compute from jobsData
-        const active = jobsData.filter(j => j.status?.toLowerCase() === 'active').length;
-        const draft = jobsData.filter(j => j.status?.toLowerCase() === 'draft').length;
-        const closed = jobsData.filter(j => j.status?.toLowerCase() === 'closed').length;
-        const depts = new Set(jobsData.map(j => j.department?.trim()).filter(Boolean)).size;
-
-        setStats({
-          activeVacanciesCount: active,
-          draftVacanciesCount: draft,
-          closedVacanciesCount: closed,
-          totalVacanciesCount: jobsData.length,
-          totalDepartmentsCount: depts,
-          recentVacancies: jobsData.slice(0, 5),
-        });
-      }
-
-      setJobs(jobsData);
-    } catch (err: any) {
-      console.error('Failed to load dashboard data:', err);
-      setErrorMessage(err.message || 'Unable to load real-time company metrics.');
-    } finally {
-      setDataLoading(false);
-    }
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
+  const fetchDashboardData = useCallback(() => {
+    setDataLoading(true);
+    setRefreshTrigger((prev) => prev + 1);
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchDashboardData();
-    }
-  }, [isAuthenticated, fetchDashboardData]);
+    if (!isAuthenticated) return;
+    let isMounted = true;
+
+    const loadData = async () => {
+      try {
+        const [statsData, jobsData] = await Promise.all([
+          dashboardApi.getStats().catch(() => null),
+          jobsApi.getJobs().catch(() => []),
+        ]);
+        if (!isMounted) return;
+
+        setErrorMessage(null);
+        if (statsData) {
+          setStats(statsData);
+        } else {
+          // Fallback compute from jobsData
+          const active = jobsData.filter((j) => j.status?.toLowerCase() === 'active').length;
+          const draft = jobsData.filter((j) => j.status?.toLowerCase() === 'draft').length;
+          const closed = jobsData.filter((j) => j.status?.toLowerCase() === 'closed').length;
+          const depts = new Set(jobsData.map((j) => j.department?.trim()).filter(Boolean)).size;
+
+          setStats({
+            activeVacanciesCount: active,
+            draftVacanciesCount: draft,
+            closedVacanciesCount: closed,
+            totalVacanciesCount: jobsData.length,
+            totalDepartmentsCount: depts,
+            recentVacancies: jobsData.slice(0, 5),
+          });
+        }
+
+        setJobs(jobsData);
+      } catch (err: unknown) {
+        if (!isMounted) return;
+        console.error('Failed to load dashboard data:', err);
+        const errorObj = err as { message?: string };
+        setErrorMessage(errorObj?.message || 'Unable to load real-time company metrics.');
+      } finally {
+        if (isMounted) {
+          setDataLoading(false);
+        }
+      }
+    };
+
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, refreshTrigger]);
 
   const handleLogout = () => {
     logout()
@@ -309,14 +337,38 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
 
           <button
             type="button"
-            className={`dashboard-nav-item ${activeTab === 'assessments' ? 'active' : ''}`}
+            className={`dashboard-nav-item ${activeTab === 'assessment-templates' ? 'active' : ''}`}
             onClick={() => {
-              setActiveTab('assessments')
+              setActiveTab('assessment-templates')
+              setSidebarOpen(false)
+            }}
+          >
+            <BriefcaseIcon />
+            <span>Assessment Templates</span>
+          </button>
+
+          <button
+            type="button"
+            className={`dashboard-nav-item ${activeTab === 'assessment-submissions' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('assessment-submissions')
+              setSidebarOpen(false)
+            }}
+          >
+            <ClipboardCheckIcon />
+            <span>Submissions &amp; Review</span>
+          </button>
+
+          <button
+            type="button"
+            className={`dashboard-nav-item ${activeTab === 'assessment-leaderboard' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('assessment-leaderboard')
               setSidebarOpen(false)
             }}
           >
             <TrophyIcon />
-            <span>Coding Assessments</span>
+            <span>Top 5 Leaderboard</span>
             <span className="nav-badge-count" style={{ background: '#e0e7ff', color: '#4338ca' }}>Top 5</span>
           </button>
 
@@ -409,7 +461,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
                 {activeTab === 'vacancies' && 'Job Vacancies'}
                 {activeTab === 'pipelines' && 'AI Screening'}
                 {activeTab === 'hiring-pipeline' && 'Hiring Pipeline'}
-                {activeTab === 'assessments' && 'Technical Assessments'}
+                {activeTab === 'assessment-templates' && 'Assessment Templates'}
+                {activeTab === 'assessment-submissions' && 'Submissions & Review'}
+                {activeTab === 'assessment-leaderboard' && 'Top 5 Leaderboard'}
+                {activeTab === 'assessments' && 'Assessment Templates'}
                 {activeTab === 'settings' && 'Settings'}
                 {activeTab === 'security' && 'Security'}
               </span>
@@ -434,8 +489,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             <PipelineJobSelector />
           ) : activeTab === 'hiring-pipeline' ? (
             <HiringPipeline />
+          ) : activeTab === 'assessment-templates' ? (
+            <TechnicalAssessments activeSection="templates" />
+          ) : activeTab === 'assessment-submissions' ? (
+            <TechnicalAssessments activeSection="submissions" />
+          ) : activeTab === 'assessment-leaderboard' ? (
+            <TechnicalAssessments activeSection="leaderboard" />
           ) : activeTab === 'assessments' ? (
-            <TechnicalAssessments />
+            <TechnicalAssessments activeSection="templates" />
           ) : activeTab === 'settings' ? (
             <CompanySettings />
           ) : activeTab === 'security' ? (

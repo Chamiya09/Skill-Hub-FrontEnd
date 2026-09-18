@@ -77,14 +77,20 @@ SELECT *
 FROM table_name;`,
 };
 
-export const TechnicalAssessments: React.FC = () => {
+export interface TechnicalAssessmentsProps {
+  activeSection?: 'templates' | 'submissions' | 'leaderboard';
+}
+
+export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
+  activeSection = 'templates',
+}) => {
   // 1. Requisition selection state
   const [jobs, setJobs] = useState<JobDto[]>([]);
   const [selectedJob, setSelectedJob] = useState<JobDto | null>(null);
   const [, setLoadingJobs] = useState<boolean>(true);
 
-  // 2. Tab selection: 'templates' | 'submissions' | 'leaderboard'
-  const [subTab, setSubTab] = useState<'templates' | 'submissions' | 'leaderboard'>('templates');
+  // 2. Active Section: 'templates' | 'submissions' | 'leaderboard'
+  const subTab = activeSection;
 
   // 3. Assessments state
   const [assessments, setAssessments] = useState<AssessmentResponseDto[]>([]);
@@ -419,10 +425,18 @@ export const TechnicalAssessments: React.FC = () => {
             <span>STUDENT 4 • TECHNICAL ASSESSMENT ENGINE</span>
           </div>
           <h1 className="pipeline-page-title" style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', marginTop: '8px' }}>
-            Skills Verification & Technical Assessments
+            {subTab === 'templates'
+              ? 'Assessment Templates'
+              : subTab === 'submissions'
+              ? 'Candidate Submissions & Code Review'
+              : 'Top 5 Candidate Leaderboard'}
           </h1>
           <p className="pipeline-page-subtitle" style={{ fontSize: '14px', color: '#64748b', maxWidth: '800px' }}>
-            Technical validation checkpoint for shortlisted talent. Create custom coding problems, generate AI-assisted question banks (Human-in-the-Loop), evaluate candidate code, and promote the <strong>Top 5 finalists</strong> directly to Student 3's Meeting Orchestration Hub.
+            {subTab === 'templates'
+              ? 'Design custom coding problem tracks, configure language starter templates, and publish technical assessment benchmarks for active requisitions.'
+              : subTab === 'submissions'
+              ? 'Review candidate-written code solutions, examine proctor anti-cheat telemetry, evaluate question performance, and select candidates for technical interview.'
+              : 'Ranked performance leaderboard for candidate exam submissions. Finalize and promote the Top 5 finalists directly to Student 3\'s Meeting Orchestration Hub.'}
           </p>
         </div>
 
@@ -458,73 +472,64 @@ export const TechnicalAssessments: React.FC = () => {
         </div>
       </div>
 
-      {/* Primary Sub-Tabs */}
+      {/* Active Section Indicator */}
       <div style={{ display: 'flex', gap: '12px', borderBottom: '2px solid #e2e8f0', marginBottom: '24px' }}>
-        <button
-          type="button"
-          onClick={() => setSubTab('templates')}
-          style={{
-            padding: '12px 20px',
-            fontSize: '14.5px',
-            fontWeight: 700,
-            color: subTab === 'templates' ? '#00b074' : '#64748b',
-            borderBottom: subTab === 'templates' ? '3px solid #00b074' : '3px solid transparent',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            marginBottom: '-2px'
-          }}
-        >
-          <BriefcaseIcon />
-          <span>Assessment Templates ({assessments.length})</span>
-        </button>
+        {subTab === 'templates' && (
+          <div
+            style={{
+              padding: '12px 20px',
+              fontSize: '14.5px',
+              fontWeight: 700,
+              color: '#00b074',
+              borderBottom: '3px solid #00b074',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: '-2px',
+            }}
+          >
+            <BriefcaseIcon />
+            <span>Assessment Templates ({assessments.length})</span>
+          </div>
+        )}
 
-        <button
-          type="button"
-          onClick={() => setSubTab('submissions')}
-          style={{
-            padding: '12px 20px',
-            fontSize: '14.5px',
-            fontWeight: 700,
-            color: subTab === 'submissions' ? '#00b074' : '#64748b',
-            borderBottom: subTab === 'submissions' ? '3px solid #00b074' : '3px solid transparent',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            marginBottom: '-2px'
-          }}
-        >
-          <SparkleIcon />
-          <span>Candidate Submissions &amp; Review ({submissions.length})</span>
-        </button>
+        {subTab === 'submissions' && (
+          <div
+            style={{
+              padding: '12px 20px',
+              fontSize: '14.5px',
+              fontWeight: 700,
+              color: '#00b074',
+              borderBottom: '3px solid #00b074',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: '-2px',
+            }}
+          >
+            <SparkleIcon />
+            <span>Candidate Submissions &amp; Review ({submissions.length})</span>
+          </div>
+        )}
 
-        <button
-          type="button"
-          onClick={() => setSubTab('leaderboard')}
-          style={{
-            padding: '12px 20px',
-            fontSize: '14.5px',
-            fontWeight: 700,
-            color: subTab === 'leaderboard' ? '#00b074' : '#64748b',
-            borderBottom: subTab === 'leaderboard' ? '3px solid #00b074' : '3px solid transparent',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            marginBottom: '-2px'
-          }}
-        >
-          <TrophyIcon />
-          <span>Top 5 Leaderboard ({leaderboard.length})</span>
-        </button>
+        {subTab === 'leaderboard' && (
+          <div
+            style={{
+              padding: '12px 20px',
+              fontSize: '14.5px',
+              fontWeight: 700,
+              color: '#00b074',
+              borderBottom: '3px solid #00b074',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: '-2px',
+            }}
+          >
+            <TrophyIcon />
+            <span>Top 5 Leaderboard ({leaderboard.length})</span>
+          </div>
+        )}
       </div>
 
       {/* =========================================================

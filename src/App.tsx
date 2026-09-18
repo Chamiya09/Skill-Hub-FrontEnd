@@ -46,6 +46,9 @@ function AppContent() {
     location.pathname.startsWith("/pipelines") ||
     location.pathname.startsWith("/hiring-pipeline") ||
     location.pathname.startsWith("/assessments") ||
+    location.pathname.startsWith("/assessment-templates") ||
+    location.pathname.startsWith("/submissions") ||
+    location.pathname.startsWith("/leaderboard") ||
     location.pathname.startsWith("/exam") ||
     location.pathname.startsWith("/vacancies") ||
     location.pathname.startsWith("/users") ||
@@ -224,7 +227,7 @@ function AppContent() {
               path="/dashboard/assessments"
               element={
                 <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
-                  <Dashboard defaultTab="assessments" />
+                  <Dashboard defaultTab="assessment-templates" />
                 </ProtectedRoute>
               }
             />
@@ -232,7 +235,55 @@ function AppContent() {
               path="/assessments"
               element={
                 <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
-                  <Dashboard defaultTab="assessments" />
+                  <Dashboard defaultTab="assessment-templates" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/assessment-templates"
+              element={
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
+                  <Dashboard defaultTab="assessment-templates" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/assessment-templates"
+              element={
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
+                  <Dashboard defaultTab="assessment-templates" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/submissions"
+              element={
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
+                  <Dashboard defaultTab="assessment-submissions" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/submissions"
+              element={
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
+                  <Dashboard defaultTab="assessment-submissions" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/leaderboard"
+              element={
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
+                  <Dashboard defaultTab="assessment-leaderboard" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leaderboard"
+              element={
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
+                  <Dashboard defaultTab="assessment-leaderboard" />
                 </ProtectedRoute>
               }
             />

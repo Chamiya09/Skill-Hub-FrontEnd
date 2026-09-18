@@ -1532,6 +1532,8 @@ export interface AssessmentResponseDto {
   createdAt: string;
   updatedAt: string;
   totalSubmissions: number;
+  hasActiveCandidateExam?: boolean;
+  canEdit?: boolean;
 }
 
 export interface AssessmentTrackSummaryDto {

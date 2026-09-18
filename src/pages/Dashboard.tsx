@@ -24,7 +24,6 @@ import {
   FunnelIcon,
   ShieldCheckIcon,
   TrophyIcon,
-  ClipboardCheckIcon,
 } from '../components/common/Icons'
 import { PipelineJobSelector } from './PipelineJobSelector'
 import { HiringPipeline } from './HiringPipeline'
@@ -42,6 +41,7 @@ export type DashboardTab =
   | 'hiring-pipeline'
   | 'assessments'
   | 'assessment-templates'
+  | 'performance-hub'
   | 'assessment-submissions'
   | 'assessment-leaderboard'
   | 'settings'
@@ -344,31 +344,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             }}
           >
             <BriefcaseIcon />
-            <span>Assessment Templates</span>
+            <span>Assessments</span>
           </button>
 
           <button
             type="button"
-            className={`dashboard-nav-item ${activeTab === 'assessment-submissions' ? 'active' : ''}`}
+            className={`dashboard-nav-item ${activeTab === 'performance-hub' || activeTab === 'assessment-submissions' || activeTab === 'assessment-leaderboard' ? 'active' : ''}`}
             onClick={() => {
-              setActiveTab('assessment-submissions')
-              setSidebarOpen(false)
-            }}
-          >
-            <ClipboardCheckIcon />
-            <span>Submissions &amp; Review</span>
-          </button>
-
-          <button
-            type="button"
-            className={`dashboard-nav-item ${activeTab === 'assessment-leaderboard' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('assessment-leaderboard')
+              setActiveTab('performance-hub')
               setSidebarOpen(false)
             }}
           >
             <TrophyIcon />
-            <span>Top 5 Leaderboard</span>
+            <span>Performance Hub</span>
             <span className="nav-badge-count" style={{ background: '#e0e7ff', color: '#4338ca' }}>Top 5</span>
           </button>
 
@@ -461,10 +449,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
                 {activeTab === 'vacancies' && 'Job Vacancies'}
                 {activeTab === 'pipelines' && 'AI Screening'}
                 {activeTab === 'hiring-pipeline' && 'Hiring Pipeline'}
-                {activeTab === 'assessment-templates' && 'Assessment Templates'}
-                {activeTab === 'assessment-submissions' && 'Submissions & Review'}
-                {activeTab === 'assessment-leaderboard' && 'Top 5 Leaderboard'}
-                {activeTab === 'assessments' && 'Assessment Templates'}
+                {activeTab === 'assessment-templates' && 'Assessments'}
+                {(activeTab === 'performance-hub' || activeTab === 'assessment-submissions' || activeTab === 'assessment-leaderboard') && 'Performance Hub'}
+                {activeTab === 'assessments' && 'Assessments'}
                 {activeTab === 'settings' && 'Settings'}
                 {activeTab === 'security' && 'Security'}
               </span>
@@ -491,10 +478,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             <HiringPipeline />
           ) : activeTab === 'assessment-templates' ? (
             <TechnicalAssessments activeSection="templates" />
+          ) : activeTab === 'performance-hub' ? (
+            <TechnicalAssessments activeSection="performance-hub" />
           ) : activeTab === 'assessment-submissions' ? (
-            <TechnicalAssessments activeSection="submissions" />
+            <TechnicalAssessments activeSection="performance-hub" initialPerformanceTab="submissions" />
           ) : activeTab === 'assessment-leaderboard' ? (
-            <TechnicalAssessments activeSection="leaderboard" />
+            <TechnicalAssessments activeSection="performance-hub" initialPerformanceTab="leaderboard" />
           ) : activeTab === 'assessments' ? (
             <TechnicalAssessments activeSection="templates" />
           ) : activeTab === 'settings' ? (

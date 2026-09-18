@@ -78,19 +78,36 @@ FROM table_name;`,
 };
 
 export interface TechnicalAssessmentsProps {
-  activeSection?: 'templates' | 'submissions' | 'leaderboard';
+  activeSection?: 'templates' | 'performance-hub' | 'submissions' | 'leaderboard';
+  initialPerformanceTab?: 'submissions' | 'leaderboard';
 }
 
 export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   activeSection = 'templates',
+  initialPerformanceTab = 'submissions',
 }) => {
   // 1. Requisition selection state
   const [jobs, setJobs] = useState<JobDto[]>([]);
   const [selectedJob, setSelectedJob] = useState<JobDto | null>(null);
   const [, setLoadingJobs] = useState<boolean>(true);
 
-  // 2. Active Section: 'templates' | 'submissions' | 'leaderboard'
-  const subTab = activeSection;
+  // 2. Active Section: 'templates' vs 'performance-hub'
+  const isPerformanceHub =
+    activeSection === 'performance-hub' ||
+    activeSection === 'submissions' ||
+    activeSection === 'leaderboard';
+
+  const targetPerfTab: 'submissions' | 'leaderboard' =
+    activeSection === 'leaderboard' || initialPerformanceTab === 'leaderboard'
+      ? 'leaderboard'
+      : 'submissions';
+
+  const [perfTab, setPerfTab] = useState<'submissions' | 'leaderboard'>(targetPerfTab);
+  const [prevTargetPerfTab, setPrevTargetPerfTab] = useState<'submissions' | 'leaderboard'>(targetPerfTab);
+  if (targetPerfTab !== prevTargetPerfTab) {
+    setPrevTargetPerfTab(targetPerfTab);
+    setPerfTab(targetPerfTab);
+  }
 
   // 3. Assessments state
   const [assessments, setAssessments] = useState<AssessmentResponseDto[]>([]);
@@ -124,6 +141,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   const [manualPassingThreshold, setManualPassingThreshold] = useState<number>(60);
   const [manualTimeLimit, setManualTimeLimit] = useState<number>(60);
   const [manualQuestions, setManualQuestions] = useState<CodingQuestionItemDto[]>([]);
+  const [editingAssessment, setEditingAssessment] = useState<AssessmentResponseDto | null>(null);
   const [isSavingManual, setIsSavingManual] = useState<boolean>(false);
 
   // Current question under edit in manual modal
@@ -306,7 +324,35 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     showToast('✓ Coding problem added to assessment template!');
   };
 
-  // Save Manual Assessment
+  const handleOpenCreateModal = () => {
+    setEditingAssessment(null);
+    setManualTitle(`${selectedJob?.title || 'Technical'} Skill Assessment`);
+    setManualTimeLimit(60);
+    setManualPassingThreshold(60);
+    setManualQuestions([]);
+    setCurQTitle('');
+    setCurQStatement('');
+    setCurQLanguage('csharp');
+    setCurQDifficulty('Medium');
+    setCurQStarter(LANGUAGE_STARTER_TEMPLATES['csharp']);
+    setIsManualModalOpen(true);
+  };
+
+  const handleOpenEditModal = (track: AssessmentResponseDto) => {
+    setEditingAssessment(track);
+    setManualTitle(track.title);
+    setManualTimeLimit(track.timeLimitMinutes || 60);
+    setManualPassingThreshold(track.passingThreshold || 60);
+    setManualQuestions([...track.finalQuestions]);
+    setCurQTitle('');
+    setCurQStatement('');
+    setCurQLanguage('csharp');
+    setCurQDifficulty('Medium');
+    setCurQStarter(LANGUAGE_STARTER_TEMPLATES['csharp']);
+    setIsManualModalOpen(true);
+  };
+
+  // Save or Update Assessment
   const handleSaveManualAssessment = async (publish: boolean) => {
     if (!selectedJob) return;
     if (!manualTitle.trim()) {
@@ -320,24 +366,40 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
     try {
       setIsSavingManual(true);
-      const created = await assessmentsApi.createManual({
-        jobVacancyId: selectedJob.id,
-        title: manualTitle.trim(),
-        passingThreshold: manualPassingThreshold,
-        timeLimitMinutes: manualTimeLimit,
-        questions: manualQuestions,
-        publishImmediately: publish,
-      });
+      if (editingAssessment) {
+        const updated = await assessmentsApi.update(editingAssessment.id, {
+          title: manualTitle.trim(),
+          passingThreshold: manualPassingThreshold,
+          timeLimitMinutes: manualTimeLimit,
+          finalQuestions: manualQuestions,
+        });
 
-      setAssessments([created, ...assessments]);
-      setIsManualModalOpen(false);
-      setManualTitle('');
-      setManualQuestions([]);
-      showToast(`✓ Assessment "${created.title}" created successfully!`);
+        setAssessments(assessments.map((a) => (a.id === editingAssessment.id ? updated : a)));
+        setIsManualModalOpen(false);
+        setEditingAssessment(null);
+        setManualTitle('');
+        setManualQuestions([]);
+        showToast(`✓ Assessment "${updated.title}" updated successfully!`);
+      } else {
+        const created = await assessmentsApi.createManual({
+          jobVacancyId: selectedJob.id,
+          title: manualTitle.trim(),
+          passingThreshold: manualPassingThreshold,
+          timeLimitMinutes: manualTimeLimit,
+          questions: manualQuestions,
+          publishImmediately: publish,
+        });
+
+        setAssessments([created, ...assessments]);
+        setIsManualModalOpen(false);
+        setManualTitle('');
+        setManualQuestions([]);
+        showToast(`✓ Assessment "${created.title}" created successfully!`);
+      }
     } catch (err: unknown) {
-      console.error('Failed to create assessment:', err);
+      console.error('Failed to save assessment:', err);
       const errorObj = err as { message?: string };
-      showToast(errorObj?.message || 'Error creating assessment.');
+      showToast(errorObj?.message || 'Error saving assessment.');
     } finally {
       setIsSavingManual(false);
     }
@@ -425,18 +487,12 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
             <span>STUDENT 4 • TECHNICAL ASSESSMENT ENGINE</span>
           </div>
           <h1 className="pipeline-page-title" style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', marginTop: '8px' }}>
-            {subTab === 'templates'
-              ? 'Assessment Templates'
-              : subTab === 'submissions'
-              ? 'Candidate Submissions & Code Review'
-              : 'Top 5 Candidate Leaderboard'}
+            {!isPerformanceHub ? 'Assessments' : 'Performance Hub'}
           </h1>
           <p className="pipeline-page-subtitle" style={{ fontSize: '14px', color: '#64748b', maxWidth: '800px' }}>
-            {subTab === 'templates'
-              ? 'Design custom coding problem tracks, configure language starter templates, and publish technical assessment benchmarks for active requisitions.'
-              : subTab === 'submissions'
-              ? 'Review candidate-written code solutions, examine proctor anti-cheat telemetry, evaluate question performance, and select candidates for technical interview.'
-              : 'Ranked performance leaderboard for candidate exam submissions. Finalize and promote the Top 5 finalists directly to Student 3\'s Meeting Orchestration Hub.'}
+            {!isPerformanceHub
+              ? 'Design custom coding problem tracks, configure language starter code, and publish technical assessment benchmarks for active requisitions.'
+              : 'Review candidate code solutions, inspect anti-cheat proctor telemetry, evaluate question performance, and promote the Top 5 finalists directly to Student 3\'s Meeting Orchestration Hub.'}
           </p>
         </div>
 
@@ -472,9 +528,9 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         </div>
       </div>
 
-      {/* Active Section Indicator */}
+      {/* Active Section / Performance Hub Tabs */}
       <div style={{ display: 'flex', gap: '12px', borderBottom: '2px solid #e2e8f0', marginBottom: '24px' }}>
-        {subTab === 'templates' && (
+        {!isPerformanceHub ? (
           <div
             style={{
               padding: '12px 20px',
@@ -489,59 +545,67 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
             }}
           >
             <BriefcaseIcon />
-            <span>Assessment Templates ({assessments.length})</span>
+            <span>Assessments ({assessments.length})</span>
           </div>
-        )}
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => setPerfTab('submissions')}
+              style={{
+                padding: '12px 20px',
+                fontSize: '14.5px',
+                fontWeight: 700,
+                color: perfTab === 'submissions' ? '#00b074' : '#64748b',
+                borderBottom: perfTab === 'submissions' ? '3px solid #00b074' : '3px solid transparent',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '-2px',
+              }}
+            >
+              <SparkleIcon />
+              <span>Candidate Submissions &amp; Review ({submissions.length})</span>
+            </button>
 
-        {subTab === 'submissions' && (
-          <div
-            style={{
-              padding: '12px 20px',
-              fontSize: '14.5px',
-              fontWeight: 700,
-              color: '#00b074',
-              borderBottom: '3px solid #00b074',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginBottom: '-2px',
-            }}
-          >
-            <SparkleIcon />
-            <span>Candidate Submissions &amp; Review ({submissions.length})</span>
-          </div>
-        )}
-
-        {subTab === 'leaderboard' && (
-          <div
-            style={{
-              padding: '12px 20px',
-              fontSize: '14.5px',
-              fontWeight: 700,
-              color: '#00b074',
-              borderBottom: '3px solid #00b074',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginBottom: '-2px',
-            }}
-          >
-            <TrophyIcon />
-            <span>Top 5 Leaderboard ({leaderboard.length})</span>
-          </div>
+            <button
+              type="button"
+              onClick={() => setPerfTab('leaderboard')}
+              style={{
+                padding: '12px 20px',
+                fontSize: '14.5px',
+                fontWeight: 700,
+                color: perfTab === 'leaderboard' ? '#00b074' : '#64748b',
+                borderBottom: perfTab === 'leaderboard' ? '3px solid #00b074' : '3px solid transparent',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '-2px',
+              }}
+            >
+              <TrophyIcon />
+              <span>Top 5 Leaderboard ({leaderboard.length})</span>
+            </button>
+          </>
         )}
       </div>
 
       {/* =========================================================
-          VIEW 1: ASSESSMENT TEMPLATES
+          VIEW 1: ASSESSMENTS
           ========================================================= */}
-      {subTab === 'templates' && (
+      {!isPerformanceHub && (
         <div>
           {/* Action Row */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
             <div>
               <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                Coding Track Templates for {selectedJob?.title || 'Selected Role'}
+                Coding Tracks for {selectedJob?.title || 'Selected Role'}
               </h3>
               <p style={{ fontSize: '12.5px', color: '#64748b', margin: '2px 0 0 0' }}>
                 Candidates will write and run code against these challenges when dispatched.
@@ -551,16 +615,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 type="button"
-                onClick={() => {
-                  setManualTitle(`${selectedJob?.title || 'Technical'} Skill Assessment`);
-                  setManualQuestions([]);
-                  setCurQTitle('');
-                  setCurQStatement('');
-                  setCurQLanguage('csharp');
-                  setCurQDifficulty('Medium');
-                  setCurQStarter(LANGUAGE_STARTER_TEMPLATES['csharp']);
-                  setIsManualModalOpen(true);
-                }}
+                onClick={handleOpenCreateModal}
                 className="btn-primary"
                 style={{ padding: '8px 18px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
@@ -594,16 +649,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               </p>
               <button
                 type="button"
-                onClick={() => {
-                  setManualTitle(`${selectedJob?.title || 'Technical'} Skill Assessment`);
-                  setManualQuestions([]);
-                  setCurQTitle('');
-                  setCurQStatement('');
-                  setCurQLanguage('csharp');
-                  setCurQDifficulty('Medium');
-                  setCurQStarter(LANGUAGE_STARTER_TEMPLATES['csharp']);
-                  setIsManualModalOpen(true);
-                }}
+                onClick={handleOpenCreateModal}
                 className="btn-primary"
                 style={{ padding: '8px 18px', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
@@ -677,44 +723,85 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '14px' }}>
-                    <button
-                      type="button"
-                      onClick={() => setPreviewAssessment(track)}
-                      className="btn-secondary"
-                      style={{ padding: '6px 14px', fontSize: '12px' }}
-                    >
-                      View Question Bank
-                    </button>
+                  {(() => {
+                    const hasActiveExam = track.hasActiveCandidateExam ?? (
+                      submissions.some((s) => s.assessmentId === track.id && (s.status === 'Assigned' || s.status === 'Started'))
+                    );
+                    const isEditable = track.canEdit !== undefined ? track.canEdit : !hasActiveExam;
 
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      {track.status === 'Draft' && (
+                    return (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '14px' }}>
                         <button
                           type="button"
-                          onClick={() => handlePublishAssessment(track.id)}
-                          className="btn-primary"
+                          onClick={() => setPreviewAssessment(track)}
+                          className="btn-secondary"
                           style={{ padding: '6px 14px', fontSize: '12px' }}
                         >
-                          Publish
+                          View Question Bank
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteAssessment(track.id)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#ef4444',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          padding: '6px 8px'
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {isEditable ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditModal(track)}
+                              className="btn-secondary"
+                              style={{ padding: '6px 14px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              <span>Edit</span>
+                            </button>
+                          ) : (
+                            <span
+                              title="This assessment is currently dispatched to a candidate profile and exam is in-progress. Editing will be re-enabled once the candidate completes the assessment."
+                              style={{
+                                fontSize: '11px',
+                                color: '#b45309',
+                                background: '#fef3c7',
+                                border: '1px solid #fde68a',
+                                borderRadius: '6px',
+                                padding: '4px 8px',
+                                fontWeight: 600,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                cursor: 'help',
+                              }}
+                            >
+                              🔒 Locked (In Progress)
+                            </span>
+                          )}
+
+                          {track.status === 'Draft' && (
+                            <button
+                              type="button"
+                              onClick={() => handlePublishAssessment(track.id)}
+                              className="btn-primary"
+                              style={{ padding: '6px 14px', fontSize: '12px' }}
+                            >
+                              Publish
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAssessment(track.id)}
+                            disabled={!isEditable}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: !isEditable ? '#cbd5e1' : '#ef4444',
+                              cursor: !isEditable ? 'not-allowed' : 'pointer',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              padding: '6px 8px',
+                            }}
+                            title={!isEditable ? 'Cannot delete while candidate exam is in progress' : undefined}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               ))}
             </div>
@@ -725,7 +812,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
       {/* =========================================================
           VIEW 2: CANDIDATE SUBMISSIONS & MANUAL CODE REVIEW
           ========================================================= */}
-      {subTab === 'submissions' && (
+      {isPerformanceHub && perfTab === 'submissions' && (
         <div>
           {/* Header & Filter Controls */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
@@ -997,7 +1084,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
       {/* =========================================================
           VIEW 3: TOP 5 LEADERBOARD & STUDENT 3 HANDOFF
           ========================================================= */}
-      {subTab === 'leaderboard' && (
+      {isPerformanceHub && perfTab === 'leaderboard' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
             <div>
@@ -1193,15 +1280,20 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                   </span>
                 </div>
                 <h3 style={{ fontSize: '19px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  Create Technical Assessment (Manual Option)
+                  {editingAssessment ? 'Edit Coding Assessment' : 'Create Technical Assessment'}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: '#64748b', margin: '4px 0 0 0' }}>
-                  Configure custom coding problems, runtime environments, and passing benchmarks for candidates.
+                  {editingAssessment
+                    ? 'Update assessment parameters, problem statements, and coding challenges for this track.'
+                    : 'Configure custom coding problems, runtime environments, and passing benchmarks for candidates.'}
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => setIsManualModalOpen(false)}
+                onClick={() => {
+                  setIsManualModalOpen(false);
+                  setEditingAssessment(null);
+                }}
                 style={{
                   background: '#f8fafc',
                   border: '1px solid #e2e8f0',
@@ -1325,13 +1417,30 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                             </div>
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setManualQuestions(manualQuestions.filter((item) => item.id !== q.id))}
-                          style={{ background: '#fee2e2', border: '1px solid #fecaca', color: '#ef4444', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '11.5px', fontWeight: 700 }}
-                        >
-                          Remove
-                        </button>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCurQTitle(q.title);
+                              setCurQStatement(q.problemStatement);
+                              setCurQLanguage(q.language);
+                              setCurQDifficulty(q.difficulty);
+                              setCurQStarter(q.starterCode);
+                              setManualQuestions(manualQuestions.filter((item) => item.id !== q.id));
+                              showToast(`Loaded "${q.title}" into editor below.`);
+                            }}
+                            style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '11.5px', fontWeight: 700 }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setManualQuestions(manualQuestions.filter((item) => item.id !== q.id))}
+                            style={{ background: '#fee2e2', border: '1px solid #fecaca', color: '#ef4444', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '11.5px', fontWeight: 700 }}
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1482,31 +1591,50 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
                   type="button"
-                  onClick={() => setIsManualModalOpen(false)}
+                  onClick={() => {
+                    setIsManualModalOpen(false);
+                    setEditingAssessment(null);
+                  }}
                   className="btn-secondary"
                   style={{ padding: '8px 16px', fontSize: '13px' }}
                 >
                   Cancel
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleSaveManualAssessment(false)}
-                  disabled={isSavingManual}
-                  className="btn-secondary"
-                  style={{ padding: '8px 16px', fontSize: '13px' }}
-                >
-                  {isSavingManual ? 'Saving...' : 'Save as Draft'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSaveManualAssessment(true)}
-                  disabled={isSavingManual}
-                  className="btn-primary"
-                  style={{ padding: '8px 20px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
-                >
-                  <CheckIcon />
-                  <span>{isSavingManual ? 'Publishing...' : 'Publish Template'}</span>
-                </button>
+
+                {editingAssessment ? (
+                  <button
+                    type="button"
+                    onClick={() => handleSaveManualAssessment(false)}
+                    disabled={isSavingManual}
+                    className="btn-primary"
+                    style={{ padding: '8px 20px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <CheckIcon />
+                    <span>{isSavingManual ? 'Saving...' : 'Save Changes'}</span>
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveManualAssessment(false)}
+                      disabled={isSavingManual}
+                      className="btn-secondary"
+                      style={{ padding: '8px 16px', fontSize: '13px' }}
+                    >
+                      {isSavingManual ? 'Saving...' : 'Save as Draft'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveManualAssessment(true)}
+                      disabled={isSavingManual}
+                      className="btn-primary"
+                      style={{ padding: '8px 20px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      <CheckIcon />
+                      <span>{isSavingManual ? 'Publishing...' : 'Publish Assessment'}</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

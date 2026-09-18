@@ -103,7 +103,7 @@ export const CandidateAssessments: React.FC = () => {
 
   // Filtered assessments
   const filteredAssessments = assessments.filter((item) => {
-    const isCompleted = item.status === 'Submitted' || item.status === 'Under_Review' || item.status === 'Graded' || item.status === 'Passed';
+    const isCompleted = item.status === 'Submitted' || item.status === 'Under_Review' || item.status === 'Graded' || item.status === 'Passed' || item.status === 'Rejected';
     const isPending = !isCompleted;
 
     if (activeTab === 'pending' && !isPending) return false;
@@ -120,8 +120,8 @@ export const CandidateAssessments: React.FC = () => {
     return true;
   });
 
-  const pendingCount = assessments.filter((a) => a.status === 'Assigned' || a.status === 'In_Progress').length;
-  const completedCount = assessments.filter((a) => a.status === 'Submitted' || a.status === 'Under_Review' || a.status === 'Graded' || a.status === 'Passed').length;
+  const pendingCount = assessments.filter((a) => a.status === 'Assigned' || a.status === 'In_Progress' || a.status === 'Started').length;
+  const completedCount = assessments.filter((a) => a.status === 'Submitted' || a.status === 'Under_Review' || a.status === 'Graded' || a.status === 'Passed' || a.status === 'Rejected').length;
 
   return (
     <div className="candidate-assessments-page">
@@ -251,9 +251,9 @@ export const CandidateAssessments: React.FC = () => {
         <div className="assessments-grid">
           {filteredAssessments.map((item) => {
             const isUnderReview = item.status === 'Under_Review' || (item.status === 'Submitted' && item.examScore === 0);
-            const isGraded = item.status === 'Graded' || item.status === 'Passed' || (item.status === 'Submitted' && item.examScore > 0);
+            const isGraded = item.status === 'Graded' || item.status === 'Passed' || item.status === 'Rejected' || (item.status === 'Submitted' && item.examScore > 0);
             const isCompleted = isUnderReview || isGraded;
-            const isInProgress = item.status === 'In_Progress';
+            const isInProgress = item.status === 'In_Progress' || item.status === 'Started';
             const companyInitials = item.companyName
               ? item.companyName.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
               : 'CO';

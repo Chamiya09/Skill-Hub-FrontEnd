@@ -141,6 +141,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   const [manualPassingThreshold, setManualPassingThreshold] = useState<number>(60);
   const [manualTimeLimit, setManualTimeLimit] = useState<number>(60);
   const [manualQuestions, setManualQuestions] = useState<CodingQuestionItemDto[]>([]);
+  const [manualExpiresAt, setManualExpiresAt] = useState<string>('');
   const [editingAssessment, setEditingAssessment] = useState<AssessmentResponseDto | null>(null);
   const [isSavingManual, setIsSavingManual] = useState<boolean>(false);
 
@@ -330,6 +331,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     setManualTimeLimit(60);
     setManualPassingThreshold(60);
     setManualQuestions([]);
+    setManualExpiresAt('');
     setCurQTitle('');
     setCurQStatement('');
     setCurQLanguage('csharp');
@@ -344,6 +346,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     setManualTimeLimit(track.timeLimitMinutes || 60);
     setManualPassingThreshold(track.passingThreshold || 60);
     setManualQuestions([...track.finalQuestions]);
+    setManualExpiresAt(track.expiresAt ? new Date(track.expiresAt).toISOString().slice(0, 16) : '');
     setCurQTitle('');
     setCurQStatement('');
     setCurQLanguage('csharp');
@@ -366,12 +369,15 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
     try {
       setIsSavingManual(true);
+      const expiresAtIso = manualExpiresAt ? new Date(manualExpiresAt).toISOString() : null;
+
       if (editingAssessment) {
         const updated = await assessmentsApi.update(editingAssessment.id, {
           title: manualTitle.trim(),
           passingThreshold: manualPassingThreshold,
           timeLimitMinutes: manualTimeLimit,
           finalQuestions: manualQuestions,
+          expiresAt: expiresAtIso,
         });
 
         setAssessments(assessments.map((a) => (a.id === editingAssessment.id ? updated : a)));
@@ -379,6 +385,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         setEditingAssessment(null);
         setManualTitle('');
         setManualQuestions([]);
+        setManualExpiresAt('');
         showToast(`✓ Assessment "${updated.title}" updated successfully!`);
       } else {
         const created = await assessmentsApi.createManual({
@@ -388,12 +395,14 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           timeLimitMinutes: manualTimeLimit,
           questions: manualQuestions,
           publishImmediately: publish,
+          expiresAt: expiresAtIso,
         });
 
         setAssessments([created, ...assessments]);
         setIsManualModalOpen(false);
         setManualTitle('');
         setManualQuestions([]);
+        setManualExpiresAt('');
         showToast(`✓ Assessment "${created.title}" created successfully!`);
       }
     } catch (err: unknown) {
@@ -695,7 +704,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       {track.title}
                     </h4>
 
-                    <div style={{ display: 'flex', gap: '14px', fontSize: '12px', color: '#64748b', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', gap: '14px', fontSize: '12px', color: '#64748b', marginBottom: '16px', flexWrap: 'wrap' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <ClockIcon /> {track.timeLimitMinutes} mins
                       </span>
@@ -703,6 +712,14 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       <span>{track.finalQuestions.length} Coding Problems</span>
                       <span>•</span>
                       <span>Pass: {track.passingThreshold}%</span>
+                      {track.expiresAt && (
+                        <>
+                          <span>•</span>
+                          <span style={{ color: new Date(track.expiresAt).getTime() < Date.now() ? '#dc2626' : '#b45309', fontWeight: 600 }}>
+                            Deadline: {new Date(track.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </>
+                      )}
                     </div>
 
                     {/* Problem list preview */}
@@ -1326,10 +1343,10 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '14px' }}>
                   <div>
                     <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '5px' }}>
-                      Time Limit (Minutes):
+                      Time Limit:
                     </label>
                     <div style={{ position: 'relative' }}>
                       <input
@@ -1347,7 +1364,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                   </div>
                   <div>
                     <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '5px' }}>
-                      Passing Benchmark (%):
+                      Benchmark (%):
                     </label>
                     <div style={{ position: 'relative' }}>
                       <input
@@ -1362,6 +1379,18 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         %
                       </span>
                     </div>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '5px' }}>
+                      Expiration Date (Deadline):
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={manualExpiresAt}
+                      onChange={(e) => setManualExpiresAt(e.target.value)}
+                      min={new Date().toISOString().slice(0, 16)}
+                      style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a' }}
+                    />
                   </div>
                 </div>
               </div>

@@ -32,7 +32,7 @@ const PlayIcon: React.FC = () => (
   </svg>
 );
 
-type FilterTab = 'all' | 'pending' | 'completed';
+type FilterTab = 'all' | 'pending' | 'completed' | 'expired';
 
 export const CandidateAssessments: React.FC = () => {
   const { currentUser } = useAuth();
@@ -119,13 +119,24 @@ export const CandidateAssessments: React.FC = () => {
     setScorecardError(null);
   };
 
+  // Helper functions for completion & expiration status
+  const checkIsCompleted = (item: CandidateAssessmentListItemDto) =>
+    item.status === 'Submitted' || item.status === 'Under_Review' || item.status === 'Graded' || item.status === 'Passed' || item.status === 'Rejected';
+
+  const checkIsExpired = (item: CandidateAssessmentListItemDto) => {
+    if (checkIsCompleted(item)) return false;
+    return Boolean(item.isExpired) || (Boolean(item.expiresAt) && new Date(item.expiresAt!).getTime() < Date.now());
+  };
+
   // Filtered assessments
   const filteredAssessments = assessments.filter((item) => {
-    const isCompleted = item.status === 'Submitted' || item.status === 'Under_Review' || item.status === 'Graded' || item.status === 'Passed' || item.status === 'Rejected';
-    const isPending = !isCompleted;
+    const isCompleted = checkIsCompleted(item);
+    const isExpired = checkIsExpired(item);
+    const isPending = !isCompleted && !isExpired;
 
     if (activeTab === 'pending' && !isPending) return false;
     if (activeTab === 'completed' && !isCompleted) return false;
+    if (activeTab === 'expired' && !isExpired) return false;
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -138,8 +149,9 @@ export const CandidateAssessments: React.FC = () => {
     return true;
   });
 
-  const pendingCount = assessments.filter((a) => a.status === 'Assigned' || a.status === 'In_Progress' || a.status === 'Started').length;
-  const completedCount = assessments.filter((a) => a.status === 'Submitted' || a.status === 'Under_Review' || a.status === 'Graded' || a.status === 'Passed' || a.status === 'Rejected').length;
+  const pendingCount = assessments.filter((a) => !checkIsCompleted(a) && !checkIsExpired(a)).length;
+  const completedCount = assessments.filter((a) => checkIsCompleted(a)).length;
+  const expiredCount = assessments.filter((a) => checkIsExpired(a)).length;
 
   return (
     <div className="candidate-assessments-page">
@@ -199,6 +211,15 @@ export const CandidateAssessments: React.FC = () => {
           >
             Completed ({completedCount})
           </button>
+          {expiredCount > 0 && (
+            <button
+              type="button"
+              className={`tab-btn ${activeTab === 'expired' ? 'active' : ''}`}
+              onClick={() => setActiveTab('expired')}
+            >
+              Expired ({expiredCount})
+            </button>
+          )}
         </div>
 
         <div className="assessments-search">
@@ -268,10 +289,11 @@ export const CandidateAssessments: React.FC = () => {
       ) : (
         <div className="assessments-grid">
           {filteredAssessments.map((item) => {
+            const isCompleted = checkIsCompleted(item);
+            const isExpired = checkIsExpired(item);
             const isUnderReview = item.status === 'Under_Review' || (item.status === 'Submitted' && item.examScore === 0);
             const isGraded = item.status === 'Graded' || item.status === 'Passed' || item.status === 'Rejected' || (item.status === 'Submitted' && item.examScore > 0);
-            const isCompleted = isUnderReview || isGraded;
-            const isInProgress = item.status === 'In_Progress' || item.status === 'Started' || (!!item.startedAt && !isCompleted);
+            const isInProgress = !isExpired && (item.status === 'In_Progress' || item.status === 'Started' || (!!item.startedAt && !isCompleted));
             const companyInitials = item.companyName
               ? item.companyName.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
               : 'CO';
@@ -301,7 +323,12 @@ export const CandidateAssessments: React.FC = () => {
                   </div>
 
                   {/* Status Pill */}
-                  {isUnderReview ? (
+                  {isExpired ? (
+                    <span className="status-pill" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca' }}>
+                      <XIcon />
+                      <span>Expired</span>
+                    </span>
+                  ) : isUnderReview ? (
                     <span className="status-pill" style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }}>
                       <ClockIcon />
                       <span>Under Review</span>
@@ -389,13 +416,42 @@ export const CandidateAssessments: React.FC = () => {
                     <ShieldCheckIcon />
                     <span>Pass: {item.passingThreshold}%</span>
                   </div>
+                  {item.expiresAt && (
+                    <div
+                      className="spec-badge"
+                      style={
+                        isExpired
+                          ? { color: '#ef4444', borderColor: '#fecaca', background: '#fff5f5' }
+                          : undefined
+                      }
+                    >
+                      <ClockIcon />
+                      <span>
+                        {isExpired ? 'Expired' : 'Deadline'}:{' '}
+                        {new Date(item.expiresAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Card Footer: Date & Action CTA */}
                 <div className="card-footer-row">
                   <div className="card-timeline-info">
-                    <span className="timeline-lbl">{isCompleted ? 'Submitted' : 'Assigned'}</span>
-                    <span className="timeline-date">{assignedFormatted}</span>
+                    <span className="timeline-lbl">{isCompleted ? 'Submitted' : isExpired ? 'Expired' : 'Assigned'}</span>
+                    <span className="timeline-date">
+                      {isExpired && item.expiresAt
+                        ? new Date(item.expiresAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })
+                        : assignedFormatted}
+                    </span>
                   </div>
 
                   <div className="card-actions">
@@ -406,6 +462,21 @@ export const CandidateAssessments: React.FC = () => {
                         onClick={() => handleOpenScorecard(item.submissionId)}
                       >
                         <span>{isUnderReview ? 'Check Status' : 'View Scorecard'}</span>
+                      </button>
+                    ) : isExpired ? (
+                      <button
+                        type="button"
+                        className="btn-start-exam"
+                        style={{
+                          background: '#f1f5f9',
+                          color: '#94a3b8',
+                          border: '1px solid #e2e8f0',
+                          cursor: 'not-allowed',
+                        }}
+                        disabled
+                        title="The deadline for this assessment has passed."
+                      >
+                        <span>Expired</span>
                       </button>
                     ) : isInProgress ? (
                       <button

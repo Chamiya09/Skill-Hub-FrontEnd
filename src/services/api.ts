@@ -1531,6 +1531,7 @@ export interface AssessmentResponseDto {
   status: 'Draft' | 'Published' | 'Archived';
   createdAt: string;
   updatedAt: string;
+  expiresAt?: string | null;
   totalSubmissions: number;
   hasActiveCandidateExam?: boolean;
   canEdit?: boolean;
@@ -1543,6 +1544,7 @@ export interface AssessmentTrackSummaryDto {
   questionCount: number;
   passingThreshold: number;
   status: string;
+  expiresAt?: string | null;
 }
 
 export interface CreateAssessmentManualPayload {
@@ -1552,6 +1554,7 @@ export interface CreateAssessmentManualPayload {
   timeLimitMinutes?: number;
   questions: CodingQuestionItemDto[];
   publishImmediately?: boolean;
+  expiresAt?: string | null;
 }
 
 export interface UpdateAssessmentPayload {
@@ -1559,6 +1562,7 @@ export interface UpdateAssessmentPayload {
   passingThreshold: number;
   timeLimitMinutes: number;
   finalQuestions: CodingQuestionItemDto[];
+  expiresAt?: string | null;
 }
 
 export interface DispatchAssessmentPayload {
@@ -1749,7 +1753,8 @@ export interface CandidateAssessmentListItemDto {
   assignedAt: string;
   startedAt?: string;
   submittedAt?: string;
-  expiresAt: string;
+  expiresAt?: string | null;
+  isExpired?: boolean;
 }
 
 export const assessmentsApi = {

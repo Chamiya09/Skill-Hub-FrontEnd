@@ -28,9 +28,12 @@ const getApplicationStage = (status?: string | null): number => {
   return 0;
 };
 
-const getCopilotMessage = (stage: number, isRejected?: boolean): string => {
+const getCopilotMessage = (stage: number, isRejected?: boolean, isSuspended?: boolean): string => {
   if (isRejected) {
     return 'Your application was not selected to proceed after the shortlisting review. Thank you for your interest and time.';
+  }
+  if (isSuspended) {
+    return 'Your technical assessment was suspended because the test session rules were not followed (e.g. closing browser tab, refreshing, or leaving the active exam). You cannot retake this assessment.';
   }
   return [
     'Your application is submitted. Keep your Digital CV current while the hiring team begins its review.',
@@ -52,7 +55,10 @@ export const ApplicationProgressModal: React.FC<ApplicationProgressModalProps> =
   onClose,
 }) => {
   const isRejected = (application.status || '').toLowerCase().includes('reject');
-  const currentStage = isRejected ? 2 : getApplicationStage(application.status);
+  const isSuspended =
+    (application.status || '').toLowerCase().includes('suspend') ||
+    (application.status || '').toLowerCase().includes('block');
+  const currentStage = isRejected ? 2 : isSuspended ? 3 : getApplicationStage(application.status);
   const initials = application.companyName
     .split(' ')
     .map((word) => word[0])
@@ -91,8 +97,8 @@ export const ApplicationProgressModal: React.FC<ApplicationProgressModalProps> =
           <div className="progress-modal-heading">
             <div className="progress-title-row">
               <h2 id="progress-modal-title">{application.jobTitle}</h2>
-              <span className={`application-status ${isRejected ? 'is-rejected' : ''}`}>
-                <b />{isRejected ? 'Rejected' : STAGES[currentStage]}
+              <span className={`application-status ${isRejected || isSuspended ? 'is-rejected' : ''}`}>
+                <b />{isRejected ? 'Rejected' : isSuspended ? 'Assessment Suspended' : STAGES[currentStage]}
               </span>
             </div>
             <div className="progress-modal-meta">
@@ -106,7 +112,7 @@ export const ApplicationProgressModal: React.FC<ApplicationProgressModalProps> =
 
         <div className="progress-modal-body">
           <div className="progress-section-label">APPLICATION JOURNEY</div>
-          <div className="application-stepper" aria-label={`Current stage: ${isRejected ? 'Rejected at Shortlisted' : STAGES[currentStage]}`}>
+          <div className="application-stepper" aria-label={`Current stage: ${isRejected ? 'Rejected at Shortlisted' : isSuspended ? 'Suspended at Assessment' : STAGES[currentStage]}`}>
             {STAGES.map((stage, index) => {
               let stepClass = '';
               let dotContent: React.ReactNode = index + 1;
@@ -116,6 +122,14 @@ export const ApplicationProgressModal: React.FC<ApplicationProgressModalProps> =
                   stepClass = 'is-complete';
                   dotContent = '✓';
                 } else if (index === 2) {
+                  stepClass = 'is-rejected is-current';
+                  dotContent = <WrongTickIcon />;
+                }
+              } else if (isSuspended) {
+                if (index < 3) {
+                  stepClass = 'is-complete';
+                  dotContent = '✓';
+                } else if (index === 3) {
                   stepClass = 'is-rejected is-current';
                   dotContent = <WrongTickIcon />;
                 }
@@ -139,7 +153,7 @@ export const ApplicationProgressModal: React.FC<ApplicationProgressModalProps> =
 
           <div className="application-copilot">
             <span className="application-copilot-icon"><SparkleIcon /></span>
-            <div><strong>AI COPILOT INSIGHT</strong><p>{getCopilotMessage(currentStage, isRejected)}</p></div>
+            <div><strong>AI COPILOT INSIGHT</strong><p>{getCopilotMessage(currentStage, isRejected, isSuspended)}</p></div>
           </div>
         </div>
 
@@ -147,15 +161,21 @@ export const ApplicationProgressModal: React.FC<ApplicationProgressModalProps> =
           <Link to={`/jobs/${application.jobId}`} className="application-view-link">
             View Job Details <ArrowRightIcon />
           </Link>
-          {!isRejected && currentStage === 2 && (
+          {!isRejected && !isSuspended && currentStage === 2 && (
             <Link to={`/candidate/mock-interview?jobId=${application.jobId}`} className="application-smart-action">
               <span>Practice Mock Interview</span>
               <ArrowRightIcon />
             </Link>
           )}
-          {!isRejected && currentStage === 3 && (
+          {!isRejected && !isSuspended && currentStage === 3 && (
             <Link to="/candidate/assessments" className="application-smart-action">
               <span>Go to Technical Assessments</span>
+              <ArrowRightIcon />
+            </Link>
+          )}
+          {isSuspended && (
+            <Link to="/candidate/assessments" className="application-smart-action" style={{ background: '#ef4444', borderColor: '#ef4444' }}>
+              <span>View Suspended Assessment</span>
               <ArrowRightIcon />
             </Link>
           )}

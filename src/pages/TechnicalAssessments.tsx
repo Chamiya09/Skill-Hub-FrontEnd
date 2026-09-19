@@ -19,6 +19,7 @@ import {
   CheckIcon,
   ShieldCheckIcon,
 } from '../components/common/Icons';
+import { Lock, AlertTriangle } from 'lucide-react';
 
 const LANGUAGE_STARTER_TEMPLATES: Record<string, string> = {
   csharp: `using System;
@@ -386,7 +387,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         setManualTitle('');
         setManualQuestions([]);
         setManualExpiresAt('');
-        showToast(`✓ Assessment "${updated.title}" updated successfully!`);
+        showToast(`Assessment "${updated.title}" updated successfully.`);
       } else {
         const created = await assessmentsApi.createManual({
           jobVacancyId: selectedJob.id,
@@ -403,7 +404,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         setManualTitle('');
         setManualQuestions([]);
         setManualExpiresAt('');
-        showToast(`✓ Assessment "${created.title}" created successfully!`);
+        showToast(`Assessment "${created.title}" created successfully.`);
       }
     } catch (err: unknown) {
       console.error('Failed to save assessment:', err);
@@ -420,7 +421,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
       const published = await assessmentsApi.publish(id);
       setAssessments(assessments.map((a) => (a.id === id ? published : a)));
       if (previewAssessment?.id === id) setPreviewAssessment(published);
-      showToast('✓ Assessment template published successfully!');
+      showToast('Assessment template published successfully.');
     } catch (err: unknown) {
       const errorObj = err as { message?: string };
       showToast(errorObj?.message || 'Failed to publish assessment.');
@@ -434,7 +435,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
       await assessmentsApi.delete(id);
       setAssessments(assessments.filter((a) => a.id !== id));
       if (previewAssessment?.id === id) setPreviewAssessment(null);
-      showToast('✓ Assessment deleted.');
+      showToast('Assessment deleted.');
     } catch (err: unknown) {
       const errorObj = err as { message?: string };
       showToast(errorObj?.message || 'Failed to delete assessment.');
@@ -742,7 +743,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
                   {(() => {
                     const hasActiveExam = track.hasActiveCandidateExam ?? (
-                      submissions.some((s) => s.assessmentId === track.id && (s.status === 'Assigned' || s.status === 'Started'))
+                      submissions.some((s) => s.assessmentId === track.id && s.status === 'Started')
                     );
                     const isEditable = track.canEdit !== undefined ? track.canEdit : !hasActiveExam;
 
@@ -758,16 +759,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         </button>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          {isEditable ? (
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditModal(track)}
-                              className="btn-secondary"
-                              style={{ padding: '6px 14px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                            >
-                              <span>Edit</span>
-                            </button>
-                          ) : (
+                          {hasActiveExam ? (
                             <span
                               title="This assessment is currently dispatched to a candidate profile and exam is in-progress. Editing will be re-enabled once the candidate completes the assessment."
                               style={{
@@ -780,13 +772,23 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                 fontWeight: 600,
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '4px',
+                                gap: '5px',
                                 cursor: 'help',
                               }}
                             >
-                              🔒 Locked (In Progress)
+                              <Lock size={12} strokeWidth={2.2} />
+                              <span>Locked (In Progress)</span>
                             </span>
-                          )}
+                          ) : isEditable ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditModal(track)}
+                              className="btn-secondary"
+                              style={{ padding: '6px 14px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              <span>Edit</span>
+                            </button>
+                          ) : null}
 
                           {track.status === 'Draft' && (
                             <button
@@ -801,17 +803,17 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                           <button
                             type="button"
                             onClick={() => handleDeleteAssessment(track.id)}
-                            disabled={!isEditable}
+                            disabled={hasActiveExam}
                             style={{
                               background: 'none',
                               border: 'none',
-                              color: !isEditable ? '#cbd5e1' : '#ef4444',
-                              cursor: !isEditable ? 'not-allowed' : 'pointer',
+                              color: hasActiveExam ? '#cbd5e1' : '#ef4444',
+                              cursor: hasActiveExam ? 'not-allowed' : 'pointer',
                               fontSize: '12px',
                               fontWeight: 600,
                               padding: '6px 8px',
                             }}
-                            title={!isEditable ? 'Cannot delete while candidate exam is in progress' : undefined}
+                            title={hasActiveExam ? 'Cannot delete while candidate exam is in progress' : undefined}
                           >
                             Delete
                           </button>
@@ -1020,12 +1022,14 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
                             <td style={{ padding: '14px 18px', textAlign: 'center' }}>
                               {infractions > 0 ? (
-                                <span style={{ padding: '3px 8px', borderRadius: '6px', background: '#fee2e2', color: '#b91c1c', fontSize: '11.5px', fontWeight: 700 }}>
-                                  ⚠️ {infractions} Alert(s)
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', background: '#fee2e2', color: '#b91c1c', fontSize: '11.5px', fontWeight: 700 }}>
+                                  <AlertTriangle size={12} strokeWidth={2.2} />
+                                  <span>{infractions} Alert(s)</span>
                                 </span>
                               ) : (
-                                <span style={{ padding: '3px 8px', borderRadius: '6px', background: '#ecfdf5', color: '#059669', fontSize: '11.5px', fontWeight: 600 }}>
-                                  ✓ Clean (0)
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', background: '#ecfdf5', color: '#059669', fontSize: '11.5px', fontWeight: 600 }}>
+                                  <CheckIcon />
+                                  <span>Clean (0)</span>
                                 </span>
                               )}
                             </td>
@@ -1039,6 +1043,30 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                 <span style={{ padding: '4px 10px', borderRadius: '999px', background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', fontSize: '11.5px', fontWeight: 700 }}>
                                   Graded
                                 </span>
+                              ) : s.status === 'Blocked' ? (
+                                <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+                                  <span
+                                    title="Candidate did not follow the rules: Closed browser tab, refreshed, or exited active test session."
+                                    style={{
+                                      padding: '3px 10px',
+                                      borderRadius: '999px',
+                                      background: '#fef2f2',
+                                      color: '#b91c1c',
+                                      border: '1px solid #fecaca',
+                                      fontSize: '11.5px',
+                                      fontWeight: 700,
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                    }}
+                                  >
+                                    <AlertTriangle size={11} strokeWidth={2.2} />
+                                    <span>Suspended</span>
+                                  </span>
+                                  <span style={{ fontSize: '10px', color: '#dc2626', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                                    (User did not follow the rules)
+                                  </span>
+                                </div>
                               ) : (
                                 <span style={{ padding: '4px 10px', borderRadius: '999px', background: '#f1f5f9', color: '#475569', fontSize: '11.5px', fontWeight: 600 }}>
                                   {s.status}
@@ -1058,8 +1086,9 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
                             <td style={{ padding: '14px 18px', textAlign: 'center' }}>
                               {s.isSelectedForInterview ? (
-                                <span style={{ padding: '4px 10px', borderRadius: '999px', background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe', fontSize: '11.5px', fontWeight: 800 }}>
-                                  ⭐ Selected
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '999px', background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe', fontSize: '11.5px', fontWeight: 800 }}>
+                                  <TrophyIcon />
+                                  <span>Selected</span>
                                 </span>
                               ) : (
                                 <span style={{ color: '#94a3b8', fontSize: '12px' }}>—</span>
@@ -1215,12 +1244,14 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
                         <td style={{ padding: '14px 18px', textAlign: 'center' }}>
                           {row.proctorTabSwitches > 0 ? (
-                            <span style={{ padding: '3px 8px', borderRadius: '6px', background: '#fee2e2', color: '#b91c1c', fontSize: '11.5px', fontWeight: 700 }}>
-                              ⚠️ {row.proctorTabSwitches} tab switch(es)
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', background: '#fee2e2', color: '#b91c1c', fontSize: '11.5px', fontWeight: 700 }}>
+                              <AlertTriangle size={12} strokeWidth={2.2} />
+                              <span>{row.proctorTabSwitches} tab switch(es)</span>
                             </span>
                           ) : (
-                            <span style={{ padding: '3px 8px', borderRadius: '6px', background: '#ecfdf5', color: '#059669', fontSize: '11.5px', fontWeight: 600 }}>
-                              ✓ Clean Session
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', background: '#ecfdf5', color: '#059669', fontSize: '11.5px', fontWeight: 600 }}>
+                              <CheckIcon />
+                              <span>Clean Session</span>
                             </span>
                           )}
                         </td>
@@ -1251,7 +1282,8 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                               alignItems: 'center',
                               gap: '4px'
                             }}>
-                              ⭐ Top 5 Finalist
+                              <TrophyIcon />
+                              <span>Top 5 Finalist</span>
                             </span>
                           ) : (
                             <span style={{ color: '#94a3b8', fontSize: '12px' }}>Standard</span>

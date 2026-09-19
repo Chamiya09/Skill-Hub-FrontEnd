@@ -110,6 +110,7 @@ export const CandidateExam: React.FC = () => {
 
   // Submit confirmation modal
   const [showSubmitModal, setShowSubmitModal] = useState<boolean>(false);
+  const isSubmittedRef = useRef<boolean>(false);
 
   // -------------------------------------------------------------
   // Panel Resizing State (Adjustable Width & Height)
@@ -188,29 +189,7 @@ export const CandidateExam: React.FC = () => {
         const paper = await assessmentsApi.getExamPaper(submissionId);
         setExamPaper(paper);
 
-        // Check localStorage for offline / recent backup
-        let localDraft: { remainingSeconds?: number; answers?: Record<string, { code: string; language: string }> } | null = null;
-        try {
-          const cached = localStorage.getItem(`exam_draft_${submissionId}`);
-          if (cached) localDraft = JSON.parse(cached);
-        } catch {
-          // ignore parsing error
-        }
-
-        // Map draft answers from backend if available
-        const backendDraftMap: Record<string, { code: string; language: string }> = {};
-        if (paper.draftAnswers && paper.draftAnswers.length > 0) {
-          paper.draftAnswers.forEach((ans) => {
-            if (ans.questionId) {
-              backendDraftMap[ans.questionId] = {
-                code: ans.submittedCode,
-                language: ans.language || 'csharp',
-              };
-            }
-          });
-        }
-
-        // Prepopulate code and language for each question (priority: localDraft > backendDraft > starterCode)
+        // Prepopulate code and language for each question from starter templates
         const initialAnswers: Record<string, { code: string; language: string }> = {};
         paper.questions.forEach((q) => {
           const qLang = (q.language || 'csharp').toLowerCase();
@@ -220,48 +199,33 @@ export const CandidateExam: React.FC = () => {
           const resolvedLangId = runtime ? runtime.id : 'csharp';
           const defaultCode = q.starterCode || DEFAULT_STARTER_TEMPLATES[resolvedLangId] || `// Solution for ${q.title}\n`;
 
-          const savedCode = localDraft?.answers?.[q.id]?.code ?? backendDraftMap[q.id]?.code;
-          const savedLang = localDraft?.answers?.[q.id]?.language ?? backendDraftMap[q.id]?.language;
-
           initialAnswers[q.id] = {
-            code: savedCode !== undefined ? savedCode : defaultCode,
-            language: savedLang || resolvedLangId,
+            code: defaultCode,
+            language: resolvedLangId,
           };
         });
         setAnswers(initialAnswers);
 
-        // Determine if exam was already started
+        // Strict One-Attempt Check: if already started or blocked, block re-entry
         const isAlreadyStarted = paper.status === 'Started' || paper.status === 'In_Progress' || !!paper.startedAt;
+        const isBlocked = paper.status === 'Blocked';
 
-        if (isAlreadyStarted) {
-          // Restore remaining time: priority: localDraft > paper.remainingSeconds > calculated from startedAt
-          let secondsLeft: number;
-          if (typeof localDraft?.remainingSeconds === 'number' && localDraft.remainingSeconds > 0) {
-            secondsLeft = localDraft.remainingSeconds;
-          } else if (typeof paper.remainingSeconds === 'number' && paper.remainingSeconds > 0) {
-            secondsLeft = paper.remainingSeconds;
-          } else if (paper.startedAt) {
-            const startedTime = new Date(paper.startedAt).getTime();
-            const elapsedSeconds = Math.floor((Date.now() - startedTime) / 1000);
-            const totalLimitSeconds = paper.timeLimitMinutes * 60;
-            secondsLeft = Math.max(0, totalLimitSeconds - elapsedSeconds);
-          } else {
-            secondsLeft = paper.timeLimitMinutes * 60;
-          }
-
-          setRemainingSeconds(secondsLeft);
-          setPhase('in_progress');
-        } else {
-          setRemainingSeconds(paper.timeLimitMinutes * 60);
-          setPhase('briefing');
+        if (isBlocked || isAlreadyStarted) {
+          assessmentsApi.blockAssessment(submissionId).catch(() => {});
+          setErrorMessage('This technical assessment has been blocked and cannot be retaken because the test session was closed or exited.');
+          setPhase('error');
+          return;
         }
+
+        setRemainingSeconds(paper.timeLimitMinutes * 60);
+        setPhase('briefing');
       } catch (err: unknown) {
         console.error('Failed to load exam paper:', err);
         const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
         setErrorMessage(
           errorObj?.response?.data?.message ||
             errorObj?.message ||
-            'Could not load assessment paper. It may have expired or already been completed.'
+            'Could not load assessment paper. It may have expired, been blocked, or already been completed.'
         );
         setPhase('error');
       }
@@ -402,35 +366,54 @@ export const CandidateExam: React.FC = () => {
     }, 1500);
   }, [submissionId, phase, examPaper, saveDraftNow]);
 
-  // Window unload / unmount hook: ensure last-second code and timer are captured
+  // Window unload / unmount hook: strictly block assessment if candidate closes tab, refreshes, or navigates away
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (phase === 'in_progress' && submissionId) {
-        try {
-          localStorage.setItem(
-            `exam_draft_${submissionId}`,
-            JSON.stringify({
-              remainingSeconds: remainingSecondsRef.current,
-              answers: answersRef.current,
-            })
-          );
-        } catch {
-          // ignore
+    if (phase !== 'in_progress' || !submissionId) return;
+
+    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5155/api';
+    const blockUrl = `${apiBase}/Assessments/take/${submissionId}/block`;
+
+    const handleExit = () => {
+      if (isSubmittedRef.current) return;
+      try {
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        fetch(blockUrl, { method: 'POST', keepalive: true, headers }).catch(() => {});
+      } catch {
+        // ignore
+      }
+      try {
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon(blockUrl);
         }
+      } catch {
+        // ignore
+      }
+      try {
+        localStorage.removeItem(`exam_draft_${submissionId}`);
+      } catch {
+        // ignore
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('beforeunload', handleExit);
+    window.addEventListener('pagehide', handleExit);
+
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      if (phase === 'in_progress') {
-        handleBeforeUnload();
+      window.removeEventListener('beforeunload', handleExit);
+      window.removeEventListener('pagehide', handleExit);
+      if (!isSubmittedRef.current) {
+        handleExit();
+        assessmentsApi.blockAssessment(submissionId).catch(() => {});
       }
     };
   }, [phase, submissionId]);
 
   const handleAutoSubmit = useCallback(async () => {
     if (phase !== 'in_progress' || !submissionId || !examPaper) return;
+    isSubmittedRef.current = true;
     setPhase('submitting');
 
     try {
@@ -461,19 +444,14 @@ export const CandidateExam: React.FC = () => {
           handleAutoSubmit();
           return 0;
         }
-        const next = prev - 1;
-        // Periodically sync remaining time to DB and localStorage every 15s
-        if (next % 15 === 0) {
-          void saveDraftNow(next);
-        }
-        return next;
+        return prev - 1;
       });
     }, 1000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [phase, handleAutoSubmit, saveDraftNow]);
+  }, [phase, handleAutoSubmit]);
 
   const formatTime = (totalSec: number) => {
     const hours = Math.floor(totalSec / 3600);
@@ -607,6 +585,7 @@ export const CandidateExam: React.FC = () => {
   // -------------------------------------------------------------
   const handleConfirmSubmit = async () => {
     if (!submissionId || !examPaper) return;
+    isSubmittedRef.current = true;
     setShowSubmitModal(false);
     setPhase('submitting');
 
@@ -719,12 +698,16 @@ export const CandidateExam: React.FC = () => {
           >
             <XIcon />
           </div>
-          <h2 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 12px' }}>Assessment Unavailable</h2>
+          <h2 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 12px' }}>
+            {errorMessage?.toLowerCase().includes('block') || errorMessage?.toLowerCase().includes('retake')
+              ? 'Assessment Blocked'
+              : 'Assessment Unavailable'}
+          </h2>
           <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6, margin: '0 0 24px' }}>
             {errorMessage || 'The assessment link is invalid, expired, or has already been completed.'}
           </p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/candidate/assessments')}
             style={{
               padding: '10px 24px',
               borderRadius: '8px',
@@ -735,7 +718,7 @@ export const CandidateExam: React.FC = () => {
               cursor: 'pointer',
             }}
           >
-            Return to Skill Hub
+            Return to Technical Assessments
           </button>
         </div>
       </div>
@@ -880,12 +863,37 @@ export const CandidateExam: React.FC = () => {
 
           {/* Assessment Protocol */}
           <div style={{ backgroundColor: '#0f172a80', border: '1px solid #334155', borderRadius: '10px', padding: '18px 20px', marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '0.88rem', fontWeight: 700, color: '#f1f5f9', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontSize: '0.88rem', fontWeight: 700, color: '#f1f5f9', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <ShieldCheckIcon /> Assessment Guidelines &amp; Integrity Protocol
             </h3>
+
+            {/* Prominent One-Attempt Security Warning */}
+            <div
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.35)',
+                borderRadius: '8px',
+                padding: '12px 14px',
+                marginBottom: '14px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px',
+              }}
+            >
+              <div style={{ color: '#ef4444', flexShrink: 0, marginTop: '2px' }}>
+                <AlertTriangleIcon size={18} />
+              </div>
+              <div style={{ fontSize: '0.82rem', color: '#fca5a5', lineHeight: 1.5 }}>
+                <strong style={{ color: '#fecaca', display: 'block', marginBottom: '2px' }}>
+                  Strict One-Attempt Security Policy:
+                </strong>
+                If you close the browser tab, refresh the page, or navigate back during the active test, the assessment will immediately be terminated and permanently blocked. You cannot retake or resume this assessment once exited.
+              </div>
+            </div>
+
             <ul style={{ margin: 0, paddingLeft: '18px', color: '#94a3b8', fontSize: '0.825rem', lineHeight: 1.75 }}>
               <li>
-                <strong style={{ color: '#e2e8f0' }}>Single-Window Policy:</strong> Switching tabs or navigating away from this window is monitored and recorded in your proctoring audit log.
+                <strong style={{ color: '#e2e8f0' }}>Tab Switching Monitored:</strong> Navigating between tabs or losing window focus is strictly monitored and recorded in your proctoring audit log.
               </li>
               <li>
                 <strong style={{ color: '#e2e8f0' }}>Timer &amp; Auto-Submit:</strong> The countdown timer starts immediately upon beginning. When time expires, answers submit automatically.

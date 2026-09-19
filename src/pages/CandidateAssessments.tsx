@@ -16,6 +16,7 @@ import {
   ArrowRightIcon,
   SearchIcon,
 } from '../components/common/Icons';
+import { Trash2 } from 'lucide-react';
 import './CandidateAssessments.css';
 
 // SVG Icon for Code / Technical assessment
@@ -119,20 +120,49 @@ export const CandidateAssessments: React.FC = () => {
     setScorecardError(null);
   };
 
-  // Helper functions for completion & expiration status
+  // Delete assessment from candidate dashboard
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+  const handleDeleteAssessment = async (submissionId: string, title: string) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete "${title}"? This will remove this assessment from your dashboard.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setIsDeletingId(submissionId);
+      await assessmentsApi.deleteSubmission(submissionId);
+      setAssessments((prev) => prev.filter((a) => a.submissionId !== submissionId));
+    } catch (err: unknown) {
+      console.error('Failed to delete assessment:', err);
+      alert(err instanceof Error ? err.message : 'Failed to delete assessment.');
+    } finally {
+      setIsDeletingId(null);
+    }
+  };
+
+  // Helper functions for completion, expiration & blocked status
   const checkIsCompleted = (item: CandidateAssessmentListItemDto) =>
     item.status === 'Submitted' || item.status === 'Under_Review' || item.status === 'Graded' || item.status === 'Passed' || item.status === 'Rejected';
 
-  const checkIsExpired = (item: CandidateAssessmentListItemDto) => {
+  const checkIsBlocked = (item: CandidateAssessmentListItemDto) => {
     if (checkIsCompleted(item)) return false;
+    return Boolean(item.isBlocked) || item.status === 'Blocked' || item.status === 'Started' || item.status === 'In_Progress' || Boolean(item.startedAt);
+  };
+
+  const checkIsExpired = (item: CandidateAssessmentListItemDto) => {
+    if (checkIsCompleted(item) || checkIsBlocked(item)) return false;
     return Boolean(item.isExpired) || (Boolean(item.expiresAt) && new Date(item.expiresAt!).getTime() < Date.now());
   };
 
   // Filtered assessments
   const filteredAssessments = assessments.filter((item) => {
     const isCompleted = checkIsCompleted(item);
+    const isBlocked = checkIsBlocked(item);
     const isExpired = checkIsExpired(item);
-    const isPending = !isCompleted && !isExpired;
+    const isPending = !isCompleted && !isExpired && !isBlocked;
 
     if (activeTab === 'pending' && !isPending) return false;
     if (activeTab === 'completed' && !isCompleted) return false;
@@ -149,7 +179,7 @@ export const CandidateAssessments: React.FC = () => {
     return true;
   });
 
-  const pendingCount = assessments.filter((a) => !checkIsCompleted(a) && !checkIsExpired(a)).length;
+  const pendingCount = assessments.filter((a) => !checkIsCompleted(a) && !checkIsExpired(a) && !checkIsBlocked(a)).length;
   const completedCount = assessments.filter((a) => checkIsCompleted(a)).length;
   const expiredCount = assessments.filter((a) => checkIsExpired(a)).length;
 
@@ -290,10 +320,11 @@ export const CandidateAssessments: React.FC = () => {
         <div className="assessments-grid">
           {filteredAssessments.map((item) => {
             const isCompleted = checkIsCompleted(item);
+            const isBlocked = checkIsBlocked(item);
             const isExpired = checkIsExpired(item);
             const isUnderReview = item.status === 'Under_Review' || (item.status === 'Submitted' && item.examScore === 0);
             const isGraded = item.status === 'Graded' || item.status === 'Passed' || item.status === 'Rejected' || (item.status === 'Submitted' && item.examScore > 0);
-            const isInProgress = !isExpired && (item.status === 'In_Progress' || item.status === 'Started' || (!!item.startedAt && !isCompleted));
+            const isInProgress = !isExpired && !isBlocked && (item.status === 'In_Progress' || item.status === 'Started' || (!!item.startedAt && !isCompleted));
             const companyInitials = item.companyName
               ? item.companyName.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
               : 'CO';
@@ -323,7 +354,12 @@ export const CandidateAssessments: React.FC = () => {
                   </div>
 
                   {/* Status Pill */}
-                  {isExpired ? (
+                  {isBlocked ? (
+                    <span className="status-pill status-blocked" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca' }}>
+                      <XIcon />
+                      <span>Cannot Retake</span>
+                    </span>
+                  ) : isExpired ? (
                     <span className="status-pill" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca' }}>
                       <XIcon />
                       <span>Expired</span>
@@ -444,7 +480,7 @@ export const CandidateAssessments: React.FC = () => {
                 {/* Card Footer: Date & Action CTA */}
                 <div className="card-footer-row">
                   <div className="card-timeline-info">
-                    <span className="timeline-lbl">{isCompleted ? 'Submitted' : isExpired ? 'Expired' : 'Assigned'}</span>
+                    <span className="timeline-lbl">{isCompleted ? 'Submitted' : isBlocked ? 'Blocked' : isExpired ? 'Expired' : 'Assigned'}</span>
                     <span className="timeline-date">
                       {isExpired && item.expiresAt
                         ? new Date(item.expiresAt).toLocaleDateString('en-US', {
@@ -465,6 +501,16 @@ export const CandidateAssessments: React.FC = () => {
                       >
                         <span>{isUnderReview ? 'Check Status' : 'View Scorecard'}</span>
                       </button>
+                    ) : isBlocked ? (
+                      <button
+                        type="button"
+                        className="btn-start-exam btn-cannot-retake"
+                        disabled
+                        title="You cannot retake this assessment because the test session was closed or exited."
+                      >
+                        <XIcon />
+                        <span>Cannot Retake</span>
+                      </button>
                     ) : isExpired ? (
                       <button
                         type="button"
@@ -480,15 +526,6 @@ export const CandidateAssessments: React.FC = () => {
                       >
                         <span>Expired</span>
                       </button>
-                    ) : isInProgress ? (
-                      <button
-                        type="button"
-                        className="btn-start-exam btn-resume"
-                        onClick={() => navigate(`/exam/take/${item.submissionId}`)}
-                      >
-                        <PlayIcon />
-                        <span>Resume Quiz</span>
-                      </button>
                     ) : (
                       <button
                         type="button"
@@ -499,6 +536,17 @@ export const CandidateAssessments: React.FC = () => {
                         <span>Start Assessment</span>
                       </button>
                     )}
+
+                    <button
+                      type="button"
+                      className="btn-delete-assessment"
+                      onClick={() => handleDeleteAssessment(item.submissionId, item.assessmentTitle)}
+                      disabled={isDeletingId === item.submissionId}
+                      title="Delete this assessment"
+                    >
+                      <Trash2 size={13} strokeWidth={2} />
+                      <span>{isDeletingId === item.submissionId ? 'Deleting...' : 'Delete'}</span>
+                    </button>
                   </div>
                 </div>
               </div>

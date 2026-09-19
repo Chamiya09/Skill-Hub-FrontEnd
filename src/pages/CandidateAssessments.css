@@ -417,6 +417,12 @@
   color: #475569;
 }
 
+.status-blocked {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
 /* Track Details Box */
 .card-track-box {
   background: #f8fafc;
@@ -501,6 +507,33 @@
 .card-actions {
   display: flex;
   align-items: center;
+  gap: 8px;
+}
+
+.btn-delete-assessment {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-delete-assessment:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #ef4444;
+}
+
+.btn-delete-assessment:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-start-exam {
@@ -524,13 +557,18 @@
   transform: translateY(-1px);
 }
 
-.btn-start-exam.btn-resume {
-  background: #d97706;
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.2);
+.btn-start-exam.btn-cannot-retake {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.9;
 }
 
-.btn-start-exam.btn-resume:hover {
-  background: #b45309;
+.btn-start-exam.btn-cannot-retake:hover {
+  background: #fef2f2;
+  transform: none;
 }
 
 .btn-view-scorecard {

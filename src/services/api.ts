@@ -1545,6 +1545,7 @@ export interface AssessmentResponseDto {
   expiresAt?: string | null;
   totalSubmissions: number;
   hasActiveCandidateExam?: boolean;
+  hasSuspendedCandidateExam?: boolean;
   canEdit?: boolean;
 }
 
@@ -1766,6 +1767,7 @@ export interface CandidateAssessmentListItemDto {
   submittedAt?: string;
   expiresAt?: string | null;
   isExpired?: boolean;
+  isBlocked?: boolean;
 }
 
 export const assessmentsApi = {
@@ -1856,6 +1858,11 @@ export const assessmentsApi = {
     request<{ success: boolean }>(`/Assessments/take/${submissionId}/draft`, {
       method: 'POST',
       body: JSON.stringify(payload),
+    }),
+
+  blockAssessment: (submissionId: string) =>
+    request<{ success: boolean; message?: string }>(`/Assessments/take/${submissionId}/block`, {
+      method: 'POST',
     }),
 
   getSubmissionDetail: (submissionId: string) =>

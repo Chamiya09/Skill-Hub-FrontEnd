@@ -17,3 +17,36 @@
 .progress-modal-header{background:linear-gradient(120deg,#fff,#f1fcf7)}
 .progress-modal-actions{background:linear-gradient(90deg,#fbfcfd,#f4fbf8)}
 @media(max-width:1000px){.candidate-applications-page{width:100%}.applications-table th,.applications-table td{padding-left:14px;padding-right:14px}}
+
+/* Rejected state styling for status badges and stepper */
+.table-status.is-rejected,
+.application-status.is-rejected {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.table-status.is-rejected b,
+.application-status.is-rejected b {
+  background: #dc2626;
+}
+
+.application-step.is-rejected {
+  color: #dc2626;
+}
+
+.application-step.is-rejected .application-step-dot {
+  border-color: #ef4444;
+  background: #ef4444;
+  color: #fff;
+  box-shadow: 0 0 0 4px #fee2e2;
+}
+
+.application-step.is-rejected .application-step-label {
+  color: #dc2626;
+  font-weight: 850;
+}
+
+.application-step.is-rejected .application-step-line {
+  background: #e2e8f0;
+}

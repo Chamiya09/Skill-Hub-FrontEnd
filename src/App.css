@@ -10037,7 +10037,8 @@ select.w-full {
 }
 
 .ai-view-cv-link,
-.ai-shortlist-btn {
+.ai-shortlist-btn,
+.ai-reject-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -10081,6 +10082,26 @@ select.w-full {
   border-color: #d1fae5;
   background: #ecfdf5;
   color: #047857;
+  cursor: default;
+}
+
+.ai-reject-btn {
+  border: 1px solid #fecdd3;
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.ai-reject-btn:hover:not(:disabled) {
+  border-color: #fda4af;
+  background: #ffe4e6;
+  color: #9f1239;
+}
+
+.ai-reject-btn.is-rejected,
+.ai-reject-btn:disabled {
+  border-color: #fee2e2;
+  background: #fef2f2;
+  color: #dc2626;
   cursor: default;
 }
 

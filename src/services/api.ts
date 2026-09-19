@@ -1410,6 +1410,16 @@ export const jobApplicationsApi = {
     });
   },
 
+  async rejectApplicant(jobId: string, candidateIds: string[]): Promise<{
+    message: string;
+    updatedCount: number;
+  }> {
+    return request(`/jobs/${jobId}/reject-applicant`, {
+      method: 'POST',
+      body: JSON.stringify(candidateIds),
+    });
+  },
+
   /**
    * Returns all shortlisted candidates for a job from the dedicated pipeline endpoint.
    * Calls: GET /api/jobs/{jobId}/shortlisted

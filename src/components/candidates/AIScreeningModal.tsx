@@ -210,7 +210,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
         };
       }));
       setIsAiAnalyzed(true);
-      showToast('✨ Batch AI Screening Complete! Top candidates shortlisted.');
+      showToast('Batch AI Screening Complete! Top candidates shortlisted.');
     } catch (error: any) {
       setErrorMessage(error.message || 'The Skill Hu AI screening service is unavailable.');
     } finally {
@@ -268,6 +268,20 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
       await fetchApplicants(currentJob.id); // Refetch from DB to ensure sync
     } catch (err: any) {
       showToast(`Failed to unshortlist ${candidate.name}: ${err.message}`);
+    }
+  };
+
+  const handleRejectCandidate = async (candidateId: string) => {
+    if (!currentJob) return;
+    const candidate = candidates.find((item) => item.id === candidateId);
+    if (!candidate) return;
+
+    try {
+      await jobApplicationsApi.rejectApplicant(currentJob.id, [candidate.candidateId]);
+      showToast(`✕ ${candidate.name} has been rejected.`);
+      await fetchApplicants(currentJob.id); // Refetch from DB to ensure sync
+    } catch (err: any) {
+      showToast(`Failed to reject ${candidate.name}: ${err.message}`);
     }
   };
 
@@ -402,7 +416,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                 style={{ padding: '9px 18px', fontSize: '13px' }}
               >
                 <SparkleIcon />
-                <span>✨ Run AI Analysis</span>
+                <span>Run AI Analysis</span>
               </button>
             </div>
           )}
@@ -599,6 +613,17 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                             >
                               <CheckIcon /> Unshortlist
                             </button>
+                            <button
+                              type="button"
+                              className="ai-reject-btn"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleRejectCandidate(candidate.id);
+                              }}
+                              title="Click to reject candidate"
+                            >
+                              <XIcon /> Reject
+                            </button>
                           </div>
                         </div>
                       );
@@ -630,7 +655,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                         onClick={handleAutoSelect}
                         className="ai-auto-select-btn"
                       >
-                        ⚡ Auto-Select
+                        Auto-Select
                       </button>
                     </div>
                   </div>
@@ -707,12 +732,25 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                             <button
                               type="button"
                               className="ai-shortlist-btn"
+                              disabled={candidate.status?.toLowerCase() === 'rejected'}
                               onClick={(event) => {
                                 event.stopPropagation();
                                 handleShortlistCandidate(candidate.id);
                               }}
                             >
                               <CheckIcon /> Shortlist
+                            </button>
+                            <button
+                              type="button"
+                              className={`ai-reject-btn ${candidate.status?.toLowerCase() === 'rejected' ? 'is-rejected' : ''}`}
+                              disabled={candidate.status?.toLowerCase() === 'rejected'}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleRejectCandidate(candidate.id);
+                              }}
+                              title={candidate.status?.toLowerCase() === 'rejected' ? 'Candidate Rejected' : 'Click to reject candidate'}
+                            >
+                              <XIcon /> {candidate.status?.toLowerCase() === 'rejected' ? 'Rejected' : 'Reject'}
                             </button>
                           </div>
                         </div>
@@ -826,13 +864,25 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                           <button
                             type="button"
                             className={`ai-shortlist-btn ${candidate.isShortlisted ? 'is-shortlisted' : ''}`}
-                            disabled={candidate.isShortlisted}
+                            disabled={candidate.isShortlisted || candidate.status?.toLowerCase() === 'rejected'}
                             onClick={(event) => {
                               event.stopPropagation();
                               handleShortlistCandidate(candidate.id);
                             }}
                           >
                             <CheckIcon /> {candidate.isShortlisted ? 'Shortlisted' : 'Shortlist'}
+                          </button>
+                          <button
+                            type="button"
+                            className={`ai-reject-btn ${candidate.status?.toLowerCase() === 'rejected' ? 'is-rejected' : ''}`}
+                            disabled={candidate.status?.toLowerCase() === 'rejected'}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleRejectCandidate(candidate.id);
+                            }}
+                            title={candidate.status?.toLowerCase() === 'rejected' ? 'Candidate Rejected' : 'Click to reject candidate'}
+                          >
+                            <XIcon /> {candidate.status?.toLowerCase() === 'rejected' ? 'Rejected' : 'Reject'}
                           </button>
                         </div>
                       </div>
@@ -878,7 +928,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
               className="popup-footer-btn-primary"
             >
               <SparkleIcon />
-              <span>✨ Run AI Analysis</span>
+              <span>Run AI Analysis</span>
             </button>
           ) : (
             <button
@@ -889,7 +939,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
               title="Run AI screening across currently received applications"
             >
               <SparkleIcon />
-              <span>✨ Run AI Screening ({candidates.length})</span>
+              <span>Run AI Screening ({candidates.length})</span>
             </button>
           )}
         </div>

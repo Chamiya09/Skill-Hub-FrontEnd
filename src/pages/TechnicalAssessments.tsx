@@ -484,7 +484,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         <div className="pipeline-header-title-box">
           <div className="badge-tag" style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0' }}>
             <SparkleIcon />
-            <span>STUDENT 4 • TECHNICAL ASSESSMENT ENGINE</span>
+            <span>{!isPerformanceHub ? 'TECHNICAL ASSESSMENT ENGINE' : 'PERFORMANCE HUB'}</span>
           </div>
           <h1 className="pipeline-page-title" style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', marginTop: '8px' }}>
             {!isPerformanceHub ? 'Assessments' : 'Performance Hub'}

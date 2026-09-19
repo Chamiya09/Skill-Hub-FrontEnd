@@ -174,7 +174,29 @@ export const CandidateExam: React.FC = () => {
         const paper = await assessmentsApi.getExamPaper(submissionId);
         setExamPaper(paper);
 
-        // Prepopulate starter code and language for each question
+        // Check localStorage for offline / recent backup
+        let localDraft: { remainingSeconds?: number; answers?: Record<string, { code: string; language: string }> } | null = null;
+        try {
+          const cached = localStorage.getItem(`exam_draft_${submissionId}`);
+          if (cached) localDraft = JSON.parse(cached);
+        } catch {
+          // ignore parsing error
+        }
+
+        // Map draft answers from backend if available
+        const backendDraftMap: Record<string, { code: string; language: string }> = {};
+        if (paper.draftAnswers && paper.draftAnswers.length > 0) {
+          paper.draftAnswers.forEach((ans) => {
+            if (ans.questionId) {
+              backendDraftMap[ans.questionId] = {
+                code: ans.submittedCode,
+                language: ans.language || 'csharp',
+              };
+            }
+          });
+        }
+
+        // Prepopulate code and language for each question (priority: localDraft > backendDraft > starterCode)
         const initialAnswers: Record<string, { code: string; language: string }> = {};
         paper.questions.forEach((q) => {
           const qLang = (q.language || 'csharp').toLowerCase();
@@ -184,20 +206,36 @@ export const CandidateExam: React.FC = () => {
           const resolvedLangId = runtime ? runtime.id : 'csharp';
           const defaultCode = q.starterCode || DEFAULT_STARTER_TEMPLATES[resolvedLangId] || `// Solution for ${q.title}\n`;
 
+          const savedCode = localDraft?.answers?.[q.id]?.code ?? backendDraftMap[q.id]?.code;
+          const savedLang = localDraft?.answers?.[q.id]?.language ?? backendDraftMap[q.id]?.language;
+
           initialAnswers[q.id] = {
-            code: defaultCode,
-            language: resolvedLangId,
+            code: savedCode !== undefined ? savedCode : defaultCode,
+            language: savedLang || resolvedLangId,
           };
         });
         setAnswers(initialAnswers);
 
-        // Calculate timer if already started
-        if (paper.startedAt) {
-          const startedTime = new Date(paper.startedAt).getTime();
-          const elapsedSeconds = Math.floor((Date.now() - startedTime) / 1000);
-          const totalLimitSeconds = paper.timeLimitMinutes * 60;
-          const timeLeft = Math.max(0, totalLimitSeconds - elapsedSeconds);
-          setRemainingSeconds(timeLeft);
+        // Determine if exam was already started
+        const isAlreadyStarted = paper.status === 'Started' || paper.status === 'In_Progress' || !!paper.startedAt;
+
+        if (isAlreadyStarted) {
+          // Restore remaining time: priority: localDraft > paper.remainingSeconds > calculated from startedAt
+          let secondsLeft: number;
+          if (typeof localDraft?.remainingSeconds === 'number' && localDraft.remainingSeconds > 0) {
+            secondsLeft = localDraft.remainingSeconds;
+          } else if (typeof paper.remainingSeconds === 'number' && paper.remainingSeconds > 0) {
+            secondsLeft = paper.remainingSeconds;
+          } else if (paper.startedAt) {
+            const startedTime = new Date(paper.startedAt).getTime();
+            const elapsedSeconds = Math.floor((Date.now() - startedTime) / 1000);
+            const totalLimitSeconds = paper.timeLimitMinutes * 60;
+            secondsLeft = Math.max(0, totalLimitSeconds - elapsedSeconds);
+          } else {
+            secondsLeft = paper.timeLimitMinutes * 60;
+          }
+
+          setRemainingSeconds(secondsLeft);
           setPhase('in_progress');
         } else {
           setRemainingSeconds(paper.timeLimitMinutes * 60);
@@ -221,9 +259,16 @@ export const CandidateExam: React.FC = () => {
   // -------------------------------------------------------------
   // 2. Proctoring Telemetry: Detect Tab Switches & Window Blurs
   // -------------------------------------------------------------
+  const lastViolationTimeRef = useRef<number>(0);
+
   const logProctorViolation = useCallback(
     async (reason: string) => {
       if (phase !== 'in_progress' || !submissionId) return;
+
+      // Deduplicate: browsers fire both 'blur' and 'visibilitychange' simultaneously on tab switch
+      const now = Date.now();
+      if (now - lastViolationTimeRef.current < 1200) return;
+      lastViolationTimeRef.current = now;
 
       setTabSwitches((prev) => prev + 1);
       setCheatWarningMessage(reason);
@@ -267,8 +312,109 @@ export const CandidateExam: React.FC = () => {
   }, [phase, logProctorViolation]);
 
   // -------------------------------------------------------------
-  // 3. Countdown Timer Management
+  // 3. Countdown Timer & Draft Autosave Management
   // -------------------------------------------------------------
+  const remainingSecondsRef = useRef(remainingSeconds);
+  useEffect(() => {
+    remainingSecondsRef.current = remainingSeconds;
+  }, [remainingSeconds]);
+
+  const answersRef = useRef(answers);
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
+
+  const saveDraftTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const saveDraftNow = useCallback(
+    async (currentSec?: number, currentAns?: Record<string, { code: string; language: string }>) => {
+      if (!submissionId || !examPaper) return;
+      const sec = currentSec ?? remainingSecondsRef.current;
+      const ans = currentAns ?? answersRef.current;
+
+      // 1. Immediately save snapshot to localStorage for instantaneous recovery
+      try {
+        localStorage.setItem(
+          `exam_draft_${submissionId}`,
+          JSON.stringify({
+            remainingSeconds: sec,
+            answers: ans,
+          })
+        );
+      } catch {
+        // ignore quota errors
+      }
+
+      // 2. Persist to backend database
+      try {
+        const payloadAnswers: SubmittedAnswerItemDto[] = examPaper.questions.map((q) => ({
+          questionId: q.id,
+          submittedCode: ans[q.id]?.code || '',
+          language: ans[q.id]?.language || q.language || 'csharp',
+        }));
+
+        await assessmentsApi.saveDraft(submissionId, {
+          remainingSeconds: sec,
+          answers: payloadAnswers,
+        });
+      } catch (err) {
+        console.warn('Failed to save exam draft to backend:', err);
+      }
+    },
+    [submissionId, examPaper]
+  );
+
+  const triggerDebouncedSaveDraft = useCallback(() => {
+    if (!submissionId || phase !== 'in_progress' || !examPaper) return;
+
+    // Instant local storage backup
+    try {
+      localStorage.setItem(
+        `exam_draft_${submissionId}`,
+        JSON.stringify({
+          remainingSeconds: remainingSecondsRef.current,
+          answers: answersRef.current,
+        })
+      );
+    } catch {
+      // ignore
+    }
+
+    if (saveDraftTimeoutRef.current) {
+      clearTimeout(saveDraftTimeoutRef.current);
+    }
+    saveDraftTimeoutRef.current = setTimeout(() => {
+      void saveDraftNow();
+    }, 1500);
+  }, [submissionId, phase, examPaper, saveDraftNow]);
+
+  // Window unload / unmount hook: ensure last-second code and timer are captured
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (phase === 'in_progress' && submissionId) {
+        try {
+          localStorage.setItem(
+            `exam_draft_${submissionId}`,
+            JSON.stringify({
+              remainingSeconds: remainingSecondsRef.current,
+              answers: answersRef.current,
+            })
+          );
+        } catch {
+          // ignore
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (phase === 'in_progress') {
+        handleBeforeUnload();
+      }
+    };
+  }, [phase, submissionId]);
+
   const handleAutoSubmit = useCallback(async () => {
     if (phase !== 'in_progress' || !submissionId || !examPaper) return;
     setPhase('submitting');
@@ -281,6 +427,7 @@ export const CandidateExam: React.FC = () => {
       }));
 
       const res = await assessmentsApi.submitExam(submissionId, { answers: payloadAnswers });
+      localStorage.removeItem(`exam_draft_${submissionId}`);
       setFinalResult(res);
       setPhase('completed');
     } catch (err: unknown) {
@@ -300,14 +447,19 @@ export const CandidateExam: React.FC = () => {
           handleAutoSubmit();
           return 0;
         }
-        return prev - 1;
+        const next = prev - 1;
+        // Periodically sync remaining time to DB and localStorage every 15s
+        if (next % 15 === 0) {
+          void saveDraftNow(next);
+        }
+        return next;
       });
     }, 1000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [phase, handleAutoSubmit]);
+  }, [phase, handleAutoSubmit, saveDraftNow]);
 
   const formatTime = (totalSec: number) => {
     const hours = Math.floor(totalSec / 3600);
@@ -329,7 +481,11 @@ export const CandidateExam: React.FC = () => {
       setPhase('loading');
       const paper = await assessmentsApi.startExam(submissionId);
       setExamPaper(paper);
-      setRemainingSeconds(paper.timeLimitMinutes * 60);
+      const initialSec =
+        typeof paper.remainingSeconds === 'number' && paper.remainingSeconds > 0
+          ? paper.remainingSeconds
+          : paper.timeLimitMinutes * 60;
+      setRemainingSeconds(initialSec);
       setPhase('in_progress');
     } catch (err: unknown) {
       console.error('Failed to start exam:', err);
@@ -348,13 +504,16 @@ export const CandidateExam: React.FC = () => {
 
   const handleCodeChange = (newCode: string) => {
     if (!currentQuestion) return;
-    setAnswers((prev) => ({
-      ...prev,
+    const updated = {
+      ...answers,
       [currentQuestion.id]: {
         code: newCode,
-        language: prev[currentQuestion.id]?.language || currentLang,
+        language: answers[currentQuestion.id]?.language || currentLang,
       },
-    }));
+    };
+    setAnswers(updated);
+    answersRef.current = updated;
+    triggerDebouncedSaveDraft();
   };
 
   const handleLanguageChange = (newLangId: string) => {
@@ -368,13 +527,16 @@ export const CandidateExam: React.FC = () => {
       ? (DEFAULT_STARTER_TEMPLATES[newLangId] || `// Write your ${newLangId} solution here\n`)
       : oldCode;
 
-    setAnswers((prev) => ({
-      ...prev,
+    const updated = {
+      ...answers,
       [currentQuestion.id]: {
         code: newCode,
         language: newLangId,
       },
-    }));
+    };
+    setAnswers(updated);
+    answersRef.current = updated;
+    triggerDebouncedSaveDraft();
   };
 
   const handleResetStarterCode = () => {
@@ -442,6 +604,7 @@ export const CandidateExam: React.FC = () => {
       }));
 
       const res = await assessmentsApi.submitExam(submissionId, { answers: payloadAnswers });
+      localStorage.removeItem(`exam_draft_${submissionId}`);
       setFinalResult(res);
       setPhase('completed');
     } catch (err: unknown) {
@@ -1588,7 +1751,7 @@ export const CandidateExam: React.FC = () => {
                   <span>Execution Output</span>
                 </button>
 
-                {lastRunResult?.samplePassed !== undefined && (
+                {lastRunResult?.samplePassed !== null && lastRunResult?.samplePassed !== undefined && (
                   <span
                     style={{
                       padding: '2px 8px',
@@ -1748,33 +1911,50 @@ export const CandidateExam: React.FC = () => {
                   )}
 
                   {/* Sample Test Comparison */}
-                  {lastRunResult.expectedOutput && (
+                  {(lastRunResult.expectedOutput || (currentQuestion?.sampleTestCases && currentQuestion.sampleTestCases.length > 0)) && (
                     <div
                       style={{
                         backgroundColor: '#1e293b80',
                         border: '1px solid #334155',
                         borderRadius: '8px',
-                        padding: '10px 14px',
+                        padding: '12px 14px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '6px',
+                        gap: '8px',
                         fontSize: '0.8rem',
                       }}
                     >
+                      <div style={{ fontWeight: 700, color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                        Sample Test Case 1 Evaluation:
+                      </div>
                       <div>
-                        <span style={{ color: '#94a3b8' }}>Sample Input: </span>
-                        <code>{lastRunResult.sampleInputUsed}</code>
+                        <span style={{ color: '#94a3b8' }}>Input: </span>
+                        <code style={{ color: '#e2e8f0', backgroundColor: '#0f172a', padding: '2px 6px', borderRadius: '4px' }}>
+                          {lastRunResult.sampleInputUsed || currentQuestion?.sampleTestCases?.[0]?.input || '<none>'}
+                        </code>
                       </div>
                       <div>
                         <span style={{ color: '#94a3b8' }}>Expected Output: </span>
-                        <code style={{ color: '#10b981' }}>{lastRunResult.expectedOutput}</code>
-                      </div>
-                      <div>
-                        <span style={{ color: '#94a3b8' }}>Actual Output: </span>
-                        <code style={{ color: lastRunResult.samplePassed ? '#10b981' : '#f87171' }}>
-                          {lastRunResult.stdout?.trim() || 'null'}
+                        <code style={{ color: '#10b981', backgroundColor: '#0f172a', padding: '2px 6px', borderRadius: '4px' }}>
+                          {lastRunResult.expectedOutput || currentQuestion?.sampleTestCases?.[0]?.expectedOutput || '<none>'}
                         </code>
                       </div>
+                      <div>
+                        <span style={{ color: '#94a3b8' }}>Your Output: </span>
+                        <code style={{
+                          color: lastRunResult.samplePassed ? '#10b981' : '#f87171',
+                          backgroundColor: '#0f172a',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                        }}>
+                          {lastRunResult.stdout?.trim() || '<empty>'}
+                        </code>
+                      </div>
+                      {lastRunResult.samplePassed === false && (
+                        <div style={{ fontSize: '0.75rem', color: '#fbbf24', marginTop: '4px', lineHeight: 1.4 }}>
+                          💡 <strong>Format Tip:</strong> Automated test grading expects exact matching. If the problem asks for <code>42</code>, use <code>print(maximum)</code> instead of <code>print(&quot;Maximum number:&quot;, maximum)</code>.
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

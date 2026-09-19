@@ -271,7 +271,7 @@ export const CandidateAssessments: React.FC = () => {
             const isUnderReview = item.status === 'Under_Review' || (item.status === 'Submitted' && item.examScore === 0);
             const isGraded = item.status === 'Graded' || item.status === 'Passed' || item.status === 'Rejected' || (item.status === 'Submitted' && item.examScore > 0);
             const isCompleted = isUnderReview || isGraded;
-            const isInProgress = item.status === 'In_Progress' || item.status === 'Started';
+            const isInProgress = item.status === 'In_Progress' || item.status === 'Started' || (!!item.startedAt && !isCompleted);
             const companyInitials = item.companyName
               ? item.companyName.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
               : 'CO';
@@ -414,7 +414,7 @@ export const CandidateAssessments: React.FC = () => {
                         onClick={() => navigate(`/exam/take/${item.submissionId}`)}
                       >
                         <PlayIcon />
-                        <span>Resume Exam</span>
+                        <span>Resume Quiz</span>
                       </button>
                     ) : (
                       <button

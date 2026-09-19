@@ -1586,7 +1586,10 @@ export interface StartExamResponseDto {
   assessmentId: string;
   assessmentTitle: string;
   timeLimitMinutes: number;
-  startedAt: string;
+  startedAt?: string | null;
+  status?: string;
+  remainingSeconds?: number | null;
+  draftAnswers?: SubmittedAnswerItemDto[] | null;
   questions: CandidateCodingQuestionDto[];
 }
 
@@ -1632,6 +1635,11 @@ export interface RunCodeResponseDto {
 }
 
 export interface SubmitAnswersPayload {
+  answers: SubmittedAnswerItemDto[];
+}
+
+export interface SaveDraftPayload {
+  remainingSeconds?: number;
   answers: SubmittedAnswerItemDto[];
 }
 
@@ -1824,6 +1832,12 @@ export const assessmentsApi = {
 
   submitExam: (submissionId: string, payload: SubmitAnswersPayload) =>
     request<SubmissionDetailDto>(`/Assessments/take/${submissionId}/submit`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  saveDraft: (submissionId: string, payload: SaveDraftPayload) =>
+    request<{ success: boolean }>(`/Assessments/take/${submissionId}/draft`, {
       method: 'POST',
       body: JSON.stringify(payload),
     }),

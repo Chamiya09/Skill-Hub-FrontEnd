@@ -1590,6 +1590,16 @@ export interface StartExamResponseDto {
   questions: CandidateCodingQuestionDto[];
 }
 
+export interface TestCaseEvaluationItemDto {
+  index: number;
+  input: string;
+  expectedOutput: string;
+  actualOutput: string;
+  passed: boolean;
+  isHidden: boolean;
+  errorMessage?: string;
+}
+
 export interface SubmittedAnswerItemDto {
   questionId: string;
   submittedCode: string;
@@ -1597,6 +1607,28 @@ export interface SubmittedAnswerItemDto {
   testCasesPassed?: number;
   totalTestCases?: number;
   score?: number;
+  testCaseResults?: TestCaseEvaluationItemDto[];
+}
+
+export interface RunCodePayload {
+  questionId: string;
+  code: string;
+  language?: string;
+  customInput?: string;
+}
+
+export interface RunCodeResponseDto {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+  compileOutput?: string;
+  isRateLimited: boolean;
+  isError: boolean;
+  errorMessage?: string;
+  executionTimeMs: number;
+  sampleInputUsed?: string;
+  expectedOutput?: string;
+  samplePassed?: boolean;
 }
 
 export interface SubmitAnswersPayload {
@@ -1782,6 +1814,12 @@ export const assessmentsApi = {
     request<{ success: boolean }>(`/Assessments/take/${submissionId}/proctor-event`, {
       method: 'POST',
       body: JSON.stringify(event),
+    }),
+
+  runCode: (submissionId: string, payload: RunCodePayload) =>
+    request<RunCodeResponseDto>(`/Assessments/take/${submissionId}/run`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
     }),
 
   submitExam: (submissionId: string, payload: SubmitAnswersPayload) =>

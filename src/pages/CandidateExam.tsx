@@ -6,7 +6,7 @@ import {
   type CandidateCodingQuestionDto,
   type SubmissionDetailDto,
   type SubmittedAnswerItemDto,
-  type TestCaseDto,
+  type RunCodeResponseDto,
 } from '../services/api';
 import {
   SparkleIcon,
@@ -17,14 +17,51 @@ import {
   ArrowRightIcon,
 } from '../components/common/Icons';
 
+// Lazy-load Monaco Editor so it only loads when the assessment screen mounts
+const MonacoEditor = React.lazy(() => import('@monaco-editor/react'));
+
 type ExamPhase = 'loading' | 'briefing' | 'in_progress' | 'submitting' | 'completed' | 'error';
 
-interface SampleTestRunResult {
-  input: string;
-  expectedOutput: string;
-  actualOutput: string;
-  passed: boolean;
+interface SupportedRuntime {
+  id: string;
+  label: string;
+  monacoLang: string;
+  pistonLang: string;
+  version: string;
 }
+
+const SUPPORTED_RUNTIMES: SupportedRuntime[] = [
+  { id: 'python', label: 'Python (3.10.0)', monacoLang: 'python', pistonLang: 'python', version: '3.10.0' },
+  { id: 'javascript', label: 'JavaScript Node.js (18.15.0)', monacoLang: 'javascript', pistonLang: 'javascript', version: '18.15.0' },
+  { id: 'typescript', label: 'TypeScript (5.0.3)', monacoLang: 'typescript', pistonLang: 'typescript', version: '5.0.3' },
+  { id: 'csharp', label: 'C# (.NET 5.0.201)', monacoLang: 'csharp', pistonLang: 'csharp.net', version: '5.0.201' },
+  { id: 'java', label: 'Java (15.0.2)', monacoLang: 'java', pistonLang: 'java', version: '15.0.2' },
+  { id: 'cpp', label: 'C++ GCC (10.2.0)', monacoLang: 'cpp', pistonLang: 'c++', version: '10.2.0' },
+  { id: 'go', label: 'Go (1.16.2)', monacoLang: 'go', pistonLang: 'go', version: '1.16.2' },
+];
+
+const DEFAULT_STARTER_TEMPLATES: Record<string, string> = {
+  python: `def solution():\n    # Write your solution here\n    pass\n\nif __name__ == "__main__":\n    solution()`,
+  javascript: `function solution() {\n    // Write your solution here\n}\n\nsolution();`,
+  typescript: `function solution(): void {\n    // Write your solution here\n}\n\nsolution();`,
+  csharp: `using System;\n\npublic class Solution\n{\n    public static void Main(string[] args)\n    {\n        // Write your solution here\n    }\n}`,
+  java: `import java.util.*;\n\npublic class Solution {\n    public static void main(String[] args) {\n        // Write your solution here\n    }\n}`,
+  cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    // Write your solution here\n    return 0;\n}`,
+  go: `package main\n\nimport "fmt"\n\nfunc main() {\n    // Write your solution here\n    fmt.Println("Solution")\n}`,
+};
+
+const PlayIcon: React.FC = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+    <polygon points="5 3 19 12 5 21 5 3" />
+  </svg>
+);
+
+const TerminalIcon: React.FC = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="4 17 10 11 4 5" />
+    <line x1="12" y1="19" x2="20" y2="19" />
+  </svg>
+);
 
 export const CandidateExam: React.FC = () => {
   const { submissionId } = useParams<{ submissionId: string }>();
@@ -37,7 +74,9 @@ export const CandidateExam: React.FC = () => {
   );
   const [examPaper, setExamPaper] = useState<StartExamResponseDto | null>(null);
   const [currentQIndex, setCurrentQIndex] = useState<number>(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+
+  // Per-question answer and language tracking
+  const [answers, setAnswers] = useState<Record<string, { code: string; language: string }>>({});
   const [finalResult, setFinalResult] = useState<SubmissionDetailDto | null>(null);
 
   // Timer state
@@ -49,48 +88,117 @@ export const CandidateExam: React.FC = () => {
   const [showCheatWarning, setShowCheatWarning] = useState<boolean>(false);
   const [cheatWarningMessage, setCheatWarningMessage] = useState<string>('');
 
-  // Sample runner state
-  const [isRunningTests, setIsRunningTests] = useState<boolean>(false);
-  const [sampleTestResults, setSampleTestResults] = useState<SampleTestRunResult[] | null>(null);
-  const [consoleLog, setConsoleLog] = useState<string | null>(null);
+  // Execution & Output State
+  const [isExecuting, setIsExecuting] = useState<boolean>(false);
+  const [lastRunResult, setLastRunResult] = useState<RunCodeResponseDto | null>(null);
+  const [executionError, setExecutionError] = useState<string | null>(null);
+  const [activeOutputTab, setActiveOutputTab] = useState<'console' | 'tests'>('console');
 
   // Submit confirmation modal
   const [showSubmitModal, setShowSubmitModal] = useState<boolean>(false);
 
   // -------------------------------------------------------------
+  // Panel Resizing State (Adjustable Width & Height)
+  // -------------------------------------------------------------
+  // Left problem panel width in percentage (default: 32%)
+  const [leftPanelWidth, setLeftPanelWidth] = useState<number>(32);
+  // Code editor height in percentage of right column (default: 60%)
+  const [codePanelHeight, setCodePanelHeight] = useState<number>(60);
+
+  const isDraggingH = useRef<boolean>(false);
+  const isDraggingV = useRef<boolean>(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rightColRef = useRef<HTMLDivElement>(null);
+
+  // Handle Horizontal Resize (Width)
+  const handleMouseDownH = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isDraggingH.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  // Handle Vertical Resize (Height)
+  const handleMouseDownV = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isDraggingV.current = true;
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDraggingH.current && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const newWidth = ((e.clientX - rect.left) / rect.width) * 100;
+        // Clamp left width between 20% and 55%
+        if (newWidth >= 20 && newWidth <= 55) {
+          setLeftPanelWidth(newWidth);
+        }
+      } else if (isDraggingV.current && rightColRef.current) {
+        const rect = rightColRef.current.getBoundingClientRect();
+        const newHeight = ((e.clientY - rect.top) / rect.height) * 100;
+        // Clamp code panel height between 30% and 80%
+        if (newHeight >= 30 && newHeight <= 80) {
+          setCodePanelHeight(newHeight);
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (isDraggingH.current || isDraggingV.current) {
+        isDraggingH.current = false;
+        isDraggingV.current = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
+  // -------------------------------------------------------------
   // 1. Initial Load: Fetch Candidate Exam Paper
   // -------------------------------------------------------------
   useEffect(() => {
-    if (!submissionId) {
-      return;
-    }
+    if (!submissionId) return;
 
     const fetchPaper = async () => {
       try {
         const paper = await assessmentsApi.getExamPaper(submissionId);
         setExamPaper(paper);
 
-        // Prepopulate starter code for each question
-        const initialAnswers: Record<string, string> = {};
+        // Prepopulate starter code and language for each question
+        const initialAnswers: Record<string, { code: string; language: string }> = {};
         paper.questions.forEach((q) => {
-          initialAnswers[q.id] = q.starterCode || `// Solution for ${q.title}\n`;
+          const qLang = (q.language || 'csharp').toLowerCase();
+          const runtime = SUPPORTED_RUNTIMES.find(
+            (r) => r.id === qLang || r.monacoLang === qLang || r.pistonLang === qLang
+          );
+          const resolvedLangId = runtime ? runtime.id : 'csharp';
+          const defaultCode = q.starterCode || DEFAULT_STARTER_TEMPLATES[resolvedLangId] || `// Solution for ${q.title}\n`;
+
+          initialAnswers[q.id] = {
+            code: defaultCode,
+            language: resolvedLangId,
+          };
         });
         setAnswers(initialAnswers);
 
-        // Calculate timer if already started, or default to full time limit
+        // Calculate timer if already started
         if (paper.startedAt) {
           const startedTime = new Date(paper.startedAt).getTime();
           const elapsedSeconds = Math.floor((Date.now() - startedTime) / 1000);
           const totalLimitSeconds = paper.timeLimitMinutes * 60;
           const timeLeft = Math.max(0, totalLimitSeconds - elapsedSeconds);
           setRemainingSeconds(timeLeft);
-
-          if (timeLeft <= 0) {
-            // Already expired, direct to submit
-            setPhase('in_progress');
-          } else {
-            setPhase('in_progress');
-          }
+          setPhase('in_progress');
         } else {
           setRemainingSeconds(paper.timeLimitMinutes * 60);
           setPhase('briefing');
@@ -121,7 +229,6 @@ export const CandidateExam: React.FC = () => {
       setCheatWarningMessage(reason);
       setShowCheatWarning(true);
 
-      // Dismiss warning banner after 6 seconds
       setTimeout(() => setShowCheatWarning(false), 6000);
 
       try {
@@ -169,8 +276,8 @@ export const CandidateExam: React.FC = () => {
     try {
       const payloadAnswers: SubmittedAnswerItemDto[] = examPaper.questions.map((q) => ({
         questionId: q.id,
-        submittedCode: answers[q.id] || '',
-        language: q.language || 'csharp',
+        submittedCode: answers[q.id]?.code || '',
+        language: answers[q.id]?.language || q.language || 'csharp',
       }));
 
       const res = await assessmentsApi.submitExam(submissionId, { answers: payloadAnswers });
@@ -202,7 +309,6 @@ export const CandidateExam: React.FC = () => {
     };
   }, [phase, handleAutoSubmit]);
 
-  // Format seconds to HH:MM:SS or MM:SS
   const formatTime = (totalSec: number) => {
     const hours = Math.floor(totalSec / 3600);
     const minutes = Math.floor((totalSec % 3600) / 60);
@@ -227,7 +333,6 @@ export const CandidateExam: React.FC = () => {
       setPhase('in_progress');
     } catch (err: unknown) {
       console.error('Failed to start exam:', err);
-      // Fallback: proceed to in_progress if already started
       setPhase('in_progress');
     }
   };
@@ -236,89 +341,95 @@ export const CandidateExam: React.FC = () => {
   // 5. Code Editor Helpers
   // -------------------------------------------------------------
   const currentQuestion: CandidateCodingQuestionDto | undefined = examPaper?.questions[currentQIndex];
+  const currentAnswer = currentQuestion ? answers[currentQuestion.id] : undefined;
+  const currentCode = currentAnswer?.code ?? '';
+  const currentLang = currentAnswer?.language ?? 'python';
+  const currentRuntime = SUPPORTED_RUNTIMES.find((r) => r.id === currentLang) || SUPPORTED_RUNTIMES[0];
 
   const handleCodeChange = (newCode: string) => {
     if (!currentQuestion) return;
     setAnswers((prev) => ({
       ...prev,
-      [currentQuestion.id]: newCode,
+      [currentQuestion.id]: {
+        code: newCode,
+        language: prev[currentQuestion.id]?.language || currentLang,
+      },
+    }));
+  };
+
+  const handleLanguageChange = (newLangId: string) => {
+    if (!currentQuestion) return;
+    const oldCode = answers[currentQuestion.id]?.code || '';
+    const oldDefault = DEFAULT_STARTER_TEMPLATES[currentLang] || '';
+
+    // If code is unchanged from default template, auto-replace with new language template
+    const shouldReplaceTemplate = !oldCode.trim() || oldCode.trim() === oldDefault.trim();
+    const newCode = shouldReplaceTemplate
+      ? (DEFAULT_STARTER_TEMPLATES[newLangId] || `// Write your ${newLangId} solution here\n`)
+      : oldCode;
+
+    setAnswers((prev) => ({
+      ...prev,
+      [currentQuestion.id]: {
+        code: newCode,
+        language: newLangId,
+      },
     }));
   };
 
   const handleResetStarterCode = () => {
     if (!currentQuestion) return;
-    if (window.confirm('Reset code to original starter template? Current edits will be lost.')) {
+    if (window.confirm('Reset code to starter template? Current edits will be lost.')) {
+      const template = currentQuestion.starterCode || DEFAULT_STARTER_TEMPLATES[currentLang] || '// Solution\n';
       setAnswers((prev) => ({
         ...prev,
-        [currentQuestion.id]: currentQuestion.starterCode,
+        [currentQuestion.id]: {
+          code: template,
+          language: currentLang,
+        },
       }));
-      setSampleTestResults(null);
-      setConsoleLog(null);
-    }
-  };
-
-  // Support Tab key inside textarea for code indentation
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const target = e.currentTarget;
-      const start = target.selectionStart;
-      const end = target.selectionEnd;
-      const value = target.value;
-
-      target.value = value.substring(0, start) + '    ' + value.substring(end);
-      target.selectionStart = target.selectionEnd = start + 4;
-      handleCodeChange(target.value);
+      setLastRunResult(null);
+      setExecutionError(null);
     }
   };
 
   // -------------------------------------------------------------
-  // 6. Action: Run Sample Tests (Client-side validation sandbox)
+  // 6. Action: "Run" (Execute against sample test case via Piston)
   // -------------------------------------------------------------
-  const handleRunSampleTests = async () => {
-    if (!currentQuestion) return;
-    setIsRunningTests(true);
-    setConsoleLog('Compiling solution...\nValidating syntax and sample test cases...');
+  const handleRunCode = async () => {
+    if (!submissionId || !currentQuestion) return;
+    setIsExecuting(true);
+    setExecutionError(null);
+    setActiveOutputTab('console');
 
-    // Simulate realistic execution delay and evaluate basic sample outputs
-    setTimeout(() => {
-      const currentCode = answers[currentQuestion.id] || '';
-      const sampleCases: TestCaseDto[] = currentQuestion.sampleTestCases || [];
-
-      if (sampleCases.length === 0) {
-        setSampleTestResults([]);
-        setConsoleLog(
-          `Code captured successfully.\n[Manual Review Mode]: No sample test cases configured for this problem.\nYour submitted solution will be evaluated and scored manually by the engineering hiring panel.`
-        );
-        setIsRunningTests(false);
-        return;
-      }
-
-      // Check if code contains basic expected return logic or is non-empty
-      const results: SampleTestRunResult[] = sampleCases.map((tc) => {
-        const isNonEmpty = currentCode.trim().length > (currentQuestion.starterCode?.trim().length || 0);
-        // Realistic simulation: if candidate has written logic, passes sample cases
-        return {
-          input: tc.input,
-          expectedOutput: tc.expectedOutput,
-          actualOutput: isNonEmpty ? tc.expectedOutput : 'null / default',
-          passed: isNonEmpty,
-        };
+    try {
+      const res = await assessmentsApi.runCode(submissionId, {
+        questionId: currentQuestion.id,
+        code: currentCode,
+        language: currentRuntime.pistonLang,
       });
 
-      setSampleTestResults(results);
-      const passedCount = results.filter((r) => r.passed).length;
-      setConsoleLog(
-        `Execution Complete.\n[Result]: ${passedCount}/${results.length} sample test case(s) passed.\nFull automated test evaluation with hidden test cases will execute on final submission.`
+      setLastRunResult(res);
+      if (res.isRateLimited) {
+        setExecutionError('Piston API rate limit reached (HTTP 429). Please wait a few seconds and try again.');
+      } else if (res.isError && res.errorMessage) {
+        setExecutionError(res.errorMessage);
+      }
+    } catch (err: unknown) {
+      console.error('Run code error:', err);
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      setExecutionError(
+        errorObj?.response?.data?.message || errorObj?.message || 'Failed to execute code in runtime sandbox.'
       );
-      setIsRunningTests(false);
-    }, 900);
+    } finally {
+      setIsExecuting(false);
+    }
   };
 
   // -------------------------------------------------------------
-  // 7. Action: Candidate Final Submission
+  // 7. Action: "Submit" (Execute against all test cases & finalize)
   // -------------------------------------------------------------
-  const handleSubmitExam = async () => {
+  const handleConfirmSubmit = async () => {
     if (!submissionId || !examPaper) return;
     setShowSubmitModal(false);
     setPhase('submitting');
@@ -326,8 +437,8 @@ export const CandidateExam: React.FC = () => {
     try {
       const payloadAnswers: SubmittedAnswerItemDto[] = examPaper.questions.map((q) => ({
         questionId: q.id,
-        submittedCode: answers[q.id] || '',
-        language: q.language || 'csharp',
+        submittedCode: answers[q.id]?.code || '',
+        language: answers[q.id]?.language || q.language || 'csharp',
       }));
 
       const res = await assessmentsApi.submitExam(submissionId, { answers: payloadAnswers });
@@ -345,11 +456,10 @@ export const CandidateExam: React.FC = () => {
     }
   };
 
-  // Count answered questions
   const answeredCount = examPaper
     ? examPaper.questions.filter((q) => {
-        const code = answers[q.id];
-        return code && code.trim() !== (q.starterCode || '').trim() && code.trim().length > 10;
+        const item = answers[q.id];
+        return item && item.code.trim().length > 15;
       }).length
     : 0;
 
@@ -384,7 +494,7 @@ export const CandidateExam: React.FC = () => {
         <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>Initializing Secure Assessment Environment...</h2>
         <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '8px' }}>
-          Loading coding questions, test cases, and proctoring telemetry.
+          Loading coding questions, Monaco Editor, and sandboxed runtimes.
         </p>
       </div>
     );
@@ -483,7 +593,6 @@ export const CandidateExam: React.FC = () => {
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
           }}
         >
-          {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
             <div
               style={{
@@ -500,121 +609,62 @@ export const CandidateExam: React.FC = () => {
               <SparkleIcon />
             </div>
             <div>
-              <span
-                style={{
-                  fontSize: '0.75rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  fontWeight: 700,
-                  color: '#60a5fa',
-                }}
-              >
-                SKILL HUB TECHNICAL ASSESSMENT
+              <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#60a5fa', fontWeight: 700 }}>
+                CANDIDATE TECHNICAL EXAMINATION
               </span>
-              <h1 style={{ fontSize: '1.6rem', fontWeight: 800, margin: 0, color: '#ffffff' }}>
+              <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '2px 0 0', color: '#ffffff' }}>
                 {examPaper.assessmentTitle}
               </h1>
             </div>
           </div>
 
-          {/* Quick Metrics Grid */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '16px',
-              margin: '28px 0',
-            }}
-          >
-            <div
-              style={{
-                backgroundColor: '#0f172a',
-                border: '1px solid #334155',
-                borderRadius: '12px',
-                padding: '16px',
-                textAlign: 'center',
-              }}
-            >
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>TIME LIMIT</span>
+          <p style={{ color: '#94a3b8', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '28px' }}>
+            You have been invited to complete a real-world coding challenge. Your solutions will be evaluated using our
+            sandboxed multi-language execution engine and reviewed by the hiring panel.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '28px' }}>
+            <div style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>DURATION</span>
               <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc', marginTop: '4px' }}>
                 {examPaper.timeLimitMinutes} Mins
               </div>
             </div>
 
-            <div
-              style={{
-                backgroundColor: '#0f172a',
-                border: '1px solid #334155',
-                borderRadius: '12px',
-                padding: '16px',
-                textAlign: 'center',
-              }}
-            >
+            <div style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
               <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>CHALLENGES</span>
               <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc', marginTop: '4px' }}>
-                {examPaper.questions.length} Questions
+                {examPaper.questions.length} Question{examPaper.questions.length > 1 ? 's' : ''}
               </div>
             </div>
 
-            <div
-              style={{
-                backgroundColor: '#0f172a',
-                border: '1px solid #334155',
-                borderRadius: '12px',
-                padding: '16px',
-                textAlign: 'center',
-              }}
-            >
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>EVALUATION</span>
+            <div style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>RUNTIMES</span>
               <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#10b981', marginTop: '4px' }}>
-                Automated
+                Piston Sandboxed
               </div>
             </div>
           </div>
 
-          {/* Guidelines & Rules */}
-          <div
-            style={{
-              backgroundColor: '#0f172a80',
-              border: '1px solid #334155',
-              borderRadius: '12px',
-              padding: '20px',
-              marginBottom: '28px',
-            }}
-          >
-            <h3
-              style={{
-                fontSize: '0.95rem',
-                fontWeight: 700,
-                color: '#f1f5f9',
-                margin: '0 0 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
-            >
+          <div style={{ backgroundColor: '#0f172a80', border: '1px solid #334155', borderRadius: '12px', padding: '20px', marginBottom: '28px' }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f1f5f9', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <ShieldCheckIcon /> Assessment Rules & Integrity Protocol
             </h3>
             <ul style={{ margin: 0, paddingLeft: '20px', color: '#cbd5e1', fontSize: '0.85rem', lineHeight: 1.8 }}>
               <li>
                 <strong>Single-Window Policy:</strong> Switching tabs or navigating away from this window will trigger
-                an integrity telemetry alert recorded in your HR audit log.
+                an integrity alert recorded in your HR audit log.
               </li>
               <li>
-                <strong>Strict Timer:</strong> The countdown timer will begin immediately upon clicking &ldquo;Begin Assessment&rdquo;.
-                When the timer expires, answers will automatically submit.
+                <strong>Timer &amp; Auto-Submit:</strong> The countdown timer will start immediately. When time expires,
+                answers will submit automatically.
               </li>
               <li>
-                <strong>Automated Test Runner:</strong> You can run visible sample test cases to verify your logic before final submission.
-                Hidden test cases test edge conditions and performance constraints.
-              </li>
-              <li>
-                <strong>Top 5 Shortlist:</strong> High scorers advance directly into technical interview orchestration.
+                <strong>Run &amp; Submit:</strong> Use <strong>Run</strong> to test your code against sample inputs, and <strong>Submit</strong> to evaluate against all test cases.
               </li>
             </ul>
           </div>
 
-          {/* Start Button */}
           <button
             onClick={handleStartExam}
             style={{
@@ -631,12 +681,9 @@ export const CandidateExam: React.FC = () => {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '10px',
-              transition: 'background-color 0.2s',
             }}
-            onMouseOver={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#1d4ed8')}
-            onMouseOut={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#2563eb')}
           >
-            <span>I Acknowledge & Begin Assessment</span>
+            <span>I Acknowledge &amp; Begin Assessment</span>
             <ArrowRightIcon />
           </button>
         </div>
@@ -675,7 +722,7 @@ export const CandidateExam: React.FC = () => {
         <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
         <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0 }}>Grading Your Code Submissions...</h2>
         <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '8px' }}>
-          Executing test suites, evaluating edge cases, and computing final weighted scores.
+          Executing test suites, evaluating edge cases, and storing your evaluation report.
         </p>
       </div>
     );
@@ -712,7 +759,6 @@ export const CandidateExam: React.FC = () => {
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
           }}
         >
-          {/* Submission Success Icon */}
           <div
             style={{
               width: '68px',
@@ -756,7 +802,6 @@ export const CandidateExam: React.FC = () => {
             Your code has been securely submitted and stored in the evaluation registry.
           </p>
 
-          {/* Primary Review SLA Notice Box */}
           <div
             style={{
               backgroundColor: '#0f172a',
@@ -776,12 +821,11 @@ export const CandidateExam: React.FC = () => {
               </h3>
             </div>
             <p style={{ color: '#cbd5e1', fontSize: '0.875rem', lineHeight: 1.6, margin: 0 }}>
-              Our engineering evaluation and hiring committee will review your typed code solutions manually.
-              Once your code is verified, your technical marks, performance scorecard, and technical interview decision will be published directly to your profile.
+              Our engineering evaluation panel and hiring team will review your typed code solutions.
+              Once finalized, your technical marks, performance scorecard, and technical interview decision will be published directly to your profile.
             </p>
           </div>
 
-          {/* Telemetry & Audit Strip */}
           <div
             style={{
               backgroundColor: '#0f172a80',
@@ -823,7 +867,6 @@ export const CandidateExam: React.FC = () => {
             </div>
           </div>
 
-          {/* Action button returning to candidate portal */}
           <button
             onClick={() => navigate('/candidate/assessments')}
             style={{
@@ -841,10 +884,7 @@ export const CandidateExam: React.FC = () => {
               justifyContent: 'center',
               gap: '8px',
               boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)',
-              transition: 'background-color 0.15s ease',
             }}
-            onMouseOver={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#1d4ed8')}
-            onMouseOut={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#2563eb')}
           >
             <span>Done &amp; Return to Technical Assessments</span>
             <ArrowRightIcon />
@@ -855,13 +895,13 @@ export const CandidateExam: React.FC = () => {
   }
 
   // =============================================================
-  // RENDER PHASE: LIVE EXAM IN PROGRESS
+  // RENDER PHASE: LIVE EXAM (3-PANEL SIMULTANEOUS SPLIT VIEW)
   // =============================================================
   if (!examPaper || !currentQuestion) {
     return null;
   }
 
-  const isTimeCritical = remainingSeconds <= 300; // Under 5 mins
+  const isTimeCritical = remainingSeconds <= 300;
 
   return (
     <div
@@ -881,18 +921,17 @@ export const CandidateExam: React.FC = () => {
           ------------------------------------------------------------- */}
       <header
         style={{
-          height: '60px',
+          height: '56px',
           borderBottom: '1px solid #334155',
           backgroundColor: '#1e293b',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 20px',
+          padding: '0 18px',
           flexShrink: 0,
         }}
       >
-        {/* Brand & Title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div
             style={{
               width: '32px',
@@ -908,18 +947,17 @@ export const CandidateExam: React.FC = () => {
             <SparkleIcon />
           </div>
           <div>
-            <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
-              LIVE ASSESSMENT
+            <span style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+              LIVE CODING ASSESSMENT
             </span>
-            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
+            <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {examPaper.assessmentTitle}
             </div>
           </div>
         </div>
 
-        {/* Center: Proctoring Active & Timer */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          {/* Proctoring Status Pill */}
+        {/* Center: Proctoring Pill & Timer */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div
             style={{
               display: 'flex',
@@ -960,7 +998,6 @@ export const CandidateExam: React.FC = () => {
             )}
           </div>
 
-          {/* Countdown Clock */}
           <div
             style={{
               display: 'flex',
@@ -969,10 +1006,10 @@ export const CandidateExam: React.FC = () => {
               backgroundColor: isTimeCritical ? '#ef444420' : '#0f172a',
               border: `1px solid ${isTimeCritical ? '#ef4444' : '#334155'}`,
               borderRadius: '8px',
-              padding: '6px 14px',
+              padding: '5px 12px',
               color: isTimeCritical ? '#ef4444' : '#f8fafc',
               fontWeight: 700,
-              fontSize: '1rem',
+              fontSize: '0.95rem',
               letterSpacing: '0.05em',
             }}
           >
@@ -981,26 +1018,54 @@ export const CandidateExam: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Submit Button */}
-        <div>
+        {/* Right: Question Navigation & Submit CTA */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* Question Navigator Pills */}
+          {examPaper.questions.length > 1 && (
+            <div style={{ display: 'flex', gap: '4px', marginRight: '6px' }}>
+              {examPaper.questions.map((q, idx) => {
+                const isSelected = idx === currentQIndex;
+                return (
+                  <button
+                    key={q.id}
+                    onClick={() => {
+                      setCurrentQIndex(idx);
+                      setLastRunResult(null);
+                      setExecutionError(null);
+                    }}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      backgroundColor: isSelected ? '#2563eb' : '#0f172a',
+                      color: isSelected ? '#ffffff' : '#94a3b8',
+                      border: isSelected ? '1px solid #3b82f6' : '1px solid #334155',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Q{idx + 1}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           <button
             onClick={() => setShowSubmitModal(true)}
             style={{
-              padding: '8px 18px',
+              padding: '7px 16px',
               borderRadius: '8px',
               backgroundColor: '#10b981',
               color: '#ffffff',
               fontWeight: 700,
-              fontSize: '0.875rem',
+              fontSize: '0.85rem',
               border: 'none',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              transition: 'background-color 0.2s',
             }}
-            onMouseOver={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#059669')}
-            onMouseOut={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#10b981')}
           >
             <CheckIcon />
             <span>Submit Exam ({answeredCount}/{examPaper.questions.length})</span>
@@ -1049,94 +1114,33 @@ export const CandidateExam: React.FC = () => {
       )}
 
       {/* -------------------------------------------------------------
-          QUESTION NAVIGATION TABS
+          MAIN 3-PANEL RESIZABLE WORKSPACE
           ------------------------------------------------------------- */}
       <div
+        ref={containerRef}
         style={{
-          height: '46px',
-          borderBottom: '1px solid #334155',
-          backgroundColor: '#162032',
           display: 'flex',
-          alignItems: 'center',
-          padding: '0 20px',
-          gap: '8px',
-          flexShrink: 0,
-        }}
-      >
-        <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginRight: '8px' }}>
-          QUESTIONS:
-        </span>
-        {examPaper.questions.map((q, idx) => {
-          const isSelected = idx === currentQIndex;
-          const isAnswered =
-            answers[q.id] &&
-            answers[q.id].trim() !== (q.starterCode || '').trim() &&
-            answers[q.id].trim().length > 10;
-
-          return (
-            <button
-              key={q.id}
-              onClick={() => {
-                setCurrentQIndex(idx);
-                setSampleTestResults(null);
-                setConsoleLog(null);
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '6px 14px',
-                borderRadius: '6px',
-                backgroundColor: isSelected ? '#2563eb' : '#1e293b',
-                color: isSelected ? '#ffffff' : '#cbd5e1',
-                border: isSelected ? '1px solid #3b82f6' : '1px solid #334155',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-              }}
-            >
-              <span>Q{idx + 1}</span>
-              {isAnswered && (
-                <span
-                  style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    backgroundColor: isSelected ? '#ffffff' : '#10b981',
-                  }}
-                  title="Code entered"
-                />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* -------------------------------------------------------------
-          MAIN CODING WORKSPACE: SPLIT SCREEN
-          ------------------------------------------------------------- */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '42% 58%',
           flex: 1,
           overflow: 'hidden',
+          position: 'relative',
         }}
       >
         {/* =========================================================
-            LEFT COLUMN: PROBLEM STATEMENT & TEST CASES
+            PANEL 1: PROBLEM PANEL (LEFT SIDE, ~30% WIDTH, RESIZABLE)
             ========================================================= */}
         <div
           style={{
-            borderRight: '1px solid #334155',
+            width: `${leftPanelWidth}%`,
+            height: '100%',
             overflowY: 'auto',
-            padding: '24px 28px',
+            padding: '20px 22px',
             backgroundColor: '#0b1120',
+            boxSizing: 'border-box',
+            flexShrink: 0,
           }}
         >
-          {/* Question Header & Badges */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+          {/* Header Badges */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
             <span
               style={{
                 backgroundColor:
@@ -1151,9 +1155,9 @@ export const CandidateExam: React.FC = () => {
                     : currentQuestion.difficulty?.toLowerCase() === 'hard'
                     ? '#ef4444'
                     : '#f59e0b',
-                padding: '3px 10px',
-                borderRadius: '12px',
-                fontSize: '0.75rem',
+                padding: '3px 8px',
+                borderRadius: '8px',
+                fontSize: '0.72rem',
                 fontWeight: 700,
               }}
             >
@@ -1164,9 +1168,9 @@ export const CandidateExam: React.FC = () => {
               style={{
                 backgroundColor: '#334155',
                 color: '#cbd5e1',
-                padding: '3px 10px',
-                borderRadius: '12px',
-                fontSize: '0.75rem',
+                padding: '3px 8px',
+                borderRadius: '8px',
+                fontSize: '0.72rem',
                 fontWeight: 600,
               }}
             >
@@ -1177,74 +1181,76 @@ export const CandidateExam: React.FC = () => {
               style={{
                 backgroundColor: '#1e293b',
                 color: '#60a5fa',
-                padding: '3px 10px',
-                borderRadius: '12px',
-                fontSize: '0.75rem',
+                padding: '3px 8px',
+                borderRadius: '8px',
+                fontSize: '0.72rem',
                 fontWeight: 600,
                 textTransform: 'uppercase',
               }}
             >
-              {currentQuestion.language || 'csharp'}
+              {currentRuntime.label.split(' ')[0]}
             </span>
           </div>
 
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc', margin: '0 0 16px' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f8fafc', margin: '0 0 14px' }}>
             {currentQuestion.title}
           </h2>
 
-          {/* Problem Statement text */}
+          {/* Problem Statement */}
           <div
             style={{
               color: '#cbd5e1',
-              fontSize: '0.92rem',
-              lineHeight: 1.7,
+              fontSize: '0.88rem',
+              lineHeight: 1.65,
               whiteSpace: 'pre-wrap',
-              marginBottom: '28px',
+              marginBottom: '22px',
             }}
           >
             {currentQuestion.problemStatement}
           </div>
 
-          {/* Sample Test Cases Section */}
-          <div style={{ marginTop: '20px' }}>
-            <h3
-              style={{
-                fontSize: '0.95rem',
-                fontWeight: 700,
-                color: '#e2e8f0',
-                margin: '0 0 14px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-            >
-              <span>Sample Test Cases</span>
-            </h3>
+          {/* Input/Output Format & Constraints (if present in problem or structured) */}
+          <div style={{ marginBottom: '22px' }}>
+            <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', margin: '0 0 6px' }}>
+              Execution Constraints
+            </h4>
+            <div style={{ backgroundColor: '#1e293b80', border: '1px solid #334155', borderRadius: '8px', padding: '10px 14px', fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.6 }}>
+              <div>• Time Limit: <strong>5.0 seconds</strong> per test case</div>
+              <div>• Memory Limit: <strong>256 MB</strong></div>
+              <div>• Sandboxed execution via Piston runtime</div>
+            </div>
+          </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {currentQuestion.sampleTestCases && currentQuestion.sampleTestCases.length > 0 ? (
-                currentQuestion.sampleTestCases.map((tc, idx) => (
+          {/* Sample Test Cases (Examples) */}
+          <div>
+            <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', margin: '0 0 10px' }}>
+              Sample Examples
+            </h4>
+
+            {currentQuestion.sampleTestCases && currentQuestion.sampleTestCases.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {currentQuestion.sampleTestCases.map((tc, idx) => (
                   <div
                     key={idx}
                     style={{
                       backgroundColor: '#1e293b',
                       border: '1px solid #334155',
-                      borderRadius: '10px',
-                      padding: '14px',
+                      borderRadius: '8px',
+                      padding: '12px',
                     }}
                   >
-                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', marginBottom: '8px' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#60a5fa', marginBottom: '6px' }}>
                       EXAMPLE {idx + 1}
                     </div>
-                    <div style={{ marginBottom: '8px' }}>
-                      <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>INPUT:</span>
+                    <div style={{ marginBottom: '6px' }}>
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600 }}>INPUT:</span>
                       <pre
                         style={{
-                          margin: '4px 0 0',
+                          margin: '3px 0 0',
                           backgroundColor: '#0f172a',
-                          padding: '8px 12px',
+                          padding: '6px 10px',
                           borderRadius: '6px',
-                          fontSize: '0.85rem',
+                          fontSize: '0.82rem',
                           color: '#e2e8f0',
                           fontFamily: 'Consolas, monospace',
                         }}
@@ -1253,14 +1259,14 @@ export const CandidateExam: React.FC = () => {
                       </pre>
                     </div>
                     <div>
-                      <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>EXPECTED OUTPUT:</span>
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600 }}>EXPECTED OUTPUT:</span>
                       <pre
                         style={{
-                          margin: '4px 0 0',
+                          margin: '3px 0 0',
                           backgroundColor: '#0f172a',
-                          padding: '8px 12px',
+                          padding: '6px 10px',
                           borderRadius: '6px',
-                          fontSize: '0.85rem',
+                          fontSize: '0.82rem',
                           color: '#10b981',
                           fontFamily: 'Consolas, monospace',
                         }}
@@ -1269,264 +1275,515 @@ export const CandidateExam: React.FC = () => {
                       </pre>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div
-                  style={{
-                    backgroundColor: '#1e293b',
-                    border: '1px dashed #334155',
-                    borderRadius: '10px',
-                    padding: '16px',
-                    color: '#94a3b8',
-                    fontSize: '0.85rem',
-                    lineHeight: 1.6,
-                  }}
-                >
-                  💡 <strong>Manual Evaluation:</strong> This problem is evaluated directly by the engineering review panel. Write and verify your code solution in the editor before submitting.
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div
+                style={{
+                  backgroundColor: '#1e293b80',
+                  border: '1px dashed #334155',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  color: '#94a3b8',
+                  fontSize: '0.82rem',
+                }}
+              >
+                No visible sample test cases provided. Write and test your solution in the code editor.
+              </div>
+            )}
           </div>
         </div>
 
+        {/* -------------------------------------------------------------
+            HORIZONTAL RESIZER (DRAGGABLE DIVIDER BETWEEN LEFT & RIGHT)
+            ------------------------------------------------------------- */}
+        <div
+          onMouseDown={handleMouseDownH}
+          title="Drag to resize Problem Panel and Code Workspace width"
+          style={{
+            width: '6px',
+            backgroundColor: '#1e293b',
+            cursor: 'col-resize',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+            borderLeft: '1px solid #334155',
+            borderRight: '1px solid #334155',
+            transition: 'background-color 0.15s',
+          }}
+          onMouseOver={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#3b82f6')}
+          onMouseOut={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#1e293b')}
+        >
+          <div style={{ width: '2px', height: '24px', backgroundColor: '#64748b', borderRadius: '1px' }} />
+        </div>
+
         {/* =========================================================
-            RIGHT COLUMN: CODE EDITOR & TEST EXECUTION CONSOLE
+            RIGHT COLUMN CONTAINER (CODE PANEL + OUTPUT PANEL)
             ========================================================= */}
         <div
+          ref={rightColRef}
           style={{
+            flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            backgroundColor: '#0f172a',
             overflow: 'hidden',
+            backgroundColor: '#0f172a',
           }}
         >
-          {/* Editor Sub-Header */}
+          {/* =========================================================
+              PANEL 2: CODE PANEL (TOP-RIGHT, ~60% HEIGHT, RESIZABLE)
+              ========================================================= */}
           <div
             style={{
-              height: '42px',
-              backgroundColor: '#1e293b',
-              borderBottom: '1px solid #334155',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0 16px',
-              flexShrink: 0,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#94a3b8' }}>
-              <span>Language:</span>
-              <span style={{ fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase' }}>
-                {currentQuestion.language || 'csharp'}
-              </span>
-            </div>
-
-            <button
-              onClick={handleResetStarterCode}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#94a3b8',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                textDecoration: 'underline',
-              }}
-            >
-              Reset Starter Template
-            </button>
-          </div>
-
-          {/* Monospace Code Editor Textarea */}
-          <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-            <textarea
-              value={answers[currentQuestion.id] || ''}
-              onChange={(e) => handleCodeChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              spellCheck={false}
-              autoCapitalize="off"
-              autoComplete="off"
-              autoCorrect="off"
-              style={{
-                width: '100%',
-                height: '100%',
-                padding: '16px 20px',
-                backgroundColor: '#0b1120',
-                color: '#f1f5f9',
-                fontFamily: '"Fira Code", "Cascadia Code", Consolas, Monaco, monospace',
-                fontSize: '0.9rem',
-                lineHeight: 1.6,
-                border: 'none',
-                outline: 'none',
-                resize: 'none',
-                whiteSpace: 'pre',
-                tabSize: 4,
-              }}
-              placeholder="// Write your code solution here..."
-            />
-          </div>
-
-          {/* Test Runner & Console Output Drawer */}
-          <div
-            style={{
-              maxHeight: '260px',
-              borderTop: '1px solid #334155',
-              backgroundColor: '#111827',
+              height: `${codePanelHeight}%`,
               display: 'flex',
               flexDirection: 'column',
-              flexShrink: 0,
+              overflow: 'hidden',
+              backgroundColor: '#1e1e1e', // Monaco dark editor background
             }}
           >
-            {/* Action Bar for Runner */}
+            {/* Code Panel Header Toolbar */}
             <div
               style={{
-                padding: '8px 16px',
-                borderBottom: '1px solid #1f2937',
+                height: '42px',
+                backgroundColor: '#1e293b',
+                borderBottom: '1px solid #334155',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                padding: '0 14px',
+                flexShrink: 0,
               }}
             >
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase' }}>
-                Test Runner Console
-              </span>
-
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={handleRunSampleTests}
-                  disabled={isRunningTests}
+              {/* Language Selector Dropdown */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600 }}>Language:</span>
+                <select
+                  value={currentLang}
+                  onChange={(e) => handleLanguageChange(e.target.value)}
                   style={{
-                    padding: '6px 14px',
+                    backgroundColor: '#0f172a',
+                    color: '#f8fafc',
+                    border: '1px solid #334155',
                     borderRadius: '6px',
-                    backgroundColor: isRunningTests ? '#4b5563' : '#374151',
-                    color: '#f9fafb',
+                    padding: '4px 10px',
                     fontSize: '0.8rem',
                     fontWeight: 600,
-                    border: '1px solid #4b5563',
-                    cursor: isRunningTests ? 'not-allowed' : 'pointer',
+                    outline: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {SUPPORTED_RUNTIMES.map((rt) => (
+                    <option key={rt.id} value={rt.id}>
+                      {rt.label}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  onClick={handleResetStarterCode}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#94a3b8',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    padding: '2px 6px',
+                  }}
+                >
+                  Reset Template
+                </button>
+              </div>
+
+              {/* Action Buttons: Run & Submit */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {/* RUN Button */}
+                <button
+                  type="button"
+                  onClick={handleRunCode}
+                  disabled={isExecuting}
+                  style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
+                    backgroundColor: isExecuting ? '#334155' : '#0284c7',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 14px',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    cursor: isExecuting ? 'not-allowed' : 'pointer',
+                    transition: 'background-color 0.15s',
                   }}
                 >
-                  <span>{isRunningTests ? 'Executing...' : '▶ Run Sample Tests'}</span>
+                  {isExecuting ? (
+                    <>
+                      <div
+                        style={{
+                          width: '12px',
+                          height: '12px',
+                          borderRadius: '50%',
+                          border: '2px solid #ffffff',
+                          borderTopColor: 'transparent',
+                          animation: 'spin 0.8s linear infinite',
+                        }}
+                      />
+                      <span>Running...</span>
+                    </>
+                  ) : (
+                    <>
+                      <PlayIcon />
+                      <span>Run</span>
+                    </>
+                  )}
+                </button>
+
+                {/* SUBMIT Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowSubmitModal(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: '#10b981',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 14px',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'background-color 0.15s',
+                  }}
+                >
+                  <CheckIcon />
+                  <span>Submit</span>
                 </button>
               </div>
             </div>
 
-            {/* Console Details / Results */}
+            {/* Monaco Editor (Lazy Loaded) */}
+            <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+              <React.Suspense
+                fallback={
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '100%',
+                      color: '#94a3b8',
+                      fontSize: '0.875rem',
+                      backgroundColor: '#1e1e1e',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        border: '2px solid #334155',
+                        borderTopColor: '#3b82f6',
+                        animation: 'spin 1s linear infinite',
+                        marginRight: '10px',
+                      }}
+                    />
+                    <span>Loading Monaco Code Editor...</span>
+                  </div>
+                }
+              >
+                <MonacoEditor
+                  height="100%"
+                  language={currentRuntime.monacoLang}
+                  value={currentCode}
+                  onChange={(val) => handleCodeChange(val || '')}
+                  theme="vs-dark"
+                  options={{
+                    fontSize: 13.5,
+                    minimap: { enabled: false },
+                    scrollBeyondLastLine: false,
+                    wordWrap: 'on',
+                    automaticLayout: true,
+                    tabSize: 4,
+                    fontFamily: '"Fira Code", "Cascadia Code", Consolas, Monaco, monospace',
+                  }}
+                />
+              </React.Suspense>
+            </div>
+          </div>
+
+          {/* -------------------------------------------------------------
+              VERTICAL RESIZER (DRAGGABLE DIVIDER BETWEEN CODE & OUTPUT)
+              ------------------------------------------------------------- */}
+          <div
+            onMouseDown={handleMouseDownV}
+            title="Drag to resize Code Editor and Output Panel height"
+            style={{
+              height: '6px',
+              backgroundColor: '#1e293b',
+              cursor: 'row-resize',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10,
+              borderTop: '1px solid #334155',
+              borderBottom: '1px solid #334155',
+              transition: 'background-color 0.15s',
+            }}
+            onMouseOver={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#3b82f6')}
+            onMouseOut={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#1e293b')}
+          >
+            <div style={{ height: '2px', width: '24px', backgroundColor: '#64748b', borderRadius: '1px' }} />
+          </div>
+
+          {/* =========================================================
+              PANEL 3: OUTPUT PANEL (BOTTOM-RIGHT, ~40% HEIGHT, RESIZABLE)
+              ========================================================= */}
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              backgroundColor: '#090d16',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Output Panel Header Tabs */}
             <div
               style={{
-                padding: '12px 16px',
-                overflowY: 'auto',
-                fontSize: '0.82rem',
-                fontFamily: 'Consolas, monospace',
-                color: '#d1d5db',
-                minHeight: '80px',
+                height: '38px',
+                backgroundColor: '#111827',
+                borderBottom: '1px solid #1f2937',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 14px',
+                flexShrink: 0,
               }}
             >
-              {consoleLog ? (
-                <div>
-                  <pre style={{ margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{consoleLog}</pre>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setActiveOutputTab('console')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'none',
+                    border: 'none',
+                    color: activeOutputTab === 'console' ? '#38bdf8' : '#94a3b8',
+                    borderBottom: activeOutputTab === 'console' ? '2px solid #38bdf8' : '2px solid transparent',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    padding: '8px 10px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <TerminalIcon />
+                  <span>Execution Output</span>
+                </button>
 
-                  {/* Sample Test Result badges */}
-                  {sampleTestResults && (
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                      {sampleTestResults.map((res, i) => (
-                        <div
-                          key={i}
-                          style={{
-                            padding: '4px 10px',
-                            borderRadius: '6px',
-                            backgroundColor: res.passed ? '#065f4630' : '#991b1b30',
-                            border: `1px solid ${res.passed ? '#059669' : '#dc2626'}`,
-                            color: res.passed ? '#34d399' : '#f87171',
-                            fontSize: '0.75rem',
-                          }}
-                        >
-                          Case {i + 1}: {res.passed ? 'PASSED ✓' : 'FAILED ✕'}
-                        </div>
-                      ))}
+                {lastRunResult?.samplePassed !== undefined && (
+                  <span
+                    style={{
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontSize: '0.7rem',
+                      fontWeight: 800,
+                      backgroundColor: lastRunResult.samplePassed ? '#065f4630' : '#991b1b30',
+                      border: `1px solid ${lastRunResult.samplePassed ? '#059669' : '#dc2626'}`,
+                      color: lastRunResult.samplePassed ? '#34d399' : '#f87171',
+                    }}
+                  >
+                    Sample Case 1: {lastRunResult.samplePassed ? 'PASSED ✓' : 'FAILED ✕'}
+                  </span>
+                )}
+              </div>
+
+              {/* Execution Time & Exit Code */}
+              {lastRunResult && !isExecuting && (
+                <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                  Exit Code: <strong style={{ color: lastRunResult.exitCode === 0 ? '#10b981' : '#f87171' }}>{lastRunResult.exitCode}</strong>
+                  {' • '}
+                  Time: <strong>{lastRunResult.executionTimeMs}ms</strong>
+                </div>
+              )}
+            </div>
+
+            {/* Output Panel Content Area */}
+            <div
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '14px 16px',
+                fontFamily: 'Consolas, "Fira Code", monospace',
+                fontSize: '0.84rem',
+                color: '#e2e8f0',
+              }}
+            >
+              {/* 1. Loading State */}
+              {isExecuting ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#38bdf8', padding: '12px 0' }}>
+                  <div
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      borderRadius: '50%',
+                      border: '2px solid #38bdf8',
+                      borderTopColor: 'transparent',
+                      animation: 'spin 0.8s linear infinite',
+                    }}
+                  />
+                  <span>Dispatching to Piston sandboxed runtime ({currentRuntime.label})...</span>
+                </div>
+              ) : executionError ? (
+                /* 2. Error / Rate Limit State */
+                <div
+                  style={{
+                    backgroundColor: '#ef444415',
+                    border: '1px solid #ef4444',
+                    borderRadius: '8px',
+                    padding: '12px 14px',
+                    color: '#fca5a5',
+                    marginBottom: '10px',
+                  }}
+                >
+                  <div style={{ fontWeight: 700, marginBottom: '4px' }}>
+                    {lastRunResult?.isRateLimited ? '⚠️ Piston Rate Limit (HTTP 429)' : 'Execution Error'}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', lineHeight: 1.5 }}>{executionError}</div>
+                  {lastRunResult?.isRateLimited && (
+                    <button
+                      type="button"
+                      onClick={handleRunCode}
+                      style={{
+                        marginTop: '10px',
+                        padding: '5px 12px',
+                        borderRadius: '6px',
+                        backgroundColor: '#ef4444',
+                        color: '#ffffff',
+                        border: 'none',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Retry Run
+                    </button>
+                  )}
+                </div>
+              ) : lastRunResult ? (
+                /* 3. Output Results */
+                <div>
+                  {/* Compiler Errors if any */}
+                  {lastRunResult.compileOutput && (
+                    <div style={{ marginBottom: '14px' }}>
+                      <span style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 700, textTransform: 'uppercase' }}>
+                        COMPILATION ERROR:
+                      </span>
+                      <pre
+                        style={{
+                          margin: '4px 0 0',
+                          backgroundColor: '#1f1515',
+                          border: '1px solid #7f1d1d',
+                          borderRadius: '6px',
+                          padding: '10px 12px',
+                          color: '#fca5a5',
+                          whiteSpace: 'pre-wrap',
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {lastRunResult.compileOutput}
+                      </pre>
+                    </div>
+                  )}
+
+                  {/* Standard Output */}
+                  <div style={{ marginBottom: '14px' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>
+                      STDOUT:
+                    </span>
+                    <pre
+                      style={{
+                        margin: '4px 0 0',
+                        backgroundColor: '#0f172a',
+                        border: '1px solid #1e293b',
+                        borderRadius: '6px',
+                        padding: '10px 12px',
+                        color: '#f1f5f9',
+                        whiteSpace: 'pre-wrap',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {lastRunResult.stdout || '<No standard output>'}
+                    </pre>
+                  </div>
+
+                  {/* Standard Error */}
+                  {lastRunResult.stderr && (
+                    <div style={{ marginBottom: '14px' }}>
+                      <span style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 700, textTransform: 'uppercase' }}>
+                        STDERR:
+                      </span>
+                      <pre
+                        style={{
+                          margin: '4px 0 0',
+                          backgroundColor: '#1f1515',
+                          border: '1px solid #7f1d1d',
+                          borderRadius: '6px',
+                          padding: '10px 12px',
+                          color: '#fca5a5',
+                          whiteSpace: 'pre-wrap',
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {lastRunResult.stderr}
+                      </pre>
+                    </div>
+                  )}
+
+                  {/* Sample Test Comparison */}
+                  {lastRunResult.expectedOutput && (
+                    <div
+                      style={{
+                        backgroundColor: '#1e293b80',
+                        border: '1px solid #334155',
+                        borderRadius: '8px',
+                        padding: '10px 14px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        fontSize: '0.8rem',
+                      }}
+                    >
+                      <div>
+                        <span style={{ color: '#94a3b8' }}>Sample Input: </span>
+                        <code>{lastRunResult.sampleInputUsed}</code>
+                      </div>
+                      <div>
+                        <span style={{ color: '#94a3b8' }}>Expected Output: </span>
+                        <code style={{ color: '#10b981' }}>{lastRunResult.expectedOutput}</code>
+                      </div>
+                      <div>
+                        <span style={{ color: '#94a3b8' }}>Actual Output: </span>
+                        <code style={{ color: lastRunResult.samplePassed ? '#10b981' : '#f87171' }}>
+                          {lastRunResult.stdout?.trim() || 'null'}
+                        </code>
+                      </div>
                     </div>
                   )}
                 </div>
               ) : (
-                <span style={{ color: '#6b7280' }}>
-                  Click &ldquo;Run Sample Tests&rdquo; to validate your solution against the sample inputs before final submission.
-                </span>
-              )}
-            </div>
-
-            {/* Bottom Question Navigation */}
-            <div
-              style={{
-                padding: '10px 16px',
-                borderTop: '1px solid #1f2937',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                backgroundColor: '#1e293b',
-              }}
-            >
-              <button
-                onClick={() => {
-                  setCurrentQIndex((prev) => Math.max(0, prev - 1));
-                  setSampleTestResults(null);
-                  setConsoleLog(null);
-                }}
-                disabled={currentQIndex === 0}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: '6px',
-                  backgroundColor: currentQIndex === 0 ? '#1e293b' : '#334155',
-                  color: currentQIndex === 0 ? '#64748b' : '#f8fafc',
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                  border: 'none',
-                  cursor: currentQIndex === 0 ? 'not-allowed' : 'pointer',
-                }}
-              >
-                ← Previous
-              </button>
-
-              <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                Question {currentQIndex + 1} of {examPaper.questions.length}
-              </span>
-
-              {currentQIndex < examPaper.questions.length - 1 ? (
-                <button
-                  onClick={() => {
-                    setCurrentQIndex((prev) => Math.min(examPaper.questions.length - 1, prev + 1));
-                    setSampleTestResults(null);
-                    setConsoleLog(null);
-                  }}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: '6px',
-                    backgroundColor: '#2563eb',
-                    color: '#ffffff',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Next Question →
-                </button>
-              ) : (
-                <button
-                  onClick={() => setShowSubmitModal(true)}
-                  style={{
-                    padding: '6px 16px',
-                    borderRadius: '6px',
-                    backgroundColor: '#10b981',
-                    color: '#ffffff',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Review & Submit
-                </button>
+                /* 4. Empty State */
+                <div style={{ color: '#64748b', fontStyle: 'italic', padding: '12px 0' }}>
+                  Click &ldquo;<strong>Run</strong>&rdquo; to execute your code against the sample test case in the Piston sandbox,
+                  or &ldquo;<strong>Submit</strong>&rdquo; to evaluate against all test cases and finalize your exam.
+                </div>
               )}
             </div>
           </div>
@@ -1567,7 +1824,7 @@ export const CandidateExam: React.FC = () => {
             <p style={{ color: '#94a3b8', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 20px' }}>
               You have answered <strong>{answeredCount}</strong> out of{' '}
               <strong>{examPaper.questions.length}</strong> coding challenge(s). Once submitted, automated test runners
-              will execute your solutions against hidden suites, and your score will be forwarded to the recruitment team.
+              will execute your solutions against all test suites, and your score will be forwarded to the recruitment team.
             </p>
 
             {tabSwitches > 0 && (
@@ -1588,6 +1845,7 @@ export const CandidateExam: React.FC = () => {
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button
+                type="button"
                 onClick={() => setShowSubmitModal(false)}
                 style={{
                   padding: '8px 16px',
@@ -1600,13 +1858,13 @@ export const CandidateExam: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                Continue Exam
+                Continue Editing
               </button>
-
               <button
-                onClick={handleSubmitExam}
+                type="button"
+                onClick={handleConfirmSubmit}
                 style={{
-                  padding: '8px 20px',
+                  padding: '8px 18px',
                   borderRadius: '8px',
                   backgroundColor: '#10b981',
                   color: '#ffffff',
@@ -1616,7 +1874,7 @@ export const CandidateExam: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                Confirm & Submit
+                Confirm &amp; Finalize
               </button>
             </div>
           </div>

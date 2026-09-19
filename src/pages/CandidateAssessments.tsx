@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -42,6 +42,8 @@ export const CandidateAssessments: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [refreshIndex, setRefreshIndex] = useState<number>(0);
+
   // Filter & Search states
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -52,33 +54,49 @@ export const CandidateAssessments: React.FC = () => {
   const [scorecardLoading, setScorecardLoading] = useState<boolean>(false);
   const [scorecardError, setScorecardError] = useState<string | null>(null);
 
-  const fetchAssessments = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  useEffect(() => {
+    let isMounted = true;
 
-      let list: CandidateAssessmentListItemDto[] = [];
+    const loadData = async () => {
       try {
-        list = await assessmentsApi.getMyAssessments();
-      } catch {
-        // Fallback to direct candidateId fetch if JWT claims differ
-        if (currentUser?.id) {
-          list = await assessmentsApi.getCandidateAssessments(currentUser.id);
+        let list: CandidateAssessmentListItemDto[] = [];
+        try {
+          list = await assessmentsApi.getMyAssessments();
+        } catch {
+          // Fallback to direct candidateId fetch if JWT claims differ
+          if (currentUser?.id) {
+            list = await assessmentsApi.getCandidateAssessments(currentUser.id);
+          }
+        }
+
+        if (isMounted) {
+          setAssessments(list || []);
+          setError(null);
+        }
+      } catch (err: unknown) {
+        console.error('Error fetching candidate assessments:', err);
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Failed to load assigned technical assessments.');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
         }
       }
+    };
 
-      setAssessments(list || []);
-    } catch (err: any) {
-      console.error('Error fetching candidate assessments:', err);
-      setError(err?.message || 'Failed to load assigned technical assessments.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentUser?.id]);
+    void loadData();
 
-  useEffect(() => {
-    fetchAssessments();
-  }, [fetchAssessments]);
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser, refreshIndex]);
+
+  const handleRetry = () => {
+    setIsLoading(true);
+    setError(null);
+    setRefreshIndex((prev) => prev + 1);
+  };
 
   // Load submission detail when modal opens
   const handleOpenScorecard = async (submissionId: string) => {
@@ -88,8 +106,8 @@ export const CandidateAssessments: React.FC = () => {
     try {
       const detail = await assessmentsApi.getSubmissionDetail(submissionId);
       setScorecardDetail(detail);
-    } catch (err: any) {
-      setScorecardError(err?.message || 'Failed to retrieve assessment scorecard details.');
+    } catch (err: unknown) {
+      setScorecardError(err instanceof Error ? err.message : 'Failed to retrieve assessment scorecard details.');
     } finally {
       setScorecardLoading(false);
     }
@@ -207,7 +225,7 @@ export const CandidateAssessments: React.FC = () => {
       {error && (
         <div className="assessments-alert-error" role="alert">
           <span>{error}</span>
-          <button type="button" onClick={() => void fetchAssessments()}>
+          <button type="button" onClick={handleRetry}>
             Retry
           </button>
         </div>

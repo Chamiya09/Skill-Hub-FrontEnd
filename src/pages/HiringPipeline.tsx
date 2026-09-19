@@ -234,7 +234,7 @@ export const HiringPipeline: React.FC = () => {
         avatarBg: getGradientForName(app.fullName || 'Candidate'),
         jobId: job.id,
         jobTitle: job.title,
-        assessmentStatus: 'None',
+        assessmentStatus: app.assessmentStatus || 'None',
         interviewStatus: 'None',
       }));
 

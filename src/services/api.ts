@@ -1469,6 +1469,7 @@ export interface ShortlistedApplicantDto {
   appliedDate: string;
   shortlistedAt?: string;
   aiMatchScore?: number;
+  assessmentStatus?: 'None' | 'Sent' | 'Completed';
 }
 
 export const candidateJobRecommendationsApi = {

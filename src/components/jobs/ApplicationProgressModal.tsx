@@ -9,12 +9,13 @@ import {
   SparkleIcon,
 } from '../common/Icons';
 
-const STAGES = ['Applied', 'Under Review', 'Shortlisted', 'Interview', 'Offer'] as const;
+const STAGES = ['Applied', 'Under Review', 'Shortlisted', 'Assessment', 'Interview', 'Offer'] as const;
 
 const getApplicationStage = (status?: string | null): number => {
   const value = (status || 'Applied').toLowerCase();
-  if (value.includes('offer') || value.includes('accepted') || value.includes('hired')) return 4;
-  if (value.includes('interview')) return 3;
+  if (value.includes('offer') || value.includes('accepted') || value.includes('hired')) return 5;
+  if (value.includes('interview')) return 4;
+  if (value.includes('assess') || value.includes('test') || value.includes('exam')) return 3;
   if (value.includes('shortlist')) return 2;
   if (value.includes('review') || value.includes('screen')) return 1;
   return 0;
@@ -23,7 +24,8 @@ const getApplicationStage = (status?: string | null): number => {
 const getCopilotMessage = (stage: number): string => [
   'Your application is submitted. Keep your Digital CV current while the hiring team begins its review.',
   'Your profile is being reviewed. Prepare two measurable examples that demonstrate impact in this role.',
-  'You made the shortlist. Your next best step is a focused mock interview based on this role.',
+  'You made the shortlist. A technical assessment may be dispatched by the hiring committee.',
+  'Your technical assessment has been sent by HR. Head to Technical Assessments to take your coding challenge.',
   'Your interview stage is active. Rehearse concise STAR responses and questions for the hiring team.',
   'You reached the offer stage. Review the role scope, total package, and growth expectations carefully.',
 ][stage];
@@ -113,7 +115,14 @@ export const ApplicationProgressModal: React.FC<ApplicationProgressModalProps> =
           </Link>
           {currentStage === 2 && (
             <Link to={`/candidate/mock-interview?jobId=${application.jobId}`} className="application-smart-action">
-              🎯 Practice Mock Interview
+              <span>Practice Mock Interview</span>
+              <ArrowRightIcon />
+            </Link>
+          )}
+          {currentStage === 3 && (
+            <Link to="/candidate/assessments" className="application-smart-action">
+              <span>Go to Technical Assessments</span>
+              <ArrowRightIcon />
             </Link>
           )}
         </footer>

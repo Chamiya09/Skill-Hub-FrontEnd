@@ -9,7 +9,6 @@ import {
   type RunCodeResponseDto,
 } from '../services/api';
 import {
-  SparkleIcon,
   ClockIcon,
   CheckIcon,
   XIcon,
@@ -60,6 +59,21 @@ const TerminalIcon: React.FC = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="4 17 10 11 4 5" />
     <line x1="12" y1="19" x2="20" y2="19" />
+  </svg>
+);
+
+const CodeIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="16 18 22 12 16 6" />
+    <polyline points="8 6 2 12 8 18" />
+  </svg>
+);
+
+const AlertTriangleIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+    <line x1="12" y1="9" x2="12" y2="13" />
+    <line x1="12" y1="17" x2="12.01" y2="17" />
   </svg>
 );
 
@@ -556,7 +570,7 @@ export const CandidateExam: React.FC = () => {
   };
 
   // -------------------------------------------------------------
-  // 6. Action: "Run" (Execute against sample test case via Piston)
+  // 6. Action: "Run" (Execute against sample test case)
   // -------------------------------------------------------------
   const handleRunCode = async () => {
     if (!submissionId || !currentQuestion) return;
@@ -573,7 +587,7 @@ export const CandidateExam: React.FC = () => {
 
       setLastRunResult(res);
       if (res.isRateLimited) {
-        setExecutionError('Piston API rate limit reached (HTTP 429). Please wait a few seconds and try again.');
+        setExecutionError('Execution service is busy (HTTP 429). Please wait a few seconds and try again.');
       } else if (res.isError && res.errorMessage) {
         setExecutionError(res.errorMessage);
       }
@@ -747,83 +761,137 @@ export const CandidateExam: React.FC = () => {
       >
         <div
           style={{
-            maxWidth: '680px',
+            maxWidth: '640px',
             width: '100%',
             backgroundColor: '#1e293b',
             border: '1px solid #334155',
-            borderRadius: '20px',
-            padding: '40px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            borderRadius: '16px',
+            padding: '36px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.45)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px' }}>
             <div
               style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                width: '42px',
+                height: '42px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                border: '1px solid rgba(59, 130, 246, 0.25)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#ffffff',
+                color: '#60a5fa',
+                flexShrink: 0,
               }}
             >
-              <SparkleIcon />
+              <CodeIcon size={22} />
             </div>
             <div>
-              <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#60a5fa', fontWeight: 700 }}>
-                CANDIDATE TECHNICAL EXAMINATION
+              <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#60a5fa', fontWeight: 700 }}>
+                Candidate Technical Examination
               </span>
-              <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '2px 0 0', color: '#ffffff' }}>
+              <h1 style={{ fontSize: '1.45rem', fontWeight: 700, margin: '2px 0 0', color: '#ffffff', letterSpacing: '-0.01em' }}>
                 {examPaper.assessmentTitle}
               </h1>
             </div>
           </div>
 
-          <p style={{ color: '#94a3b8', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '28px' }}>
-            You have been invited to complete a real-world coding challenge. Your solutions will be evaluated using our
-            sandboxed multi-language execution engine and reviewed by the hiring panel.
+          <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '24px' }}>
+            You have been invited to complete a technical coding assessment. Your solutions will be evaluated against automated test suites and reviewed by the technical hiring panel.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '28px' }}>
-            <div style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>DURATION</span>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc', marginTop: '4px' }}>
-                {examPaper.timeLimitMinutes} Mins
+          {/* 2-Column Clean Meta Row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', marginBottom: '24px' }}>
+            <div
+              style={{
+                backgroundColor: '#0f172a',
+                border: '1px solid #334155',
+                borderRadius: '10px',
+                padding: '16px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+              }}
+            >
+              <div
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(148, 163, 184, 0.08)',
+                  border: '1px solid #334155',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#94a3b8',
+                  flexShrink: 0,
+                }}
+              >
+                <ClockIcon />
+              </div>
+              <div>
+                <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  Duration
+                </span>
+                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f8fafc', marginTop: '2px' }}>
+                  {examPaper.timeLimitMinutes} Minutes
+                </div>
               </div>
             </div>
 
-            <div style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>CHALLENGES</span>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc', marginTop: '4px' }}>
-                {examPaper.questions.length} Question{examPaper.questions.length > 1 ? 's' : ''}
+            <div
+              style={{
+                backgroundColor: '#0f172a',
+                border: '1px solid #334155',
+                borderRadius: '10px',
+                padding: '16px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+              }}
+            >
+              <div
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(148, 163, 184, 0.08)',
+                  border: '1px solid #334155',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#94a3b8',
+                  flexShrink: 0,
+                }}
+              >
+                <CodeIcon size={18} />
               </div>
-            </div>
-
-            <div style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>RUNTIMES</span>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#10b981', marginTop: '4px' }}>
-                Piston Sandboxed
+              <div>
+                <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  Challenges
+                </span>
+                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f8fafc', marginTop: '2px' }}>
+                  {examPaper.questions.length} {examPaper.questions.length === 1 ? 'Problem' : 'Problems'}
+                </div>
               </div>
             </div>
           </div>
 
-          <div style={{ backgroundColor: '#0f172a80', border: '1px solid #334155', borderRadius: '12px', padding: '20px', marginBottom: '28px' }}>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f1f5f9', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShieldCheckIcon /> Assessment Rules & Integrity Protocol
+          {/* Assessment Protocol */}
+          <div style={{ backgroundColor: '#0f172a80', border: '1px solid #334155', borderRadius: '10px', padding: '18px 20px', marginBottom: '24px' }}>
+            <h3 style={{ fontSize: '0.88rem', fontWeight: 700, color: '#f1f5f9', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ShieldCheckIcon /> Assessment Guidelines &amp; Integrity Protocol
             </h3>
-            <ul style={{ margin: 0, paddingLeft: '20px', color: '#cbd5e1', fontSize: '0.85rem', lineHeight: 1.8 }}>
+            <ul style={{ margin: 0, paddingLeft: '18px', color: '#94a3b8', fontSize: '0.825rem', lineHeight: 1.75 }}>
               <li>
-                <strong>Single-Window Policy:</strong> Switching tabs or navigating away from this window will trigger
-                an integrity alert recorded in your HR audit log.
+                <strong style={{ color: '#e2e8f0' }}>Single-Window Policy:</strong> Switching tabs or navigating away from this window is monitored and recorded in your proctoring audit log.
               </li>
               <li>
-                <strong>Timer &amp; Auto-Submit:</strong> The countdown timer will start immediately. When time expires,
-                answers will submit automatically.
+                <strong style={{ color: '#e2e8f0' }}>Timer &amp; Auto-Submit:</strong> The countdown timer starts immediately upon beginning. When time expires, answers submit automatically.
               </li>
               <li>
-                <strong>Run &amp; Submit:</strong> Use <strong>Run</strong> to test your code against sample inputs, and <strong>Submit</strong> to evaluate against all test cases.
+                <strong style={{ color: '#e2e8f0' }}>Run &amp; Submit:</strong> Use <strong>Run</strong> to test code against sample test cases, and <strong>Submit</strong> when you are ready to finalize.
               </li>
             </ul>
           </div>
@@ -832,21 +900,22 @@ export const CandidateExam: React.FC = () => {
             onClick={handleStartExam}
             style={{
               width: '100%',
-              padding: '16px',
-              borderRadius: '12px',
+              padding: '14px 20px',
+              borderRadius: '10px',
               backgroundColor: '#2563eb',
               color: '#ffffff',
-              fontSize: '1.05rem',
-              fontWeight: 700,
+              fontSize: '0.95rem',
+              fontWeight: 600,
               border: 'none',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '10px',
+              gap: '8px',
+              transition: 'background-color 0.15s ease',
             }}
           >
-            <span>I Acknowledge &amp; Begin Assessment</span>
+            <span>Begin Assessment</span>
             <ArrowRightIcon />
           </button>
         </div>
@@ -1100,14 +1169,15 @@ export const CandidateExam: React.FC = () => {
               width: '32px',
               height: '32px',
               borderRadius: '8px',
-              backgroundColor: '#2563eb',
-              color: '#ffffff',
+              backgroundColor: 'rgba(59, 130, 246, 0.15)',
+              border: '1px solid rgba(59, 130, 246, 0.25)',
+              color: '#60a5fa',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <SparkleIcon />
+            <CodeIcon size={16} />
           </div>
           <div>
             <span style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
@@ -1254,8 +1324,8 @@ export const CandidateExam: React.FC = () => {
             zIndex: 100,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>⚠️</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <AlertTriangleIcon size={18} />
             <span>
               <strong>Integrity Alert:</strong> {cheatWarningMessage} Tab switches and window focus losses are permanently
               logged to your candidate proctoring audit log.
@@ -1268,10 +1338,12 @@ export const CandidateExam: React.FC = () => {
               border: 'none',
               color: '#ffffff',
               cursor: 'pointer',
-              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              padding: 0,
             }}
           >
-            ✕
+            <XIcon />
           </button>
         </div>
       )}
@@ -1380,7 +1452,7 @@ export const CandidateExam: React.FC = () => {
             <div style={{ backgroundColor: '#1e293b80', border: '1px solid #334155', borderRadius: '8px', padding: '10px 14px', fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.6 }}>
               <div>• Time Limit: <strong>5.0 seconds</strong> per test case</div>
               <div>• Memory Limit: <strong>256 MB</strong></div>
-              <div>• Sandboxed execution via Piston runtime</div>
+              <div>• Isolated execution sandbox</div>
             </div>
           </div>
 
@@ -1802,7 +1874,7 @@ export const CandidateExam: React.FC = () => {
                       animation: 'spin 0.8s linear infinite',
                     }}
                   />
-                  <span>Dispatching to Piston sandboxed runtime ({currentRuntime.label})...</span>
+                  <span>Executing code in secure sandbox ({currentRuntime.label})...</span>
                 </div>
               ) : executionError ? (
                 /* 2. Error / Rate Limit State */
@@ -1816,8 +1888,9 @@ export const CandidateExam: React.FC = () => {
                     marginBottom: '10px',
                   }}
                 >
-                  <div style={{ fontWeight: 700, marginBottom: '4px' }}>
-                    {lastRunResult?.isRateLimited ? '⚠️ Piston Rate Limit (HTTP 429)' : 'Execution Error'}
+                  <div style={{ fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <AlertTriangleIcon size={16} />
+                    <span>{lastRunResult?.isRateLimited ? 'Rate Limit Exceeded (429)' : 'Execution Error'}</span>
                   </div>
                   <div style={{ fontSize: '0.8rem', lineHeight: 1.5 }}>{executionError}</div>
                   {lastRunResult?.isRateLimited && (
@@ -1952,7 +2025,7 @@ export const CandidateExam: React.FC = () => {
                       </div>
                       {lastRunResult.samplePassed === false && (
                         <div style={{ fontSize: '0.75rem', color: '#fbbf24', marginTop: '4px', lineHeight: 1.4 }}>
-                          💡 <strong>Format Tip:</strong> Automated test grading expects exact matching. If the problem asks for <code>42</code>, use <code>print(maximum)</code> instead of <code>print(&quot;Maximum number:&quot;, maximum)</code>.
+                          <strong>Format Tip:</strong> Automated test grading expects exact matching. If the problem asks for <code>42</code>, use <code>print(maximum)</code> instead of <code>print(&quot;Maximum number:&quot;, maximum)</code>.
                         </div>
                       )}
                     </div>
@@ -1961,7 +2034,7 @@ export const CandidateExam: React.FC = () => {
               ) : (
                 /* 4. Empty State */
                 <div style={{ color: '#64748b', fontStyle: 'italic', padding: '12px 0' }}>
-                  Click &ldquo;<strong>Run</strong>&rdquo; to execute your code against the sample test case in the Piston sandbox,
+                  Click &ldquo;<strong>Run</strong>&rdquo; to execute your code against the sample test case in the sandbox,
                   or &ldquo;<strong>Submit</strong>&rdquo; to evaluate against all test cases and finalize your exam.
                 </div>
               )}

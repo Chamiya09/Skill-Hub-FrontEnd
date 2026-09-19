@@ -12,8 +12,8 @@ import {
   XIcon,
   TrophyIcon,
   ShieldCheckIcon,
+  AwardIcon,
   ArrowRightIcon,
-  SparkleIcon,
   SearchIcon,
 } from '../components/common/Icons';
 import './CandidateAssessments.css';
@@ -337,7 +337,7 @@ export const CandidateAssessments: React.FC = () => {
                     item.isSelectedForInterview ? (
                       <span className="status-pill" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', fontWeight: 800 }}>
                         <TrophyIcon />
-                        <span>⭐ Interview Selected ({item.examScore}%)</span>
+                        <span>Interview Selected ({item.examScore}%)</span>
                       </span>
                     ) : item.isPassed ? (
                       <span className="status-pill status-passed">
@@ -357,7 +357,7 @@ export const CandidateAssessments: React.FC = () => {
                     </span>
                   ) : (
                     <span className="status-pill status-assigned">
-                      <SparkleIcon />
+                      <ClockIcon />
                       <span>Action Required</span>
                     </span>
                   )}
@@ -372,7 +372,9 @@ export const CandidateAssessments: React.FC = () => {
                 {/* Interview Selected Callout or Under Review Notice */}
                 {item.isSelectedForInterview && (
                   <div style={{ background: '#ecfdf5', border: '1px solid #6ee7b7', borderRadius: '8px', padding: '9px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '18px' }}>🎉</span>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: '#d1fae5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <AwardIcon />
+                    </div>
                     <div>
                       <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#065f46' }}>Selected for Technical Interview!</div>
                       <p style={{ fontSize: '11.5px', color: '#047857', margin: 0 }}>HR evaluated your code and selected you for the interview stage.</p>
@@ -382,7 +384,7 @@ export const CandidateAssessments: React.FC = () => {
 
                 {isUnderReview && !item.isSelectedForInterview && (
                   <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#475569', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '14px' }}>⏳</span>
+                    <ClockIcon />
                     <span>Code submitted • Results will be published within <strong>3–4 working days</strong></span>
                   </div>
                 )}
@@ -573,9 +575,9 @@ export const CandidateAssessments: React.FC = () => {
                 {scorecardDetail.isSelectedForInterview && (
                   <div style={{ background: 'linear-gradient(135deg, #059669 0%, #047857 100%)', color: '#ffffff', borderRadius: '12px', padding: '18px 20px', marginBottom: '20px', boxShadow: '0 4px 14px rgba(5, 150, 105, 0.25)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '22px' }}>🌟</span>
+                      <AwardIcon />
                       <span style={{ fontSize: '15px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Selected for Technical Interview!
+                        Selected for Technical Interview
                       </span>
                     </div>
                     <p style={{ margin: 0, fontSize: '13px', opacity: 0.95, lineHeight: 1.5 }}>
@@ -610,7 +612,7 @@ export const CandidateAssessments: React.FC = () => {
                       {scorecardDetail.status === 'Under_Review' || (!scorecardDetail.gradedAt && scorecardDetail.examScore === 0) ? (
                         <span style={{ color: '#d97706', fontWeight: 800 }}>UNDER REVIEW</span>
                       ) : scorecardDetail.isSelectedForInterview ? (
-                        <span style={{ color: '#059669', fontWeight: 800 }}>⭐ SELECTED</span>
+                        <span style={{ color: '#059669', fontWeight: 800 }}>SELECTED</span>
                       ) : scorecardDetail.examScore >= scorecardDetail.passingThreshold ? (
                         <span style={{ color: '#059669', fontWeight: 800 }}>PASSED</span>
                       ) : (

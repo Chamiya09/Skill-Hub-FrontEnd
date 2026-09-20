@@ -11,7 +11,7 @@ import {
   SparkleIcon,
   LayoutDashboardIcon,
   BriefcaseIcon,
-  LightningIcon,
+
   TrendUpIcon,
   SettingsIcon,
   MenuIcon,
@@ -606,23 +606,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
                       </div>
                       <p className="stat-footer-text">Engineering, AI Research, Design, Product & Ops</p>
                     </div>
-
-                    {/* Card 4: AI Matching Precision */}
-                    <div className="dashboard-stat-card">
-                      <div className="stat-card-header">
-                        <span className="stat-label">AI Match Status</span>
-                        <div className="stat-icon-wrapper stat-icon-orange">
-                          <LightningIcon />
-                        </div>
-                      </div>
-                      <div className="stat-value-box">
-                        <span className="stat-number">Active</span>
-                        <span className="stat-trend positive">
-                          <span>95% Fit Benchmark</span>
-                        </span>
-                      </div>
-                      <p className="stat-footer-text">Real-time candidate indexing enabled</p>
-                    </div>
                   </>
                 )}
               </section>
@@ -784,10 +767,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
                             <div className="candidate-tags-row">
                               <span className={`candidate-stage-pill ${job.status === 'Active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
                                 {job.status}
-                              </span>
-                              <span className="candidate-score-pill">
-                                <SparkleIcon />
-                                95% AI Match
                               </span>
                             </div>
                           </div>

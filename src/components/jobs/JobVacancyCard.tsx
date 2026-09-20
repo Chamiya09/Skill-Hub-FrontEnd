@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Sparkles } from 'lucide-react'
+
 import type { JobDto } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import {
@@ -103,25 +103,11 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
   }
 
   const salaryDisplay = formatSalary(job.salaryRange)
-  const hasMatchScore =
-    typeof job.matchPercentage === 'number' && Number.isFinite(job.matchPercentage)
-  const matchPercentage = hasMatchScore
-    ? Math.min(100, Math.max(0, job.matchPercentage as number))
-    : undefined
-  const isAiRecommended = !isEmployer && matchPercentage !== undefined && matchPercentage >= 70
-  const detailsState =
-    matchPercentage === undefined
-      ? undefined
-      : { recommendedMatch: { jobId: job.id, matchPercentage } }
+
 
   return (
     <div className={`rich-job-card w-full ${className}`}>
-      {isAiRecommended && (
-        <div className="w-fit mb-2 flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] uppercase font-bold tracking-wider rounded-full">
-          <Sparkles size={12} aria-hidden="true" />
-          <span>AI Recommended</span>
-        </div>
-      )}
+
 
       {/* Top Header Row: Company Info */}
       <div className="job-card-header">
@@ -156,7 +142,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
       </div>
 
       {/* Job Title */}
-      <Link to={`/jobs/${job.id}`} state={detailsState} className="job-title-link">
+      <Link to={`/jobs/${job.id}`} className="job-title-link">
         <h3 className="job-card-title">{job.title}</h3>
       </Link>
 
@@ -274,7 +260,7 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
           )}
 
           {/* View Details Navigation Button */}
-          <Link to={`/jobs/${job.id}`} state={detailsState} className="job-details-link-btn">
+          <Link to={`/jobs/${job.id}`} className="job-details-link-btn">
             <span>View Details</span>
             <ArrowRightIcon />
           </Link>

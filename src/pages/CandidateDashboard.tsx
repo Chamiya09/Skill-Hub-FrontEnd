@@ -1,123 +1,56 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { BriefcaseBusiness, RefreshCw, Sparkles } from 'lucide-react'
-import { RecommendedJobCard } from '../components/jobs/RecommendedJobCard'
+import { BriefcaseBusiness, Search } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import {
-  jobRecommendationsApi,
-  type RecommendedJobDto,
-} from '../services/api'
 
 export function CandidateDashboard() {
   const { currentUser } = useAuth()
-  const [jobs, setJobs] = useState<RecommendedJobDto[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const candidateId = currentUser?.id
-
-  const loadRecommendations = async () => {
-    if (!candidateId) return
-
-    try {
-      setIsLoading(true)
-      setError(null)
-      setJobs(await jobRecommendationsApi.getForCandidate(candidateId))
-    } catch (requestError: unknown) {
-      console.error('Unable to load AI job recommendations:', requestError)
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : 'Unable to load recommendations right now.',
-      )
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (!candidateId) return
-
-    let isCurrent = true
-    jobRecommendationsApi
-      .getForCandidate(candidateId)
-      .then((recommendations) => {
-        if (isCurrent) setJobs(recommendations)
-      })
-      .catch((requestError: unknown) => {
-        if (!isCurrent) return
-        console.error('Unable to load AI job recommendations:', requestError)
-        setError(
-          requestError instanceof Error
-            ? requestError.message
-            : 'Unable to load recommendations right now.',
-        )
-      })
-      .finally(() => {
-        if (isCurrent) setIsLoading(false)
-      })
-
-    return () => {
-      isCurrent = false
-    }
-  }, [candidateId])
 
   return (
-    <div className="candidate-recommendations-page space-y-6">
-      <section className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="mb-8 flex items-center justify-between">
         <div>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-bold tracking-wider">
-            <Sparkles size={14} aria-hidden="true" />
-            SEMANTIC TWIN RECOMMENDATIONS
-          </span>
-          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight mt-3">
-            Recommended Jobs For You
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+            Welcome back, {currentUser?.firstName || 'Candidate'}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Live opportunities ranked against your verified Digital CV skills.
+          <p className="mt-2 text-slate-600">
+            Track your applications and explore new opportunities.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void loadRecommendations()}
-          disabled={isLoading}
-          className="recommendations-refresh inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold text-sm hover:bg-emerald-100 disabled:opacity-60 transition-all"
-        >
-          <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
-          Refresh Matches
-        </button>
-      </section>
+      </div>
 
-      {error && (
-        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between gap-4">
-          <span>{error}</span>
-          <button type="button" onClick={() => void loadRecommendations()} className="font-bold">
-            Retry
-          </button>
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="recommended-jobs-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="recommended-job-skeleton w-full bg-white border border-gray-200 rounded-2xl" />
-          ))}
-        </div>
-      ) : jobs.length > 0 ? (
-        <div className="recommended-jobs-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {jobs.map((job) => <RecommendedJobCard key={job.jobId} job={job} />)}
-        </div>
-      ) : !error ? (
-        <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center">
-          <BriefcaseBusiness size={36} className="text-emerald-500 mx-auto" />
-          <h2 className="text-lg font-bold text-gray-900 mt-4">No recommendations yet</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Add skills to your Digital CV or check back when new jobs are published.
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col items-center text-center">
+          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4">
+            <Search className="w-6 h-6" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 mb-2">Find Jobs</h3>
+          <p className="text-slate-600 mb-6 flex-grow">
+            Browse our latest job openings and find your next role.
           </p>
-          <Link to="/candidate/profile" className="inline-flex mt-5 text-sm font-bold text-emerald-700">
-            Update Digital CV →
+          <Link
+            to="/jobs"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
+          >
+            Explore Jobs
           </Link>
         </div>
-      ) : null}
+
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col items-center text-center">
+          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-4">
+            <BriefcaseBusiness className="w-6 h-6" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 mb-2">My Applications</h3>
+          <p className="text-slate-600 mb-6 flex-grow">
+            Track the status of jobs you've applied for.
+          </p>
+          <Link
+            to="/candidate/applications"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-medium transition-colors"
+          >
+            View Applications
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }

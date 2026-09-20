@@ -531,41 +531,7 @@ export interface JobDto {
   updatedAt?: string;
 }
 
-export interface AiMatchRequestDto {
-  candidate: {
-    skills: string[];
-    experienceYears: number;
-    headline?: string;
-    summary?: string;
-    experiences: ExperienceDto[];
-    projects: ProjectDto[];
-    educations: EducationDto[];
-    certifications: CertificationDto[];
-  };
-  job: {
-    title: string;
-    department?: string;
-    experienceLevel?: string;
-    description?: string;
-    skills: string[];
-  };
-}
 
-export interface AiMatchResponseDto {
-  matchPercentage: number;
-  strengths: string[];
-  missingSkillGaps: string[];
-  aiRecommendation: string;
-}
-
-export const aiMatchApi = {
-  async analyze(candidateId: string, jobId: string): Promise<AiMatchResponseDto> {
-    const query = new URLSearchParams({ candidateId, jobId });
-    return request<AiMatchResponseDto>(`/match?${query.toString()}`, {
-      method: 'GET',
-    }, 120_000);
-  },
-};
 
 export interface CreateJobPayload {
   title: string;
@@ -1307,37 +1273,7 @@ export const savedJobsApi = {
   },
 };
 
-export interface RecommendedJobDto {
-  jobId: string;
-  title: string;
-  company: string;
-  location: string;
-  postedDate: string;
-  matchPercentage: number;
-  isRecommended: boolean;
-}
 
-const recommendationRequests = new Map<string, Promise<RecommendedJobDto[]>>();
-
-export const jobRecommendationsApi = {
-  async getForCandidate(candidateId: string): Promise<RecommendedJobDto[]> {
-    const existingRequest = recommendationRequests.get(candidateId);
-    if (existingRequest) return existingRequest;
-
-    const pendingRequest = request<RecommendedJobDto[]>(
-      `/candidate/${encodeURIComponent(candidateId)}/recommended-jobs`,
-      { method: 'GET' },
-      120000,
-    );
-
-    recommendationRequests.set(candidateId, pendingRequest);
-    try {
-      return await pendingRequest;
-    } finally {
-      recommendationRequests.delete(candidateId);
-    }
-  },
-};
 
 export const jobApplicationsApi = {
   /**
@@ -1459,15 +1395,7 @@ export const jobApplicationsApi = {
   }
 };
 
-export interface RecommendedJobResponseDto {
-  jobId: string;
-  title: string;
-  company: string;
-  location: string;
-  postedDate: string;
-  matchPercentage: number;
-  isRecommended: boolean;
-}
+
 
 export interface ShortlistedApplicantDto {
   applicationId: string;
@@ -1485,17 +1413,7 @@ export interface ShortlistedApplicantDto {
   assessmentStatus?: 'None' | 'Sent' | 'Completed';
 }
 
-export const candidateJobRecommendationsApi = {
-  /**
-   * Fetches AI-recommended jobs for a candidate.
-   * Calls: GET /api/candidate/{candidateId}/recommended-jobs
-   */
-  async getRecommendedJobs(candidateId: string): Promise<RecommendedJobResponseDto[]> {
-    return request<RecommendedJobResponseDto[]>(`/candidate/${candidateId}/recommended-jobs`, {
-      method: 'GET',
-    });
-  },
-};
+
 
 // ==========================================
 // TECHNICAL ASSESSMENT ENGINE (STUDENT 4)

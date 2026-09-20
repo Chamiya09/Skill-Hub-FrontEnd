@@ -511,7 +511,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
           {isLoadingApplicants ? (
             <div className="py-16 text-center space-y-3">
               <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="text-xs font-semibold text-slate-500">AI is analyzing candidate profiles... This may take a few seconds.</p>
+              <p className="text-xs font-semibold text-slate-500">Loading applicants...</p>
             </div>
           ) : candidates.length === 0 ? (
             /* 1. STRICT 0 APPLICANTS EMPTY STATE AS REQUIRED */
@@ -595,10 +595,17 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                           </div>
 
                           <div className="flex items-center gap-4 shrink-0 sm:ml-auto ai-screening-actions">
-                            <div className="ai-match-ring" style={{ '--match-score': `${candidate.aiScore ?? 0}%` } as React.CSSProperties}>
-                              <span>{candidate.aiScore}%</span>
-                              <small>Match</small>
-                            </div>
+                            {candidate.aiScore !== null && candidate.aiScore !== undefined ? (
+                              <div className="ai-match-ring" style={{ '--match-score': `${candidate.aiScore}%` } as React.CSSProperties}>
+                                <span>{candidate.aiScore}%</span>
+                                <small>Match</small>
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-sm font-medium text-indigo-700">
+                                <ClockIcon />
+                                <span>AI score pending</span>
+                              </span>
+                            )}
                             <button
                               type="button"
                               className="ai-view-cv-link"
@@ -722,10 +729,17 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                           </div>
 
                           <div className="flex items-center gap-4 shrink-0 sm:ml-auto ai-screening-actions">
-                            <div className="ai-match-ring" style={{ '--match-score': `${candidate.aiScore ?? 0}%` } as React.CSSProperties}>
-                              <span>{candidate.aiScore}%</span>
-                              <small>Match</small>
-                            </div>
+                            {candidate.aiScore !== null && candidate.aiScore !== undefined ? (
+                              <div className="ai-match-ring" style={{ '--match-score': `${candidate.aiScore}%` } as React.CSSProperties}>
+                                <span>{candidate.aiScore}%</span>
+                                <small>Match</small>
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-sm font-medium text-indigo-700">
+                                <ClockIcon />
+                                <span>AI score pending</span>
+                              </span>
+                            )}
                             <button
                               type="button"
                               className="ai-view-cv-link"

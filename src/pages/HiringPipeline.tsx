@@ -11,6 +11,7 @@ import {
   type DispatchAssessmentResponseDto,
 } from '../services/api';
 import { CandidateProfileReadOnly } from '../components/candidates/CandidateProfileReadOnly';
+import { CvEvaluationPanel } from '../components/pipeline/CvEvaluationPanel';
 import {
   SparkleIcon,
   SearchIcon,
@@ -926,6 +927,29 @@ export const HiringPipeline: React.FC = () => {
                           <span>Schedule Interview</span>
                         </button>
                       </div>
+
+                      {/* ── AI CV Evaluation Panel (API Integration) ──────────────────
+                           Strictly additive: mounts below existing action buttons.
+                           Wires "Run AI CV Evaluation" → POST /api/CVEvaluation/analyze
+                           Wires "Approve & Shortlist"  → POST /api/CVEvaluation/{id}/approve
+                           ──────────────────────────────────────────────────────────── */}
+                      <CvEvaluationPanel
+                        candidateId={candidate.candidateId}
+                        jobId={candidate.jobId}
+                        applicationId={candidate.id}
+                        candidateName={candidate.name}
+                        onApproved={(evaluationId) => {
+                          // Optimistically update the candidate's status in the local list
+                          setShortlistedCandidates((prev) =>
+                            prev.map((c) =>
+                              c.id === candidate.id
+                                ? { ...c, status: 'AI Approved' }
+                                : c
+                            )
+                          );
+                          showToast(`✓ ${candidate.name} has been AI-evaluated and approved. Evaluation ID: ${evaluationId.substring(0, 8)}...`);
+                        }}
+                      />
                     </div>
                   );
                 })

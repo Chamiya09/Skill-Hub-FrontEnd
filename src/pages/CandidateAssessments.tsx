@@ -16,7 +16,6 @@ import {
   ArrowRightIcon,
   SearchIcon,
 } from '../components/common/Icons';
-import { Trash2 } from 'lucide-react';
 import './CandidateAssessments.css';
 
 // SVG Icon for Code / Technical assessment
@@ -118,29 +117,6 @@ export const CandidateAssessments: React.FC = () => {
     setSelectedSubmissionId(null);
     setScorecardDetail(null);
     setScorecardError(null);
-  };
-
-  // Delete assessment from candidate dashboard
-  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
-  const handleDeleteAssessment = async (submissionId: string, title: string) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete "${title}"? This will remove this assessment from your dashboard.`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      setIsDeletingId(submissionId);
-      await assessmentsApi.deleteSubmission(submissionId);
-      setAssessments((prev) => prev.filter((a) => a.submissionId !== submissionId));
-    } catch (err: unknown) {
-      console.error('Failed to delete assessment:', err);
-      alert(err instanceof Error ? err.message : 'Failed to delete assessment.');
-    } finally {
-      setIsDeletingId(null);
-    }
   };
 
   // Helper functions for completion, expiration & blocked status
@@ -537,16 +513,6 @@ export const CandidateAssessments: React.FC = () => {
                       </button>
                     )}
 
-                    <button
-                      type="button"
-                      className="btn-delete-assessment"
-                      onClick={() => handleDeleteAssessment(item.submissionId, item.assessmentTitle)}
-                      disabled={isDeletingId === item.submissionId}
-                      title="Delete this assessment"
-                    >
-                      <Trash2 size={13} strokeWidth={2} />
-                      <span>{isDeletingId === item.submissionId ? 'Deleting...' : 'Delete'}</span>
-                    </button>
                   </div>
                 </div>
               </div>

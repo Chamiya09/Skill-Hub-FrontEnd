@@ -13,6 +13,7 @@ import {
   ArrowLeftIcon,
   AwardIcon,
   ShieldCheckIcon,
+  ClockIcon,
 } from '../common/Icons';
 
 export interface JobFormData {
@@ -26,6 +27,7 @@ export interface JobFormData {
   description: string;
   benefits: string;
   tags?: string[];
+  deadline?: string;
 }
 
 export interface JobFormModalProps {
@@ -45,6 +47,7 @@ const defaultJobData: JobFormData = {
   experienceLevel: 'Senior Level (5+ Yrs)',
   status: 'Active',
   salaryRange: '',
+  deadline: '',
   description: `<h2>Role Overview</h2><p>Provide a comprehensive overview of the role, team mission, and impact...</p><h3>Key Responsibilities</h3><ul><li>Architect and build scalable web microservices.</li><li>Collaborate with cross-functional engineering teams.</li></ul><h3>Required Qualifications</h3><ul><li>3+ years of production experience in relevant tech stack.</li><li>Strong problem-solving and communication abilities.</li></ul>`,
   benefits: `<h3>What We Offer</h3><ul><li>Competitive base compensation + equity options.</li><li>100% remote flexibility with home office stipend.</li><li>Comprehensive health, dental, and vision insurance.</li></ul>`,
   tags: ['React', 'TypeScript', '.NET Core', 'PostgreSQL'],
@@ -494,6 +497,28 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                       <option value="Draft">Draft (Internal Requisition Review)</option>
                     </select>
                   </div>
+                </div>
+
+                {/* Application Deadline */}
+                <div className="form-group-item" style={{ marginTop: '14px', marginBottom: '14px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
+                    Application Deadline
+                  </label>
+                  <div className="relative w-full auth-input-wrapper">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400 auth-input-icon">
+                      <ClockIcon />
+                    </span>
+                    <input
+                      type="datetime-local"
+                      name="deadline"
+                      value={formData.deadline ? formData.deadline.substring(0, 16) : ''}
+                      onChange={handleInputChange}
+                      className="input-field-standard pl-11 w-full"
+                    />
+                  </div>
+                  <span style={{ fontSize: '11.5px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                    Once this deadline passes, the vacancy will automatically be removed from available jobs for candidates.
+                  </span>
                 </div>
 
                 {/* Status Explanation Helper Box */}

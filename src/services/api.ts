@@ -526,6 +526,7 @@ export interface JobDto {
   whatWeOffer?: string;
   tags?: string[];
   applicantsCount?: number;
+  deadline?: string;
   createdAt: string;
   updatedAt?: string;
 }
@@ -577,6 +578,7 @@ export interface CreateJobPayload {
   description: string;
   whatWeOffer?: string;
   tags?: string[];
+  deadline?: string;
 }
 
 export interface UpdateJobPayload {
@@ -590,6 +592,7 @@ export interface UpdateJobPayload {
   description: string;
   whatWeOffer?: string;
   tags?: string[];
+  deadline?: string;
 }
 
 export const extractJobTags = (job: Partial<JobDto>): string[] => {

@@ -80,6 +80,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
   const [, setToastMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
+  const [isProcessingBulk, setIsProcessingBulk] = useState<boolean>(false);
   const [topCount, setTopCount] = useState<number>(5);
 
   const showToast = (msg: string) => {
@@ -98,7 +99,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
       const mapped: ModalCandidate[] = (data || [])
         .filter((app) => {
           const st = (app.status || '').toLowerCase();
-          return st !== 'assessment_reviewed' && st !== 'interview' && st !== 'rejected';
+          return st !== 'assessment_reviewed' && st !== 'interview';
         })
         .map((app) => ({
           id: app.applicationId,
@@ -226,34 +227,43 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
 
 
 
-  const handleShortlistCandidate = async (candidateId: string) => {
-    if (!currentJob) return;
-    const candidate = candidates.find((item) => item.id === candidateId);
-    if (!candidate) return;
-
-    try {
-      await jobApplicationsApi.moveToShortlist(currentJob.id, [candidate.candidateId]);
-      showToast(`✓ ${candidate.name} added to the shortlist.`);
-      await fetchApplicants(currentJob.id); // Refetch from DB to ensure sync
-    } catch (err: any) {
-      showToast(`Failed to shortlist ${candidate.name}: ${err.message}`);
-    }
-  };
-
-  const handleShortlist = async () => {
-    if (!currentJob || selectedCandidateIds.length === 0) return;
+  const handleBulkShortlist = async () => {
+    if (!currentJob || selectedCandidateIds.length === 0 || isProcessingBulk) return;
     
     const candidateIdsToShortlist = candidates
       .filter((c) => selectedCandidateIds.includes(c.id))
       .map((c) => c.candidateId);
 
     try {
+      setIsProcessingBulk(true);
       await jobApplicationsApi.moveToShortlist(currentJob.id, candidateIdsToShortlist);
-      showToast(`✓ ${selectedCandidateIds.length} candidate(s) added to the shortlist.`);
+      showToast(`✓ ${candidateIdsToShortlist.length} candidate(s) sent to the shortlist.`);
       setSelectedCandidateIds([]);
       await fetchApplicants(currentJob.id); // Refetch from DB to ensure sync
     } catch (err: any) {
       showToast(`Failed to shortlist candidates: ${err.message}`);
+    } finally {
+      setIsProcessingBulk(false);
+    }
+  };
+
+  const handleBulkReject = async () => {
+    if (!currentJob || selectedCandidateIds.length === 0 || isProcessingBulk) return;
+    
+    const candidateIdsToReject = candidates
+      .filter((c) => selectedCandidateIds.includes(c.id))
+      .map((c) => c.candidateId);
+
+    try {
+      setIsProcessingBulk(true);
+      await jobApplicationsApi.rejectApplicant(currentJob.id, candidateIdsToReject);
+      showToast(`✕ ${candidateIdsToReject.length} candidate(s) rejected.`);
+      setSelectedCandidateIds([]);
+      await fetchApplicants(currentJob.id); // Refetch from DB to ensure sync
+    } catch (err: any) {
+      showToast(`Failed to reject candidates: ${err.message}`);
+    } finally {
+      setIsProcessingBulk(false);
     }
   };
 
@@ -261,34 +271,6 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
     const sorted = [...otherList].sort((a, b) => (b.aiScore ?? 0) - (a.aiScore ?? 0));
     const topIds = sorted.slice(0, topCount).map(c => c.id);
     setSelectedCandidateIds(topIds);
-  };
-
-  const handleRemoveFromShortlist = async (candidateId: string) => {
-    if (!currentJob) return;
-    const candidate = candidates.find((item) => item.id === candidateId);
-    if (!candidate) return;
-
-    try {
-      await jobApplicationsApi.removeFromShortlist(currentJob.id, [candidate.candidateId]);
-      showToast(`✕ ${candidate.name} removed from the shortlist.`);
-      await fetchApplicants(currentJob.id); // Refetch from DB to ensure sync
-    } catch (err: any) {
-      showToast(`Failed to unshortlist ${candidate.name}: ${err.message}`);
-    }
-  };
-
-  const handleRejectCandidate = async (candidateId: string) => {
-    if (!currentJob) return;
-    const candidate = candidates.find((item) => item.id === candidateId);
-    if (!candidate) return;
-
-    try {
-      await jobApplicationsApi.rejectApplicant(currentJob.id, [candidate.candidateId]);
-      showToast(`✕ ${candidate.name} has been rejected.`);
-      await fetchApplicants(currentJob.id); // Refetch from DB to ensure sync
-    } catch (err: any) {
-      showToast(`Failed to reject ${candidate.name}: ${err.message}`);
-    }
   };
 
   const shortlistedList = candidates.filter((c) => c.isShortlisted);
@@ -562,6 +544,20 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                           title="Click to view full verified Digital CV Profile"
                         >
                           <div className="flex items-center gap-4 ai-screening-candidate-identity">
+                            <input
+                              type="checkbox"
+                              className="ai-screening-checkbox"
+                              checked={selectedCandidateIds.includes(candidate.id)}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                setSelectedCandidateIds((prev) =>
+                                  e.target.checked
+                                    ? [...prev, candidate.id]
+                                    : prev.filter((id) => id !== candidate.id)
+                                );
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            />
                             {candidate.avatarUrl ? (
                               <img
                                 src={candidate.avatarUrl}
@@ -616,28 +612,23 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                             >
                               View CV <ArrowRightIcon />
                             </button>
-                            <button
-                              type="button"
-                              className="ai-shortlist-btn is-shortlisted"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleRemoveFromShortlist(candidate.id);
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '6px 14px',
+                                borderRadius: '9999px',
+                                backgroundColor: '#ecfdf5',
+                                border: '1px solid #a7f3d0',
+                                color: '#047857',
+                                fontSize: '13px',
+                                fontWeight: 600,
                               }}
-                              title="Click to remove from shortlist"
                             >
-                              <CheckIcon /> Unshortlist
-                            </button>
-                            <button
-                              type="button"
-                              className="ai-reject-btn"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleRejectCandidate(candidate.id);
-                              }}
-                              title="Click to reject candidate"
-                            >
-                              <XIcon /> Reject
-                            </button>
+                              <CheckIcon />
+                              <span>Shortlisted</span>
+                            </span>
                           </div>
                         </div>
                       );
@@ -750,29 +741,60 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                             >
                               View CV <ArrowRightIcon />
                             </button>
-                            <button
-                              type="button"
-                              className="ai-shortlist-btn"
-                              disabled={candidate.status?.toLowerCase() === 'rejected'}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleShortlistCandidate(candidate.id);
-                              }}
-                            >
-                              <CheckIcon /> Shortlist
-                            </button>
-                            <button
-                              type="button"
-                              className={`ai-reject-btn ${candidate.status?.toLowerCase() === 'rejected' ? 'is-rejected' : ''}`}
-                              disabled={candidate.status?.toLowerCase() === 'rejected'}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleRejectCandidate(candidate.id);
-                              }}
-                              title={candidate.status?.toLowerCase() === 'rejected' ? 'Candidate Rejected' : 'Click to reject candidate'}
-                            >
-                              <XIcon /> {candidate.status?.toLowerCase() === 'rejected' ? 'Rejected' : 'Reject'}
-                            </button>
+                            {candidate.isShortlisted || candidate.status?.toLowerCase() === 'shortlisted' ? (
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '6px 14px',
+                                  borderRadius: '9999px',
+                                  backgroundColor: '#ecfdf5',
+                                  border: '1px solid #a7f3d0',
+                                  color: '#047857',
+                                  fontSize: '13px',
+                                  fontWeight: 600,
+                                }}
+                              >
+                                <CheckIcon />
+                                <span>Shortlisted</span>
+                              </span>
+                            ) : candidate.status?.toLowerCase() === 'rejected' ? (
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '6px 14px',
+                                  borderRadius: '9999px',
+                                  backgroundColor: '#fef2f2',
+                                  border: '1px solid #fecaca',
+                                  color: '#dc2626',
+                                  fontSize: '13px',
+                                  fontWeight: 600,
+                                }}
+                              >
+                                <XIcon />
+                                <span>Rejected</span>
+                              </span>
+                            ) : (
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '6px 14px',
+                                  borderRadius: '9999px',
+                                  backgroundColor: '#f8fafc',
+                                  border: '1px solid #e2e8f0',
+                                  color: '#64748b',
+                                  fontSize: '13px',
+                                  fontWeight: 600,
+                                }}
+                              >
+                                <span>Under Review</span>
+                              </span>
+                            )}
                           </div>
                         </div>
                       );
@@ -882,29 +904,60 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                           >
                             View CV <ArrowRightIcon />
                           </button>
-                          <button
-                            type="button"
-                            className={`ai-shortlist-btn ${candidate.isShortlisted ? 'is-shortlisted' : ''}`}
-                            disabled={candidate.isShortlisted || candidate.status?.toLowerCase() === 'rejected'}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleShortlistCandidate(candidate.id);
-                            }}
-                          >
-                            <CheckIcon /> {candidate.isShortlisted ? 'Shortlisted' : 'Shortlist'}
-                          </button>
-                          <button
-                            type="button"
-                            className={`ai-reject-btn ${candidate.status?.toLowerCase() === 'rejected' ? 'is-rejected' : ''}`}
-                            disabled={candidate.status?.toLowerCase() === 'rejected'}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleRejectCandidate(candidate.id);
-                            }}
-                            title={candidate.status?.toLowerCase() === 'rejected' ? 'Candidate Rejected' : 'Click to reject candidate'}
-                          >
-                            <XIcon /> {candidate.status?.toLowerCase() === 'rejected' ? 'Rejected' : 'Reject'}
-                          </button>
+                          {candidate.isShortlisted || candidate.status?.toLowerCase() === 'shortlisted' ? (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '6px 14px',
+                                borderRadius: '9999px',
+                                backgroundColor: '#ecfdf5',
+                                border: '1px solid #a7f3d0',
+                                color: '#047857',
+                                fontSize: '13px',
+                                fontWeight: 600,
+                              }}
+                            >
+                              <CheckIcon />
+                              <span>Shortlisted</span>
+                            </span>
+                          ) : candidate.status?.toLowerCase() === 'rejected' ? (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '6px 14px',
+                                borderRadius: '9999px',
+                                backgroundColor: '#fef2f2',
+                                border: '1px solid #fecaca',
+                                color: '#dc2626',
+                                fontSize: '13px',
+                                fontWeight: 600,
+                              }}
+                            >
+                              <XIcon />
+                              <span>Rejected</span>
+                            </span>
+                          ) : (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '6px 14px',
+                                borderRadius: '9999px',
+                                backgroundColor: '#f8fafc',
+                                border: '1px solid #e2e8f0',
+                                color: '#64748b',
+                                fontSize: '13px',
+                                fontWeight: 600,
+                              }}
+                            >
+                              <span>Under Review</span>
+                            </span>
+                          )}
                         </div>
                       </div>
                     );
@@ -927,42 +980,56 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
             Close Window
           </button>
 
-          {/* PIPELINE MOVE BUTTON / RUN AI ACTION / BULK SHORTLIST */}
-          {isAiAnalyzed ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button
               type="button"
-              onClick={handleShortlist}
-              disabled={selectedCandidateIds.length === 0}
-              className="popup-footer-btn-primary"
-              title="Transfer all shortlisted candidates to the next hiring pipeline module"
+              onClick={handleBulkReject}
+              disabled={selectedCandidateIds.length === 0 || isProcessingBulk}
+              title={
+                selectedCandidateIds.length === 0
+                  ? 'Select one or more candidates to reject'
+                  : `Reject ${selectedCandidateIds.length} candidate(s)`
+              }
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 18px',
+                borderRadius: '9999px',
+                fontSize: '13px',
+                fontWeight: 600,
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fecaca',
+                color: '#dc2626',
+                cursor: selectedCandidateIds.length === 0 || isProcessingBulk ? 'not-allowed' : 'pointer',
+                opacity: selectedCandidateIds.length === 0 || isProcessingBulk ? 0.5 : 1,
+                transition: 'all 0.15s ease',
+                fontFamily: 'inherit',
+              }}
             >
-              <ArrowRightIcon />
+              <XIcon />
               <span>
-                Send Shortlisted ({selectedCandidateIds.length}) to Hiring Pipeline
+                Reject{selectedCandidateIds.length > 0 ? ` (${selectedCandidateIds.length})` : ''}
               </span>
             </button>
-          ) : isJobClosed ? (
+
             <button
               type="button"
-              onClick={handleRunAiAnalysis}
-              disabled={isAnalyzing || candidates.length === 0}
+              onClick={handleBulkShortlist}
+              disabled={selectedCandidateIds.length === 0 || isProcessingBulk}
               className="popup-footer-btn-primary"
+              title={
+                selectedCandidateIds.length === 0
+                  ? 'Select one or more candidates to shortlist'
+                  : `Send ${selectedCandidateIds.length} candidate(s) to the shortlist`
+              }
             >
-              <SparkleIcon />
-              <span>Run AI Analysis</span>
+              <CheckIcon />
+              <span>
+                Send to the Shortlist{selectedCandidateIds.length > 0 ? ` (${selectedCandidateIds.length})` : ''}
+              </span>
             </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleRunAiAnalysis}
-              disabled={isAnalyzing || candidates.length === 0}
-              className="popup-footer-btn-primary"
-              title="Run AI screening across currently received applications"
-            >
-              <SparkleIcon />
-              <span>Run AI Screening ({candidates.length})</span>
-            </button>
-          )}
+          </div>
         </div>
       </div>
 

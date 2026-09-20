@@ -176,6 +176,26 @@ export const JobVacancyCard: React.FC<JobVacancyCardProps> = ({
             <span>{job.experienceLevel}</span>
           </div>
         )}
+        {job.deadline && (
+          <div
+            className="job-meta-pill"
+            style={{
+              color: '#d97706',
+              borderColor: '#fde68a',
+              background: '#fffbeb',
+            }}
+          >
+            <ClockIcon />
+            <span>
+              Deadline:{' '}
+              {new Date(job.deadline).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Department & Skill Tags Row */}

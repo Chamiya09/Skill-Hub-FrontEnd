@@ -1966,25 +1966,6 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                           Incorrect / Incomplete
                         </label>
                       </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Points Awarded:</span>
-                        <input
-                          type="number"
-                          min={0}
-                          max={questionDef?.points || 100}
-                          value={qEval.pointsEarned}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            setQuestionEvaluations((prev) => ({
-                              ...prev,
-                              [ans.questionId]: { ...qEval, pointsEarned: val, isCorrect: val > 0 },
-                            }));
-                          }}
-                          style={{ width: '70px', padding: '5px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12.5px', textAlign: 'center', fontWeight: 700 }}
-                        />
-                        <span style={{ fontSize: '12px', color: '#64748b' }}>/ {questionDef?.points || 100}</span>
-                      </div>
                     </div>
                   </div>
                 );

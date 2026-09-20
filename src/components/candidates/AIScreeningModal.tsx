@@ -95,27 +95,32 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
       setAnalyzingStageText('AI is analyzing candidate profiles... This may take a few seconds.');
       const data = await jobApplicationsApi.getRankedApplicants(jobId);
 
-      const mapped: ModalCandidate[] = (data || []).map((app) => ({
-        id: app.applicationId,
-        candidateId: app.candidateId,
-        name: app.fullName || 'Unnamed Candidate',
-        headline: app.headline || 'Candidate Profile',
-        email: app.email || '',
-        phone: app.phone || '',
-        location: app.location || 'Location unspecified',
-        appliedDate: app.appliedDate
-          ? new Date(app.appliedDate).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })
-          : 'Recent',
-        isShortlisted: (app.status || '').toLowerCase() === 'shortlisted',
-        aiScore: app.aiMatchScore,
-        skills: app.skills || [],
-        avatarBg: getGradientForName(app.fullName || 'Candidate'),
-        status: app.status || 'Applied',
-      }));
+      const mapped: ModalCandidate[] = (data || [])
+        .filter((app) => {
+          const st = (app.status || '').toLowerCase();
+          return st !== 'assessment_reviewed' && st !== 'interview' && st !== 'rejected';
+        })
+        .map((app) => ({
+          id: app.applicationId,
+          candidateId: app.candidateId,
+          name: app.fullName || 'Unnamed Candidate',
+          headline: app.headline || 'Candidate Profile',
+          email: app.email || '',
+          phone: app.phone || '',
+          location: app.location || 'Location unspecified',
+          appliedDate: app.appliedDate
+            ? new Date(app.appliedDate).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })
+            : 'Recent',
+          isShortlisted: (app.status || '').toLowerCase() === 'shortlisted',
+          aiScore: app.aiMatchScore,
+          skills: app.skills || [],
+          avatarBg: getGradientForName(app.fullName || 'Candidate'),
+          status: app.status || 'Applied',
+        }));
 
       setCandidates(mapped);
       setIsAiAnalyzed(mapped.length > 0);

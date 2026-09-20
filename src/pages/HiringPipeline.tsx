@@ -1163,22 +1163,14 @@ export const HiringPipeline: React.FC = () => {
               </p>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button
                 type="button"
                 onClick={() => setDispatchedModalData(null)}
-                className="btn-secondary"
-                style={{ padding: '8px 16px', fontSize: '13px' }}
+                className="btn-primary"
+                style={{ padding: '8px 22px', fontSize: '13px' }}
               >
                 Done
-              </button>
-              <button
-                type="button"
-                onClick={() => window.open(dispatchedModalData.testLink, '_blank')}
-                className="btn-primary"
-                style={{ padding: '8px 18px', fontSize: '13px' }}
-              >
-                <span>Take Exam Now &rarr;</span>
               </button>
             </div>
           </div>

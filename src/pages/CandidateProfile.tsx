@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { useAuth } from '../context/AuthContext';
 import {
   candidateCvApi,
   candidateAuthApi,
+  assessmentsApi,
   type CandidateProfileResponseDto,
   type ExperienceDto,
   type EducationDto,
   type ProjectDto,
   type SkillDto,
   type CertificationDto,
+  type CandidateAssessmentListItemDto,
 } from '../services/api';
 import {
   SparkleIcon,
@@ -284,12 +287,21 @@ export const CandidateProfile: React.FC = () => {
 
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [technicalAssessments, setTechnicalAssessments] = useState<CandidateAssessmentListItemDto[]>([]);
 
   // Fetch Full Profile from Backend
   const loadProfileData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
+      // Also fetch technical assessments
+      try {
+        const tests = await assessmentsApi.getMyAssessments();
+        setTechnicalAssessments(tests || []);
+      } catch (tErr) {
+        console.warn('Could not load candidate technical assessments:', tErr);
+      }
+
       let data: CandidateProfileResponseDto;
       try {
         data = await candidateCvApi.getProfile();
@@ -1165,6 +1177,124 @@ export const CandidateProfile: React.FC = () => {
               setEditingCertification(null);
               setIsCertModalOpen(true);
             }}
+          />
+        )}
+      </div>
+
+      {/* =========================================================================
+          SECTION 8: TECHNICAL ASSESSMENTS (Verified Engine & HR Evaluated Marks)
+          ========================================================================= */}
+      <div className="candidate-card" id="technical-assessments-section">
+        <div className="candidate-card-header">
+          <div className="candidate-card-title-group">
+            <div className="candidate-icon-box" style={{ background: '#ecfdf5', color: '#059669' }}>
+              <SparkleIcon />
+            </div>
+            <div className="candidate-card-title-text">
+              <h2>Technical Assessments &amp; Verified Scores</h2>
+              <p>Evaluated coding challenges, benchmark marks, and interview selection status</p>
+            </div>
+          </div>
+          <Link
+            to="/candidate/assessments"
+            style={{
+              fontSize: '13px',
+              fontWeight: 600,
+              color: '#008759',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            <span>View Assessments Portal</span>
+            <ExternalLinkIcon />
+          </Link>
+        </div>
+
+        {technicalAssessments && technicalAssessments.length > 0 ? (
+          <div className="candidate-grid-cards">
+            {technicalAssessments.map((item) => {
+              const isGraded = item.status === 'Graded' || item.status === 'Passed' || (item.status === 'Submitted' && item.examScore > 0);
+              const isUnderReview = item.status === 'Under_Review' || (item.status === 'Submitted' && item.examScore === 0);
+
+              return (
+                <div
+                  key={item.submissionId}
+                  className="candidate-item-card"
+                  style={item.isSelectedForInterview ? { border: '1.5px solid #10b981', background: '#f0fdf4' } : undefined}
+                >
+                  <div className="candidate-item-card-top">
+                    <div className="candidate-item-card-badge-row">
+                      {item.isSelectedForInterview ? (
+                        <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '12px', background: '#ecfdf5', color: '#047857', border: '1px solid #6ee7b7' }}>
+                          ⭐ Selected for Technical Interview
+                        </span>
+                      ) : isGraded ? (
+                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '12px', background: item.isPassed ? '#ecfdf5' : '#eff6ff', color: item.isPassed ? '#047857' : '#1d4ed8' }}>
+                          {item.isPassed ? 'Passed Assessment' : 'Evaluated'}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '12px', background: '#fffbeb', color: '#b45309' }}>
+                          Under Review
+                        </span>
+                      )}
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>
+                        {item.companyName}
+                      </span>
+                    </div>
+
+                    <h3 className="candidate-item-title">{item.assessmentTitle}</h3>
+                    <p className="candidate-item-subtitle">
+                      Applied for: <strong>{item.jobTitle}</strong>
+                    </p>
+
+                    {isUnderReview && (
+                      <p className="candidate-item-desc" style={{ color: '#b45309' }}>
+                        ⏳ Code submitted. Evaluators are reviewing your solutions. Results will be published within 3–4 working days.
+                      </p>
+                    )}
+
+                    {isGraded && (
+                      <div style={{ marginTop: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                          <span style={{ fontSize: '12px', color: '#64748b' }}>Technical Score:</span>
+                          <span style={{ fontSize: '20px', fontWeight: 800, color: item.examScore >= item.passingThreshold ? '#059669' : '#0f172a' }}>
+                            {item.examScore}%
+                          </span>
+                          <span style={{ fontSize: '12px', color: '#94a3b8' }}>(Pass Benchmark: {item.passingThreshold}%)</span>
+                        </div>
+                        {item.reviewerFeedback && (
+                          <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: '#475569', fontStyle: 'italic' }}>
+                            "{item.reviewerFeedback}"
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="candidate-item-footer" style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: item.isSelectedForInterview ? '#047857' : '#008759' }}>
+                      <CheckIcon />
+                      <span>{item.isSelectedForInterview ? 'Interview Round Unlocked' : 'Verified Challenge'}</span>
+                    </span>
+                    <Link
+                      to="/candidate/assessments"
+                      style={{ fontSize: '12px', fontWeight: 600, color: '#008759', textDecoration: 'none' }}
+                    >
+                      Scorecard &rarr;
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <EmptyState
+            icon={<SparkleIcon />}
+            message="No technical assessments completed yet. When employers dispatch coding assessments for your applications, your scores will appear here."
+            actionLabel="View Technical Assessments"
+            onAction={() => window.location.href = '/candidate/assessments'}
           />
         )}
       </div>

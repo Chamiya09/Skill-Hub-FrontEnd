@@ -49,6 +49,7 @@ export const CandidateLayout: React.FC = () => {
     if (location.pathname.startsWith('/candidate/recommended') || location.pathname.startsWith('/candidate/dashboard')) return 'AI Recommended Jobs';
     if (location.pathname.startsWith('/candidate/applications')) return 'Applied Jobs';
     if (location.pathname.startsWith('/candidate/saved')) return 'Saved Jobs';
+    if (location.pathname.startsWith('/candidate/assessments')) return 'Technical Assessments';
     if (location.pathname.startsWith('/candidate/settings') || location.pathname.startsWith('/candidate/security')) return 'Account & Security';
     return 'My Digital CV';
   };

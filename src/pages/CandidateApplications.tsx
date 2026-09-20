@@ -14,12 +14,13 @@ import {
 } from '../components/common/Icons';
 import './CandidateApplications.css';
 
-const STAGE_LABELS = ['Applied', 'Under Review', 'Shortlisted', 'Interview', 'Offer'];
+const STAGE_LABELS = ['Applied', 'Under Review', 'Shortlisted', 'Assessment', 'Interview', 'Offer'];
 
 const getApplicationStage = (status?: string | null): number => {
   const value = (status || 'Applied').toLowerCase();
-  if (value.includes('offer') || value.includes('accepted') || value.includes('hired')) return 4;
-  if (value.includes('interview')) return 3;
+  if (value.includes('offer') || value.includes('accepted') || value.includes('hired')) return 5;
+  if (value.includes('interview')) return 4;
+  if (value.includes('assess') || value.includes('test') || value.includes('exam')) return 3;
   if (value.includes('shortlist')) return 2;
   if (value.includes('review') || value.includes('screen')) return 1;
   return 0;
@@ -110,6 +111,8 @@ export const CandidateApplications: React.FC = () => {
               <thead><tr><th>Position &amp; Company</th><th>Location &amp; Type</th><th>Date Applied</th><th>Status</th><th><span className="sr-only">Action</span></th></tr></thead>
               <tbody>{applications.map((application) => {
                 const stage = getApplicationStage(application.status);
+                const isRejected = (application.status || '').toLowerCase().includes('reject');
+                const isSuspended = (application.status || '').toLowerCase().includes('suspend') || (application.status || '').toLowerCase().includes('block');
                 const initials = application.companyName.split(' ').map((word) => word[0]).join('').slice(0, 2).toUpperCase();
                 const date = new Date(application.appliedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 return <tr key={application.id} tabIndex={0} role="button"
@@ -118,7 +121,7 @@ export const CandidateApplications: React.FC = () => {
                   <td><div className="table-position"><span className="table-company-avatar">{initials}</span><div><strong>{application.jobTitle}</strong><span>{application.companyName}</span></div></div></td>
                   <td><div className="table-location"><strong>{application.location}</strong><span>{application.workplaceType ? `${application.workplaceType} • ` : ''}{application.employmentType}</span></div></td>
                   <td><span className="table-date">{date}</span></td>
-                  <td><span className={`table-status stage-${stage}`}><b />{STAGE_LABELS[stage]}</span></td>
+                  <td><span className={`table-status ${isRejected || isSuspended ? 'is-rejected' : `stage-${stage}`}`}><b />{isRejected ? 'Rejected' : isSuspended ? 'Suspended' : STAGE_LABELS[stage]}</span></td>
                   <td><button type="button" className="track-progress-button" onClick={(event) => { event.stopPropagation(); setSelectedApplication(application); }}>Track Progress ↗</button></td>
                 </tr>;
               })}</tbody>

@@ -75,6 +75,8 @@ export const JobDetailsPublic: React.FC = () => {
     )
   )
 
+  const isExpired = Boolean(job?.deadline && new Date(job.deadline).getTime() < Date.now())
+
   // Scroll to top when job ID changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -183,7 +185,7 @@ export const JobDetailsPublic: React.FC = () => {
   // ONE-CLICK DIGITAL CV APPLY HANDLER (LIVE INTEGRATION)
   // =========================================================================
   const handleApply = async () => {
-    if (isEmployer || hasApplied || isApplying) return
+    if (isEmployer || hasApplied || isApplying || isExpired) return
 
     if (!currentUser) {
       // Redirect unauthenticated user to login with redirect back
@@ -536,6 +538,29 @@ export const JobDetailsPublic: React.FC = () => {
                     <BriefcaseIcon />
                     <span>{job.experienceLevel}</span>
                   </div>
+                  {job.deadline && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        color: isExpired ? '#ef4444' : '#d97706',
+                        fontWeight: 600,
+                      }}
+                    >
+                      <ClockIcon />
+                      <span>
+                        {isExpired ? 'Deadline Passed: ' : 'Deadline: '}
+                        {new Date(job.deadline).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Tags / Required Skills Badges */}
@@ -684,6 +709,69 @@ export const JobDetailsPublic: React.FC = () => {
                 About the Position
               </h2>
 
+              {/* Prominent Application Deadline Banner */}
+              {job.deadline && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '12px',
+                    padding: '14px 18px',
+                    borderRadius: '12px',
+                    background: isExpired ? '#fef2f2' : '#fffbeb',
+                    border: `1px solid ${isExpired ? '#fecaca' : '#fde68a'}`,
+                    marginBottom: '24px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        background: isExpired ? '#fee2e2' : '#fef3c7',
+                        color: isExpired ? '#ef4444' : '#d97706',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <ClockIcon />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '11.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px', color: isExpired ? '#b91c1c' : '#92400e' }}>
+                        Application Deadline
+                      </div>
+                      <div style={{ fontSize: '14.5px', fontWeight: 700, color: isExpired ? '#991b1b' : '#78350f', marginTop: '1px' }}>
+                        {new Date(job.deadline).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      padding: '4px 12px',
+                      borderRadius: '9999px',
+                      background: isExpired ? '#ef4444' : '#059669',
+                      color: '#ffffff',
+                    }}
+                  >
+                    {isExpired ? 'Applications Closed' : 'Accepting Applications'}
+                  </span>
+                </div>
+              )}
+
               {/* Render rich HTML safely with prose typography */}
               {job.description ? (
                 <div
@@ -780,6 +868,20 @@ export const JobDetailsPublic: React.FC = () => {
                       <CheckCircle className="text-emerald-500" size={18} aria-hidden="true" />
                       <span>Already Applied</span>
                     </button>
+                  ) : isExpired ? (
+                    <div>
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-red-50 text-red-600 font-semibold rounded-xl cursor-not-allowed border border-red-200"
+                      >
+                        <ClockIcon />
+                        <span>Deadline Passed</span>
+                      </button>
+                      <p style={{ fontSize: '12px', color: '#ef4444', textAlign: 'center', marginTop: '8px', margin: '8px 0 0 0' }}>
+                        The application deadline for this vacancy has passed. Applications are no longer accepted.
+                      </p>
+                    </div>
                   ) : (
                     <button
                       type="button"
@@ -856,13 +958,49 @@ export const JobDetailsPublic: React.FC = () => {
                   </div>
                 </div>
 
+                {job.deadline && (
+                  <div style={{ borderTop: '1px solid #f8fafc', paddingTop: '12px' }}>
+                    <div style={{ fontSize: '11.5px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                      Application Deadline
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '14px',
+                        color: isExpired ? '#ef4444' : '#0f172a',
+                        fontWeight: 600,
+                        marginTop: '2px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <span>
+                        {new Date(job.deadline).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                      {isExpired && (
+                        <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 700 }}>
+                          (Closed)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div style={{ borderTop: '1px solid #f8fafc', paddingTop: '12px' }}>
                   <div style={{ fontSize: '11.5px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                     Status
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00b074' }}></span>
-                    <span style={{ fontSize: '13.5px', color: '#065f46', fontWeight: 600 }}>Active & Accepting Applications</span>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: isExpired ? '#ef4444' : '#00b074' }}></span>
+                    <span style={{ fontSize: '13.5px', color: isExpired ? '#b91c1c' : '#065f46', fontWeight: 600 }}>
+                      {isExpired ? 'Applications Closed (Deadline Passed)' : 'Active & Accepting Applications'}
+                    </span>
                   </div>
                 </div>
               </div>

@@ -29,6 +29,7 @@ export interface JobVacancyItem {
   experienceLevel?: string;
   salaryRange?: string;
   tags?: string[];
+  deadline?: string;
 }
 
 export const JobVacancies = () => {
@@ -74,6 +75,7 @@ export const JobVacancies = () => {
         description: j.description,
         benefits: j.whatWeOffer || '',
         tags: j.tags || [],
+        deadline: j.deadline,
       }));
       setVacancies(mapped);
     } catch (err: any) {
@@ -155,6 +157,7 @@ export const JobVacancies = () => {
           description: data.description,
           whatWeOffer: data.benefits,
           tags: data.tags,
+          deadline: data.deadline ? new Date(data.deadline).toISOString() : undefined,
         });
         showToast(`Vacancy "${data.title}" updated successfully.`);
       } else {
@@ -170,6 +173,7 @@ export const JobVacancies = () => {
           description: data.description,
           whatWeOffer: data.benefits,
           tags: data.tags,
+          deadline: data.deadline ? new Date(data.deadline).toISOString() : undefined,
         });
         showToast(`New vacancy "${data.title}" published successfully.`);
       }
@@ -438,6 +442,27 @@ export const JobVacancies = () => {
                           year: 'numeric',
                         })}
                       </span>
+                      {job.deadline && (
+                        <div
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            color: new Date(job.deadline) < new Date() ? '#ef4444' : '#059669',
+                            marginTop: '3px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                          }}
+                        >
+                          <span>{new Date(job.deadline) < new Date() ? 'Expired:' : 'Deadline:'}</span>
+                          <span>
+                            {new Date(job.deadline).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </span>
+                        </div>
+                      )}
                     </td>
 
                     {/* Actions Column: Edit & Direct Delete */}
@@ -557,6 +582,7 @@ export const JobVacancies = () => {
                 salaryRange: editingJob.salaryRange || '',
                 description: editingJob.description || '',
                 benefits: editingJob.benefits || '',
+                deadline: editingJob.deadline || '',
               }
             : null
         }

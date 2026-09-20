@@ -45,6 +45,13 @@ const ShieldLockIcon: React.FC = () => (
   </svg>
 );
 
+const CodeTerminalIcon: React.FC = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="16 18 22 12 16 6" />
+    <polyline points="8 6 2 12 8 18" />
+  </svg>
+);
+
 export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onClose }) => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -140,6 +147,15 @@ export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onCl
         >
           <BookmarkIcon />
           <span>Saved Jobs</span>
+        </NavLink>
+
+        <NavLink
+          to="/candidate/assessments"
+          onClick={onClose}
+          className={({ isActive }) => `dashboard-nav-item ${isActive ? 'active' : ''}`}
+        >
+          <CodeTerminalIcon />
+          <span>Technical Assessments</span>
         </NavLink>
 
         <div className="nav-group-label" style={{ marginTop: '16px' }}>SYSTEM & SECURITY</div>

@@ -167,6 +167,9 @@ export const FindJobs = () => {
           selectedExperience === 'All' ||
           job.experienceLevel.toLowerCase().includes(selectedExperience.toLowerCase())
 
+        const isExpired = Boolean(job.deadline && new Date(job.deadline).getTime() < Date.now())
+        if (isExpired) return false
+
         return matchesSearch && matchesCategory && matchesWorkType && matchesExp
       })
       .sort((a, b) => {

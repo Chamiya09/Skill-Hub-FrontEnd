@@ -9,24 +9,41 @@ import {
   SparkleIcon,
 } from '../common/Icons';
 
-const STAGES = ['Applied', 'Under Review', 'Shortlisted', 'Interview', 'Offer'] as const;
+const WrongTickIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+const STAGES = ['Applied', 'Under Review', 'Shortlisted', 'Assessment', 'Interview', 'Offer'] as const;
 
 const getApplicationStage = (status?: string | null): number => {
   const value = (status || 'Applied').toLowerCase();
-  if (value.includes('offer') || value.includes('accepted') || value.includes('hired')) return 4;
-  if (value.includes('interview')) return 3;
+  if (value.includes('offer') || value.includes('accepted') || value.includes('hired')) return 5;
+  if (value.includes('interview')) return 4;
+  if (value.includes('assess') || value.includes('test') || value.includes('exam')) return 3;
   if (value.includes('shortlist')) return 2;
   if (value.includes('review') || value.includes('screen')) return 1;
   return 0;
 };
 
-const getCopilotMessage = (stage: number): string => [
-  'Your application is submitted. Keep your Digital CV current while the hiring team begins its review.',
-  'Your profile is being reviewed. Prepare two measurable examples that demonstrate impact in this role.',
-  'You made the shortlist. Your next best step is a focused mock interview based on this role.',
-  'Your interview stage is active. Rehearse concise STAR responses and questions for the hiring team.',
-  'You reached the offer stage. Review the role scope, total package, and growth expectations carefully.',
-][stage];
+const getCopilotMessage = (stage: number, isRejected?: boolean, isSuspended?: boolean): string => {
+  if (isRejected) {
+    return 'Your application was not selected to proceed after the shortlisting review. Thank you for your interest and time.';
+  }
+  if (isSuspended) {
+    return 'Your technical assessment was suspended because the test session rules were not followed (e.g. closing browser tab, refreshing, or leaving the active exam). You cannot retake this assessment.';
+  }
+  return [
+    'Your application is submitted. Keep your Digital CV current while the hiring team begins its review.',
+    'Your profile is being reviewed. Prepare two measurable examples that demonstrate impact in this role.',
+    'You made the shortlist. A technical assessment may be dispatched by the hiring committee.',
+    'Your technical assessment has been sent by HR. Head to Technical Assessments to take your coding challenge.',
+    'Your interview stage is active. Rehearse concise STAR responses and questions for the hiring team.',
+    'You reached the offer stage. Review the role scope, total package, and growth expectations carefully.',
+  ][stage];
+};
 
 interface ApplicationProgressModalProps {
   application: CandidateApplicationItemDto;
@@ -37,7 +54,11 @@ export const ApplicationProgressModal: React.FC<ApplicationProgressModalProps> =
   application,
   onClose,
 }) => {
-  const currentStage = getApplicationStage(application.status);
+  const isRejected = (application.status || '').toLowerCase().includes('reject');
+  const isSuspended =
+    (application.status || '').toLowerCase().includes('suspend') ||
+    (application.status || '').toLowerCase().includes('block');
+  const currentStage = isRejected ? 2 : isSuspended ? 3 : getApplicationStage(application.status);
   const initials = application.companyName
     .split(' ')
     .map((word) => word[0])
@@ -76,7 +97,9 @@ export const ApplicationProgressModal: React.FC<ApplicationProgressModalProps> =
           <div className="progress-modal-heading">
             <div className="progress-title-row">
               <h2 id="progress-modal-title">{application.jobTitle}</h2>
-              <span className="application-status"><b />{STAGES[currentStage]}</span>
+              <span className={`application-status ${isRejected || isSuspended ? 'is-rejected' : ''}`}>
+                <b />{isRejected ? 'Rejected' : isSuspended ? 'Assessment Suspended' : STAGES[currentStage]}
+              </span>
             </div>
             <div className="progress-modal-meta">
               <span><BuildingIcon /> {application.companyName}</span>
@@ -89,21 +112,48 @@ export const ApplicationProgressModal: React.FC<ApplicationProgressModalProps> =
 
         <div className="progress-modal-body">
           <div className="progress-section-label">APPLICATION JOURNEY</div>
-          <div className="application-stepper" aria-label={`Current stage: ${STAGES[currentStage]}`}>
-            {STAGES.map((stage, index) => (
-              <div className={`application-step ${index <= currentStage ? 'is-complete' : ''} ${index === currentStage ? 'is-current' : ''}`} key={stage}>
-                <div className="application-step-track">
-                  <span className="application-step-dot">{index < currentStage ? '✓' : index + 1}</span>
-                  {index < STAGES.length - 1 && <span className="application-step-line" />}
+          <div className="application-stepper" aria-label={`Current stage: ${isRejected ? 'Rejected at Shortlisted' : isSuspended ? 'Suspended at Assessment' : STAGES[currentStage]}`}>
+            {STAGES.map((stage, index) => {
+              let stepClass = '';
+              let dotContent: React.ReactNode = index + 1;
+
+              if (isRejected) {
+                if (index < 2) {
+                  stepClass = 'is-complete';
+                  dotContent = '✓';
+                } else if (index === 2) {
+                  stepClass = 'is-rejected is-current';
+                  dotContent = <WrongTickIcon />;
+                }
+              } else if (isSuspended) {
+                if (index < 3) {
+                  stepClass = 'is-complete';
+                  dotContent = '✓';
+                } else if (index === 3) {
+                  stepClass = 'is-rejected is-current';
+                  dotContent = <WrongTickIcon />;
+                }
+              } else {
+                if (index <= currentStage) stepClass += ' is-complete';
+                if (index === currentStage) stepClass += ' is-current';
+                dotContent = index < currentStage ? '✓' : index + 1;
+              }
+
+              return (
+                <div className={`application-step ${stepClass}`} key={stage}>
+                  <div className="application-step-track">
+                    <span className="application-step-dot">{dotContent}</span>
+                    {index < STAGES.length - 1 && <span className="application-step-line" />}
+                  </div>
+                  <span className="application-step-label">{stage}</span>
                 </div>
-                <span className="application-step-label">{stage}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="application-copilot">
             <span className="application-copilot-icon"><SparkleIcon /></span>
-            <div><strong>AI COPILOT INSIGHT</strong><p>{getCopilotMessage(currentStage)}</p></div>
+            <div><strong>AI COPILOT INSIGHT</strong><p>{getCopilotMessage(currentStage, isRejected, isSuspended)}</p></div>
           </div>
         </div>
 
@@ -111,9 +161,22 @@ export const ApplicationProgressModal: React.FC<ApplicationProgressModalProps> =
           <Link to={`/jobs/${application.jobId}`} className="application-view-link">
             View Job Details <ArrowRightIcon />
           </Link>
-          {currentStage === 2 && (
+          {!isRejected && !isSuspended && currentStage === 2 && (
             <Link to={`/candidate/mock-interview?jobId=${application.jobId}`} className="application-smart-action">
-              🎯 Practice Mock Interview
+              <span>Practice Mock Interview</span>
+              <ArrowRightIcon />
+            </Link>
+          )}
+          {!isRejected && !isSuspended && currentStage === 3 && (
+            <Link to="/candidate/assessments" className="application-smart-action">
+              <span>Go to Technical Assessments</span>
+              <ArrowRightIcon />
+            </Link>
+          )}
+          {isSuspended && (
+            <Link to="/candidate/assessments" className="application-smart-action" style={{ background: '#ef4444', borderColor: '#ef4444' }}>
+              <span>View Suspended Assessment</span>
+              <ArrowRightIcon />
             </Link>
           )}
         </footer>

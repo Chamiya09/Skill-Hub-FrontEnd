@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import {
   jobsApi,
   jobApplicationsApi,
+  assessmentsApi,
   type JobDto,
   type JobApplicantDto,
   type ShortlistedApplicantDto,
+  type AssessmentTrackSummaryDto,
+  type DispatchAssessmentResponseDto,
 } from '../services/api';
 import { CandidateProfileReadOnly } from '../components/candidates/CandidateProfileReadOnly';
 import {
@@ -115,10 +118,36 @@ export const HiringPipeline: React.FC = () => {
   // 4. Action Modals State (Connect Assessment & Schedule Interview)
   const [assessmentCandidate, setAssessmentCandidate] = useState<ShortlistedCandidate | null>(null);
   const [interviewCandidate, setInterviewCandidate] = useState<ShortlistedCandidate | null>(null);
-  const [selectedAssessmentType, setSelectedAssessmentType] = useState<string>('full-stack-senior');
+  const [selectedAssessmentType, setSelectedAssessmentType] = useState<string>('');
+  const [availableTracks, setAvailableTracks] = useState<AssessmentTrackSummaryDto[]>([]);
+  const [loadingTracks, setLoadingTracks] = useState<boolean>(false);
+  const [sendingAssessment, setSendingAssessment] = useState<boolean>(false);
+  const [dispatchedModalData, setDispatchedModalData] = useState<DispatchAssessmentResponseDto | null>(null);
   const [interviewDate, setInterviewDate] = useState<string>('');
   const [interviewTime, setInterviewTime] = useState<string>('10:00 AM');
   const [interviewFormat, setInterviewFormat] = useState<string>('Google Meet / Video Call');
+
+  // Load available published assessment tracks for the selected job when modal opens
+  useEffect(() => {
+    if (assessmentCandidate && selectedJob) {
+      setLoadingTracks(true);
+      assessmentsApi.getTracksByJob(selectedJob.id)
+        .then((tracks) => {
+          setAvailableTracks(tracks || []);
+          if (tracks && tracks.length > 0) {
+            setSelectedAssessmentType(tracks[0].id);
+          } else {
+            setSelectedAssessmentType('');
+          }
+        })
+        .catch((err) => {
+          console.warn('Could not load assessment tracks:', err);
+          setAvailableTracks([]);
+          setSelectedAssessmentType('');
+        })
+        .finally(() => setLoadingTracks(false));
+    }
+  }, [assessmentCandidate, selectedJob]);
 
   // 5. Toast Feedback State
   const [, setToastMessage] = useState<string | null>(null);
@@ -205,7 +234,7 @@ export const HiringPipeline: React.FC = () => {
         avatarBg: getGradientForName(app.fullName || 'Candidate'),
         jobId: job.id,
         jobTitle: job.title,
-        assessmentStatus: 'None',
+        assessmentStatus: app.assessmentStatus || 'None',
         interviewStatus: 'None',
       }));
 
@@ -276,15 +305,43 @@ export const HiringPipeline: React.FC = () => {
   }, [shortlistedCandidates, modalSearchQuery]);
 
   // Handler: Confirm Assessment
-  const handleSendAssessment = () => {
-    if (!assessmentCandidate) return;
-    setShortlistedCandidates((prev) =>
-      prev.map((c) =>
-        c.id === assessmentCandidate.id ? { ...c, assessmentStatus: 'Sent' } : c
-      )
-    );
-    showToast(`✓ Skill assessment invitation sent to ${assessmentCandidate.name}!`);
-    setAssessmentCandidate(null);
+  const handleSendAssessment = async () => {
+    if (!assessmentCandidate || !selectedJob) return;
+    try {
+      setSendingAssessment(true);
+      let targetAssessmentId = selectedAssessmentType;
+      if (!targetAssessmentId && availableTracks.length > 0) {
+        targetAssessmentId = availableTracks[0].id;
+      }
+
+      if (!targetAssessmentId) {
+        showToast('No published assessment track found. Please configure and publish a manual assessment track first under Coding Assessments.');
+        return;
+      }
+
+      const dispatchRes = await assessmentsApi.dispatch({
+        assessmentId: targetAssessmentId,
+        candidateId: assessmentCandidate.candidateId,
+        applicationId: assessmentCandidate.id,
+        jobVacancyId: selectedJob.id,
+        cvMatchScore: assessmentCandidate.aiScore,
+      });
+
+      setShortlistedCandidates((prev) =>
+        prev.map((c) =>
+          c.id === assessmentCandidate.id ? { ...c, assessmentStatus: 'Sent' } : c
+        )
+      );
+
+      setAssessmentCandidate(null);
+      setDispatchedModalData(dispatchRes);
+      showToast(`✓ Skill assessment successfully dispatched to ${assessmentCandidate.name}!`);
+    } catch (err: any) {
+      console.error('Error dispatching assessment:', err);
+      showToast(err.message || 'Failed to dispatch skill assessment.');
+    } finally {
+      setSendingAssessment(false);
+    }
   };
 
   // Handler: Confirm Schedule Interview
@@ -956,30 +1013,48 @@ export const HiringPipeline: React.FC = () => {
                 <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                   Select Assessment Track:
                 </label>
-                <select
-                  value={selectedAssessmentType}
-                  onChange={(e) => setSelectedAssessmentType(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '13px',
-                    color: '#0f172a',
-                    outline: 'none',
-                  }}
-                >
-                  <option value="full-stack-senior">Senior Full Stack Architecture (60 min)</option>
-                  <option value="react-typescript">Modern React & TypeScript Mastery (45 min)</option>
-                  <option value="backend-dotnet">Enterprise .NET & Distributed Systems (45 min)</option>
-                  <option value="system-design">Cloud Architecture & System Design (60 min)</option>
-                </select>
+                {loadingTracks ? (
+                  <div style={{ fontSize: '13px', color: '#64748b', padding: '8px 0' }}>
+                    Loading available technical tracks...
+                  </div>
+                ) : (
+                  <select
+                    value={selectedAssessmentType}
+                    onChange={(e) => setSelectedAssessmentType(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '13px',
+                      color: '#0f172a',
+                      outline: 'none',
+                    }}
+                  >
+                    {availableTracks.length > 0 ? (
+                      availableTracks.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.title} ({t.timeLimitMinutes} min • {t.questionCount} coding problems)
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">
+                        No published technical assessment tracks available
+                      </option>
+                    )}
+                  </select>
+                )}
               </div>
 
               <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <p style={{ fontSize: '12px', color: '#475569', margin: 0, lineHeight: 1.4 }}>
-                  An automated secure test link will be dispatched to <strong>{assessmentCandidate.email}</strong> with a 48-hour completion window.
+                  This technical assessment will be delivered directly to <strong>{assessmentCandidate.name}</strong>'s candidate profile under their <strong>Technical Assessments</strong> dashboard.
                 </p>
+                {availableTracks.length === 0 && (
+                  <p style={{ fontSize: '11.5px', color: '#dc2626', margin: '6px 0 0 0', fontWeight: 500 }}>
+                    ⚠️ No published assessment tracks found for this requisition. Please configure and publish a manual assessment track first under the Coding Assessments tab.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -988,6 +1063,7 @@ export const HiringPipeline: React.FC = () => {
                 type="button"
                 onClick={() => setAssessmentCandidate(null)}
                 className="btn-secondary"
+                disabled={sendingAssessment}
                 style={{ padding: '8px 16px', fontSize: '13px' }}
               >
                 Cancel
@@ -996,10 +1072,105 @@ export const HiringPipeline: React.FC = () => {
                 type="button"
                 onClick={handleSendAssessment}
                 className="btn-primary"
-                style={{ padding: '8px 18px', fontSize: '13px' }}
+                disabled={sendingAssessment || availableTracks.length === 0}
+                style={{
+                  padding: '8px 18px',
+                  fontSize: '13px',
+                  opacity: availableTracks.length === 0 ? 0.5 : 1,
+                  cursor: availableTracks.length === 0 ? 'not-allowed' : 'pointer'
+                }}
               >
                 <ClipboardCheckIcon />
-                <span>Send Assessment</span>
+                <span>{sendingAssessment ? 'Dispatching...' : 'Dispatch to Candidate Profile'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================
+          ACTION DIALOG: DISPATCHED TEST LINK CONFIRMATION
+          ========================================================= */}
+      {dispatchedModalData && (
+        <div
+          className="popup-backdrop"
+          style={{ zIndex: 1150 }}
+          onClick={() => setDispatchedModalData(null)}
+        >
+          <div
+            className="popup-card"
+            style={{ maxWidth: '540px', width: '100%', padding: '24px', borderRadius: '16px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <ClipboardCheckIcon />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                  Assessment Delivered to Candidate Profile
+                </h3>
+                <p style={{ fontSize: '12.5px', color: '#64748b', margin: 0 }}>
+                  Delivered to {dispatchedModalData.candidateEmail}
+                </p>
+              </div>
+            </div>
+
+            <div style={{ background: '#ecfdf5', padding: '14px', borderRadius: '10px', border: '1px solid #a7f3d0', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#047857', fontWeight: 700, fontSize: '12.5px', marginBottom: '4px' }}>
+                <ClipboardCheckIcon />
+                <span>Available on Candidate Dashboard</span>
+              </div>
+              <p style={{ fontSize: '12px', color: '#065f46', margin: 0, lineHeight: 1.5 }}>
+                The candidate can now log into their candidate portal, open <strong>Technical Assessments</strong> in their navigation menu, and complete the coding challenges directly from their profile.
+              </p>
+            </div>
+
+            <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
+              <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                DIRECT TEST LINK (FOR TESTING / SHARING):
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="text"
+                  readOnly
+                  value={`${window.location.origin}${dispatchedModalData.testLink}`}
+                  style={{
+                    flex: 1,
+                    padding: '8px 10px',
+                    fontSize: '12px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    background: '#ffffff',
+                    color: '#0f172a',
+                    fontFamily: 'monospace'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}${dispatchedModalData.testLink}`);
+                    showToast('✓ Link copied to clipboard!');
+                  }}
+                  className="btn-secondary"
+                  style={{ padding: '8px 12px', fontSize: '12px', whiteSpace: 'nowrap' }}
+                >
+                  Copy Link
+                </button>
+              </div>
+              <p style={{ fontSize: '11.5px', color: '#64748b', margin: '8px 0 0 0' }}>
+                Completion Window: <strong>48 hours</strong> • Track: <strong>{dispatchedModalData.assessmentTitle}</strong>
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setDispatchedModalData(null)}
+                className="btn-primary"
+                style={{ padding: '8px 22px', fontSize: '13px' }}
+              >
+                Done
               </button>
             </div>
           </div>

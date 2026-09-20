@@ -526,6 +526,7 @@ export interface JobDto {
   whatWeOffer?: string;
   tags?: string[];
   applicantsCount?: number;
+  deadline?: string;
   createdAt: string;
   updatedAt?: string;
 }
@@ -577,6 +578,7 @@ export interface CreateJobPayload {
   description: string;
   whatWeOffer?: string;
   tags?: string[];
+  deadline?: string;
 }
 
 export interface UpdateJobPayload {
@@ -590,6 +592,7 @@ export interface UpdateJobPayload {
   description: string;
   whatWeOffer?: string;
   tags?: string[];
+  deadline?: string;
 }
 
 export const extractJobTags = (job: Partial<JobDto>): string[] => {
@@ -1410,6 +1413,16 @@ export const jobApplicationsApi = {
     });
   },
 
+  async rejectApplicant(jobId: string, candidateIds: string[]): Promise<{
+    message: string;
+    updatedCount: number;
+  }> {
+    return request(`/jobs/${jobId}/reject-applicant`, {
+      method: 'POST',
+      body: JSON.stringify(candidateIds),
+    });
+  },
+
   /**
    * Returns all shortlisted candidates for a job from the dedicated pipeline endpoint.
    * Calls: GET /api/jobs/{jobId}/shortlisted
@@ -1469,6 +1482,7 @@ export interface ShortlistedApplicantDto {
   appliedDate: string;
   shortlistedAt?: string;
   aiMatchScore?: number;
+  assessmentStatus?: 'None' | 'Sent' | 'Completed';
 }
 
 export const candidateJobRecommendationsApi = {
@@ -1481,4 +1495,392 @@ export const candidateJobRecommendationsApi = {
       method: 'GET',
     });
   },
+};
+
+// ==========================================
+// TECHNICAL ASSESSMENT ENGINE (STUDENT 4)
+// ==========================================
+
+export interface TestCaseDto {
+  input: string;
+  expectedOutput: string;
+  isHidden?: boolean;
+}
+
+export interface CodingQuestionItemDto {
+  id: string;
+  title: string;
+  problemStatement: string;
+  language: string;
+  difficulty: string;
+  starterCode: string;
+  solutionCode?: string;
+  sampleTestCases: TestCaseDto[];
+  hiddenTestCases?: TestCaseDto[];
+  points: number;
+  order: number;
+}
+
+export interface CandidateCodingQuestionDto {
+  id: string;
+  title: string;
+  problemStatement: string;
+  language: string;
+  difficulty: string;
+  starterCode: string;
+  sampleTestCases: TestCaseDto[];
+  points: number;
+  order: number;
+}
+
+export interface AssessmentResponseDto {
+  id: string;
+  jobVacancyId: string;
+  title: string;
+  generatedQuestions: CodingQuestionItemDto[];
+  finalQuestions: CodingQuestionItemDto[];
+  passingThreshold: number;
+  timeLimitMinutes: number;
+  createdBy: string;
+  status: 'Draft' | 'Published' | 'Archived';
+  createdAt: string;
+  updatedAt: string;
+  expiresAt?: string | null;
+  totalSubmissions: number;
+  hasActiveCandidateExam?: boolean;
+  hasSuspendedCandidateExam?: boolean;
+  canEdit?: boolean;
+}
+
+export interface AssessmentTrackSummaryDto {
+  id: string;
+  title: string;
+  timeLimitMinutes: number;
+  questionCount: number;
+  passingThreshold: number;
+  status: string;
+  expiresAt?: string | null;
+}
+
+export interface CreateAssessmentManualPayload {
+  jobVacancyId: string;
+  title: string;
+  passingThreshold?: number;
+  timeLimitMinutes?: number;
+  questions: CodingQuestionItemDto[];
+  publishImmediately?: boolean;
+  expiresAt?: string | null;
+}
+
+export interface UpdateAssessmentPayload {
+  title: string;
+  passingThreshold: number;
+  timeLimitMinutes: number;
+  finalQuestions: CodingQuestionItemDto[];
+  expiresAt?: string | null;
+}
+
+export interface DispatchAssessmentPayload {
+  assessmentId: string;
+  candidateId: string;
+  applicationId: string;
+  jobVacancyId: string;
+  cvMatchScore: number;
+}
+
+export interface DispatchAssessmentResponseDto {
+  submissionId: string;
+  assessmentId: string;
+  assessmentTitle: string;
+  candidateId: string;
+  candidateEmail: string;
+  testLink: string;
+  expiresInHours: number;
+  status: string;
+  message: string;
+}
+
+export interface StartExamResponseDto {
+  submissionId: string;
+  assessmentId: string;
+  assessmentTitle: string;
+  timeLimitMinutes: number;
+  startedAt?: string | null;
+  status?: string;
+  remainingSeconds?: number | null;
+  draftAnswers?: SubmittedAnswerItemDto[] | null;
+  questions: CandidateCodingQuestionDto[];
+}
+
+export interface TestCaseEvaluationItemDto {
+  index: number;
+  input: string;
+  expectedOutput: string;
+  actualOutput: string;
+  passed: boolean;
+  isHidden: boolean;
+  errorMessage?: string;
+}
+
+export interface SubmittedAnswerItemDto {
+  questionId: string;
+  submittedCode: string;
+  language: string;
+  testCasesPassed?: number;
+  totalTestCases?: number;
+  score?: number;
+  testCaseResults?: TestCaseEvaluationItemDto[];
+}
+
+export interface RunCodePayload {
+  questionId: string;
+  code: string;
+  language?: string;
+  customInput?: string;
+}
+
+export interface RunCodeResponseDto {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+  compileOutput?: string;
+  isRateLimited: boolean;
+  isError: boolean;
+  errorMessage?: string;
+  executionTimeMs: number;
+  sampleInputUsed?: string;
+  expectedOutput?: string;
+  samplePassed?: boolean;
+}
+
+export interface SubmitAnswersPayload {
+  answers: SubmittedAnswerItemDto[];
+}
+
+export interface SaveDraftPayload {
+  remainingSeconds?: number;
+  answers: SubmittedAnswerItemDto[];
+}
+
+export interface ProctorEventPayload {
+  eventType: string; // 'TAB_SWITCH' | 'WINDOW_BLUR' | 'FULLSCREEN_EXIT'
+  timestamp: string;
+  details?: string;
+}
+
+export interface ProctorSummaryDto {
+  tabSwitches: number;
+  windowBlurs: number;
+  events: ProctorEventPayload[];
+}
+
+export interface SubmissionDetailDto {
+  id: string;
+  assessmentId: string;
+  assessmentTitle: string;
+  candidateId: string;
+  candidateName?: string;
+  candidateEmail?: string;
+  applicationId: string;
+  jobVacancyId: string;
+  examScore: number;
+  cvScore: number;
+  finalWeightedScore: number;
+  passingThreshold: number;
+  status: string;
+  startedAt?: string;
+  submittedAt?: string;
+  gradedAt?: string;
+  answers: SubmittedAnswerItemDto[];
+  proctorSummary: ProctorSummaryDto;
+  isSelectedForInterview?: boolean;
+  reviewerFeedback?: string;
+}
+
+export interface LeaderboardEntryDto {
+  rank: number;
+  submissionId: string;
+  applicationId: string;
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  cvScore: number;
+  examScore: number;
+  finalWeightedScore: number;
+  submissionStatus: string;
+  applicationStatus: string;
+  proctorTabSwitches: number;
+  isTop5: boolean;
+  isPassed: boolean;
+  isSelectedForInterview?: boolean;
+  submittedAt?: string;
+}
+
+export interface Student3OutgoingCandidateDto {
+  applicationId: string;
+  candidateId: string;
+  jobVacancyId: string;
+  finalWeightedScore: number;
+  hrManagerId: string;
+}
+
+export interface FinalizeTop5ResponseDto {
+  jobVacancyId: string;
+  totalSubmissions: number;
+  passedCount: number;
+  top5PromotedCount: number;
+  rejectedCount: number;
+  outgoingTop5Payload: Student3OutgoingCandidateDto[];
+  message: string;
+}
+
+export interface QuestionReviewItemDto {
+  questionId: string;
+  isCorrect: boolean;
+  pointsEarned: number;
+  notes?: string;
+}
+
+export interface ManualReviewSubmissionPayload {
+  examScore: number;
+  isSelectedForInterview: boolean;
+  reviewerFeedback?: string;
+  questionReviews?: QuestionReviewItemDto[];
+}
+
+export interface CandidateAssessmentListItemDto {
+  submissionId: string;
+  assessmentId: string;
+  assessmentTitle: string;
+  jobVacancyId: string;
+  jobTitle: string;
+  companyName: string;
+  department: string;
+  timeLimitMinutes: number;
+  questionCount: number;
+  passingThreshold: number;
+  status: string;
+  examScore: number;
+  finalWeightedScore: number;
+  isPassed: boolean;
+  isSelectedForInterview?: boolean;
+  reviewerFeedback?: string;
+  assignedAt: string;
+  startedAt?: string;
+  submittedAt?: string;
+  expiresAt?: string | null;
+  isExpired?: boolean;
+  isBlocked?: boolean;
+}
+
+export const assessmentsApi = {
+  getMyAssessments: () =>
+    request<CandidateAssessmentListItemDto[]>('/Assessments/candidate/my-assessments'),
+
+  getCandidateAssessments: (candidateId: string) =>
+    request<CandidateAssessmentListItemDto[]>(`/Assessments/candidate/${candidateId}`),
+
+  getSubmissionsByJob: (jobVacancyId: string) =>
+    request<SubmissionDetailDto[]>(`/Assessments/job/${jobVacancyId}/submissions`),
+
+  reviewSubmission: (submissionId: string, payload: ManualReviewSubmissionPayload) =>
+    request<SubmissionDetailDto>(`/Assessments/submissions/${submissionId}/review`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  getTracksByJob: (jobVacancyId: string) =>
+    request<AssessmentTrackSummaryDto[]>(`/Assessments/job/${jobVacancyId}/tracks`),
+
+  getAssessmentsByJob: (jobVacancyId: string) =>
+    request<AssessmentResponseDto[]>(`/Assessments/job/${jobVacancyId}`),
+
+  getById: (id: string) =>
+    request<AssessmentResponseDto>(`/Assessments/${id}`),
+
+  createManual: (payload: CreateAssessmentManualPayload) =>
+    request<AssessmentResponseDto>('/Assessments', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  update: (id: string, payload: UpdateAssessmentPayload) =>
+    request<AssessmentResponseDto>(`/Assessments/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
+  publish: (id: string) =>
+    request<AssessmentResponseDto>(`/Assessments/${id}/publish`, {
+      method: 'POST',
+    }),
+
+  archive: (id: string) =>
+    request<AssessmentResponseDto>(`/Assessments/${id}/archive`, {
+      method: 'POST',
+    }),
+
+  delete: (id: string) =>
+    request<void>(`/Assessments/${id}`, {
+      method: 'DELETE',
+    }),
+
+  dispatch: (payload: DispatchAssessmentPayload) =>
+    request<DispatchAssessmentResponseDto>('/Assessments/dispatch', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  getExamPaper: (submissionId: string) =>
+    request<StartExamResponseDto>(`/Assessments/take/${submissionId}`),
+
+  startExam: (submissionId: string) =>
+    request<StartExamResponseDto>(`/Assessments/take/${submissionId}/start`, {
+      method: 'POST',
+    }),
+
+  logProctorEvent: (submissionId: string, event: ProctorEventPayload) =>
+    request<{ success: boolean }>(`/Assessments/take/${submissionId}/proctor-event`, {
+      method: 'POST',
+      body: JSON.stringify(event),
+    }),
+
+  runCode: (submissionId: string, payload: RunCodePayload) =>
+    request<RunCodeResponseDto>(`/Assessments/take/${submissionId}/run`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  submitExam: (submissionId: string, payload: SubmitAnswersPayload) =>
+    request<SubmissionDetailDto>(`/Assessments/take/${submissionId}/submit`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  saveDraft: (submissionId: string, payload: SaveDraftPayload) =>
+    request<{ success: boolean }>(`/Assessments/take/${submissionId}/draft`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  blockAssessment: (submissionId: string) =>
+    request<{ success: boolean; message?: string }>(`/Assessments/take/${submissionId}/block`, {
+      method: 'POST',
+    }),
+
+  getSubmissionDetail: (submissionId: string) =>
+    request<SubmissionDetailDto>(`/Assessments/submissions/${submissionId}`),
+
+  deleteSubmission: (submissionId: string) =>
+    request<void>(`/Assessments/submissions/${submissionId}`, {
+      method: 'DELETE',
+    }),
+
+  getLeaderboard: (jobVacancyId: string) =>
+    request<LeaderboardEntryDto[]>(`/Assessments/job/${jobVacancyId}/leaderboard`),
+
+  finalizeTop5: (jobVacancyId: string) =>
+    request<FinalizeTop5ResponseDto>(`/Assessments/job/${jobVacancyId}/finalize-top5`, {
+      method: 'POST',
+    }),
 };

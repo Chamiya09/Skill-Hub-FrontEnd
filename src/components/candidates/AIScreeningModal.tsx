@@ -5,6 +5,7 @@ import {
   type JobDto,
 } from '../../services/api';
 import { CandidateProfileReadOnly } from './CandidateProfileReadOnly';
+import { CvEvaluationPanel } from '../pipeline/CvEvaluationPanel';
 import {
   SparkleIcon,
   XIcon,
@@ -82,6 +83,8 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
   const [isProcessingBulk, setIsProcessingBulk] = useState<boolean>(false);
   const [topCount, setTopCount] = useState<number>(5);
+  const [aiReportCandidateId, setAiReportCandidateId] = useState<string | null>(null);
+  
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -142,6 +145,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
     setIsAiAnalyzed(false);
     setIsAnalyzing(false);
     setIsTransferred(false);
+    setSelectedCandidateId(null);
     setSelectedCandidateId(null);
     setSearchQuery('');
     setErrorMessage(null);
@@ -543,7 +547,8 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                           className="ai-screening-candidate-card flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white border border-indigo-100 rounded-2xl gap-4 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer"
                           title="Click to view full verified Digital CV Profile"
                         >
-                          <div className="flex items-center gap-4 ai-screening-candidate-identity">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 gap-4 w-full">
+  <div className="flex items-center gap-4 ai-screening-candidate-identity">
                             <input
                               type="checkbox"
                               className="ai-screening-checkbox"
@@ -592,7 +597,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
 
                           <div className="flex items-center gap-4 shrink-0 sm:ml-auto ai-screening-actions">
                             {candidate.aiScore !== null && candidate.aiScore !== undefined ? (
-                              <div className="ai-match-ring" style={{ '--match-score': `${candidate.aiScore}%` } as React.CSSProperties}>
+                              <div className="ai-match-ring cursor-pointer hover:scale-105 transition-transform" onClick={(e) => { e.stopPropagation(); setAiReportCandidateId(candidate.candidateId); }} title="Click to view AI Evaluation Report" style={{ '--match-score': `${candidate.aiScore}%` } as React.CSSProperties}>
                                 <span>{candidate.aiScore}%</span>
                                 <small>Match</small>
                               </div>
@@ -630,6 +635,8 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                               <span>Shortlisted</span>
                             </span>
                           </div>
+  </div>
+
                         </div>
                       );
                     })
@@ -681,7 +688,8 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                           className="ai-screening-candidate-card flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white border border-indigo-100 rounded-2xl gap-4 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer"
                           title="Click to view full verified Digital CV Profile"
                         >
-                          <div className="flex items-center gap-4 ai-screening-candidate-identity">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 gap-4 w-full">
+  <div className="flex items-center gap-4 ai-screening-candidate-identity">
                             <input
                               type="checkbox"
                               className="ai-screening-checkbox"
@@ -721,7 +729,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
 
                           <div className="flex items-center gap-4 shrink-0 sm:ml-auto ai-screening-actions">
                             {candidate.aiScore !== null && candidate.aiScore !== undefined ? (
-                              <div className="ai-match-ring" style={{ '--match-score': `${candidate.aiScore}%` } as React.CSSProperties}>
+                              <div className="ai-match-ring cursor-pointer hover:scale-105 transition-transform" onClick={(e) => { e.stopPropagation(); setAiReportCandidateId(candidate.candidateId); }} title="Click to view AI Evaluation Report" style={{ '--match-score': `${candidate.aiScore}%` } as React.CSSProperties}>
                                 <span>{candidate.aiScore}%</span>
                                 <small>Match</small>
                               </div>
@@ -796,6 +804,8 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                               </span>
                             )}
                           </div>
+  </div>
+
                         </div>
                       );
                     })}
@@ -836,7 +846,8 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                         className="ai-screening-candidate-card flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white border border-indigo-100 rounded-2xl gap-4 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer"
                         title="Click to view full verified Digital CV Profile"
                       >
-                        <div className="flex items-center gap-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 gap-4 w-full">
+  <div className="flex items-center gap-4">
                           <input
                             type="checkbox"
                             className="ai-screening-checkbox"
@@ -959,7 +970,8 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                             </span>
                           )}
                         </div>
-                      </div>
+  </div>
+                        </div>
                     );
                   })
                 )}
@@ -1036,6 +1048,50 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
       {/* =========================================================
           4. DIGITAL CV DRAWER (SLIDES OVER MODAL)
           ========================================================= */}
+      
+  {/* =========================================================
+          5. AI EVALUATION REPORT DRAWER (SLIDES OVER MODAL)
+          ========================================================= */}
+      {aiReportCandidateId && currentJob && (
+        <>
+          <div
+            className="candidate-cv-drawer-overlay"
+            onClick={(e) => {
+              e.stopPropagation();
+              setAiReportCandidateId(null);
+            }}
+          />
+
+          <div
+            className="candidate-cv-drawer p-6 bg-slate-50"
+            style={{ width: '100%', maxWidth: '600px', overflowY: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-end mb-2">
+              <button onClick={() => setAiReportCandidateId(null)} className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors">
+                <XIcon />
+              </button>
+            </div>
+            {(() => {
+                const c = candidates.find(cand => cand.candidateId === aiReportCandidateId);
+                return (
+                  <CvEvaluationPanel
+                    candidateId={aiReportCandidateId}
+                    jobId={currentJob.id}
+                    applicationId={c?.id || ''}
+                    candidateName={c?.name || ''}
+                    onApproved={() => {
+                      fetchApplicants(currentJob.id);
+                      setAiReportCandidateId(null);
+                    }}
+                  />
+                );
+            })()}
+          </div>
+        </>
+      )}
+
+
       {selectedCandidateId && (
         <>
           <div

@@ -76,19 +76,19 @@ const ScoreGauge: React.FC<{ score: number }> = ({ score }) => {
   const offset = circumference - (score / 100) * circumference;
 
   const getColor = (s: number) => {
-    if (s >= 80) return '#00b074';
-    if (s >= 60) return '#0284c7';
-    if (s >= 40) return '#d97706';
-    return '#dc2626';
+    if (s >= 80) return '#047857'; // emerald-700
+    if (s >= 60) return '#4338ca'; // indigo-700
+    if (s >= 40) return '#b45309'; // amber-700
+    return '#be123c'; // rose-700
   };
 
   const color = getColor(score);
 
   return (
-    <div style={{ position: 'relative', width: '90px', height: '90px', flexShrink: 0 }}>
-      <svg width="90" height="90" viewBox="0 0 90 90" style={{ transform: 'rotate(-90deg)' }}>
+    <div className="relative w-[90px] h-[90px] shrink-0">
+      <svg width="90" height="90" viewBox="0 0 90 90" className="-rotate-90">
         {/* Background track */}
-        <circle cx="45" cy="45" r={radius} fill="none" stroke="#f1f5f9" strokeWidth="7" />
+        <circle cx="45" cy="45" r={radius} fill="none" className="stroke-slate-100" strokeWidth="7" />
         {/* Score arc */}
         <circle
           cx="45" cy="45" r={radius}
@@ -98,17 +98,13 @@ const ScoreGauge: React.FC<{ score: number }> = ({ score }) => {
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          style={{ transition: 'stroke-dashoffset 0.8s ease-in-out' }}
+          className="transition-[stroke-dashoffset] duration-700 ease-in-out"
         />
       </svg>
       {/* Score text overlay */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-      }}>
-        <span style={{ fontSize: '20px', fontWeight: 800, color, lineHeight: 1 }}>{score}</span>
-        <span style={{ fontSize: '9px', fontWeight: 600, color: '#94a3b8', letterSpacing: '0.05em' }}>MATCH</span>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-xl font-extrabold leading-none" style={{ color }}>{score}</span>
+        <span className="text-[9px] font-bold text-slate-400 tracking-wider">MATCH</span>
       </div>
     </div>
   );
@@ -119,14 +115,13 @@ const ScoreGauge: React.FC<{ score: number }> = ({ score }) => {
 const SkillChip: React.FC<{ label: string; variant: 'strength' | 'missing' }> = ({ label, variant }) => {
   const isStrength = variant === 'strength';
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '4px',
-      padding: '3px 10px', borderRadius: '9999px', fontSize: '11.5px', fontWeight: 600,
-      background: isStrength ? '#ecfdf5' : '#fef2f2',
-      color: isStrength ? '#047857' : '#b91c1c',
-      border: `1px solid ${isStrength ? '#a7f3d0' : '#fecaca'}`,
-      whiteSpace: 'nowrap',
-    }}>
+    <span
+      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap border ${
+        isStrength 
+          ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+          : 'bg-rose-50 text-rose-700 border-rose-200'
+      }`}
+    >
       {isStrength ? '✓' : '✗'} {label}
     </span>
   );
@@ -135,36 +130,28 @@ const SkillChip: React.FC<{ label: string; variant: 'strength' | 'missing' }> = 
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
 
 const EvaluationSkeleton: React.FC = () => (
-  <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+  <div className="p-5 flex flex-col gap-3">
     {/* Agent step indicators */}
     {[
       { label: 'Agent 1 · Extractor: Fetching CV profile data...', done: true },
       { label: 'Agent 2 · Evaluator: Running AI match analysis...', done: false },
       { label: 'Agent 3 · Validator: Applying business rules...', done: false },
     ].map((step, i) => (
-      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div style={{
-          width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0,
-          border: `2px solid ${step.done ? '#00b074' : '#cbd5e1'}`,
-          background: step.done ? '#e6f9f2' : '#f8fafc',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          {step.done
-            ? <span style={{ color: '#00b074', fontSize: '11px', fontWeight: 700 }}>✓</span>
-            : <div style={{
-                width: '10px', height: '10px', borderRadius: '50%',
-                border: '2px solid #00b074', borderTopColor: 'transparent',
-                animation: 'spin 0.8s linear infinite',
-              }} />
-          }
+      <div key={i} className="flex items-center gap-3">
+        <div className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center border-2 ${step.done ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
+          {step.done ? (
+            <span className="text-emerald-600 text-xs font-bold">✓</span>
+          ) : (
+            <div className="w-2.5 h-2.5 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+          )}
         </div>
-        <span style={{ fontSize: '12px', color: step.done ? '#0f172a' : '#94a3b8', fontWeight: step.done ? 600 : 400 }}>
+        <span className={`text-sm ${step.done ? 'text-slate-900 font-semibold' : 'text-slate-400 font-medium'}`}>
           {step.label}
         </span>
       </div>
     ))}
     {/* Pulse placeholder */}
-    <div style={{ marginTop: '6px', height: '60px', borderRadius: '10px', background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+    <div className="mt-2 h-16 rounded-xl bg-gradient-to-r from-slate-100 via-slate-200 to-slate-100 bg-[length:200%_100%] animate-[shimmer_1.5s_infinite]" />
   </div>
 );
 
@@ -178,24 +165,12 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
   onApproved,
 }) => {
 
-  // ── State ─────────────────────────────────────────────────────────────────
-
-  /** The live evaluation result fetched from the API */
   const [evaluationResult, setEvaluationResult] = useState<CvEvaluationResultDto | null>(null);
-
-  /** Controls loading state for the "Run AI CV Evaluation" button */
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
-
-  /** Controls loading state for the "Approve & Shortlist" button */
   const [isApproving, setIsApproving] = useState<boolean>(false);
-
-  /** Inline error message for the panel */
   const [error, setError] = useState<string | null>(null);
-
-  /** Success message shown after successful approval */
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // ── On mount: Check for an existing cached evaluation ────────────────────
   useEffect(() => {
     let isMounted = true;
     (async () => {
@@ -203,45 +178,35 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
         const cached = await cvEvaluationApi.getLatest(candidateId, jobId);
         if (isMounted) setEvaluationResult(cached);
       } catch {
-        // No cached result — that's fine, user will click "Run AI CV Evaluation"
+        // No cached result
       }
     })();
     return () => { isMounted = false; };
   }, [candidateId, jobId]);
 
-  // ── Handler: "Run AI CV Evaluation" button onClick ───────────────────────
-  /**
-   * Calls POST /api/CVEvaluation/analyze
-   * Loading state is mapped to the full API call duration.
-   */
   const handleRunEvaluation = useCallback(async () => {
     try {
       setIsAnalyzing(true);
       setError(null);
       setSuccessMessage(null);
-      setEvaluationResult(null); // Clear stale result while running
+      setEvaluationResult(null);
 
       const result = await cvEvaluationApi.analyze({
         candidateId,
         jobId,
         applicationId,
-        forceRefresh: evaluationResult !== null, // Force refresh if re-running
+        forceRefresh: evaluationResult !== null,
       });
 
       setEvaluationResult(result);
     } catch (err: any) {
       console.error('[CvEvaluationPanel] Analysis error:', err);
-      setError(err?.message || 'The AI evaluation pipeline encountered an unexpected error. Please try again.');
+      setError(err?.message || 'The AI evaluation pipeline encountered an unexpected error.');
     } finally {
       setIsAnalyzing(false);
     }
   }, [candidateId, jobId, applicationId, evaluationResult]);
 
-  // ── Handler: "Approve & Shortlist" button onClick ────────────────────────
-  /**
-   * Calls POST /api/CVEvaluation/{id}/approve
-   * Loading state is mapped to the API call duration.
-   */
   const handleApprove = useCallback(async () => {
     if (!evaluationResult) return;
     try {
@@ -250,70 +215,48 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
 
       const approvalResponse = await cvEvaluationApi.approve(evaluationResult.id, {
         decision: 'Approved',
-        reviewerNotes: `Manually approved by recruiter via Hiring Pipeline on ${new Date().toLocaleString()}.`,
+        reviewerNotes: `Manually approved by recruiter on ${new Date().toLocaleString()}.`,
       });
 
-      // Update local state to reflect the new approval status
       setEvaluationResult(prev => prev ? { ...prev, approvalStatus: 'Approved' } : null);
       setSuccessMessage(approvalResponse.message || `${candidateName} has been approved and shortlisted!`);
 
-      // Notify parent component so it can update the candidate card status
       onApproved?.(evaluationResult.id);
     } catch (err: any) {
       console.error('[CvEvaluationPanel] Approval error:', err);
-      setError(err?.message || 'Failed to save approval decision. Please try again.');
+      setError(err?.message || 'Failed to save approval decision.');
     } finally {
       setIsApproving(false);
     }
   }, [evaluationResult, candidateName, onApproved]);
 
-  // ── Derived: Score band label ─────────────────────────────────────────────
-
   const getScoreLabel = (score: number) => {
-    if (score >= 80) return { label: 'Excellent Match', color: '#00b074', bg: '#ecfdf5', border: '#a7f3d0' };
-    if (score >= 60) return { label: 'Good Fit',        color: '#0284c7', bg: '#eff6ff', border: '#bfdbfe' };
-    if (score >= 40) return { label: 'Partial Match',   color: '#d97706', bg: '#fffbeb', border: '#fde68a' };
-    return                  { label: 'Weak Match',      color: '#dc2626', bg: '#fef2f2', border: '#fecaca' };
+    if (score >= 80) return { label: 'Excellent Match', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' };
+    if (score >= 60) return { label: 'Good Fit',        color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200' };
+    if (score >= 40) return { label: 'Partial Match',   color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' };
+    return                  { label: 'Weak Match',      color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200' };
   };
-
-  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div
       id={`cv-evaluation-panel-${candidateId}`}
-      style={{
-        marginTop: '12px',
-        border: '1px solid #e2e8f0',
-        borderRadius: '12px',
-        background: '#ffffff',
-        overflow: 'hidden',
-      }}
+      className="mt-4 bg-white/70 backdrop-blur-2xl border border-white/60 rounded-[2rem] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_40px_rgb(0,0,0,0.08)] transition-all duration-500"
     >
       {/* Panel Header */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '10px 14px',
-        background: '#f8fafc',
-        borderBottom: '1px solid #e2e8f0',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div style={{
-            width: '22px', height: '22px', borderRadius: '6px',
-            background: '#00b074', color: '#ffffff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
+      <div className="relative flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50/80 via-white/40 to-emerald-50/80 border-b border-indigo-100/50">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 ring-1 ring-white/50">
             <SparkleIcon />
           </div>
-          <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#0f172a' }}>
+          <span className="text-[15px] font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600">
             AI CV Evaluation Report
           </span>
           {evaluationResult && (
-            <span style={{
-              fontSize: '10.5px', padding: '2px 7px', borderRadius: '9999px', fontWeight: 700,
-              background: evaluationResult.approvalStatus === 'Approved' ? '#ecfdf5' : evaluationResult.approvalStatus === 'Rejected' ? '#fef2f2' : '#fffbeb',
-              color: evaluationResult.approvalStatus === 'Approved' ? '#047857' : evaluationResult.approvalStatus === 'Rejected' ? '#b91c1c' : '#92400e',
-              border: `1px solid ${evaluationResult.approvalStatus === 'Approved' ? '#a7f3d0' : evaluationResult.approvalStatus === 'Rejected' ? '#fecaca' : '#fde68a'}`,
-            }}>
+            <span className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-[0.1em] shadow-sm ml-2 ${
+              evaluationResult.approvalStatus === 'Approved' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200/50' : 
+              evaluationResult.approvalStatus === 'Rejected' ? 'bg-rose-100 text-rose-800 border border-rose-200/50' : 
+              'bg-amber-100 text-amber-800 border border-amber-200/50'
+            }`}>
               {evaluationResult.approvalStatus}
             </span>
           )}
@@ -325,185 +268,148 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
           id={`btn-run-cv-evaluation-${candidateId}`}
           onClick={handleRunEvaluation}
           disabled={isAnalyzing || isApproving}
-          title={evaluationResult ? 'Re-run AI evaluation with fresh data' : 'Run AI CV evaluation pipeline'}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: '5px',
-            padding: '5px 12px', borderRadius: '7px',
-            background: isAnalyzing ? '#f1f5f9' : 'linear-gradient(135deg, #00b074 0%, #0284c7 100%)',
-            color: isAnalyzing ? '#94a3b8' : '#ffffff',
-            border: isAnalyzing ? '1px solid #e2e8f0' : '1px solid transparent',
-            fontSize: '11.5px', fontWeight: 700,
-            cursor: isAnalyzing || isApproving ? 'not-allowed' : 'pointer',
-            opacity: isApproving ? 0.5 : 1,
-            transition: 'all 0.2s',
-          }}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${
+            isAnalyzing 
+              ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/50' 
+              : 'bg-white hover:bg-indigo-50 text-indigo-600 border border-indigo-100 hover:border-indigo-200 shadow-sm hover:shadow-md'
+          } ${isApproving ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           {isAnalyzing ? (
             <>
-              <div style={{
-                width: '11px', height: '11px', borderRadius: '50%',
-                border: '2px solid #94a3b8', borderTopColor: 'transparent',
-                animation: 'spin 0.8s linear infinite',
-              }} />
+              <div className="w-3.5 h-3.5 rounded-full border-2 border-indigo-200 border-t-indigo-600 animate-spin" />
               <span>Analyzing...</span>
             </>
           ) : (
             <>
               {evaluationResult ? <RefreshIcon /> : <SparkleIcon />}
-              <span>{evaluationResult ? 'Re-evaluate' : 'Run AI CV Evaluation'}</span>
+              <span>{evaluationResult ? 'Re-evaluate' : 'Run AI Evaluation'}</span>
             </>
           )}
         </button>
       </div>
 
       {/* Panel Body */}
-      <div style={{ padding: '0' }}>
-
-        {/* ── Loading State (maps to actual API call duration) ── */}
+      <div className="p-0">
         {isAnalyzing && <EvaluationSkeleton />}
 
-        {/* ── Error State ── */}
         {!isAnalyzing && error && (
-          <div style={{
-            padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: '8px',
-            background: '#fef2f2', color: '#b91c1c',
-          }}>
-            <AlertTriangleIcon />
+          <div className="px-6 py-4 flex items-start gap-3 bg-rose-50/80 text-rose-700 border-b border-rose-100 backdrop-blur-md">
+            <div className="mt-0.5"><AlertTriangleIcon /></div>
             <div>
-              <p style={{ fontSize: '12px', fontWeight: 600, margin: '0 0 2px 0' }}>Evaluation Failed</p>
-              <p style={{ fontSize: '11.5px', margin: 0, color: '#dc2626' }}>{error}</p>
+              <p className="text-sm font-bold m-0 text-rose-800">Evaluation Failed</p>
+              <p className="text-xs m-0 mt-1 text-rose-600/90 leading-relaxed">{error}</p>
             </div>
           </div>
         )}
 
-        {/* ── Success Message (post-approval) ── */}
         {!isAnalyzing && successMessage && (
-          <div style={{
-            padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px',
-            background: '#ecfdf5', borderBottom: '1px solid #a7f3d0',
-          }}>
+          <div className="px-6 py-3 flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-emerald-50/30 border-b border-emerald-100 text-emerald-700">
             <CheckCircleIcon />
-            <span style={{ fontSize: '12px', fontWeight: 600, color: '#047857' }}>{successMessage}</span>
+            <span className="text-sm font-extrabold">{successMessage}</span>
           </div>
         )}
 
-        {/* ── Empty State (no result yet) ── */}
         {!isAnalyzing && !error && !evaluationResult && (
-          <div style={{
-            padding: '20px 14px', textAlign: 'center',
-          }}>
-            <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
-              Click <strong style={{ color: '#0f172a' }}>Run AI CV Evaluation</strong> to analyse {candidateName}'s profile against this job using the three-agent pipeline.
+          <div className="p-10 text-center flex flex-col items-center justify-center">
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100 shadow-inner">
+              <span className="text-slate-300 transform scale-150"><SparkleIcon /></span>
+            </div>
+            <p className="text-sm text-slate-500 m-0">
+              Click <strong className="text-slate-700 font-extrabold">Run AI Evaluation</strong> to analyse {candidateName}'s profile.
             </p>
           </div>
         )}
 
-        {/* ══════════════════════════════════════════════════════
-            ── Human Approval Report — Bound to API JSON Data ──
-            Binds: matchScore, strengths, missingSkills, recommendation
-            ══════════════════════════════════════════════════════ */}
         {!isAnalyzing && evaluationResult && (
-          <div style={{ padding: '14px' }}>
-
+          <div className="p-5 md:p-6">
             {/* ─ Score Row ───────────────────────────────────────── */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '14px',
-              marginBottom: '14px', padding: '12px',
-              background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0',
-            }}>
-              {/* Score Gauge — bound to evaluationResult.matchScore */}
-              <ScoreGauge score={evaluationResult.matchScore} />
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-6 p-5 bg-gradient-to-br from-slate-50/80 to-white rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl opacity-50 -mr-10 -mt-10 pointer-events-none transition-transform group-hover:scale-110 duration-700" />
+              
+              <div className="relative">
+                <div className="absolute inset-0 bg-white rounded-full shadow-lg opacity-20 blur-md"></div>
+                <ScoreGauge score={evaluationResult.matchScore} />
+              </div>
 
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="flex-1 min-w-0 text-center md:text-left relative z-10">
                 {(() => {
                   const band = getScoreLabel(evaluationResult.matchScore);
                   return (
-                    <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                      <span style={{
-                        fontSize: '13.5px', fontWeight: 800, color: band.color,
-                      }}>
+                    <div className="mb-3 flex items-center justify-center md:justify-start gap-2.5 flex-wrap">
+                      <span className={`text-xl font-black tracking-tight ${band.color}`}>
                         {evaluationResult.matchScore}% {band.label}
                       </span>
-                      <span style={{
-                        fontSize: '10px', padding: '1px 7px', borderRadius: '9999px', fontWeight: 600,
-                        background: band.bg, color: band.color, border: `1px solid ${band.border}`,
-                      }}>
+                      <span className={`text-[10px] px-2.5 py-1 rounded-full font-black border uppercase tracking-[0.15em] shadow-sm ${band.bg} ${band.color} ${band.border}`}>
                         AI Score
                       </span>
                     </div>
                   );
                 })()}
 
-                {/* Recommendation — bound to evaluationResult.recommendation */}
                 {evaluationResult.recommendation && (
-                  <p style={{
-                    fontSize: '11.5px', color: '#475569', margin: 0, lineHeight: 1.5,
-                    display: '-webkit-box', WebkitLineClamp: 3,
-                    WebkitBoxOrient: 'vertical' as const, overflow: 'hidden',
-                  }}>
+                  <p className="text-[13px] text-slate-600 m-0 leading-relaxed font-medium">
                     {evaluationResult.recommendation}
                   </p>
                 )}
               </div>
             </div>
 
-            {/* ─ Strengths — bound to evaluationResult.strengths[] ─── */}
-            {evaluationResult.strengths.length > 0 && (
-              <div style={{ marginBottom: '10px' }}>
-                <p style={{ fontSize: '11px', fontWeight: 700, color: '#047857', margin: '0 0 6px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  ✓ Strengths ({evaluationResult.strengths.length})
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                  {evaluationResult.strengths.map((s, i) => (
-                    <SkillChip key={i} label={s} variant="strength" />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ─ Missing Skills — bound to evaluationResult.missingSkills[] ─ */}
-            {evaluationResult.missingSkills.length > 0 && (
-              <div style={{ marginBottom: '12px' }}>
-                <p style={{ fontSize: '11px', fontWeight: 700, color: '#b91c1c', margin: '0 0 6px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  ✗ Skill Gaps ({evaluationResult.missingSkills.length})
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                  {evaluationResult.missingSkills.map((s, i) => (
-                    <SkillChip key={i} label={s} variant="missing" />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ─ Validation Notes (from AgentValidator) ──────────────────── */}
-            {evaluationResult.validationNotes.length > 0 && (
-              <div style={{
-                marginBottom: '12px', padding: '8px 10px',
-                background: '#fffbeb', borderRadius: '7px', border: '1px solid #fde68a',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                  <span style={{ color: '#92400e', marginTop: '1px' }}><InfoIcon /></span>
-                  <div>
-                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#92400e', margin: '0 0 3px 0' }}>
-                      Validator Adjustments
-                    </p>
-                    <ul style={{ margin: 0, padding: '0 0 0 14px' }}>
-                      {evaluationResult.validationNotes.map((note, i) => (
-                        <li key={i} style={{ fontSize: '11px', color: '#78350f', lineHeight: 1.5 }}>{note}</li>
-                      ))}
-                    </ul>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              {/* ─ Strengths ─── */}
+              {evaluationResult.strengths.length > 0 && (
+                <div className="bg-emerald-50/30 rounded-2xl p-4 border border-emerald-100/50">
+                  <p className="text-[11px] font-black text-emerald-700 uppercase tracking-wider m-0 mb-3 flex items-center gap-1.5">
+                    <span className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">✓</span>
+                    Strengths ({evaluationResult.strengths.length})
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {evaluationResult.strengths.map((s, i) => (
+                      <SkillChip key={i} label={s} variant="strength" />
+                    ))}
                   </div>
+                </div>
+              )}
+
+              {/* ─ Missing Skills ─ */}
+              {evaluationResult.missingSkills.length > 0 && (
+                <div className="bg-rose-50/30 rounded-2xl p-4 border border-rose-100/50">
+                  <p className="text-[11px] font-black text-rose-700 uppercase tracking-wider m-0 mb-3 flex items-center gap-1.5">
+                    <span className="w-4 h-4 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">✗</span>
+                    Skill Gaps ({evaluationResult.missingSkills.length})
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {evaluationResult.missingSkills.map((s, i) => (
+                      <SkillChip key={i} label={s} variant="missing" />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ─ Validation Notes ──────────────────── */}
+            {evaluationResult.validationNotes.length > 0 && (
+              <div className="mb-6 p-4 bg-amber-50/50 rounded-2xl border border-amber-200/60 flex items-start gap-3 backdrop-blur-sm">
+                <span className="text-amber-600 mt-0.5 p-1 bg-amber-100/50 rounded-lg"><InfoIcon /></span>
+                <div>
+                  <p className="text-xs font-black text-amber-800 m-0 mb-1.5 tracking-wide">
+                    Validator Adjustments
+                  </p>
+                  <ul className="m-0 pl-4 space-y-1.5">
+                    {evaluationResult.validationNotes.map((note, i) => (
+                      <li key={i} className="text-[13px] text-amber-700/90 leading-snug font-medium marker:text-amber-400">{note}</li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             )}
 
             {/* ─ Action Row ──────────────────────────────────────────────── */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-5 mt-2 border-t border-slate-100/80">
+              <span className="text-[11px] font-semibold text-slate-400/80 uppercase tracking-wider">
                 Evaluated {new Date(evaluationResult.createdAt).toLocaleString()}
               </span>
 
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
                 {/* Reject Button */}
                 <button
                   type="button"
@@ -521,53 +427,40 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
                     }
                   }}
                   disabled={isApproving || evaluationResult.approvalStatus !== 'Pending'}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '4px',
-                    padding: '6px 12px', borderRadius: '7px', fontSize: '12px', fontWeight: 600,
-                    background: '#ffffff', border: '1px solid #fca5a5', color: '#dc2626',
-                    cursor: (isApproving || evaluationResult.approvalStatus !== 'Pending') ? 'not-allowed' : 'pointer',
-                    opacity: (isApproving || evaluationResult.approvalStatus !== 'Pending') ? 0.5 : 1,
-                    transition: 'all 0.15s',
-                  }}
+                  className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all duration-300 ${
+                    isApproving || evaluationResult.approvalStatus !== 'Pending'
+                      ? 'bg-slate-50 border border-slate-200 text-slate-400 opacity-60 cursor-not-allowed'
+                      : 'bg-white border border-rose-200/80 text-rose-600 hover:bg-rose-50 hover:border-rose-300 hover:shadow-sm'
+                  }`}
                 >
-                  ✗ Reject
+                  <span>✗</span> Reject
                 </button>
 
-                {/* Approve & Shortlist Button — calls POST /api/CVEvaluation/{id}/approve */}
+                {/* Approve & Shortlist Button */}
                 <button
                   type="button"
                   id={`btn-approve-shortlist-${candidateId}`}
                   onClick={handleApprove}
                   disabled={isApproving || evaluationResult.approvalStatus !== 'Pending'}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '5px',
-                    padding: '6px 14px', borderRadius: '7px', fontSize: '12px', fontWeight: 700,
-                    background: evaluationResult.approvalStatus === 'Approved'
-                      ? '#ecfdf5' : 'linear-gradient(135deg, #00b074 0%, #008759 100%)',
-                    color: evaluationResult.approvalStatus === 'Approved' ? '#047857' : '#ffffff',
-                    border: evaluationResult.approvalStatus === 'Approved' ? '1px solid #a7f3d0' : '1px solid transparent',
-                    cursor: (isApproving || evaluationResult.approvalStatus !== 'Pending') ? 'not-allowed' : 'pointer',
-                    opacity: (isApproving || evaluationResult.approvalStatus !== 'Pending') ? 0.7 : 1,
-                    transition: 'all 0.15s',
-                  }}
+                  className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-[13px] font-bold transition-all duration-300 ${
+                    evaluationResult.approvalStatus === 'Approved'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
+                      : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 border border-emerald-600/50'
+                  } ${isApproving || evaluationResult.approvalStatus !== 'Pending' ? 'opacity-70 cursor-not-allowed shadow-none' : 'hover:-translate-y-0.5'}`}
                 >
                   {isApproving ? (
                     <>
-                      <div style={{
-                        width: '11px', height: '11px', borderRadius: '50%',
-                        border: '2px solid rgba(255,255,255,0.5)', borderTopColor: '#fff',
-                        animation: 'spin 0.7s linear infinite',
-                      }} />
+                      <div className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
                       <span>Saving...</span>
                     </>
                   ) : evaluationResult.approvalStatus === 'Approved' ? (
                     <>
-                      <CheckCircleIcon />
-                      <span>Approved ✓</span>
+                      <span className="scale-110"><CheckCircleIcon /></span>
+                      <span>Approved</span>
                     </>
                   ) : (
                     <>
-                      <CheckCircleIcon />
+                      <span className="scale-110"><CheckCircleIcon /></span>
                       <span>Approve &amp; Shortlist</span>
                     </>
                   )}
@@ -578,22 +471,10 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
         )}
       </div>
 
-      {/* Inline keyframe styles */}
       <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
         @keyframes shimmer {
           0% { background-position: 200% 0; }
           100% { background-position: -200% 0; }
-        }
-        #btn-run-cv-evaluation-${candidateId}:not(:disabled):hover {
-          opacity: 0.92;
-          transform: translateY(-1px);
-        }
-        #btn-approve-shortlist-${candidateId}:not(:disabled):hover {
-          opacity: 0.9;
-          transform: translateY(-1px);
         }
       `}</style>
     </div>

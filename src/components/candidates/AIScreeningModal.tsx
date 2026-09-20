@@ -92,7 +92,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
   const fetchApplicants = async (jobId: string) => {
     try {
       setIsLoadingApplicants(true);
-      setAnalyzingStageText('AI is analyzing candidate profiles... This may take a few seconds.');
+      setAnalyzingStageText('Loading candidate applications...');
       const data = await jobApplicationsApi.getRankedApplicants(jobId);
 
       const mapped: ModalCandidate[] = (data || [])
@@ -123,7 +123,8 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
         }));
 
       setCandidates(mapped);
-      setIsAiAnalyzed(mapped.length > 0);
+      const hasAnalyzed = mapped.some((c) => c.aiScore !== null && c.aiScore !== undefined);
+      setIsAiAnalyzed(hasAnalyzed);
     } catch (err: any) {
       console.error('Error loading applicants for AI screening:', err);
       setErrorMessage(err.message || 'Failed to fetch applicants for this requisition.');
@@ -476,7 +477,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
               onChange={(e) => setSearchQuery(e.target.value)}
               className="popup-search-input"
             />
-            {isAiAnalyzed && (
+            {candidates.length > 0 && (
               <button
                 type="button"
                 onClick={handleRunAiAnalysis}
@@ -487,18 +488,19 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                   color: '#009e67',
                   background: '#e6f9f2',
                   border: '1px solid #b7eedc',
-                  padding: '4px 10px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
+                  padding: '5px 12px',
+                  borderRadius: '7px',
+                  cursor: isAnalyzing ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px',
-                  whiteSpace: 'nowrap'
+                  gap: '5px',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.15s ease'
                 }}
-                title="Re-run AI batch scoring"
+                title="Run manual AI match analysis"
               >
                 <SparkleIcon />
-                <span>Re-run Analysis</span>
+                <span>{isAnalyzing ? 'Analyzing...' : 'AI Analysis'}</span>
               </button>
             )}
           </div>

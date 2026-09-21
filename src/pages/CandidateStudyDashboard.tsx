@@ -10,7 +10,7 @@ import {
   StudyFocusAreaCard,
   StudyDisclaimerFooter,
 } from '../components/interview-prep';
-import { ArrowLeftIcon, SparkleIcon, TargetIcon, CheckIcon } from '../components/common/Icons';
+import { ArrowLeftIcon, SparkleIcon, TargetIcon } from '../components/common/Icons';
 import './CandidateStudyDashboard.css';
 
 const LightbulbIcon: React.FC = () => (
@@ -52,7 +52,6 @@ export const CandidateStudyDashboard: React.FC = () => {
 
   // Accordion expansion state per focus area
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
-  const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
 
   // 1. Fetch all available interview preparation guides on mount
   useEffect(() => {
@@ -68,8 +67,24 @@ export const CandidateStudyDashboard: React.FC = () => {
         try {
           list = await interviewPrepApi.getAll();
         } catch (err: unknown) {
-          console.warn('interviewPrepApi.getAll() failed, falling back:', err);
+          console.warn('interviewPrepApi.getAll() failed:', err);
         }
+
+        // Strictly exclude any mock / seed test data without real applications
+        list = (list || []).filter((g) => {
+          if (!g || !g.id) return false;
+          if (
+            g.id === 'bd215d1a-bd91-459e-9604-45d44fef40da' ||
+            g.id.startsWith('mock-') ||
+            g.id.startsWith('demo-')
+          ) {
+            return false;
+          }
+          if (!g.applicationId && (!g.jobId || g.companyName === 'Enterprise Partner')) {
+            return false;
+          }
+          return true;
+        });
 
         // If route has specific :id parameter, also fetch or locate that specific guide
         if (id) {
@@ -77,24 +92,15 @@ export const CandidateStudyDashboard: React.FC = () => {
           if (!found) {
             try {
               const specific = await interviewPrepApi.getById(id);
-              if (specific) {
+              if (
+                specific &&
+                (specific.applicationId || (specific.jobId && specific.companyName !== 'Enterprise Partner'))
+              ) {
                 list = [specific, ...list.filter((g) => g.id !== specific.id)];
               }
             } catch {
               // fallback
             }
-          }
-        }
-
-        // Fallback to latest or demo data if empty
-        if (list.length === 0) {
-          try {
-            const latest = await interviewPrepApi.getLatest();
-            if (latest) {
-              list = [latest];
-            }
-          } catch {
-            // no latest guide
           }
         }
 
@@ -156,13 +162,6 @@ export const CandidateStudyDashboard: React.FC = () => {
     setExpandedCards((prev) => ({
       ...prev,
       [cardId]: !prev[cardId],
-    }));
-  };
-
-  const toggleChecklist = (idx: number) => {
-    setCheckedItems((prev) => ({
-      ...prev,
-      [idx]: !prev[idx],
     }));
   };
 
@@ -301,7 +300,7 @@ export const CandidateStudyDashboard: React.FC = () => {
             >
               <span>Coach Strategies</span>
               <span className="switcher-count">
-                {(selectedGuide.proTips?.length || 0) + (selectedGuide.preparationChecklist?.length || 0)}
+                {selectedGuide.proTips?.length || 0}
               </span>
             </button>
           </div>
@@ -398,7 +397,7 @@ export const CandidateStudyDashboard: React.FC = () => {
             </section>
           )}
 
-          {/* SECTION 3: Career Coach Strategies & Readiness (Visible in 'both' or 'coach') */}
+          {/* SECTION 3: Career Coach Strategies (Visible in 'both' or 'coach') */}
           {(activeSectionView === 'both' || activeSectionView === 'coach') && (
             <section className="study-core-section-card">
               <div className="study-section-banner coach-banner">
@@ -408,14 +407,14 @@ export const CandidateStudyDashboard: React.FC = () => {
                   </div>
                   <div className="study-section-header-titles">
                     <div className="study-section-indicator">
-                      <span className="section-pill coach-pill">CAREER COACH • STRATEGIES &amp; READINESS</span>
+                      <span className="section-pill coach-pill">CAREER COACH • STRATEGIES</span>
                       <span className="study-section-badge-counter coach-counter">
-                        {(selectedGuide.proTips?.length || 0) + (selectedGuide.preparationChecklist?.length || 0)} Strategies
+                        {selectedGuide.proTips?.length || 0} Strategies
                       </span>
                     </div>
                     <h2 className="study-section-title">Career Coach Strategic Insights</h2>
                     <p className="study-section-description">
-                      Interview room strategies, structured communication frameworks, and readiness checklist items.
+                      Interview room strategies and structured communication frameworks to demonstrate senior engineering mastery.
                     </p>
                   </div>
                 </div>
@@ -435,43 +434,6 @@ export const CandidateStudyDashboard: React.FC = () => {
                       </div>
                     </div>
                   ))}
-                </div>
-              )}
-
-              {/* Interactive Day-of-Interview Checklist */}
-              {selectedGuide.preparationChecklist && selectedGuide.preparationChecklist.length > 0 && (
-                <div className="study-readiness-checklist-card">
-                  <div className="checklist-card-header">
-                    <div className="checklist-icon-wrap">
-                      <CheckIcon />
-                    </div>
-                    <div>
-                      <h3>Interview Day Readiness Checklist</h3>
-                      <p>Track your preparation steps prior to joining the candidate interview.</p>
-                    </div>
-                  </div>
-
-                  <div className="checklist-items-list">
-                    {selectedGuide.preparationChecklist.map((item, idx) => {
-                      const isChecked = !!checkedItems[idx];
-                      return (
-                        <div
-                          key={idx}
-                          className={`checklist-item-row ${isChecked ? 'is-checked' : ''}`}
-                          onClick={() => toggleChecklist(idx)}
-                          role="checkbox"
-                          aria-checked={isChecked}
-                          tabIndex={0}
-                          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleChecklist(idx)}
-                        >
-                          <div className="checklist-item-box">
-                            {isChecked && <CheckIcon />}
-                          </div>
-                          <span className="checklist-item-text">{item}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
                 </div>
               )}
             </section>

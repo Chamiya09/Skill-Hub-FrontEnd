@@ -79,7 +79,7 @@ export const StudyTabsNavigation: React.FC<StudyTabsNavigationProps> = ({
     },
     {
       key: 'coach' as StudyTabKey,
-      label: 'Coach Strategies & Checklist',
+      label: 'Coach Strategies',
       icon: <LightbulbIcon />,
       count: coachCount,
       badge: 'Strategies',

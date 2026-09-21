@@ -1088,7 +1088,6 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                     onClose={() => setAiReportCandidateId(null)}
                     onApproved={() => {
                       fetchApplicants(currentJob.id);
-                      setAiReportCandidateId(null);
                     }}
                   />
                 );

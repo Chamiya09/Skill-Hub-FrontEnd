@@ -32,6 +32,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   cvEvaluationApi,
+  jobApplicationsApi,
   type CvEvaluationResultDto,
 } from '../../services/api';
 
@@ -391,12 +392,23 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
     try {
       setIsApproving(true);
       setError(null);
+      setSuccessMessage(null);
+
+      // 1. Record HITL decision in CvEvaluationResults table
       const res = await cvEvaluationApi.approve(evaluationResult.id, {
         decision: 'Approved',
-        reviewerNotes: `Manually approved by recruiter on ${new Date().toLocaleString()}.`,
+        reviewerNotes: `Approved by recruiter on ${new Date().toLocaleString()}.`,
       });
+
+      // 2. Also update ATS pipeline so candidate is moved to Shortlist
+      try {
+        await jobApplicationsApi.moveToShortlist(jobId, [candidateId]);
+      } catch (atsErr) {
+        console.warn('[CvEvaluationPanel] ATS shortlist update warning:', atsErr);
+      }
+
       setEvaluationResult(prev => prev ? { ...prev, approvalStatus: 'Approved' } : null);
-      setSuccessMessage(res.message || `${candidateName} has been approved and shortlisted!`);
+      setSuccessMessage(res.message || `${candidateName} has been approved and moved to Shortlist!`);
       onApproved?.(evaluationResult.id);
     } catch (err: any) {
       console.error('[CvEvaluationPanel] Approval error:', err);
@@ -404,20 +416,38 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
     } finally {
       setIsApproving(false);
     }
-  }, [evaluationResult, candidateName, onApproved]);
+  }, [evaluationResult, candidateId, jobId, candidateName, onApproved]);
 
   const handleReject = useCallback(async () => {
     if (!evaluationResult) return;
     try {
       setIsApproving(true);
-      await cvEvaluationApi.approve(evaluationResult.id, { decision: 'Rejected' });
+      setError(null);
+      setSuccessMessage(null);
+
+      // 1. Record HITL decision in CvEvaluationResults table
+      await cvEvaluationApi.approve(evaluationResult.id, {
+        decision: 'Rejected',
+        reviewerNotes: `Rejected by recruiter on ${new Date().toLocaleString()}.`,
+      });
+
+      // 2. Also update ATS pipeline so candidate is marked Rejected
+      try {
+        await jobApplicationsApi.rejectApplicant(jobId, [candidateId]);
+      } catch (atsErr) {
+        console.warn('[CvEvaluationPanel] ATS rejection update warning:', atsErr);
+      }
+
       setEvaluationResult(prev => prev ? { ...prev, approvalStatus: 'Rejected' } : null);
+      setSuccessMessage(`${candidateName} has been marked as Rejected.`);
+      onApproved?.(evaluationResult.id);
     } catch (err: any) {
+      console.error('[CvEvaluationPanel] Rejection error:', err);
       setError(err?.message || 'Failed to reject evaluation.');
     } finally {
       setIsApproving(false);
     }
-  }, [evaluationResult]);
+  }, [evaluationResult, candidateId, jobId, candidateName, onApproved]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -974,31 +1004,38 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
                 type="button"
                 id={`btn-reject-evaluation-${candidateId}`}
                 onClick={handleReject}
-                disabled={isApproving || evaluationResult.approvalStatus !== 'Pending'}
+                disabled={isApproving || evaluationResult.approvalStatus === 'Rejected'}
+                title={evaluationResult.approvalStatus === 'Rejected' ? 'Candidate is currently rejected' : 'Reject this candidate'}
                 style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                   padding: '8px 16px', borderRadius: '9px',
                   fontSize: '12.5px', fontWeight: 600,
                   transition: 'all 0.15s ease',
-                  cursor: isApproving || evaluationResult.approvalStatus !== 'Pending' ? 'not-allowed' : 'pointer',
-                  opacity: isApproving || evaluationResult.approvalStatus !== 'Pending' ? 0.5 : 1,
-                  background: '#ffffff', border: '1px solid #fecaca', color: '#b91c1c',
+                  cursor: isApproving || evaluationResult.approvalStatus === 'Rejected' ? 'not-allowed' : 'pointer',
+                  opacity: isApproving || evaluationResult.approvalStatus === 'Rejected' ? 0.55 : 1,
+                  background: evaluationResult.approvalStatus === 'Rejected' ? '#fef2f2' : '#ffffff',
+                  border: `1px solid ${evaluationResult.approvalStatus === 'Rejected' ? '#fca5a5' : '#fecaca'}`,
+                  color: '#b91c1c',
                 }}
                 onMouseEnter={e => {
-                  if (!isApproving && evaluationResult.approvalStatus === 'Pending') {
+                  if (!isApproving && evaluationResult.approvalStatus !== 'Rejected') {
                     const b = e.currentTarget as HTMLButtonElement;
                     b.style.background = '#fef2f2'; b.style.borderColor = '#f87171';
                   }
                 }}
                 onMouseLeave={e => {
-                  if (!isApproving && evaluationResult.approvalStatus === 'Pending') {
+                  if (!isApproving && evaluationResult.approvalStatus !== 'Rejected') {
                     const b = e.currentTarget as HTMLButtonElement;
                     b.style.background = '#ffffff'; b.style.borderColor = '#fecaca';
                   }
                 }}
               >
-                <XIcon size={12} />
-                <span>Reject</span>
+                {isApproving && evaluationResult.approvalStatus !== 'Approved'
+                  ? <><div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2px solid rgba(185,28,28,0.3)', borderTopColor: '#b91c1c', animation: 'cv-eval-spin 0.75s linear infinite' }} /><span>Rejecting...</span></>
+                  : evaluationResult.approvalStatus === 'Rejected'
+                    ? <><ShieldXIcon size={14} /><span>Rejected</span></>
+                    : <><XIcon size={12} /><span>Reject Candidate</span></>
+                }
               </button>
 
               {/* Approve & Shortlist — .candidate-cv-drawer-btn-primary */}
@@ -1006,36 +1043,37 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
                 type="button"
                 id={`btn-approve-shortlist-${candidateId}`}
                 onClick={handleApprove}
-                disabled={isApproving || evaluationResult.approvalStatus !== 'Pending'}
+                disabled={isApproving || evaluationResult.approvalStatus === 'Approved'}
+                title={evaluationResult.approvalStatus === 'Approved' ? 'Candidate is currently approved and shortlisted' : 'Approve and shortlist this candidate'}
                 style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                   padding: '8px 18px', borderRadius: '9px',
                   fontSize: '12.5px', fontWeight: 600,
                   transition: 'all 0.15s ease',
-                  cursor: isApproving || evaluationResult.approvalStatus !== 'Pending' ? 'not-allowed' : 'pointer',
-                  opacity: isApproving || evaluationResult.approvalStatus !== 'Pending' ? 0.65 : 1,
-                  ...(evaluationResult.approvalStatus === 'Approved'
-                    ? { background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#047857' }
-                    : { background: '#00b074', border: '1px solid #009e67', color: '#ffffff', boxShadow: '0 4px 12px rgba(0,176,116,0.25)' }
-                  ),
+                  cursor: isApproving || evaluationResult.approvalStatus === 'Approved' ? 'not-allowed' : 'pointer',
+                  opacity: isApproving || evaluationResult.approvalStatus === 'Approved' ? 0.7 : 1,
+                  background: evaluationResult.approvalStatus === 'Approved' ? '#ecfdf5' : '#00b074',
+                  border: `1px solid ${evaluationResult.approvalStatus === 'Approved' ? '#a7f3d0' : '#009e67'}`,
+                  color: evaluationResult.approvalStatus === 'Approved' ? '#047857' : '#ffffff',
+                  boxShadow: evaluationResult.approvalStatus === 'Approved' ? 'none' : '0 4px 12px rgba(0,176,116,0.25)',
                 }}
                 onMouseEnter={e => {
-                  if (!isApproving && evaluationResult.approvalStatus === 'Pending') {
+                  if (!isApproving && evaluationResult.approvalStatus !== 'Approved') {
                     const b = e.currentTarget as HTMLButtonElement;
                     b.style.background = '#009663'; b.style.transform = 'translateY(-1px)';
                   }
                 }}
                 onMouseLeave={e => {
-                  if (!isApproving && evaluationResult.approvalStatus === 'Pending') {
+                  if (!isApproving && evaluationResult.approvalStatus !== 'Approved') {
                     const b = e.currentTarget as HTMLButtonElement;
                     b.style.background = '#00b074'; b.style.transform = 'translateY(0)';
                   }
                 }}
               >
-                {isApproving
+                {isApproving && evaluationResult.approvalStatus !== 'Rejected'
                   ? <><div style={{ width: '13px', height: '13px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', animation: 'cv-eval-spin 0.75s linear infinite' }} /><span>Saving...</span></>
                   : evaluationResult.approvalStatus === 'Approved'
-                    ? <><CheckCircleIcon /><span>Approved</span></>
+                    ? <><ShieldCheckIcon size={15} /><span>Approved &amp; Shortlisted</span></>
                     : <><CheckCircleIcon /><span>Approve &amp; Shortlist</span></>
                 }
               </button>

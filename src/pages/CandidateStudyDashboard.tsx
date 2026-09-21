@@ -6,19 +6,32 @@ import {
 } from '../services/api';
 import {
   StudyDashboardHeader,
-  StudyTabsNavigation,
-  type StudyTabKey,
+  StudyJobDropdown,
   StudyFocusAreaCard,
   StudyDisclaimerFooter,
 } from '../components/interview-prep';
-import { ArrowLeftIcon, SparkleIcon, CheckIcon } from '../components/common/Icons';
+import { ArrowLeftIcon, SparkleIcon, TargetIcon, CheckIcon } from '../components/common/Icons';
 import './CandidateStudyDashboard.css';
 
 const LightbulbIcon: React.FC = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
     <path d="M9 18h6" />
     <path d="M10 22h4" />
+  </svg>
+);
+
+const BookCheckIcon: React.FC = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+    <path d="m9 10 2 2 4-4" />
+  </svg>
+);
+
+const CodeTerminalIcon: React.FC = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="16 18 22 12 16 6" />
+    <polyline points="8 6 2 12 8 18" />
   </svg>
 );
 
@@ -26,79 +39,88 @@ export const CandidateStudyDashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [guide, setGuide] = useState<InterviewPrepGuideDto | null>(null);
+  // All available guides for the current candidate
+  const [guides, setGuides] = useState<InterviewPrepGuideDto[]>([]);
+  // Currently active selected guide (defaults to first available)
+  const [selectedGuide, setSelectedGuide] = useState<InterviewPrepGuideDto | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Active study tab state:
-  // Tab 1: 'theory' (Key Theoretical Areas)
-  // Tab 2: 'core' (Technical Core Concepts)
-  // Tab 3: 'practical' (Practical Implementation Focus)
-  // Tab 4: 'coach' (Coach Strategies & Checklist)
-  const [activeTab, setActiveTab] = useState<StudyTabKey>('theory');
+  // Active section filter: 'both' (default) | 'theory' | 'practical' | 'coach'
+  const [activeSectionView, setActiveSectionView] = useState<'both' | 'theory' | 'practical' | 'coach'>('both');
 
   // Accordion expansion state per focus area
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
 
+  // 1. Fetch all available interview preparation guides on mount
   useEffect(() => {
     let isMounted = true;
 
-    const fetchGuide = async () => {
+    const fetchAllGuides = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        let data: InterviewPrepGuideDto | null = null;
 
+        let list: InterviewPrepGuideDto[] = [];
+
+        try {
+          list = await interviewPrepApi.getAll();
+        } catch (err: unknown) {
+          console.warn('interviewPrepApi.getAll() failed, falling back:', err);
+        }
+
+        // If route has specific :id parameter, also fetch or locate that specific guide
         if (id) {
-          data = await interviewPrepApi.getById(id);
-        } else {
-          // Check cached guide ID from recent generation
-          const cachedId = localStorage.getItem('skillhub_last_guide_id');
-          if (cachedId) {
+          const found = list.find((g) => g.id === id || g.applicationId === id);
+          if (!found) {
             try {
-              data = await interviewPrepApi.getById(cachedId);
+              const specific = await interviewPrepApi.getById(id);
+              if (specific) {
+                list = [specific, ...list.filter((g) => g.id !== specific.id)];
+              }
             } catch {
               // fallback
             }
           }
-          if (!data) {
-            try {
-              data = await interviewPrepApi.getLatest();
-            } catch {
-              // no latest guide
+        }
+
+        // Fallback to latest or demo data if empty
+        if (list.length === 0) {
+          try {
+            const latest = await interviewPrepApi.getLatest();
+            if (latest) {
+              list = [latest];
             }
+          } catch {
+            // no latest guide
           }
         }
 
         if (!isMounted) return;
 
-        if (!data) {
-          setError('No study guide has been generated yet. Please visit the Interview Prep Hub to create your personalized guideline.');
-          setIsLoading(false);
-          return;
-        }
+        setGuides(list);
 
-        setGuide(data);
-        if (data.id) {
-          localStorage.setItem('skillhub_last_guide_id', data.id);
-        }
+        if (list.length > 0) {
+          // Default to matching ID from URL or first available in the list
+          const target = (id && list.find((g) => g.id === id || g.applicationId === id)) || list[0];
+          setSelectedGuide(target);
+          localStorage.setItem('skillhub_last_guide_id', target.id);
 
-        // Auto-expand the first item in each section by default
-        const initialExpanded: Record<string, boolean> = {};
-        if (data.keyTheoreticalAreas?.length) {
-          initialExpanded[data.keyTheoreticalAreas[0].id] = true;
+          // Auto-expand the first item of each section for the active guide
+          const initialExpanded: Record<string, boolean> = {};
+          if (target.keyTheoreticalAreas?.length) {
+            initialExpanded[target.keyTheoreticalAreas[0].id] = true;
+          }
+          if (target.practicalImplementationFocus?.length) {
+            initialExpanded[target.practicalImplementationFocus[0].id] = true;
+          }
+          setExpandedCards(initialExpanded);
         }
-        if (data.technicalCoreConcepts?.length) {
-          initialExpanded[data.technicalCoreConcepts[0].id] = true;
-        }
-        if (data.practicalImplementationFocus?.length) {
-          initialExpanded[data.practicalImplementationFocus[0].id] = true;
-        }
-        setExpandedCards(initialExpanded);
       } catch (err: any) {
         if (isMounted) {
-          setError(err?.message || 'Failed to load the interview preparation guide.');
+          setError(err?.message || 'Failed to load interview preparation guides.');
         }
       } finally {
         if (isMounted) {
@@ -107,12 +129,28 @@ export const CandidateStudyDashboard: React.FC = () => {
       }
     };
 
-    fetchGuide();
+    fetchAllGuides();
 
     return () => {
       isMounted = false;
     };
   }, [id]);
+
+  // Handle instant dropdown selection change
+  const handleSelectGuide = (guide: InterviewPrepGuideDto) => {
+    setSelectedGuide(guide);
+    localStorage.setItem('skillhub_last_guide_id', guide.id);
+
+    // Auto-expand first item of each section for the newly selected guide
+    const newExpanded: Record<string, boolean> = {};
+    if (guide.keyTheoreticalAreas?.length) {
+      newExpanded[guide.keyTheoreticalAreas[0].id] = true;
+    }
+    if (guide.practicalImplementationFocus?.length) {
+      newExpanded[guide.practicalImplementationFocus[0].id] = true;
+    }
+    setExpandedCards(newExpanded);
+  };
 
   const toggleAccordion = (cardId: string) => {
     setExpandedCards((prev) => ({
@@ -128,7 +166,7 @@ export const CandidateStudyDashboard: React.FC = () => {
     }));
   };
 
-  // Loading State View
+  // Loading State
   if (isLoading) {
     return (
       <div className="study-dashboard-page">
@@ -140,221 +178,308 @@ export const CandidateStudyDashboard: React.FC = () => {
             </div>
           </div>
           <h2 className="study-loading-title">
-            Loading Technical Career Coach Study Guideline...
+            Loading Interview Preparation Guidelines...
           </h2>
           <p className="study-loading-subtitle">
-            Retrieving theoretical focus areas, core technical concepts, and practical priorities.
+            Retrieving interview roles, theoretical foundations, and practical implementation guidelines.
           </p>
         </div>
       </div>
     );
   }
 
-  // Error / Not Found View
-  if (error || !guide) {
+  // Empty State: No interview guides available
+  if (!isLoading && (!selectedGuide || guides.length === 0)) {
     return (
       <div className="study-dashboard-page">
-        <div className="study-error-card">
-          <h2>Study Guide Not Found</h2>
-          <p>{error || 'The requested study guide was not found or has expired.'}</p>
-          <button
-            type="button"
-            className="btn-back-to-hub"
-            onClick={() => navigate('/candidate/interview-prep')}
-          >
-            <ArrowLeftIcon />
-            <span>Return to Interview Prep Hub</span>
-          </button>
+        <div className="study-empty-state-card">
+          <div className="study-empty-icon-box">
+            <TargetIcon />
+          </div>
+          <span className="study-empty-pill">NO INTERVIEW GUIDES AVAILABLE</span>
+          <h2 className="study-empty-heading">No Active Interview Guides Found</h2>
+          <p className="study-empty-text">
+            You currently have no interview preparation guidelines generated. Guides unlock automatically when your job application progresses to the Interview stage.
+          </p>
+          <div className="study-empty-actions-row">
+            <button
+              type="button"
+              className="btn-back-to-hub"
+              onClick={() => navigate('/candidate/interview-prep')}
+            >
+              <ArrowLeftIcon />
+              <span>Go to Interview Prep Hub</span>
+            </button>
+            <button
+              type="button"
+              className="btn-study-print"
+              onClick={() => navigate('/candidate/applications')}
+            >
+              <span>Track Applied Jobs</span>
+            </button>
+          </div>
         </div>
+
+        {/* Persistent Disclaimer Footer */}
+        <StudyDisclaimerFooter />
       </div>
     );
   }
 
   return (
     <div className="study-dashboard-page">
-      {/* 1. Persistent Header (Job Title, Role, Back Button & Print Action) */}
-      <StudyDashboardHeader guide={guide} />
+      {/* 1. Single-Page Dropdown Job Selector at Top of Dashboard */}
+      {guides.length > 0 && (
+        <StudyJobDropdown
+          guides={guides}
+          selectedGuide={selectedGuide}
+          onSelectGuide={handleSelectGuide}
+        />
+      )}
 
-      {/* 2. Interactive Horizontal Tabs Navigation */}
-      <StudyTabsNavigation
-        activeTab={activeTab}
-        onSelectTab={setActiveTab}
-        theoryCount={guide.keyTheoreticalAreas?.length || 0}
-        coreCount={guide.technicalCoreConcepts?.length || 0}
-        practicalCount={guide.practicalImplementationFocus?.length || 0}
-        coachCount={(guide.proTips?.length || 0) + (guide.preparationChecklist?.length || 0)}
-      />
-
-      {/* 3. Tab Content Display Area (Only active tab content is rendered with smooth transition) */}
-      <main className="study-content-area" role="tabpanel">
-        {/* Tab 1: Key Theoretical Areas */}
-        {activeTab === 'theory' && (
-          <div className="study-tab-pane" key="tab-theory">
-            <div className="study-section-banner">
-              <div className="study-section-indicator">
-                <span className="section-pill">TAB 1 • THEORETICAL MAIN CONCEPTS</span>
-              </div>
-              <h2 className="study-section-title">Theoretical Main Concepts to Master</h2>
-              <p className="study-section-description">
-                Core theoretical principles, computer science foundations, and architectural paradigms expected for the{' '}
-                <strong>{guide.targetRole || guide.jobTitle}</strong> position.
-              </p>
-            </div>
-
-            <div className="study-cards-column">
-              {guide.keyTheoreticalAreas && guide.keyTheoreticalAreas.length > 0 ? (
-                guide.keyTheoreticalAreas.map((item) => (
-                  <StudyFocusAreaCard
-                    key={item.id}
-                    item={item}
-                    isExpanded={!!expandedCards[item.id]}
-                    onToggle={() => toggleAccordion(item.id)}
-                  />
-                ))
-              ) : (
-                <div className="study-empty-pane">
-                  <p>No theoretical focus areas available for this role.</p>
-                </div>
-              )}
-            </div>
+      {/* Error Notice if any */}
+      {error && (
+        <div className="prep-error-alert" role="alert">
+          <div className="prep-error-text">
+            <strong>Notice:</strong> {error}
           </div>
-        )}
+          <button
+            type="button"
+            className="prep-error-dismiss"
+            onClick={() => setError(null)}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
-        {/* Tab 2: Technical Core Concepts */}
-        {activeTab === 'core' && (
-          <div className="study-tab-pane" key="tab-core">
-            <div className="study-section-banner">
-              <div className="study-section-indicator">
-                <span className="section-pill">TAB 2 • TECHNICAL CORE CONCEPTS</span>
-              </div>
-              <h2 className="study-section-title">Technical Core Concepts Deep Dive</h2>
-              <p className="study-section-description">
-                In-depth runtime execution models, concurrency patterns, memory lifecycles, and database query optimization pipelines.
-              </p>
-            </div>
+      {/* 2. Contextual Persistent Header identifying the Selected Interview */}
+      {selectedGuide && <StudyDashboardHeader guide={selectedGuide} />}
 
-            <div className="study-cards-column">
-              {guide.technicalCoreConcepts && guide.technicalCoreConcepts.length > 0 ? (
-                guide.technicalCoreConcepts.map((item) => (
-                  <StudyFocusAreaCard
-                    key={item.id}
-                    item={item}
-                    isExpanded={!!expandedCards[item.id]}
-                    onToggle={() => toggleAccordion(item.id)}
-                  />
-                ))
-              ) : (
-                <div className="study-empty-pane">
-                  <p>No technical core concepts recorded for this role.</p>
-                </div>
-              )}
-            </div>
+      {/* View Switcher Pill Bar (View Both, Theoretical Only, Practical Only, Coach Tips) */}
+      {selectedGuide && (
+        <div className="study-sections-switcher-bar">
+          <div className="switcher-label-group">
+            <span className="switcher-label">STUDY SECTIONS:</span>
           </div>
-        )}
 
-        {/* Tab 3: Practical Implementation Guidelines */}
-        {activeTab === 'practical' && (
-          <div className="study-tab-pane" key="tab-practical">
-            <div className="study-section-banner">
-              <div className="study-section-indicator">
-                <span className="section-pill">TAB 3 • PRACTICAL IMPLEMENTATION GUIDELINES</span>
-              </div>
-              <h2 className="study-section-title">Practical Implementation Guidelines</h2>
-              <p className="study-section-description">
-                Real-world coding workflows, hands-on implementation priorities, schema migrations, and production diagnostics.
-              </p>
-            </div>
+          <div className="switcher-buttons-cluster">
+            <button
+              type="button"
+              className={`switcher-btn ${activeSectionView === 'both' ? 'active' : ''}`}
+              onClick={() => setActiveSectionView('both')}
+            >
+              <span>All Core Guidelines</span>
+            </button>
 
-            <div className="study-cards-column">
-              {guide.practicalImplementationFocus && guide.practicalImplementationFocus.length > 0 ? (
-                guide.practicalImplementationFocus.map((item) => (
-                  <StudyFocusAreaCard
-                    key={item.id}
-                    item={item}
-                    isExpanded={!!expandedCards[item.id]}
-                    onToggle={() => toggleAccordion(item.id)}
-                  />
-                ))
-              ) : (
-                <div className="study-empty-pane">
-                  <p>No practical implementation areas recorded for this role.</p>
-                </div>
-              )}
-            </div>
+            <button
+              type="button"
+              className={`switcher-btn ${activeSectionView === 'theory' ? 'active' : ''}`}
+              onClick={() => setActiveSectionView('theory')}
+            >
+              <span>Theoretical Main Concepts</span>
+              <span className="switcher-count">
+                {selectedGuide.keyTheoreticalAreas?.length || 0}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className={`switcher-btn ${activeSectionView === 'practical' ? 'active' : ''}`}
+              onClick={() => setActiveSectionView('practical')}
+            >
+              <span>Practical Implementation Guidelines</span>
+              <span className="switcher-count">
+                {selectedGuide.practicalImplementationFocus?.length || 0}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className={`switcher-btn ${activeSectionView === 'coach' ? 'active' : ''}`}
+              onClick={() => setActiveSectionView('coach')}
+            >
+              <span>Coach Strategies</span>
+              <span className="switcher-count">
+                {(selectedGuide.proTips?.length || 0) + (selectedGuide.preparationChecklist?.length || 0)}
+              </span>
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Tab 4: Career Coach Strategies & Readiness */}
-        {activeTab === 'coach' && (
-          <div className="study-tab-pane" key="tab-coach">
-            <div className="study-section-banner">
-              <div className="study-section-indicator">
-                <span className="section-pill">STRATEGIES &amp; READINESS</span>
-              </div>
-              <h2 className="study-section-title">Career Coach Strategic Insights</h2>
-              <p className="study-section-description">
-                Communication strategies, architecture trade-off discussions, and an interview day checklist.
-              </p>
-            </div>
-
-            {/* Strategic Pro Tips */}
-            {guide.proTips && guide.proTips.length > 0 && (
-              <div className="study-coach-tips-grid">
-                {guide.proTips.map((tip, idx) => (
-                  <div key={idx} className="study-coach-tip-card">
-                    <div className="coach-tip-badge-icon">
-                      <LightbulbIcon />
+      {/* 3. Dynamic Content Rendering: Core Guideline Cards */}
+      {selectedGuide && (
+        <main className="study-content-area" key={selectedGuide.id}>
+          {/* CORE CARD 1: Theoretical Main Concepts */}
+          {(activeSectionView === 'both' || activeSectionView === 'theory') && (
+            <section className="study-core-section-card">
+              <div className="study-section-banner">
+                <div className="study-section-header-row">
+                  <div className="study-section-icon-box">
+                    <BookCheckIcon />
+                  </div>
+                  <div className="study-section-header-titles">
+                    <div className="study-section-indicator">
+                      <span className="section-pill">CORE SECTION 1 • THEORETICAL MAIN CONCEPTS</span>
+                      <span className="study-section-badge-counter">
+                        {selectedGuide.keyTheoreticalAreas?.length || 0} Focus Areas
+                      </span>
                     </div>
-                    <div className="coach-tip-card-content">
-                      <h4>Strategic Guideline #{idx + 1}</h4>
-                      <p>{tip}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Interactive Day-of-Interview Checklist */}
-            {guide.preparationChecklist && guide.preparationChecklist.length > 0 && (
-              <div className="study-readiness-checklist-card">
-                <div className="checklist-card-header">
-                  <div className="checklist-icon-wrap">
-                    <CheckIcon />
-                  </div>
-                  <div>
-                    <h3>Interview Day Readiness Checklist</h3>
-                    <p>Track your preparation steps prior to joining the candidate interview.</p>
+                    <h2 className="study-section-title">Theoretical Main Concepts to Master</h2>
+                    <p className="study-section-description">
+                      Foundational software engineering theories, architectural patterns, and computer science principles expected for{' '}
+                      <strong>{selectedGuide.targetRole || selectedGuide.jobTitle}</strong> at{' '}
+                      <strong>{selectedGuide.companyName || 'Enterprise Partner'}</strong>.
+                    </p>
                   </div>
                 </div>
+              </div>
 
-                <div className="checklist-items-list">
-                  {guide.preparationChecklist.map((item, idx) => {
-                    const isChecked = !!checkedItems[idx];
-                    return (
-                      <div
-                        key={idx}
-                        className={`checklist-item-row ${isChecked ? 'is-checked' : ''}`}
-                        onClick={() => toggleChecklist(idx)}
-                        role="checkbox"
-                        aria-checked={isChecked}
-                        tabIndex={0}
-                        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleChecklist(idx)}
-                      >
-                        <div className="checklist-item-box">
-                          {isChecked && <CheckIcon />}
-                        </div>
-                        <span className="checklist-item-text">{item}</span>
+              <div className="study-cards-column">
+                {selectedGuide.keyTheoreticalAreas && selectedGuide.keyTheoreticalAreas.length > 0 ? (
+                  selectedGuide.keyTheoreticalAreas.map((item) => (
+                    <StudyFocusAreaCard
+                      key={item.id}
+                      item={item}
+                      isExpanded={!!expandedCards[item.id]}
+                      onToggle={() => toggleAccordion(item.id)}
+                    />
+                  ))
+                ) : (
+                  <div className="study-empty-pane">
+                    <p>No theoretical focus areas available for this role.</p>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* CORE CARD 2: Practical Implementation Guidelines */}
+          {(activeSectionView === 'both' || activeSectionView === 'practical') && (
+            <section className="study-core-section-card">
+              <div className="study-section-banner practical-banner">
+                <div className="study-section-header-row">
+                  <div className="study-section-icon-box practical-icon-box">
+                    <CodeTerminalIcon />
+                  </div>
+                  <div className="study-section-header-titles">
+                    <div className="study-section-indicator">
+                      <span className="section-pill practical-pill">CORE SECTION 2 • PRACTICAL IMPLEMENTATION GUIDELINES</span>
+                      <span className="study-section-badge-counter practical-counter">
+                        {selectedGuide.practicalImplementationFocus?.length || 0} Practical Topics
+                      </span>
+                    </div>
+                    <h2 className="study-section-title">Practical Implementation Guidelines</h2>
+                    <p className="study-section-description">
+                      Real-world coding workflows, distributed communication patterns, database indexing, and production diagnostics for{' '}
+                      <strong>{selectedGuide.targetRole || selectedGuide.jobTitle}</strong>.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="study-cards-column">
+                {selectedGuide.practicalImplementationFocus && selectedGuide.practicalImplementationFocus.length > 0 ? (
+                  selectedGuide.practicalImplementationFocus.map((item) => (
+                    <StudyFocusAreaCard
+                      key={item.id}
+                      item={item}
+                      isExpanded={!!expandedCards[item.id]}
+                      onToggle={() => toggleAccordion(item.id)}
+                    />
+                  ))
+                ) : (
+                  <div className="study-empty-pane">
+                    <p>No practical implementation guidelines recorded for this role.</p>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* SECTION 3: Career Coach Strategies & Readiness (Visible in 'both' or 'coach') */}
+          {(activeSectionView === 'both' || activeSectionView === 'coach') && (
+            <section className="study-core-section-card">
+              <div className="study-section-banner coach-banner">
+                <div className="study-section-header-row">
+                  <div className="study-section-icon-box coach-icon-box">
+                    <LightbulbIcon />
+                  </div>
+                  <div className="study-section-header-titles">
+                    <div className="study-section-indicator">
+                      <span className="section-pill coach-pill">CAREER COACH • STRATEGIES &amp; READINESS</span>
+                      <span className="study-section-badge-counter coach-counter">
+                        {(selectedGuide.proTips?.length || 0) + (selectedGuide.preparationChecklist?.length || 0)} Strategies
+                      </span>
+                    </div>
+                    <h2 className="study-section-title">Career Coach Strategic Insights</h2>
+                    <p className="study-section-description">
+                      Interview room strategies, structured communication frameworks, and readiness checklist items.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Strategic Pro Tips */}
+              {selectedGuide.proTips && selectedGuide.proTips.length > 0 && (
+                <div className="study-coach-tips-grid">
+                  {selectedGuide.proTips.map((tip, idx) => (
+                    <div key={idx} className="study-coach-tip-card">
+                      <div className="coach-tip-badge-icon">
+                        <LightbulbIcon />
                       </div>
-                    );
-                  })}
+                      <div className="coach-tip-card-content">
+                        <h4>Strategic Guideline #{idx + 1}</h4>
+                        <p>{tip}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            )}
-          </div>
-        )}
-      </main>
+              )}
 
-      {/* 4. Persistent Disclaimer Footer (Anchored permanently below all tab contents) */}
+              {/* Interactive Day-of-Interview Checklist */}
+              {selectedGuide.preparationChecklist && selectedGuide.preparationChecklist.length > 0 && (
+                <div className="study-readiness-checklist-card">
+                  <div className="checklist-card-header">
+                    <div className="checklist-icon-wrap">
+                      <CheckIcon />
+                    </div>
+                    <div>
+                      <h3>Interview Day Readiness Checklist</h3>
+                      <p>Track your preparation steps prior to joining the candidate interview.</p>
+                    </div>
+                  </div>
+
+                  <div className="checklist-items-list">
+                    {selectedGuide.preparationChecklist.map((item, idx) => {
+                      const isChecked = !!checkedItems[idx];
+                      return (
+                        <div
+                          key={idx}
+                          className={`checklist-item-row ${isChecked ? 'is-checked' : ''}`}
+                          onClick={() => toggleChecklist(idx)}
+                          role="checkbox"
+                          aria-checked={isChecked}
+                          tabIndex={0}
+                          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleChecklist(idx)}
+                        >
+                          <div className="checklist-item-box">
+                            {isChecked && <CheckIcon />}
+                          </div>
+                          <span className="checklist-item-text">{item}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
+        </main>
+      )}
+
+      {/* 4. Persistent Disclaimer Footer Anchored Permanently at Bottom */}
       <StudyDisclaimerFooter />
     </div>
   );

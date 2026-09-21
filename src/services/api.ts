@@ -2053,4 +2053,12 @@ export const interviewPrepApi = {
     request<InterviewPrepGuideDto>(
       jobId ? `/interviewprep/latest?jobId=${jobId}` : '/interviewprep/latest'
     ),
+
+  /**
+   * GET /api/interviewprep/my-guides
+   * Retrieves all interview preparation guides for the current candidate.
+   */
+  getAll: () =>
+    request<InterviewPrepGuideDto[]>('/interviewprep/my-guides'),
 };
+

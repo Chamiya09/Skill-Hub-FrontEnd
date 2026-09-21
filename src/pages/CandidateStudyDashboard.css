@@ -1,15 +1,34 @@
 /* ==========================================================================
    Candidate Study Dashboard Styles (Student 1 Module)
-   Interactive Tabs, Persistent Header/Footer, Clean Typography & Theme Tokens
+   Flawlessly synchronized with Candidate Portal Theme Tokens & Typography
    ========================================================================== */
 
-/* Main Container */
+:root {
+  --study-primary: #00b074;
+  --study-primary-dark: #009663;
+  --study-primary-light: #ecfdf5;
+  --study-primary-border: #a7f3d0;
+  --study-text-dark: #0f172a;
+  --study-text-muted: #64748b;
+  --study-text-light: #94a3b8;
+  --study-card-border: #dce7e3;
+  --study-card-bg: #ffffff;
+  --study-card-shadow: 0 1px 3px #0f172a08, 0 6px 20px #0f172a05;
+  --study-card-radius: 18px;
+  --study-font-family: var(--font-family, "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+}
+
+/* ==========================================================================
+   1. Main Page Container Layout
+   ========================================================================== */
 .study-dashboard-page {
   width: min(100%, 1280px);
   margin: auto;
   padding: 26px 24px 48px;
   display: grid;
-  gap: 24px;
+  gap: 22px;
+  font-family: var(--study-font-family);
+  color: var(--study-text-dark);
 }
 
 .dashboard-viewport > .study-dashboard-page {
@@ -20,7 +39,155 @@
 }
 
 /* ==========================================================================
-   1. Persistent Top Navigation & Role Banner
+   2. Dropdown Job Selector (Header Area) & Single-Page Architecture
+   ========================================================================== */
+.study-dropdown-banner {
+  background: var(--study-card-bg);
+  border: 1px solid var(--study-card-border);
+  border-radius: var(--study-card-radius);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  box-shadow: var(--study-card-shadow);
+  transition: all 0.2s ease;
+}
+
+.study-dropdown-banner:hover {
+  border-color: #cbd5e1;
+}
+
+.study-dropdown-left {
+  flex: 1;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.study-dropdown-label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.study-dropdown-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--study-primary-light);
+  color: var(--study-primary);
+  border: 1px solid var(--study-primary-border);
+  flex-shrink: 0;
+}
+
+.study-dropdown-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.study-dropdown-label {
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--study-text-dark);
+  letter-spacing: -0.01em;
+}
+
+.study-dropdown-counter {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: var(--study-primary-light);
+  color: #047857;
+  border: 1px solid var(--study-primary-border);
+  letter-spacing: 0.02em;
+}
+
+.study-select-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+}
+
+.study-select-control {
+  width: 100%;
+  appearance: none;
+  background-color: #ffffff;
+  color: var(--study-text-dark);
+  border: 1.5px solid var(--study-card-border);
+  border-radius: 12px;
+  padding: 11px 42px 11px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.study-select-control:hover {
+  border-color: var(--study-primary);
+  background-color: #fcfdfd;
+}
+
+.study-select-control:focus {
+  outline: none;
+  border-color: var(--study-primary);
+  box-shadow: 0 0 0 3px rgba(0, 176, 116, 0.18);
+  background-color: #ffffff;
+}
+
+.study-select-chevron {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--study-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.study-select-chevron svg {
+  width: 18px;
+  height: 18px;
+}
+
+.study-dropdown-right {
+  display: flex;
+  align-items: center;
+}
+
+.study-quick-switch-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 650;
+  color: #047857;
+  background: var(--study-primary-light);
+  border: 1px solid var(--study-primary-border);
+  border-radius: 10px;
+  padding: 8px 14px;
+}
+
+.study-quick-switch-hint svg {
+  width: 15px;
+  height: 15px;
+  color: var(--study-primary);
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   3. Persistent Top Navigation & Contextual Hero Header
    ========================================================================== */
 .study-persistent-header {
   display: grid;
@@ -52,9 +219,9 @@
 }
 
 .btn-back-to-hub:hover {
-  background: #ecfdf5;
+  background: var(--study-primary-light);
   color: #047857;
-  border-color: #a7f3d0;
+  border-color: var(--study-primary-border);
   transform: translateX(-2px);
 }
 
@@ -86,8 +253,8 @@
 
 .btn-study-print:hover {
   background: #f8fafc;
-  color: #00b074;
-  border-color: #00b074;
+  color: var(--study-primary);
+  border-color: var(--study-primary);
 }
 
 .btn-study-print svg {
@@ -95,11 +262,11 @@
   height: 15px;
 }
 
-/* Persistent Role Hero Banner */
+/* Persistent Hero Role Banner */
 .study-hero-banner {
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   color: #ffffff;
-  border-radius: 18px;
+  border-radius: var(--study-card-radius);
   padding: 28px 32px;
   position: relative;
   overflow: hidden;
@@ -255,7 +422,6 @@
   margin: 0;
 }
 
-
 .meta-strip-item {
   display: inline-flex;
   align-items: center;
@@ -293,226 +459,259 @@
 }
 
 /* ==========================================================================
-   2. Interactive Tabs Navigation (Horizontal)
+   4. Study Sections Switcher Bar
    ========================================================================== */
-.study-tabs-container {
-  background: #ffffff;
-  border: 1px solid #dce7e3;
-  border-radius: 18px;
-  padding: 8px;
-  box-shadow: 0 1px 3px #0f172a08, 0 4px 16px #0f172a04;
-}
-
-.study-tabs-track {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 8px;
-}
-
-.study-interactive-tab {
-  position: relative;
+.study-sections-switcher-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 18px;
-  border-radius: 14px;
-  border: 1.5px solid transparent;
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  user-select: none;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: var(--study-card-bg);
+  border: 1px solid var(--study-card-border);
+  border-radius: 16px;
+  padding: 10px 16px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
-.study-interactive-tab:hover {
-  background: #f8fafc;
-  border-color: #e2e8f0;
-}
-
-.study-interactive-tab.is-active {
-  background: #ecfdf5;
-  border-color: #a7f3d0;
-  box-shadow: 0 4px 14px #00b07414;
-}
-
-.tab-icon-wrap {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  background: #f1f5f9;
-  color: #64748b;
-  transition: all 0.2s ease;
-}
-
-.study-interactive-tab:hover .tab-icon-wrap {
-  color: #0f172a;
-  background: #e2e8f0;
-}
-
-.study-interactive-tab.is-active .tab-icon-wrap {
-  background: #00b074;
-  color: #ffffff;
-  box-shadow: 0 4px 10px #00b07430;
-}
-
-.tab-label-group {
-  min-width: 0;
+.switcher-label-group {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 6px;
 }
 
-.tab-badge-pill {
-  font-size: 10px;
-  font-weight: 850;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #94a3b8;
-}
-
-.study-interactive-tab.is-active .tab-badge-pill {
-  color: #047857;
-}
-
-.tab-title-text {
-  font-size: 13px;
-  font-weight: 750;
-  line-height: 1.25;
-  color: #334155;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.study-interactive-tab.is-active .tab-title-text {
-  color: #047857;
-}
-
-.tab-count-pill {
-  margin-left: auto;
+.switcher-label {
   font-size: 11px;
   font-weight: 800;
-  padding: 3px 9px;
-  border-radius: 999px;
+  letter-spacing: 0.05em;
+  color: var(--study-text-muted);
+  text-transform: uppercase;
+}
+
+.switcher-buttons-cluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.switcher-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.switcher-btn:hover {
   background: #f1f5f9;
-  color: #64748b;
-  transition: all 0.2s ease;
+  color: var(--study-text-dark);
+  border-color: #cbd5e1;
 }
 
-.study-interactive-tab.is-active .tab-count-pill {
-  background: #00b074;
+.switcher-btn.active {
+  background: var(--study-primary-light);
+  color: #047857;
+  border-color: var(--study-primary-border);
+  box-shadow: 0 2px 8px rgba(0, 176, 116, 0.12);
+}
+
+.switcher-count {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.06);
+  color: inherit;
+}
+
+.switcher-btn.active .switcher-count {
+  background: var(--study-primary);
   color: #ffffff;
-}
-
-/* Bold bottom indicator border for active state */
-.tab-active-indicator {
-  position: absolute;
-  bottom: -2px;
-  left: 20px;
-  right: 20px;
-  height: 3px;
-  background: #00b074;
-  border-radius: 3px 3px 0 0;
 }
 
 /* ==========================================================================
-   3. Tab Content Area & Smooth Transitions
+   5. Dynamic Content Area & Core Guideline Cards
    ========================================================================== */
 .study-content-area {
   display: grid;
-  gap: 20px;
+  gap: 22px;
 }
 
-.study-tab-pane {
+/* Core Guideline Card Container (Matches Candidate Portal Card System) */
+.study-core-section-card {
+  background: var(--study-card-bg);
+  border: 1px solid var(--study-card-border);
+  border-radius: var(--study-card-radius);
+  box-shadow: var(--study-card-shadow);
+  padding: 26px 28px;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  animation: studyTabFadeIn 0.22s ease-out;
+  transition: all 0.2s ease;
 }
 
-@keyframes studyTabFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.study-core-section-card:hover {
+  border-color: #cbd5e1;
 }
 
-/* Section Lead Banner */
+/* Card Header Banner */
 .study-section-banner {
-  background: #ffffff;
-  border: 1px solid #dce7e3;
-  border-radius: 16px;
-  padding: 20px 24px;
-  box-shadow: 0 1px 2px #0f172a06;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 18px;
+}
+
+.study-section-header-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.study-section-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--study-primary-light);
+  border: 1px solid var(--study-primary-border);
+  color: var(--study-primary);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 176, 116, 0.1);
+}
+
+.study-section-icon-box svg {
+  width: 20px;
+  height: 20px;
+}
+
+.study-section-icon-box.practical-icon-box {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  color: #0284c7;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.1);
+}
+
+.study-section-icon-box.coach-icon-box {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);
+}
+
+.study-section-header-titles {
+  flex: 1;
+  min-width: 0;
 }
 
 .study-section-indicator {
-  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
 }
 
 .section-pill {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #047857;
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
+  background: var(--study-primary-light);
+  border: 1px solid var(--study-primary-border);
   padding: 4px 10px;
   border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.section-pill.practical-pill {
+  color: #0369a1;
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.section-pill.coach-pill {
+  color: #b45309;
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.study-section-badge-counter {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.study-section-badge-counter.practical-counter {
+  background: #f0fdfa;
+  color: #0d9488;
+  border-color: #99f6e4;
+}
+
+.study-section-badge-counter.coach-counter {
+  background: #fefce8;
+  color: #ca8a04;
+  border-color: #fef08a;
 }
 
 .study-section-title {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 750;
-  color: #0f172a;
-  margin: 0 0 6px 0;
+  color: var(--study-text-dark);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.02em;
 }
 
 .study-section-description {
   font-size: 13px;
-  color: #64748b;
+  color: var(--study-text-muted);
   margin: 0;
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
 .study-cards-column {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 /* ==========================================================================
-   4. Study Focus Area Card (StudyFocusAreaCard)
+   6. Nested Focus Area Accordion Cards (StudyFocusAreaCard)
    ========================================================================== */
 .study-focus-card {
   background: #ffffff;
-  border: 1px solid #dce7e3;
-  border-radius: 16px;
-  box-shadow: 0 1px 3px #0f172a08, 0 4px 14px #0f172a04;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   overflow: hidden;
   transition: all 0.2s ease;
 }
 
 .study-focus-card:hover {
-  border-color: #a7f3d0;
-  box-shadow: 0 6px 20px #00b07412;
+  border-color: var(--study-primary-border);
+  box-shadow: 0 4px 14px rgba(0, 176, 116, 0.1);
 }
 
 .study-focus-card.is-expanded {
-  border-color: #bbf7d0;
-  box-shadow: 0 6px 22px #00b07416;
+  border-color: var(--study-primary-border);
+  box-shadow: 0 4px 18px rgba(0, 176, 116, 0.12);
 }
 
 .study-focus-header {
-  padding: 20px 24px;
+  padding: 18px 22px;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
@@ -523,12 +722,13 @@
 
 .study-focus-title-group {
   flex: 1;
+  min-width: 0;
 }
 
 .study-focus-meta-strip {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 8px;
   flex-wrap: wrap;
 }
@@ -556,16 +756,18 @@
   border: 1px solid #fca5a5;
 }
 
-.study-priority-badge.core-priority {
+.study-priority-badge.core-priority,
+.study-priority-badge.core-requirement {
   background: #fef3c7;
   color: #b45309;
   border: 1px solid #fcd34d;
 }
 
-.study-priority-badge.practical-priority {
-  background: #ecfdf5;
+.study-priority-badge.practical-priority,
+.study-priority-badge.practical-focus {
+  background: var(--study-primary-light);
   color: #047857;
-  border: 1px solid #a7f3d0;
+  border: 1px solid var(--study-primary-border);
 }
 
 .study-time-pill {
@@ -574,7 +776,7 @@
   gap: 5px;
   font-size: 11px;
   font-weight: 700;
-  color: #64748b;
+  color: var(--study-text-muted);
   background: #f8fafc;
   padding: 3px 9px;
   border-radius: 6px;
@@ -584,7 +786,7 @@
 .study-time-pill svg {
   width: 12px;
   height: 12px;
-  color: #94a3b8;
+  color: var(--study-text-light);
 }
 
 .study-section-tag {
@@ -598,16 +800,17 @@
 }
 
 .study-focus-heading {
-  font-size: 16px;
+  font-size: 15.5px;
   font-weight: 750;
-  color: #0f172a;
-  line-height: 1.4;
+  color: var(--study-text-dark);
+  line-height: 1.35;
   margin: 0 0 6px 0;
+  letter-spacing: -0.015em;
 }
 
 .study-focus-summary {
   font-size: 13px;
-  color: #475569;
+  color: var(--study-text-muted);
   line-height: 1.55;
   margin: 0;
 }
@@ -620,7 +823,7 @@
   place-items: center;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  color: #64748b;
+  color: var(--study-text-muted);
   flex-shrink: 0;
   transition: transform 0.2s ease, background 0.2s ease;
 }
@@ -632,48 +835,48 @@
 
 .study-expand-toggle.is-rotated {
   transform: rotate(180deg);
-  background: #ecfdf5;
-  color: #00b074;
-  border-color: #a7f3d0;
+  background: var(--study-primary-light);
+  color: var(--study-primary);
+  border-color: var(--study-primary-border);
 }
 
 /* Expanded Card Body */
 .study-focus-body {
-  padding: 0 24px 24px;
+  padding: 0 22px 20px;
   border-top: 1px solid #f1f5f9;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 
 .study-detail-block {
-  padding-top: 16px;
+  padding-top: 14px;
 }
 
 .study-block-heading {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #047857;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .study-block-heading svg {
   width: 15px;
   height: 15px;
-  color: #00b074;
+  color: var(--study-primary);
 }
 
 .study-block-heading.practical {
-  color: #1d4ed8;
+  color: #0369a1;
 }
 
 .study-block-heading.practical svg {
-  color: #2563eb;
+  color: #0284c7;
 }
 
 /* Bulleted concepts list */
@@ -682,7 +885,7 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 10px;
+  gap: 9px;
 }
 
 .study-concept-bullet-item {
@@ -698,7 +901,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #00b074;
+  background: var(--study-primary);
   margin-top: 7px;
   flex-shrink: 0;
 }
@@ -711,9 +914,9 @@
 .study-practical-callout {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-left: 4px solid #00b074;
+  border-left: 4px solid var(--study-primary);
   border-radius: 10px;
-  padding: 14px 18px;
+  padding: 14px 16px;
   font-size: 13px;
   color: #334155;
   line-height: 1.6;
@@ -724,14 +927,14 @@
   background: #f0fdf4;
   border: 1px solid #bbf7d0;
   border-radius: 12px;
-  padding: 14px 18px;
+  padding: 14px 16px;
   display: flex;
   align-items: flex-start;
   gap: 12px;
 }
 
 .coach-tip-icon {
-  color: #00b074;
+  color: var(--study-primary);
   flex-shrink: 0;
   margin-top: 1px;
 }
@@ -756,14 +959,14 @@
 }
 
 .coach-tip-text {
-  font-size: 13px;
-  color: #14532d;
+  font-size: 12.5px;
+  color: #065f46;
   line-height: 1.5;
   margin: 0;
 }
 
 /* ==========================================================================
-   5. Tab 4: Career Coach Strategies Grid & Checklist
+   7. Coach Tips Grid & Readiness Checklist
    ========================================================================== */
 .study-coach-tips-grid {
   display: grid;
@@ -773,7 +976,7 @@
 
 .study-coach-tip-card {
   background: #ffffff;
-  border: 1px solid #dce7e3;
+  border: 1px solid var(--study-card-border);
   border-radius: 14px;
   padding: 18px 20px;
   display: flex;
@@ -788,7 +991,7 @@
   border-radius: 10px;
   background: #f0fdf4;
   border: 1px solid #bbf7d0;
-  color: #00b074;
+  color: var(--study-primary);
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -802,7 +1005,7 @@
 .coach-tip-card-content h4 {
   font-size: 13.5px;
   font-weight: 750;
-  color: #0f172a;
+  color: var(--study-text-dark);
   margin: 0 0 4px 0;
 }
 
@@ -813,12 +1016,12 @@
   margin: 0;
 }
 
-/* Interview Day Checklist */
+/* Interview Day Readiness Checklist */
 .study-readiness-checklist-card {
   background: #ffffff;
-  border: 1px solid #dce7e3;
+  border: 1px solid var(--study-card-border);
   border-radius: 16px;
-  padding: 24px;
+  padding: 22px;
   box-shadow: 0 1px 3px #0f172a06;
 }
 
@@ -826,7 +1029,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   padding-bottom: 14px;
   border-bottom: 1px solid #f1f5f9;
 }
@@ -835,9 +1038,9 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
-  color: #00b074;
+  background: var(--study-primary-light);
+  border: 1px solid var(--study-primary-border);
+  color: var(--study-primary);
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -851,13 +1054,13 @@
 .checklist-card-header h3 {
   font-size: 15px;
   font-weight: 750;
-  color: #0f172a;
+  color: var(--study-text-dark);
   margin: 0 0 2px 0;
 }
 
 .checklist-card-header p {
   font-size: 12.5px;
-  color: #64748b;
+  color: var(--study-text-muted);
   margin: 0;
 }
 
@@ -885,8 +1088,8 @@
 }
 
 .checklist-item-row.is-checked {
-  background: #ecfdf5;
-  border-color: #a7f3d0;
+  background: var(--study-primary-light);
+  border-color: var(--study-primary-border);
 }
 
 .checklist-item-box {
@@ -902,8 +1105,8 @@
 }
 
 .checklist-item-row.is-checked .checklist-item-box {
-  background: #00b074;
-  border-color: #00b074;
+  background: var(--study-primary);
+  border-color: var(--study-primary);
   color: #ffffff;
 }
 
@@ -919,39 +1122,43 @@
 }
 
 .checklist-item-row.is-checked .checklist-item-text {
-  color: #64748b;
+  color: var(--study-text-muted);
   text-decoration: line-through;
 }
 
 /* ==========================================================================
-   6. Persistent Disclaimer Footer (Warning/Amber Notice)
+   8. Persistent Disclaimer Footer (Subtle, Muted Warning/Info Alert)
    ========================================================================== */
 .study-disclaimer-persistent-footer {
-  margin-top: 8px;
-  background: #fffbeb;
-  border: 1.5px solid #fde68a;
-  border-left: 6px solid #f59e0b;
-  border-radius: 16px;
-  padding: 18px 22px;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.08);
+  margin-top: 4px;
+  background: #fffdf5;
+  border: 1px solid #fef08a;
+  border-left: 4px solid #f59e0b;
+  border-radius: 14px;
+  padding: 14px 20px;
+  box-shadow: 0 1px 3px rgba(245, 158, 11, 0.05);
 }
 
 .study-disclaimer-inner {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 
 .study-disclaimer-icon-box {
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #fef3c7;
+  color: #d97706;
+  display: grid;
+  place-items: center;
 }
 
-.study-disclaimer-icon {
-  font-size: 24px;
-  line-height: 1;
+.study-disclaimer-icon-box svg {
+  width: 16px;
+  height: 16px;
 }
 
 .study-disclaimer-text-wrap {
@@ -960,29 +1167,95 @@
 
 .study-disclaimer-title {
   display: block;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 850;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #b45309;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .study-disclaimer-body {
   margin: 0;
-  font-size: 13px;
+  font-size: 12.5px;
   color: #92400e;
   font-weight: 550;
-  line-height: 1.55;
+  line-height: 1.5;
 }
 
 /* ==========================================================================
-   7. Loading & Error States
+   9. Clean Empty State & Loading State
    ========================================================================== */
+.study-empty-state-card {
+  background: #ffffff;
+  border: 1px solid var(--study-card-border);
+  border-radius: 20px;
+  padding: 56px 32px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: var(--study-card-shadow);
+}
+
+.study-empty-icon-box {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: var(--study-primary-light);
+  border: 1.5px solid var(--study-primary-border);
+  color: var(--study-primary);
+  display: grid;
+  place-items: center;
+  margin-bottom: 20px;
+}
+
+.study-empty-icon-box svg {
+  width: 32px;
+  height: 32px;
+}
+
+.study-empty-pill {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #047857;
+  background: var(--study-primary-light);
+  border: 1px solid var(--study-primary-border);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  margin-bottom: 12px;
+}
+
+.study-empty-heading {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--study-text-dark);
+  margin: 0 0 10px 0;
+  letter-spacing: -0.02em;
+}
+
+.study-empty-text {
+  font-size: 14px;
+  color: var(--study-text-muted);
+  max-width: 520px;
+  line-height: 1.6;
+  margin: 0 0 28px 0;
+}
+
+.study-empty-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .study-loading-card,
 .study-error-card {
   background: #ffffff;
-  border: 1px solid #dce7e3;
+  border: 1px solid var(--study-card-border);
   border-radius: 18px;
   padding: 64px 24px;
   text-align: center;
@@ -1000,9 +1273,15 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  border: 4px solid #ecfdf5;
-  border-top-color: #00b074;
+  border: 4px solid var(--study-primary-light);
+  border-top-color: var(--study-primary);
   animation: prepSpin 0.85s linear infinite;
+}
+
+@keyframes prepSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .study-loading-icon {
@@ -1010,7 +1289,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: #00b074;
+  color: var(--study-primary);
 }
 
 .study-loading-icon svg {
@@ -1021,13 +1300,13 @@
 .study-loading-title {
   font-size: 18px;
   font-weight: 750;
-  color: #0f172a;
+  color: var(--study-text-dark);
   margin: 0 0 6px 0;
 }
 
 .study-loading-subtitle {
   font-size: 13px;
-  color: #64748b;
+  color: var(--study-text-muted);
   margin: 0;
 }
 
@@ -1037,12 +1316,12 @@
   border-radius: 14px;
   padding: 36px 20px;
   text-align: center;
-  color: #64748b;
+  color: var(--study-text-muted);
   font-size: 13px;
 }
 
 /* ==========================================================================
-   8. Responsive Refinements
+   10. Responsive Refinements & Print Optimization
    ========================================================================== */
 @media (max-width: 768px) {
   .study-dashboard-page {
@@ -1050,12 +1329,27 @@
     gap: 18px;
   }
 
+  .study-dropdown-banner {
+    padding: 16px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .study-select-wrapper {
+    max-width: 100%;
+  }
+
   .study-hero-banner {
     padding: 22px 18px;
   }
 
-  .study-tabs-track {
-    grid-template-columns: 1fr;
+  .study-section-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .study-core-section-card {
+    padding: 20px 18px;
   }
 
   .study-focus-header {
@@ -1077,14 +1371,16 @@
   }
 }
 
-/* Print Optimization */
 @media print {
   .study-top-nav-bar,
-  .study-tabs-container {
+  .study-dropdown-banner,
+  .study-sections-switcher-bar {
     display: none !important;
   }
-  .study-tab-pane {
-    display: flex !important;
+  .study-core-section-card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    page-break-inside: avoid;
   }
   .study-focus-card {
     page-break-inside: avoid;

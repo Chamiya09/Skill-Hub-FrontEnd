@@ -10,7 +10,7 @@ import {
   StudyFocusAreaCard,
   StudyDisclaimerFooter,
 } from '../components/interview-prep';
-import { ArrowLeftIcon, SparkleIcon, TargetIcon } from '../components/common/Icons';
+import { SparkleIcon, TargetIcon } from '../components/common/Icons';
 import './CandidateStudyDashboard.css';
 
 const LightbulbIcon: React.FC = () => (
@@ -201,14 +201,6 @@ export const CandidateStudyDashboard: React.FC = () => {
             You currently have no interview preparation guidelines generated. Guides unlock automatically when your job application progresses to the Interview stage.
           </p>
           <div className="study-empty-actions-row">
-            <button
-              type="button"
-              className="btn-back-to-hub"
-              onClick={() => navigate('/candidate/interview-prep')}
-            >
-              <ArrowLeftIcon />
-              <span>Go to Interview Prep Hub</span>
-            </button>
             <button
               type="button"
               className="btn-study-print"

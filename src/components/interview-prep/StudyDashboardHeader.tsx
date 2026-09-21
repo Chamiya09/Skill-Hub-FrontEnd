@@ -1,7 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeftIcon,
   SparkleIcon,
   PrinterIcon,
   BriefcaseIcon,
@@ -15,8 +13,6 @@ interface StudyDashboardHeaderProps {
 }
 
 export const StudyDashboardHeader: React.FC<StudyDashboardHeaderProps> = ({ guide }) => {
-  const navigate = useNavigate();
-
   const handlePrint = () => {
     window.print();
   };
@@ -58,18 +54,8 @@ export const StudyDashboardHeader: React.FC<StudyDashboardHeaderProps> = ({ guid
 
   return (
     <header className="study-persistent-header">
-      {/* Top Navigation Row: Back Button & Print Actions */}
+      {/* Top Navigation Row: Actions */}
       <div className="study-top-nav-bar">
-        <button
-          type="button"
-          className="btn-back-to-hub"
-          onClick={() => navigate('/candidate/interview-prep')}
-          aria-label="Back to Interview Prep Hub"
-        >
-          <ArrowLeftIcon />
-          <span>Back to Prep Hub</span>
-        </button>
-
         <div className="study-header-actions">
           <button
             type="button"

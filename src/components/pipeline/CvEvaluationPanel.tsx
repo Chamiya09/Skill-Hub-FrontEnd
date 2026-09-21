@@ -1,16 +1,32 @@
 /**
  * CvEvaluationPanel.tsx
  *
- * Self-contained React component for the Candidate Evaluation Dashboard.
+ * AI CV Evaluation Side Drawer — Full-Detail View with Scroll.
  *
- * CRITICAL RULE: This component ONLY adds API integration logic.
- * It does NOT modify any existing UI layout, buttons, or components
- * in HiringPipeline.tsx. It is mounted as a child sub-panel inside
- * the existing candidate card action area.
+ * Layout Architecture (3-part flex column, fills 100% of the drawer height):
+ *   ┌─────────────────────────────┐  ← sticky header (shrink-0)
+ *   │  Sticky Top Bar             │
+ *   ├─────────────────────────────┤
+ *   │  Scrollable Body            │  ← flex:1, overflowY:auto
+ *   │   · Hero Score Card         │
+ *   │   · Recommendation          │
+ *   │   · Skills Match Analysis   │
+ *   │     – Strengths chips       │
+ *   │     – Skill Gaps chips      │
+ *   │   · Validator Adjustments   │
+ *   │   · Evaluation Meta         │
+ *   ├─────────────────────────────┤
+ *   │  Sticky Footer (Actions)    │  ← sticky bottom (shrink-0)
+ *   └─────────────────────────────┘
  *
- * Wires:
- *   "Run AI CV Evaluation" → POST /api/CVEvaluation/analyze
- *   "Approve & Shortlist"  → POST /api/CVEvaluation/{id}/approve
+ * THEME: Matches CandidateProfileReadOnly ("View CV") design language exactly.
+ *   --cv-primary:      #059669
+ *   --cv-primary-dark: #047857
+ *   --cv-primary-soft: #ecfdf5
+ *   Brand primary:     #00b074 / #009663
+ *
+ * Props:
+ *   onClose — called when the panel's own X button is clicked
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -22,41 +38,39 @@ import {
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface CvEvaluationPanelProps {
-  /** The candidate's User ID (for the /analyze payload) */
   candidateId: string;
-  /** The job vacancy ID (for the /analyze payload) */
   jobId: string;
-  /** The specific application ID linking candidate to vacancy */
   applicationId: string;
-  /** Candidate display name — used in UI copy */
   candidateName: string;
-  /** Called when the recruiter successfully approves the candidate */
+  /** Called when the X close button inside the panel header is clicked */
+  onClose?: () => void;
+  /** Called after a successful Approve & Shortlist action */
   onApproved?: (evaluationId: string) => void;
 }
 
-// ─── Inline SVG Icons (no new dependencies) ──────────────────────────────────
+// ─── SVG Icons ────────────────────────────────────────────────────────────────
 
 const SparkleIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
   </svg>
 );
 
 const CheckCircleIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-    <polyline points="22 4 12 14.01 9 11.01" />
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
   </svg>
 );
 
 const AlertTriangleIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+    <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
   </svg>
 );
 
 const InfoIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
   </svg>
 );
@@ -68,120 +82,251 @@ const RefreshIcon = () => (
   </svg>
 );
 
-// ─── Score Gauge Ring Component ────────────────────────────────────────────────
+const TargetIcon = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
+  </svg>
+);
+
+const ClockIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+  </svg>
+);
+
+const XIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+// ─── Score Ring ───────────────────────────────────────────────────────────────
 
 const ScoreGauge: React.FC<{ score: number }> = ({ score }) => {
-  const radius = 34;
+  const radius = 40;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
-
   const getColor = (s: number) => {
-    if (s >= 80) return '#047857'; // emerald-700
-    if (s >= 60) return '#4338ca'; // indigo-700
-    if (s >= 40) return '#b45309'; // amber-700
-    return '#be123c'; // rose-700
+    if (s >= 80) return '#00b074';
+    if (s >= 60) return '#0369a1';
+    if (s >= 40) return '#b45309';
+    return '#b91c1c';
   };
-
   const color = getColor(score);
 
   return (
-    <div className="relative w-[90px] h-[90px] shrink-0">
-      <svg width="90" height="90" viewBox="0 0 90 90" className="-rotate-90">
-        {/* Background track */}
-        <circle cx="45" cy="45" r={radius} fill="none" className="stroke-slate-100" strokeWidth="7" />
-        {/* Score arc */}
+    <div style={{ position: 'relative', width: '108px', height: '108px', flexShrink: 0 }}>
+      <svg width="108" height="108" viewBox="0 0 108 108" style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx="54" cy="54" r={radius} fill="none" stroke="#f1f5f9" strokeWidth="9" />
         <circle
-          cx="45" cy="45" r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth="7"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          className="transition-[stroke-dashoffset] duration-700 ease-in-out"
+          cx="54" cy="54" r={radius} fill="none"
+          stroke={color} strokeWidth="9" strokeLinecap="round"
+          strokeDasharray={circumference} strokeDashoffset={offset}
+          style={{ transition: 'stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1)' }}
         />
       </svg>
-      {/* Score text overlay */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-xl font-extrabold leading-none" style={{ color }}>{score}</span>
-        <span className="text-[9px] font-bold text-slate-400 tracking-wider">MATCH</span>
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <span style={{ fontSize: '26px', fontWeight: 800, color, lineHeight: 1, letterSpacing: '-0.04em' }}>{score}</span>
+        <span style={{ fontSize: '9px', fontWeight: 750, color: '#94a3b8', letterSpacing: '0.1em', marginTop: '3px' }}>MATCH</span>
       </div>
     </div>
   );
 };
 
-// ─── Skill Chip Component ─────────────────────────────────────────────────────
+// ─── Section Card (mirrors candidate-card structure exactly) ──────────────────
+
+interface SectionCardProps {
+  icon: React.ReactNode;
+  title: string;
+  subtitle?: string;
+  accentLeft?: string;
+  children: React.ReactNode;
+}
+
+const SectionCard: React.FC<SectionCardProps> = ({ icon, title, subtitle, accentLeft, children }) => (
+  <div style={{
+    overflow: 'hidden', border: '1px solid #e2e8f0', borderRadius: '18px',
+    background: 'rgba(255,255,255,0.98)',
+    boxShadow: '0 4px 16px rgba(15,23,42,0.05)',
+    position: 'relative',
+    flexShrink: 0,
+  }}>
+    {accentLeft && (
+      <div style={{
+        position: 'absolute', top: 0, left: 0, bottom: 0, width: '4px',
+        background: accentLeft,
+      }} />
+    )}
+    {/* Header — .candidate-card-header */}
+    <div style={{
+      padding: '16px 20px 13px', borderBottom: '1px solid #edf2f7',
+      background: 'linear-gradient(180deg, #ffffff, #fbfdff)',
+      display: 'flex', alignItems: 'center', gap: '12px',
+    }}>
+      {/* Icon wrap — .candidate-card-icon-wrap */}
+      <div style={{
+        display: 'grid', placeItems: 'center', flexShrink: 0,
+        width: '36px', height: '36px', borderRadius: '10px',
+        background: '#ecfdf5', color: '#047857',
+      }}>
+        {icon}
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <h2 style={{ margin: 0, color: '#0f172a', fontSize: '15px', fontWeight: 800, letterSpacing: '-0.018em', lineHeight: 1.25 }}>
+          {title}
+        </h2>
+        {subtitle && (
+          <p style={{ margin: '2px 0 0', color: '#64748b', fontSize: '11.5px', lineHeight: 1.4 }}>{subtitle}</p>
+        )}
+      </div>
+    </div>
+    {/* Body */}
+    <div style={{ padding: '18px 20px 20px' }}>
+      {children}
+    </div>
+  </div>
+);
+
+// ─── Skill Chip ───────────────────────────────────────────────────────────────
 
 const SkillChip: React.FC<{ label: string; variant: 'strength' | 'missing' }> = ({ label, variant }) => {
-  const isStrength = variant === 'strength';
+  const ok = variant === 'strength';
   return (
-    <span
-      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap border ${
-        isStrength 
-          ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-          : 'bg-rose-50 text-rose-700 border-rose-200'
-      }`}
-    >
-      {isStrength ? '✓' : '✗'} {label}
-    </span>
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: '9px',
+      padding: '9px 13px', borderRadius: '11px',
+      fontSize: '12.5px', lineHeight: 1.55, fontWeight: 500,
+      border: ok ? '1px solid #bbf7d0' : '1px solid #fecaca',
+      background: ok ? '#f0fdf4' : '#fef2f2',
+      color: ok ? '#14532d' : '#991b1b',
+      width: '100%',
+      boxSizing: 'border-box',
+    }}>
+      <span style={{
+        width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        background: ok ? '#dcfce7' : '#fee2e2',
+        color: ok ? '#16a34a' : '#dc2626',
+        fontSize: '11px', fontWeight: 800, marginTop: '1px',
+      }}>
+        {ok ? '✓' : '✗'}
+      </span>
+      <span style={{ flex: 1, minWidth: 0, wordBreak: 'break-word' }}>{label}</span>
+    </div>
   );
 };
 
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
 
 const EvaluationSkeleton: React.FC = () => (
-  <div className="p-5 flex flex-col gap-3">
-    {/* Agent step indicators */}
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '24px 20px' }}>
+    {/* Spinner header */}
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '14px',
+      padding: '16px 18px', border: '1px solid #d1fae5', borderRadius: '14px',
+      background: '#f0fdf4',
+    }}>
+      <div style={{
+        width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0,
+        border: '3px solid #d1fae5', borderTopColor: '#00b074',
+        animation: 'cv-eval-spin 0.75s linear infinite',
+      }} />
+      <div>
+        <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>Running AI Evaluation Pipeline</p>
+        <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#64748b' }}>Analysing CV against job requirements…</p>
+      </div>
+    </div>
+
+    {/* Agent steps */}
     {[
       { label: 'Agent 1 · Extractor: Fetching CV profile data...', done: true },
       { label: 'Agent 2 · Evaluator: Running AI match analysis...', done: false },
       { label: 'Agent 3 · Validator: Applying business rules...', done: false },
     ].map((step, i) => (
-      <div key={i} className="flex items-center gap-3">
-        <div className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center border-2 ${step.done ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
-          {step.done ? (
-            <span className="text-emerald-600 text-xs font-bold">✓</span>
-          ) : (
-            <div className="w-2.5 h-2.5 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
-          )}
+      <div key={i} style={{
+        display: 'flex', alignItems: 'center', gap: '12px',
+        padding: '11px 14px',
+        border: '1px solid', borderColor: step.done ? '#d1fae5' : '#f1f5f9',
+        borderRadius: '11px',
+        background: step.done ? '#f0fdf4' : '#f8fafc',
+      }}>
+        <div style={{
+          width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          border: step.done ? '2px solid #00b074' : '2px solid #e2e8f0',
+          background: step.done ? '#ecfdf5' : '#f8fafc',
+        }}>
+          {step.done
+            ? <span style={{ color: '#047857', fontSize: '11px', fontWeight: 800 }}>✓</span>
+            : <div style={{
+                width: '8px', height: '8px', borderRadius: '50%',
+                border: '2px solid #00b074', borderTopColor: 'transparent',
+                animation: 'cv-eval-spin 0.75s linear infinite',
+              }} />
+          }
         </div>
-        <span className={`text-sm ${step.done ? 'text-slate-900 font-semibold' : 'text-slate-400 font-medium'}`}>
+        <span style={{ fontSize: '12.5px', fontWeight: step.done ? 600 : 500, color: step.done ? '#047857' : '#94a3b8' }}>
           {step.label}
         </span>
       </div>
     ))}
-    {/* Pulse placeholder */}
-    <div className="mt-2 h-16 rounded-xl bg-gradient-to-r from-slate-100 via-slate-200 to-slate-100 bg-[length:200%_100%] animate-[shimmer_1.5s_infinite]" />
+
+    {/* Shimmer blocks */}
+    {[80, 56, 96].map((h, i) => (
+      <div key={i} style={{
+        height: `${h}px`, borderRadius: '12px',
+        background: 'linear-gradient(90deg, #f1f5f9 25%, #e8edf3 50%, #f1f5f9 75%)',
+        backgroundSize: '200% 100%', animation: 'cv-eval-shimmer 1.5s infinite',
+        animationDelay: `${i * 0.15}s`,
+      }} />
+    ))}
   </div>
 );
 
-// ─── Main CvEvaluationPanel ───────────────────────────────────────────────────
+// ─── Score Band Helper ────────────────────────────────────────────────────────
+
+const getScoreBand = (score: number) => {
+  if (score >= 80) return { label: 'Excellent Match', color: '#00b074', bg: '#ecfdf5', border: '#a7f3d0', text: '#047857' };
+  if (score >= 60) return { label: 'Good Fit',        color: '#0369a1', bg: '#f0f9ff', border: '#bae6fd', text: '#0369a1' };
+  if (score >= 40) return { label: 'Partial Match',   color: '#b45309', bg: '#fffbeb', border: '#fde68a', text: '#b45309' };
+  return               { label: 'Weak Match',         color: '#b91c1c', bg: '#fef2f2', border: '#fecaca', text: '#b91c1c' };
+};
+
+const getStatusStyle = (status: string) => {
+  if (status === 'Approved') return { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0' };
+  if (status === 'Rejected') return { bg: '#fef2f2', color: '#b91c1c', border: '#fecaca' };
+  return { bg: '#fffbeb', color: '#b45309', border: '#fde68a' };
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
   candidateId,
   jobId,
   applicationId,
   candidateName,
+  onClose,
   onApproved,
 }) => {
-
   const [evaluationResult, setEvaluationResult] = useState<CvEvaluationResultDto | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
-  const [isApproving, setIsApproving] = useState<boolean>(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Load cached evaluation on mount
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
     (async () => {
       try {
         const cached = await cvEvaluationApi.getLatest(candidateId, jobId);
-        if (isMounted) setEvaluationResult(cached);
-      } catch {
-        // No cached result
-      }
+        if (mounted) setEvaluationResult(cached);
+      } catch { /* no cache */ }
     })();
-    return () => { isMounted = false; };
+    return () => { mounted = false; };
   }, [candidateId, jobId]);
 
   const handleRunEvaluation = useCallback(async () => {
@@ -190,14 +335,10 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
       setError(null);
       setSuccessMessage(null);
       setEvaluationResult(null);
-
       const result = await cvEvaluationApi.analyze({
-        candidateId,
-        jobId,
-        applicationId,
+        candidateId, jobId, applicationId,
         forceRefresh: evaluationResult !== null,
       });
-
       setEvaluationResult(result);
     } catch (err: any) {
       console.error('[CvEvaluationPanel] Analysis error:', err);
@@ -212,15 +353,12 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
     try {
       setIsApproving(true);
       setError(null);
-
-      const approvalResponse = await cvEvaluationApi.approve(evaluationResult.id, {
+      const res = await cvEvaluationApi.approve(evaluationResult.id, {
         decision: 'Approved',
         reviewerNotes: `Manually approved by recruiter on ${new Date().toLocaleString()}.`,
       });
-
       setEvaluationResult(prev => prev ? { ...prev, approvalStatus: 'Approved' } : null);
-      setSuccessMessage(approvalResponse.message || `${candidateName} has been approved and shortlisted!`);
-
+      setSuccessMessage(res.message || `${candidateName} has been approved and shortlisted!`);
       onApproved?.(evaluationResult.id);
     } catch (err: any) {
       console.error('[CvEvaluationPanel] Approval error:', err);
@@ -230,254 +368,625 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
     }
   }, [evaluationResult, candidateName, onApproved]);
 
-  const getScoreLabel = (score: number) => {
-    if (score >= 80) return { label: 'Excellent Match', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' };
-    if (score >= 60) return { label: 'Good Fit',        color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200' };
-    if (score >= 40) return { label: 'Partial Match',   color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' };
-    return                  { label: 'Weak Match',      color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200' };
-  };
+  const handleReject = useCallback(async () => {
+    if (!evaluationResult) return;
+    try {
+      setIsApproving(true);
+      await cvEvaluationApi.approve(evaluationResult.id, { decision: 'Rejected' });
+      setEvaluationResult(prev => prev ? { ...prev, approvalStatus: 'Rejected' } : null);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to reject evaluation.');
+    } finally {
+      setIsApproving(false);
+    }
+  }, [evaluationResult]);
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div
       id={`cv-evaluation-panel-${candidateId}`}
-      className="mt-4 bg-white/70 backdrop-blur-2xl border border-white/60 rounded-[2rem] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_40px_rgb(0,0,0,0.08)] transition-all duration-500"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        maxHeight: '100%',
+        flex: '1 1 0%',
+        minHeight: 0,
+        overflow: 'hidden',
+        fontFamily: '"Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, sans-serif',
+        background: '#f8fafc',
+        color: '#0f172a',
+      }}
     >
-      {/* Panel Header */}
-      <div className="relative flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50/80 via-white/40 to-emerald-50/80 border-b border-indigo-100/50">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 ring-1 ring-white/50">
-            <SparkleIcon />
-          </div>
-          <span className="text-[15px] font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600">
-            AI CV Evaluation Report
-          </span>
-          {evaluationResult && (
-            <span className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-[0.1em] shadow-sm ml-2 ${
-              evaluationResult.approvalStatus === 'Approved' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200/50' : 
-              evaluationResult.approvalStatus === 'Rejected' ? 'bg-rose-100 text-rose-800 border border-rose-200/50' : 
-              'bg-amber-100 text-amber-800 border border-amber-200/50'
-            }`}>
-              {evaluationResult.approvalStatus}
-            </span>
-          )}
-        </div>
-
-        {/* Run AI CV Evaluation Button */}
-        <button
-          type="button"
-          id={`btn-run-cv-evaluation-${candidateId}`}
-          onClick={handleRunEvaluation}
-          disabled={isAnalyzing || isApproving}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${
-            isAnalyzing 
-              ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/50' 
-              : 'bg-white hover:bg-indigo-50 text-indigo-600 border border-indigo-100 hover:border-indigo-200 shadow-sm hover:shadow-md'
-          } ${isApproving ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          {isAnalyzing ? (
-            <>
-              <div className="w-3.5 h-3.5 rounded-full border-2 border-indigo-200 border-t-indigo-600 animate-spin" />
-              <span>Analyzing...</span>
-            </>
-          ) : (
-            <>
-              {evaluationResult ? <RefreshIcon /> : <SparkleIcon />}
-              <span>{evaluationResult ? 'Re-evaluate' : 'Run AI Evaluation'}</span>
-            </>
-          )}
-        </button>
-      </div>
-
-      {/* Panel Body */}
-      <div className="p-0">
-        {isAnalyzing && <EvaluationSkeleton />}
-
-        {!isAnalyzing && error && (
-          <div className="px-6 py-4 flex items-start gap-3 bg-rose-50/80 text-rose-700 border-b border-rose-100 backdrop-blur-md">
-            <div className="mt-0.5"><AlertTriangleIcon /></div>
-            <div>
-              <p className="text-sm font-bold m-0 text-rose-800">Evaluation Failed</p>
-              <p className="text-xs m-0 mt-1 text-rose-600/90 leading-relaxed">{error}</p>
-            </div>
-          </div>
-        )}
-
-        {!isAnalyzing && successMessage && (
-          <div className="px-6 py-3 flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-emerald-50/30 border-b border-emerald-100 text-emerald-700">
-            <CheckCircleIcon />
-            <span className="text-sm font-extrabold">{successMessage}</span>
-          </div>
-        )}
-
-        {!isAnalyzing && !error && !evaluationResult && (
-          <div className="p-10 text-center flex flex-col items-center justify-center">
-            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100 shadow-inner">
-              <span className="text-slate-300 transform scale-150"><SparkleIcon /></span>
-            </div>
-            <p className="text-sm text-slate-500 m-0">
-              Click <strong className="text-slate-700 font-extrabold">Run AI Evaluation</strong> to analyse {candidateName}'s profile.
-            </p>
-          </div>
-        )}
-
-        {!isAnalyzing && evaluationResult && (
-          <div className="p-5 md:p-6">
-            {/* ─ Score Row ───────────────────────────────────────── */}
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-6 p-5 bg-gradient-to-br from-slate-50/80 to-white rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl opacity-50 -mr-10 -mt-10 pointer-events-none transition-transform group-hover:scale-110 duration-700" />
-              
-              <div className="relative">
-                <div className="absolute inset-0 bg-white rounded-full shadow-lg opacity-20 blur-md"></div>
-                <ScoreGauge score={evaluationResult.matchScore} />
-              </div>
-
-              <div className="flex-1 min-w-0 text-center md:text-left relative z-10">
-                {(() => {
-                  const band = getScoreLabel(evaluationResult.matchScore);
-                  return (
-                    <div className="mb-3 flex items-center justify-center md:justify-start gap-2.5 flex-wrap">
-                      <span className={`text-xl font-black tracking-tight ${band.color}`}>
-                        {evaluationResult.matchScore}% {band.label}
-                      </span>
-                      <span className={`text-[10px] px-2.5 py-1 rounded-full font-black border uppercase tracking-[0.15em] shadow-sm ${band.bg} ${band.color} ${band.border}`}>
-                        AI Score
-                      </span>
-                    </div>
-                  );
-                })()}
-
-                {evaluationResult.recommendation && (
-                  <p className="text-[13px] text-slate-600 m-0 leading-relaxed font-medium">
-                    {evaluationResult.recommendation}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              {/* ─ Strengths ─── */}
-              {evaluationResult.strengths.length > 0 && (
-                <div className="bg-emerald-50/30 rounded-2xl p-4 border border-emerald-100/50">
-                  <p className="text-[11px] font-black text-emerald-700 uppercase tracking-wider m-0 mb-3 flex items-center gap-1.5">
-                    <span className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">✓</span>
-                    Strengths ({evaluationResult.strengths.length})
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {evaluationResult.strengths.map((s, i) => (
-                      <SkillChip key={i} label={s} variant="strength" />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* ─ Missing Skills ─ */}
-              {evaluationResult.missingSkills.length > 0 && (
-                <div className="bg-rose-50/30 rounded-2xl p-4 border border-rose-100/50">
-                  <p className="text-[11px] font-black text-rose-700 uppercase tracking-wider m-0 mb-3 flex items-center gap-1.5">
-                    <span className="w-4 h-4 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">✗</span>
-                    Skill Gaps ({evaluationResult.missingSkills.length})
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {evaluationResult.missingSkills.map((s, i) => (
-                      <SkillChip key={i} label={s} variant="missing" />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* ─ Validation Notes ──────────────────── */}
-            {evaluationResult.validationNotes.length > 0 && (
-              <div className="mb-6 p-4 bg-amber-50/50 rounded-2xl border border-amber-200/60 flex items-start gap-3 backdrop-blur-sm">
-                <span className="text-amber-600 mt-0.5 p-1 bg-amber-100/50 rounded-lg"><InfoIcon /></span>
-                <div>
-                  <p className="text-xs font-black text-amber-800 m-0 mb-1.5 tracking-wide">
-                    Validator Adjustments
-                  </p>
-                  <ul className="m-0 pl-4 space-y-1.5">
-                    {evaluationResult.validationNotes.map((note, i) => (
-                      <li key={i} className="text-[13px] text-amber-700/90 leading-snug font-medium marker:text-amber-400">{note}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
-
-            {/* ─ Action Row ──────────────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-5 mt-2 border-t border-slate-100/80">
-              <span className="text-[11px] font-semibold text-slate-400/80 uppercase tracking-wider">
-                Evaluated {new Date(evaluationResult.createdAt).toLocaleString()}
-              </span>
-
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                {/* Reject Button */}
-                <button
-                  type="button"
-                  id={`btn-reject-evaluation-${candidateId}`}
-                  onClick={async () => {
-                    if (!evaluationResult) return;
-                    try {
-                      setIsApproving(true);
-                      await cvEvaluationApi.approve(evaluationResult.id, { decision: 'Rejected' });
-                      setEvaluationResult(prev => prev ? { ...prev, approvalStatus: 'Rejected' } : null);
-                    } catch (err: any) {
-                      setError(err?.message || 'Failed to reject evaluation.');
-                    } finally {
-                      setIsApproving(false);
-                    }
-                  }}
-                  disabled={isApproving || evaluationResult.approvalStatus !== 'Pending'}
-                  className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all duration-300 ${
-                    isApproving || evaluationResult.approvalStatus !== 'Pending'
-                      ? 'bg-slate-50 border border-slate-200 text-slate-400 opacity-60 cursor-not-allowed'
-                      : 'bg-white border border-rose-200/80 text-rose-600 hover:bg-rose-50 hover:border-rose-300 hover:shadow-sm'
-                  }`}
-                >
-                  <span>✗</span> Reject
-                </button>
-
-                {/* Approve & Shortlist Button */}
-                <button
-                  type="button"
-                  id={`btn-approve-shortlist-${candidateId}`}
-                  onClick={handleApprove}
-                  disabled={isApproving || evaluationResult.approvalStatus !== 'Pending'}
-                  className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-[13px] font-bold transition-all duration-300 ${
-                    evaluationResult.approvalStatus === 'Approved'
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
-                      : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 border border-emerald-600/50'
-                  } ${isApproving || evaluationResult.approvalStatus !== 'Pending' ? 'opacity-70 cursor-not-allowed shadow-none' : 'hover:-translate-y-0.5'}`}
-                >
-                  {isApproving ? (
-                    <>
-                      <div className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : evaluationResult.approvalStatus === 'Approved' ? (
-                    <>
-                      <span className="scale-110"><CheckCircleIcon /></span>
-                      <span>Approved</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="scale-110"><CheckCircleIcon /></span>
-                      <span>Approve &amp; Shortlist</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
       <style>{`
-        @keyframes shimmer {
-          0% { background-position: 200% 0; }
+        @keyframes cv-eval-shimmer {
+          0%   { background-position: 200% 0; }
           100% { background-position: -200% 0; }
         }
+        @keyframes cv-eval-spin {
+          to { transform: rotate(360deg); }
+        }
+        .cv-eval-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #00b074 #f1f5f9;
+        }
+        .cv-eval-scroll::-webkit-scrollbar {
+          width: 8px;
+        }
+        .cv-eval-scroll::-webkit-scrollbar-track {
+          background: #f1f5f9;
+        }
+        .cv-eval-scroll::-webkit-scrollbar-thumb {
+          background: #00b074;
+          border-radius: 999px;
+        }
+        .cv-eval-scroll::-webkit-scrollbar-thumb:hover {
+          background: #009663;
+        }
+        .cv-eval-scroll > * {
+          flex-shrink: 0 !important;
+        }
       `}</style>
-    </div>
+
+        {/* ══════════════════════════════════════════════════════
+            STICKY HEADER
+            Matches .candidate-cv-readonly-container > .sticky
+        ══════════════════════════════════════════════════════ */}
+        <div style={{
+          flexShrink: 0, zIndex: 10,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '13px 20px', gap: '10px',
+          borderBottom: '1px solid #e2e8f0',
+          background: 'rgba(255,255,255,0.97)',
+          backdropFilter: 'blur(14px)',
+          boxShadow: '0 1px 0 rgba(15,23,42,0.04)',
+        }}>
+          {/* Left badges */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', minWidth: 0 }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              padding: '5px 10px', borderRadius: '999px',
+              border: '1px solid #a7f3d0', background: '#ecfdf5',
+              color: '#047857', fontSize: '11px', fontWeight: 700,
+              textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0,
+            }}>
+              <SparkleIcon />
+              AI Evaluation Report
+            </span>
+            {evaluationResult && (() => {
+              const s = getStatusStyle(evaluationResult.approvalStatus);
+              return (
+                <span style={{
+                  padding: '4px 9px', borderRadius: '999px',
+                  fontSize: '10px', fontWeight: 800,
+                  textTransform: 'uppercase', letterSpacing: '0.08em',
+                  background: s.bg, color: s.color, border: `1px solid ${s.border}`,
+                  flexShrink: 0,
+                }}>
+                  {evaluationResult.approvalStatus}
+                </span>
+              );
+            })()}
+          </div>
+
+          {/* Right: Run/Re-evaluate + Close */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <button
+              type="button"
+              id={`btn-run-cv-evaluation-${candidateId}`}
+              onClick={handleRunEvaluation}
+              disabled={isAnalyzing || isApproving}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '5px',
+                padding: '6px 12px', borderRadius: '8px',
+                fontSize: '11.5px', fontWeight: 600,
+                cursor: isAnalyzing || isApproving ? 'not-allowed' : 'pointer',
+                transition: 'all 0.15s ease',
+                border: isAnalyzing ? '1px solid #e2e8f0' : '1px solid #a7f3d0',
+                background: isAnalyzing ? '#f8fafc' : '#ffffff',
+                color: isAnalyzing ? '#94a3b8' : '#008759',
+                opacity: isApproving ? 0.6 : 1,
+              }}
+              onMouseEnter={e => {
+                if (!isAnalyzing && !isApproving) {
+                  const b = e.currentTarget as HTMLButtonElement;
+                  b.style.background = '#ecfdf5'; b.style.borderColor = '#6ee7b7';
+                }
+              }}
+              onMouseLeave={e => {
+                if (!isAnalyzing && !isApproving) {
+                  const b = e.currentTarget as HTMLButtonElement;
+                  b.style.background = '#ffffff'; b.style.borderColor = '#a7f3d0';
+                }
+              }}
+            >
+              {isAnalyzing
+                ? <><div style={{ width: '11px', height: '11px', borderRadius: '50%', border: '2px solid #a7f3d0', borderTopColor: '#00b074', animation: 'cv-eval-spin 0.75s linear infinite' }} /><span>Analyzing...</span></>
+                : <>{evaluationResult ? <RefreshIcon /> : <SparkleIcon />}<span>{evaluationResult ? 'Re-evaluate' : 'Run AI Evaluation'}</span></>
+              }
+            </button>
+
+            {/* Close button — matches candidate-cv-drawer-close-btn */}
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                title="Close"
+                style={{
+                  width: '32px', height: '32px', borderRadius: '8px',
+                  border: '1px solid #e2e8f0', background: '#ffffff',
+                  color: '#64748b', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.15s ease', flexShrink: 0,
+                }}
+                onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = '#f1f5f9'; b.style.color = '#0f172a'; }}
+                onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = '#ffffff'; b.style.color = '#64748b'; }}
+              >
+                <XIcon />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* ══════════════════════════════════════════════════════
+            SCROLLABLE BODY  (flex:1, overflowY:auto)
+        ══════════════════════════════════════════════════════ */}
+        <div
+          className="cv-eval-scroll"
+          style={{
+            flex: '1 1 0%',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            padding: '20px 18px 40px',
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain',
+          }}
+        >
+          {/* Loading */}
+          {isAnalyzing && <EvaluationSkeleton />}
+
+          {/* Error */}
+          {!isAnalyzing && error && (
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', gap: '11px',
+              padding: '14px 16px', borderRadius: '14px',
+              border: '1px solid #fecaca', background: '#fef2f2', color: '#b91c1c',
+            }}>
+              <div style={{ flexShrink: 0, marginTop: '1px' }}><AlertTriangleIcon /></div>
+              <div>
+                <p style={{ margin: 0, fontSize: '13px', fontWeight: 750, color: '#991b1b' }}>Evaluation Failed</p>
+                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#b91c1c', lineHeight: 1.55 }}>{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Success */}
+          {!isAnalyzing && successMessage && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '9px',
+              padding: '12px 15px', borderRadius: '13px',
+              border: '1px solid #a7f3d0', background: '#ecfdf5', color: '#047857',
+            }}>
+              <CheckCircleIcon />
+              <span style={{ fontSize: '13px', fontWeight: 700 }}>{successMessage}</span>
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!isAnalyzing && !error && !evaluationResult && (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'center', textAlign: 'center',
+              padding: '60px 28px',
+              border: '1px solid #e2e8f0', borderRadius: '18px',
+              background: 'rgba(255,255,255,0.98)',
+              boxShadow: '0 4px 16px rgba(15,23,42,0.05)',
+            }}>
+              <div style={{
+                width: '68px', height: '68px',
+                background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '20px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#00b074', marginBottom: '18px',
+              }}>
+                <TargetIcon />
+              </div>
+              <h3 style={{ margin: '0 0 8px', fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>
+                No Evaluation Yet
+              </h3>
+              <p style={{ margin: 0, fontSize: '13px', color: '#64748b', lineHeight: 1.65, maxWidth: '300px' }}>
+                Click <strong style={{ color: '#047857' }}>Run AI Evaluation</strong> above to analyse{' '}
+                <strong style={{ color: '#0f172a' }}>{candidateName}</strong>'s CV against this job's requirements.
+              </p>
+            </div>
+          )}
+
+          {/* ──────────────────────────────────────────────────────
+              FULL EVALUATION RESULT SECTIONS
+          ────────────────────────────────────────────────────── */}
+          {!isAnalyzing && evaluationResult && (() => {
+            const band = getScoreBand(evaluationResult.matchScore);
+            const isPending = evaluationResult.approvalStatus === 'Pending';
+
+            return (
+              <>
+                {/* ① HERO SCORE CARD — mirrors candidate-hero-card */}
+                <div style={{
+                  overflow: 'hidden', position: 'relative',
+                  border: '1px solid #b7ead7', borderRadius: '18px',
+                  background: 'radial-gradient(circle at 88% 10%, rgba(16,185,129,0.14), transparent 38%), linear-gradient(135deg,#ffffff 0%,#f0fdf8 100%)',
+                  boxShadow: '0 8px 28px rgba(15,23,42,0.06)',
+                  flexShrink: 0,
+                }}>
+                  {/* Left green stripe */}
+                  <div style={{
+                    position: 'absolute', top: 0, left: 0, bottom: 0, width: '5px',
+                    background: 'linear-gradient(180deg,#10b981,#047857)',
+                  }} />
+                  <div style={{ padding: '22px 22px 22px 27px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <ScoreGauge score={evaluationResult.matchScore} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '28px', fontWeight: 800, color: band.text, letterSpacing: '-0.04em', lineHeight: 1 }}>
+                          {evaluationResult.matchScore}%
+                        </span>
+                        <span style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.015em' }}>
+                          {band.label}
+                        </span>
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
+                          padding: '4px 9px', borderRadius: '999px',
+                          fontSize: '10px', fontWeight: 750,
+                          textTransform: 'uppercase', letterSpacing: '0.06em',
+                          background: band.bg, color: band.text, border: `1px solid ${band.border}`,
+                        }}>
+                          <SparkleIcon /> AI Score
+                        </span>
+                      </div>
+
+                      {/* Recommendation */}
+                      {evaluationResult.recommendation && (
+                        <p style={{ margin: 0, fontSize: '13px', color: '#334155', lineHeight: 1.65, fontWeight: 500 }}>
+                          {evaluationResult.recommendation}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ② CANDIDATE META INFO */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
+                  padding: '12px 16px', borderRadius: '12px',
+                  border: '1px solid #f1f5f9', background: '#ffffff',
+                  flexShrink: 0,
+                }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#475569', fontWeight: 600 }}>
+                    <span style={{ color: '#00b074' }}><TargetIcon /></span>
+                    Candidate: <strong style={{ color: '#0f172a' }}>{candidateName}</strong>
+                  </span>
+                  <span style={{ width: '1px', height: '14px', background: '#e2e8f0' }} />
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#64748b' }}>
+                    <ClockIcon />
+                    Evaluated {new Date(evaluationResult.createdAt).toLocaleString()}
+                  </span>
+                  <span style={{ width: '1px', height: '14px', background: '#e2e8f0' }} />
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#64748b' }}>
+                    ID: <code style={{ fontSize: '10px', background: '#f1f5f9', padding: '2px 5px', borderRadius: '4px', color: '#475569' }}>
+                      {evaluationResult.id.substring(0, 8).toUpperCase()}
+                    </code>
+                  </span>
+                </div>
+
+                {/* ③ SKILLS MATCH ANALYSIS */}
+                {(evaluationResult.strengths.length > 0 || evaluationResult.missingSkills.length > 0) && (
+                  <SectionCard
+                    icon={<TargetIcon />}
+                    title="Skills Match Analysis"
+                    subtitle={`${evaluationResult.strengths.length} matched · ${evaluationResult.missingSkills.length} gap${evaluationResult.missingSkills.length !== 1 ? 's' : ''} identified`}
+                  >
+                    {/* Strengths */}
+                    {evaluationResult.strengths.length > 0 && (
+                      <div style={{ marginBottom: evaluationResult.missingSkills.length > 0 ? '18px' : 0 }}>
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: '7px',
+                          marginBottom: '12px',
+                        }}>
+                          <span style={{
+                            width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            background: '#ecfdf5', border: '1px solid #a7f3d0',
+                            fontSize: '10px', fontWeight: 800, color: '#047857',
+                          }}>✓</span>
+                          <span style={{ fontSize: '11px', fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                            Matched Strengths ({evaluationResult.strengths.length})
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
+                          {evaluationResult.strengths.map((s, i) => (
+                            <SkillChip key={i} label={s} variant="strength" />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Divider */}
+                    {evaluationResult.strengths.length > 0 && evaluationResult.missingSkills.length > 0 && (
+                      <div style={{ borderTop: '1px solid #f1f5f9', marginBottom: '18px' }} />
+                    )}
+
+                    {/* Missing Skills */}
+                    {evaluationResult.missingSkills.length > 0 && (
+                      <div>
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: '7px',
+                          marginBottom: '12px',
+                        }}>
+                          <span style={{
+                            width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            background: '#fef2f2', border: '1px solid #fecaca',
+                            fontSize: '10px', fontWeight: 800, color: '#b91c1c',
+                          }}>✗</span>
+                          <span style={{ fontSize: '11px', fontWeight: 800, color: '#b91c1c', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                            Skill Gaps ({evaluationResult.missingSkills.length})
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
+                          {evaluationResult.missingSkills.map((s, i) => (
+                            <SkillChip key={i} label={s} variant="missing" />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </SectionCard>
+                )}
+
+                {/* ④ VALIDATOR ADJUSTMENTS — timeline style */}
+                {evaluationResult.validationNotes.length > 0 && (
+                  <SectionCard
+                    icon={<InfoIcon />}
+                    title="Validator Adjustments"
+                    subtitle={`${evaluationResult.validationNotes.length} business rule${evaluationResult.validationNotes.length !== 1 ? 's' : ''} applied to final score`}
+                  >
+                    {/* Timeline — mirrors candidate-timeline */}
+                    <div style={{ position: 'relative', paddingLeft: '24px' }}>
+                      {/* Vertical line */}
+                      <div style={{
+                        position: 'absolute', top: '6px', bottom: '6px', left: '7px',
+                        width: '2px', borderRadius: '2px', background: '#fde68a',
+                      }} />
+                      {evaluationResult.validationNotes.map((note, i) => (
+                        <div key={i} style={{
+                          position: 'relative',
+                          paddingBottom: i < evaluationResult.validationNotes.length - 1 ? '16px' : 0,
+                          paddingLeft: '14px',
+                        }}>
+                          {/* Bullet — mirrors candidate-timeline-bullet */}
+                          <div style={{
+                            position: 'absolute', top: '5px', left: '-4px',
+                            width: '10px', height: '10px', borderRadius: '50%',
+                            background: '#f59e0b', border: '2px solid #ffffff',
+                            boxShadow: '0 0 0 2px #fde68a',
+                          }} />
+                          <p style={{ margin: 0, fontSize: '13px', color: '#92400e', lineHeight: 1.6, fontWeight: 500 }}>
+                            {note}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </SectionCard>
+                )}
+
+                {/* ⑤ SCORE BREAKDOWN CARD */}
+                <SectionCard
+                  icon={<SparkleIcon />}
+                  title="Score Breakdown"
+                  subtitle="How the AI pipeline scored this candidate"
+                >
+                  {/* Score bar */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#475569' }}>Overall Match Score</span>
+                      <span style={{ fontSize: '13px', fontWeight: 800, color: band.text }}>{evaluationResult.matchScore}%</span>
+                    </div>
+                    <div style={{ height: '8px', borderRadius: '999px', background: '#f1f5f9', overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%', borderRadius: '999px',
+                        width: `${evaluationResult.matchScore}%`,
+                        background: `linear-gradient(90deg, ${band.color}, ${band.color}cc)`,
+                        transition: 'width 0.9s cubic-bezier(0.16,1,0.3,1)',
+                      }} />
+                    </div>
+                  </div>
+
+                  {/* Stat pills */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                    {[
+                      { label: 'Match Score', value: `${evaluationResult.matchScore}%`, color: band.text, bg: band.bg, border: band.border },
+                      { label: 'Strengths', value: String(evaluationResult.strengths.length), color: '#047857', bg: '#ecfdf5', border: '#a7f3d0' },
+                      { label: 'Skill Gaps', value: String(evaluationResult.missingSkills.length), color: '#b91c1c', bg: '#fef2f2', border: '#fecaca' },
+                    ].map((stat, i) => (
+                      <div key={i} style={{
+                        padding: '12px 10px', borderRadius: '12px', textAlign: 'center',
+                        border: `1px solid ${stat.border}`, background: stat.bg,
+                      }}>
+                        <div style={{ fontSize: '22px', fontWeight: 800, color: stat.color, letterSpacing: '-0.03em', lineHeight: 1 }}>
+                          {stat.value}
+                        </div>
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: stat.color, marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.06em', opacity: 0.8 }}>
+                          {stat.label}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Validation notes count */}
+                  {evaluationResult.validationNotes.length > 0 && (
+                    <div style={{
+                      marginTop: '12px', padding: '10px 14px', borderRadius: '10px',
+                      border: '1px solid #fde68a', background: '#fffbeb',
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                    }}>
+                      <span style={{ color: '#b45309' }}><InfoIcon /></span>
+                      <span style={{ fontSize: '12px', color: '#b45309', fontWeight: 600 }}>
+                        {evaluationResult.validationNotes.length} business rule adjustment{evaluationResult.validationNotes.length !== 1 ? 's' : ''} were applied to the final score.
+                      </span>
+                    </div>
+                  )}
+                </SectionCard>
+
+                {/* ⑥ EVALUATION STATUS CARD */}
+                <SectionCard
+                  icon={<CheckCircleIcon />}
+                  title="Decision Status"
+                  subtitle="Current human-in-the-loop approval state"
+                  accentLeft={
+                    evaluationResult.approvalStatus === 'Approved' ? 'linear-gradient(180deg,#10b981,#047857)'
+                    : evaluationResult.approvalStatus === 'Rejected' ? 'linear-gradient(180deg,#f87171,#b91c1c)'
+                    : 'linear-gradient(180deg,#fbbf24,#b45309)'
+                  }
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    {/* Status icon */}
+                    <div style={{
+                      width: '48px', height: '48px', flexShrink: 0,
+                      borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px',
+                      background: evaluationResult.approvalStatus === 'Approved' ? '#ecfdf5'
+                        : evaluationResult.approvalStatus === 'Rejected' ? '#fef2f2' : '#fffbeb',
+                      border: `1px solid ${evaluationResult.approvalStatus === 'Approved' ? '#a7f3d0'
+                        : evaluationResult.approvalStatus === 'Rejected' ? '#fecaca' : '#fde68a'}`,
+                    }}>
+                      {evaluationResult.approvalStatus === 'Approved' ? '✅'
+                        : evaluationResult.approvalStatus === 'Rejected' ? '❌' : '⏳'}
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>
+                        {evaluationResult.approvalStatus === 'Approved' ? 'Candidate Approved & Shortlisted'
+                          : evaluationResult.approvalStatus === 'Rejected' ? 'Candidate Rejected'
+                          : 'Awaiting Recruiter Decision'}
+                      </p>
+                      <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748b', lineHeight: 1.5 }}>
+                        {evaluationResult.approvalStatus === 'Pending'
+                          ? 'Use the action buttons below to approve or reject this candidate.'
+                          : `Decision recorded at ${new Date(evaluationResult.createdAt).toLocaleString()}.`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Pending action hint */}
+                  {isPending && (
+                    <div style={{
+                      marginTop: '14px', padding: '10px 14px', borderRadius: '10px',
+                      border: '1px solid #bae6fd', background: '#f0f9ff',
+                      fontSize: '12px', color: '#0369a1', fontWeight: 500, lineHeight: 1.55,
+                    }}>
+                      💡 Review the match score and skill analysis above, then use <strong>Approve &amp; Shortlist</strong> to move this candidate to the pipeline, or <strong>Reject</strong> to exclude them.
+                    </div>
+                  )}
+                </SectionCard>
+
+              </>
+            );
+          })()}
+        </div>
+
+        {/* ══════════════════════════════════════════════════════
+            STICKY FOOTER — Approve / Reject actions
+            Only shown when a result exists
+        ══════════════════════════════════════════════════════ */}
+        {evaluationResult && !isAnalyzing && (
+          <div style={{
+            flexShrink: 0,
+            padding: '14px 18px',
+            borderTop: '1px solid #e2e8f0',
+            background: '#ffffff',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            gap: '12px', flexWrap: 'wrap',
+            boxShadow: '0 -2px 8px rgba(15,23,42,0.05)',
+          }}>
+            <span style={{ fontSize: '11px', fontWeight: 500, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <ClockIcon />
+              {new Date(evaluationResult.createdAt).toLocaleString()}
+            </span>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {/* Reject */}
+              <button
+                type="button"
+                id={`btn-reject-evaluation-${candidateId}`}
+                onClick={handleReject}
+                disabled={isApproving || evaluationResult.approvalStatus !== 'Pending'}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                  padding: '8px 16px', borderRadius: '9px',
+                  fontSize: '12.5px', fontWeight: 600,
+                  transition: 'all 0.15s ease',
+                  cursor: isApproving || evaluationResult.approvalStatus !== 'Pending' ? 'not-allowed' : 'pointer',
+                  opacity: isApproving || evaluationResult.approvalStatus !== 'Pending' ? 0.5 : 1,
+                  background: '#ffffff', border: '1px solid #fecaca', color: '#b91c1c',
+                }}
+                onMouseEnter={e => {
+                  if (!isApproving && evaluationResult.approvalStatus === 'Pending') {
+                    const b = e.currentTarget as HTMLButtonElement;
+                    b.style.background = '#fef2f2'; b.style.borderColor = '#f87171';
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!isApproving && evaluationResult.approvalStatus === 'Pending') {
+                    const b = e.currentTarget as HTMLButtonElement;
+                    b.style.background = '#ffffff'; b.style.borderColor = '#fecaca';
+                  }
+                }}
+              >
+                <span style={{ fontSize: '12px' }}>✗</span> Reject
+              </button>
+
+              {/* Approve & Shortlist — .candidate-cv-drawer-btn-primary */}
+              <button
+                type="button"
+                id={`btn-approve-shortlist-${candidateId}`}
+                onClick={handleApprove}
+                disabled={isApproving || evaluationResult.approvalStatus !== 'Pending'}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  padding: '8px 18px', borderRadius: '9px',
+                  fontSize: '12.5px', fontWeight: 600,
+                  transition: 'all 0.15s ease',
+                  cursor: isApproving || evaluationResult.approvalStatus !== 'Pending' ? 'not-allowed' : 'pointer',
+                  opacity: isApproving || evaluationResult.approvalStatus !== 'Pending' ? 0.65 : 1,
+                  ...(evaluationResult.approvalStatus === 'Approved'
+                    ? { background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#047857' }
+                    : { background: '#00b074', border: '1px solid #009e67', color: '#ffffff', boxShadow: '0 4px 12px rgba(0,176,116,0.25)' }
+                  ),
+                }}
+                onMouseEnter={e => {
+                  if (!isApproving && evaluationResult.approvalStatus === 'Pending') {
+                    const b = e.currentTarget as HTMLButtonElement;
+                    b.style.background = '#009663'; b.style.transform = 'translateY(-1px)';
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!isApproving && evaluationResult.approvalStatus === 'Pending') {
+                    const b = e.currentTarget as HTMLButtonElement;
+                    b.style.background = '#00b074'; b.style.transform = 'translateY(0)';
+                  }
+                }}
+              >
+                {isApproving
+                  ? <><div style={{ width: '13px', height: '13px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', animation: 'cv-eval-spin 0.75s linear infinite' }} /><span>Saving...</span></>
+                  : evaluationResult.approvalStatus === 'Approved'
+                    ? <><CheckCircleIcon /><span>Approved ✓</span></>
+                    : <><CheckCircleIcon /><span>Approve &amp; Shortlist</span></>
+                }
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
   );
 };
 

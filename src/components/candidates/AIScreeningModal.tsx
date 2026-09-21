@@ -1063,15 +1063,20 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
           />
 
           <div
-            className="candidate-cv-drawer p-6 bg-slate-50"
-            style={{ width: '100%', maxWidth: '600px', overflowY: 'auto' }}
+            className="candidate-cv-drawer"
+            style={{
+              width: '100%',
+              maxWidth: '600px',
+              height: '100vh',
+              maxHeight: '100vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              padding: 0,
+              background: '#f8fafc',
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-end mb-2">
-              <button onClick={() => setAiReportCandidateId(null)} className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors">
-                <XIcon />
-              </button>
-            </div>
             {(() => {
                 const c = candidates.find(cand => cand.candidateId === aiReportCandidateId);
                 return (
@@ -1080,6 +1085,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                     jobId={currentJob.id}
                     applicationId={c?.id || ''}
                     candidateName={c?.name || ''}
+                    onClose={() => setAiReportCandidateId(null)}
                     onApproved={() => {
                       fetchApplicants(currentJob.id);
                       setAiReportCandidateId(null);

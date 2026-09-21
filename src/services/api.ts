@@ -1929,6 +1929,8 @@ export const cvEvaluationApi = {
 // ── Student 1: AI Interview Preparation Guide ────────────────────────────────
 
 export interface GenerateInterviewPrepRequestDto {
+  candidateId?: string;
+  applicationId?: string;
   jobId?: string;
   jobTitle?: string;
   targetRole?: string;

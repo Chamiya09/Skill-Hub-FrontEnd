@@ -94,9 +94,47 @@ const ClockIcon = () => (
   </svg>
 );
 
-const XIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+const CheckIcon = ({ size = 13 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const XIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+const LightbulbIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 18h6" />
+    <path d="M10 22h4" />
+    <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14" />
+  </svg>
+);
+
+const ShieldCheckIcon = ({ size = 22 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <polyline points="9 12 11.5 14.5 15.5 9.5" />
+  </svg>
+);
+
+const ShieldXIcon = ({ size = 22 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <line x1="15" y1="9" x2="9" y2="15" />
+    <line x1="9" y1="9" x2="15" y2="15" />
+  </svg>
+);
+
+const HourglassIcon = ({ size = 22 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M5 22h14" />
+    <path d="M5 2h14" />
+    <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
+    <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
   </svg>
 );
 
@@ -210,9 +248,9 @@ const SkillChip: React.FC<{ label: string; variant: 'strength' | 'missing' }> = 
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         background: ok ? '#dcfce7' : '#fee2e2',
         color: ok ? '#16a34a' : '#dc2626',
-        fontSize: '11px', fontWeight: 800, marginTop: '1px',
+        marginTop: '1px',
       }}>
-        {ok ? '✓' : '✗'}
+        {ok ? <CheckIcon size={10} /> : <XIcon size={9} />}
       </span>
       <span style={{ flex: 1, minWidth: 0, wordBreak: 'break-word' }}>{label}</span>
     </div>
@@ -260,7 +298,7 @@ const EvaluationSkeleton: React.FC = () => (
           background: step.done ? '#ecfdf5' : '#f8fafc',
         }}>
           {step.done
-            ? <span style={{ color: '#047857', fontSize: '11px', fontWeight: 800 }}>✓</span>
+            ? <CheckIcon size={12} />
             : <div style={{
                 width: '8px', height: '8px', borderRadius: '50%',
                 border: '2px solid #00b074', borderTopColor: 'transparent',
@@ -697,10 +735,12 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
                         }}>
                           <span style={{
                             width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                             background: '#ecfdf5', border: '1px solid #a7f3d0',
-                            fontSize: '10px', fontWeight: 800, color: '#047857',
-                          }}>✓</span>
+                            color: '#047857',
+                          }}>
+                            <CheckIcon size={11} />
+                          </span>
                           <span style={{ fontSize: '11px', fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                             Matched Strengths ({evaluationResult.strengths.length})
                           </span>
@@ -727,10 +767,12 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
                         }}>
                           <span style={{
                             width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                             background: '#fef2f2', border: '1px solid #fecaca',
-                            fontSize: '10px', fontWeight: 800, color: '#b91c1c',
-                          }}>✗</span>
+                            color: '#b91c1c',
+                          }}>
+                            <XIcon size={10} />
+                          </span>
                           <span style={{ fontSize: '11px', fontWeight: 800, color: '#b91c1c', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                             Skill Gaps ({evaluationResult.missingSkills.length})
                           </span>
@@ -853,15 +895,22 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                     {/* Status icon */}
                     <div style={{
-                      width: '48px', height: '48px', flexShrink: 0,
-                      borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px',
+                      width: '46px', height: '46px', flexShrink: 0,
+                      borderRadius: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       background: evaluationResult.approvalStatus === 'Approved' ? '#ecfdf5'
                         : evaluationResult.approvalStatus === 'Rejected' ? '#fef2f2' : '#fffbeb',
                       border: `1px solid ${evaluationResult.approvalStatus === 'Approved' ? '#a7f3d0'
                         : evaluationResult.approvalStatus === 'Rejected' ? '#fecaca' : '#fde68a'}`,
+                      color: evaluationResult.approvalStatus === 'Approved' ? '#047857'
+                        : evaluationResult.approvalStatus === 'Rejected' ? '#b91c1c' : '#b45309',
                     }}>
-                      {evaluationResult.approvalStatus === 'Approved' ? '✅'
-                        : evaluationResult.approvalStatus === 'Rejected' ? '❌' : '⏳'}
+                      {evaluationResult.approvalStatus === 'Approved' ? (
+                        <ShieldCheckIcon size={24} />
+                      ) : evaluationResult.approvalStatus === 'Rejected' ? (
+                        <ShieldXIcon size={24} />
+                      ) : (
+                        <HourglassIcon size={22} />
+                      )}
                     </div>
                     <div>
                       <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>
@@ -882,9 +931,15 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
                     <div style={{
                       marginTop: '14px', padding: '10px 14px', borderRadius: '10px',
                       border: '1px solid #bae6fd', background: '#f0f9ff',
+                      display: 'flex', alignItems: 'flex-start', gap: '9px',
                       fontSize: '12px', color: '#0369a1', fontWeight: 500, lineHeight: 1.55,
                     }}>
-                      💡 Review the match score and skill analysis above, then use <strong>Approve &amp; Shortlist</strong> to move this candidate to the pipeline, or <strong>Reject</strong> to exclude them.
+                      <div style={{ flexShrink: 0, marginTop: '1px', color: '#0284c7' }}>
+                        <LightbulbIcon />
+                      </div>
+                      <div>
+                        Review the match score and skill analysis above, then use <strong>Approve &amp; Shortlist</strong> to move this candidate to the pipeline, or <strong>Reject</strong> to exclude them.
+                      </div>
                     </div>
                   )}
                 </SectionCard>
@@ -921,7 +976,7 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
                 onClick={handleReject}
                 disabled={isApproving || evaluationResult.approvalStatus !== 'Pending'}
                 style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                   padding: '8px 16px', borderRadius: '9px',
                   fontSize: '12.5px', fontWeight: 600,
                   transition: 'all 0.15s ease',
@@ -942,7 +997,8 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
                   }
                 }}
               >
-                <span style={{ fontSize: '12px' }}>✗</span> Reject
+                <XIcon size={12} />
+                <span>Reject</span>
               </button>
 
               {/* Approve & Shortlist — .candidate-cv-drawer-btn-primary */}
@@ -979,7 +1035,7 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
                 {isApproving
                   ? <><div style={{ width: '13px', height: '13px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', animation: 'cv-eval-spin 0.75s linear infinite' }} /><span>Saving...</span></>
                   : evaluationResult.approvalStatus === 'Approved'
-                    ? <><CheckCircleIcon /><span>Approved ✓</span></>
+                    ? <><CheckCircleIcon /><span>Approved</span></>
                     : <><CheckCircleIcon /><span>Approve &amp; Shortlist</span></>
                 }
               </button>

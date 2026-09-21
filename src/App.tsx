@@ -26,6 +26,7 @@ import { JobDetailsPublic } from "./pages/JobDetailsPublic";
 import { PublicCompanyProfile } from "./pages/PublicCompanyProfile";
 import { CandidateExam } from "./pages/CandidateExam";
 import { CandidateAssessments } from "./pages/CandidateAssessments";
+import { CandidateInterviewPrep } from "./pages/CandidateInterviewPrep";
 
 import "./App.css";
 
@@ -127,6 +128,7 @@ function AppContent() {
               <Route path="applications" element={<CandidateApplications />} />
               <Route path="saved" element={<CandidateSavedJobs />} />
               <Route path="assessments" element={<CandidateAssessments />} />
+              <Route path="interview-prep" element={<CandidateInterviewPrep />} />
               <Route path="settings" element={<CandidateSecurity />} />
               <Route path="security" element={<CandidateSecurity />} />
             </Route>

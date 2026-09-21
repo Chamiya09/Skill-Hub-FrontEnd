@@ -52,6 +52,13 @@ const CodeTerminalIcon: React.FC = () => (
   </svg>
 );
 
+const TargetCompassIcon: React.FC = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <path d="m16.2 7.8-2 6.3-6.4 2.1 2-6.3z" />
+  </svg>
+);
+
 export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onClose }) => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -156,6 +163,15 @@ export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onCl
         >
           <CodeTerminalIcon />
           <span>Technical Assessments</span>
+        </NavLink>
+
+        <NavLink
+          to="/candidate/interview-prep"
+          onClick={onClose}
+          className={({ isActive }) => `dashboard-nav-item ${isActive ? 'active' : ''}`}
+        >
+          <TargetCompassIcon />
+          <span>Interview Prep</span>
         </NavLink>
 
         <div className="nav-group-label" style={{ marginTop: '16px' }}>SYSTEM & SECURITY</div>

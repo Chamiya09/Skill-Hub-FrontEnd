@@ -1925,3 +1925,75 @@ export const cvEvaluationApi = {
       `/CVEvaluation/latest?candidateId=${candidateId}&jobId=${jobId}`
     ),
 };
+
+// ── Student 1: AI Interview Preparation Guide ────────────────────────────────
+
+export interface GenerateInterviewPrepRequestDto {
+  jobId?: string;
+  jobTitle?: string;
+  targetRole?: string;
+  jobDescription: string;
+  experienceLevel?: string;
+}
+
+export interface InterviewQuestionDto {
+  id: string;
+  question: string;
+  category: string;
+  difficulty: 'Junior' | 'Mid-Level' | 'Senior' | string;
+  expectedAnswerGuideline: string;
+  sampleAnswer?: string;
+  keyEvaluationPoints: string[];
+  proTip?: string;
+}
+
+export interface StarGuidanceDto {
+  situation: string;
+  task: string;
+  action: string;
+  result: string;
+}
+
+export interface BehavioralQuestionDto {
+  id: string;
+  question: string;
+  competency: string;
+  starGuidance: StarGuidanceDto;
+  whatToAvoid: string;
+}
+
+export interface InterviewPrepGuideDto {
+  id: string;
+  candidateId: string;
+  jobId?: string;
+  jobTitle: string;
+  targetRole: string;
+  jobDescription: string;
+  roleOverviewSummary: string;
+  technicalQuestions: InterviewQuestionDto[];
+  behavioralQuestions: BehavioralQuestionDto[];
+  proTips: string[];
+  preparationChecklist: string[];
+  createdAt: string;
+}
+
+export const interviewPrepApi = {
+  /**
+   * POST /api/interviewprep/generate
+   * Generates a tailored AI Interview Preparation Guide.
+   */
+  generate: (payload: GenerateInterviewPrepRequestDto) =>
+    request<InterviewPrepGuideDto>('/interviewprep/generate', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, 60_000),
+
+  /**
+   * GET /api/interviewprep/latest
+   * Retrieves the candidate's most recent preparation guide.
+   */
+  getLatest: (jobId?: string) =>
+    request<InterviewPrepGuideDto>(
+      jobId ? `/interviewprep/latest?jobId=${jobId}` : '/interviewprep/latest'
+    ),
+};

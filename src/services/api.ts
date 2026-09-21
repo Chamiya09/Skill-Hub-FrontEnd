@@ -531,41 +531,7 @@ export interface JobDto {
   updatedAt?: string;
 }
 
-export interface AiMatchRequestDto {
-  candidate: {
-    skills: string[];
-    experienceYears: number;
-    headline?: string;
-    summary?: string;
-    experiences: ExperienceDto[];
-    projects: ProjectDto[];
-    educations: EducationDto[];
-    certifications: CertificationDto[];
-  };
-  job: {
-    title: string;
-    department?: string;
-    experienceLevel?: string;
-    description?: string;
-    skills: string[];
-  };
-}
 
-export interface AiMatchResponseDto {
-  matchPercentage: number;
-  strengths: string[];
-  missingSkillGaps: string[];
-  aiRecommendation: string;
-}
-
-export const aiMatchApi = {
-  async analyze(candidateId: string, jobId: string): Promise<AiMatchResponseDto> {
-    const query = new URLSearchParams({ candidateId, jobId });
-    return request<AiMatchResponseDto>(`/match?${query.toString()}`, {
-      method: 'GET',
-    }, 120_000);
-  },
-};
 
 export interface CreateJobPayload {
   title: string;
@@ -1307,37 +1273,7 @@ export const savedJobsApi = {
   },
 };
 
-export interface RecommendedJobDto {
-  jobId: string;
-  title: string;
-  company: string;
-  location: string;
-  postedDate: string;
-  matchPercentage: number;
-  isRecommended: boolean;
-}
 
-const recommendationRequests = new Map<string, Promise<RecommendedJobDto[]>>();
-
-export const jobRecommendationsApi = {
-  async getForCandidate(candidateId: string): Promise<RecommendedJobDto[]> {
-    const existingRequest = recommendationRequests.get(candidateId);
-    if (existingRequest) return existingRequest;
-
-    const pendingRequest = request<RecommendedJobDto[]>(
-      `/candidate/${encodeURIComponent(candidateId)}/recommended-jobs`,
-      { method: 'GET' },
-      120000,
-    );
-
-    recommendationRequests.set(candidateId, pendingRequest);
-    try {
-      return await pendingRequest;
-    } finally {
-      recommendationRequests.delete(candidateId);
-    }
-  },
-};
 
 export const jobApplicationsApi = {
   /**
@@ -1459,15 +1395,7 @@ export const jobApplicationsApi = {
   }
 };
 
-export interface RecommendedJobResponseDto {
-  jobId: string;
-  title: string;
-  company: string;
-  location: string;
-  postedDate: string;
-  matchPercentage: number;
-  isRecommended: boolean;
-}
+
 
 export interface ShortlistedApplicantDto {
   applicationId: string;
@@ -1485,17 +1413,7 @@ export interface ShortlistedApplicantDto {
   assessmentStatus?: 'None' | 'Sent' | 'Completed';
 }
 
-export const candidateJobRecommendationsApi = {
-  /**
-   * Fetches AI-recommended jobs for a candidate.
-   * Calls: GET /api/candidate/{candidateId}/recommended-jobs
-   */
-  async getRecommendedJobs(candidateId: string): Promise<RecommendedJobResponseDto[]> {
-    return request<RecommendedJobResponseDto[]>(`/candidate/${candidateId}/recommended-jobs`, {
-      method: 'GET',
-    });
-  },
-};
+
 
 // ==========================================
 // TECHNICAL ASSESSMENT ENGINE (STUDENT 4)
@@ -1883,4 +1801,127 @@ export const assessmentsApi = {
     request<FinalizeTop5ResponseDto>(`/Assessments/job/${jobVacancyId}/finalize-top5`, {
       method: 'POST',
     }),
+};
+
+// ============================================================
+// CV EVALUATION API — Agentic Multi-Agent Pipeline Integration
+// ============================================================
+
+// ── TypeScript interfaces matching C# DTOs exactly ──────────────────────────
+
+/**
+ * Request payload for POST /api/CVEvaluation/analyze
+ * Triggers the three-agent pipeline: Extractor → Evaluator → Validator
+ */
+export interface AnalyzeCvRequestDto {
+  /** The candidate's User ID whose CV will be evaluated */
+  candidateId: string;
+  /** The job vacancy ID to evaluate the CV against */
+  jobId: string;
+  /** The specific application ID linking candidate to this vacancy */
+  applicationId?: string | null;
+  /** When true, forces a fresh AI run even if a cached result exists within 24h */
+  forceRefresh?: boolean;
+}
+
+/**
+ * Response from POST /api/CVEvaluation/analyze
+ * Binds directly to the Candidate Evaluation Dashboard Report UI.
+ */
+export interface CvEvaluationResultDto {
+  /** Unique ID of the persisted evaluation record — used to call /{id}/approve */
+  id: string;
+  candidateId: string;
+  jobId: string;
+  /** Overall match score 0–100 from AgentEvaluator.EvaluateMatch() */
+  matchScore: number;
+  /** Candidate strengths for green chip list display */
+  strengths: string[];
+  /** Skill gaps for red chip list display */
+  missingSkills: string[];
+  /** Free-text AI recommendation for the report banner */
+  recommendation: string | null;
+  /** Validation warnings from AgentValidator.ValidateBusinessRules() */
+  validationNotes: string[];
+  /** Current approval status: "Pending" | "Approved" | "Rejected" */
+  approvalStatus: 'Pending' | 'Approved' | 'Rejected';
+  createdAt: string;
+}
+
+/**
+ * Request payload for POST /api/CVEvaluation/{id}/approve
+ * Finalises the Human-in-the-Loop approval gate.
+ */
+export interface ApproveEvaluationRequestDto {
+  /** "Approved" or "Rejected" */
+  decision: 'Approved' | 'Rejected';
+  /** Optional notes from the recruiter */
+  reviewerNotes?: string;
+}
+
+/**
+ * Response from POST /api/CVEvaluation/{id}/approve
+ */
+export interface ApproveEvaluationResponseDto {
+  evaluationId: string;
+  candidateId: string;
+  approvalStatus: string;
+  approvedAt: string;
+  message: string;
+}
+
+// ── API Client ────────────────────────────────────────────────────────────────
+
+export const cvEvaluationApi = {
+  /**
+   * POST /api/CVEvaluation/analyze
+   *
+   * Runs the three-agent pipeline on the given candidate/job pair.
+   * Bind the onClick of the "Run AI CV Evaluation" button to this method.
+   *
+   * @example
+   *   const result = await cvEvaluationApi.analyze({
+   *     candidateId: candidate.candidateId,
+   *     jobId: selectedJob.id,
+   *     applicationId: candidate.id,
+   *   });
+   *   setEvaluationResult(result);
+   */
+  analyze: (payload: AnalyzeCvRequestDto) =>
+    request<CvEvaluationResultDto>('/CVEvaluation/analyze', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, 120_000 /* 2-min timeout — AI pipeline can take up to ~90s */),
+
+  /**
+   * POST /api/CVEvaluation/{id}/approve
+   *
+   * Submits the human recruiter's approval decision.
+   * Bind the onClick of the "Approve & Shortlist" button to this method.
+   *
+   * @example
+   *   await cvEvaluationApi.approve(evaluationResult.id, { decision: 'Approved' });
+   */
+  approve: (evaluationId: string, payload: ApproveEvaluationRequestDto) =>
+    request<ApproveEvaluationResponseDto>(`/CVEvaluation/${evaluationId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  /**
+   * GET /api/CVEvaluation/{id}
+   * Fetches a specific evaluation result by its persisted ID.
+   */
+  getById: (evaluationId: string) =>
+    request<CvEvaluationResultDto>(`/CVEvaluation/${evaluationId}`),
+
+  /**
+   * GET /api/CVEvaluation/latest?candidateId=...&jobId=...
+   * Fetches the latest cached evaluation for a candidate/job pair.
+   * Use this on component mount to pre-populate the report if it already exists.
+   */
+  getLatest: (candidateId: string, jobId: string) =>
+    request<CvEvaluationResultDto>(
+      `/CVEvaluation/latest?candidateId=${candidateId}&jobId=${jobId}`
+    ),
 };

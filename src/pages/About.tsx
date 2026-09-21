@@ -82,7 +82,7 @@ export const About = () => {
       <div className="about-stats-grid">
         <div className="stat-card">
           <div className="stat-number">99.4%</div>
-          <div className="stat-label">AI Match Accuracy</div>
+          <div className="stat-label">System Reliability</div>
         </div>
         <div className="stat-card">
           <div className="stat-number">45k+</div>

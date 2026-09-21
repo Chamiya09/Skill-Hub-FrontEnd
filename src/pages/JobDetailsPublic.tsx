@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
-  aiMatchApi,
   jobApplicationsApi,
   publicJobsApi,
-  type AiMatchResponseDto,
   type JobDto,
 } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { JobVacancyCard } from '../components/jobs/JobVacancyCard'
-import { AiMatchInsightsSidebar } from '../components/jobs/AiMatchInsightsSidebar'
 import { SleekSpinner, JobCardSkeleton } from '../components/common/SkeletonCard'
-import { CheckCircle, Loader2, Sparkles } from 'lucide-react'
+import { CheckCircle } from 'lucide-react'
 import {
   SparkleIcon,
   MapPinIcon,
@@ -26,7 +23,7 @@ import {
 
 export const JobDetailsPublic: React.FC = () => {
   const { id } = useParams<{ id: string }>()
-  const location = useLocation()
+
   const navigate = useNavigate()
   const { currentUser } = useAuth()
 
@@ -44,25 +41,6 @@ export const JobDetailsPublic: React.FC = () => {
   const [hasApplied, setHasApplied] = useState(false)
   const [applicationSubmitted, setApplicationSubmitted] = useState(false)
   const [applyErrorMessage, setApplyErrorMessage] = useState<string | null>(null)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [aiResults, setAiResults] = useState<AiMatchResponseDto | null>(null)
-  const [showSidebar, setShowSidebar] = useState(false)
-  const [analysisError, setAnalysisError] = useState<string | null>(null)
-
-  const routeMatch = (
-    location.state as {
-      recommendedMatch?: { jobId?: unknown; matchPercentage?: unknown }
-    } | null
-  )?.recommendedMatch
-  const routeMatchPercentage = routeMatch?.matchPercentage
-  const recommendedMatchPercentage =
-    routeMatch?.jobId === id &&
-    typeof routeMatchPercentage === 'number' &&
-    Number.isFinite(routeMatchPercentage) &&
-    routeMatchPercentage >= 0 &&
-    routeMatchPercentage <= 100
-      ? routeMatchPercentage
-      : undefined
 
   // Check if current user is an employer/recruiter
   const isEmployer = Boolean(
@@ -148,38 +126,7 @@ export const JobDetailsPublic: React.FC = () => {
     setTimeout(() => setShareCopied(false), 3000)
   }
 
-  const handleAnalyzeMatch = async () => {
-    if (!job || isEmployer || isAnalyzing) return
 
-    if (!currentUser) {
-      navigate(`/candidate/login?redirect=/jobs/${id}`)
-      return
-    }
-
-    try {
-      setIsAnalyzing(true)
-      setAnalysisError(null)
-      setAiResults(null)
-
-      console.log('Fetching match for:', {
-        candidateId: currentUser.id,
-        jobId: job.id,
-      })
-      const result = await aiMatchApi.analyze(currentUser.id, job.id)
-
-      setAiResults(result)
-      setShowSidebar(true)
-    } catch (error: unknown) {
-      console.error('AI match analysis failed:', error)
-      setAnalysisError(
-        error instanceof Error
-          ? error.message
-          : 'Unable to analyze your match right now. Please try again.',
-      )
-    } finally {
-      setIsAnalyzing(false)
-    }
-  }
 
   // =========================================================================
   // ONE-CLICK DIGITAL CV APPLY HANDLER (LIVE INTEGRATION)
@@ -598,30 +545,6 @@ export const JobDetailsPublic: React.FC = () => {
                 gap: '14px',
               }}
             >
-              {/* Interactive AI analysis trigger for candidates/public applicants */}
-              {!isEmployer && (
-                <button
-                  type="button"
-                  onClick={handleAnalyzeMatch}
-                  disabled={isAnalyzing}
-                  className="job-details-analyze-match-btn flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 font-semibold text-sm rounded-full transition-all shadow-sm"
-                  aria-haspopup="dialog"
-                  aria-busy={isAnalyzing}
-                >
-                  {isAnalyzing ? (
-                    <Loader2 className="animate-spin" size={16} aria-hidden="true" />
-                  ) : (
-                    <Sparkles size={16} aria-hidden="true" />
-                  )}
-                  <span>{isAnalyzing ? 'Analyzing Semantic Twin...' : 'Generate AI Match Insight'}</span>
-                </button>
-              )}
-
-              {analysisError && !isEmployer && (
-                <p className="job-details-analysis-error" role="alert">
-                  {analysisError}
-                </p>
-              )}
 
               {/* Action Buttons: Save & Share */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -885,7 +808,11 @@ export const JobDetailsPublic: React.FC = () => {
                   ) : (
                     <button
                       type="button"
-                      onClick={handleApply}
+                      onMouseDown={(e: React.MouseEvent) => e.preventDefault()}
+                      onClick={(e: React.MouseEvent) => {
+                        e.preventDefault();
+                        handleApply();
+                      }}
                       disabled={isApplying}
                       className="btn-primary job-details-apply-btn w-full"
                     >
@@ -1097,7 +1024,7 @@ export const JobDetailsPublic: React.FC = () => {
                 }}
               >
                 <SparkleIcon />
-                <span>AI-RECOMMENDED VACANCIES</span>
+                <span>SIMILAR VACANCIES</span>
               </div>
               <h2
                 style={{
@@ -1169,15 +1096,6 @@ export const JobDetailsPublic: React.FC = () => {
 
       </div>
 
-      {!isEmployer && (
-        <AiMatchInsightsSidebar
-          isOpen={showSidebar}
-          onClose={() => setShowSidebar(false)}
-          aiResults={aiResults}
-          hasApplied={hasApplied}
-          matchPercentage={recommendedMatchPercentage}
-        />
-      )}
     </div>
   )
 }

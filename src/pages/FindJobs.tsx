@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { publicJobsApi, savedJobsApi, type JobDto } from '../services/api'
-import { jobRecommendationsApi } from '../services/api'
 import { JobVacancyCard } from '../components/jobs/JobVacancyCard'
 import { SkeletonGrid } from '../components/common/SkeletonCard'
 import { useAuth } from '../context/AuthContext'
@@ -21,13 +20,12 @@ export const FindJobs = () => {
   const [jobs, setJobs] = useState<JobDto[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [matchScores, setMatchScores] = useState<Record<string, number>>({})
 
   const [searchTerm, setSearchTerm] = useState(initialSearch)
   const [selectedCategory, setSelectedCategory] = useState('All Roles')
   const [selectedWorkType, setSelectedWorkType] = useState('All')
   const [selectedExperience, setSelectedExperience] = useState('All')
-  const [sortBy, setSortBy] = useState<'match' | 'recent'>('match')
+  const [sortBy, setSortBy] = useState<'recent'>('recent')
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([])
 
   // Fetch real public jobs from backend
@@ -61,37 +59,6 @@ export const FindJobs = () => {
   }, [])
 
   const isCandidate = currentUser?.role?.toLowerCase() === 'candidate'
-
-  useEffect(() => {
-    if (!isCandidate || !currentUser?.id) {
-      return
-    }
-
-    let isCurrent = true
-    Promise.resolve()
-      .then(() => {
-        return jobRecommendationsApi.getForCandidate(currentUser.id)
-      })
-      .then((recommendations) => {
-        if (!isCurrent) return
-        setMatchScores(
-          Object.fromEntries(
-            recommendations.map((job) => [
-              job.jobId,
-              Math.min(100, Math.max(0, job.matchPercentage)),
-            ]),
-          ),
-        )
-      })
-      .catch((error: unknown) => {
-        if (!isCurrent) return
-        console.error('Unable to load AI job recommendations:', error)
-      })
-
-    return () => {
-      isCurrent = false
-    }
-  }, [currentUser?.id, isCandidate])
 
   useEffect(() => {
     if (!isCandidate) return
@@ -134,13 +101,8 @@ export const FindJobs = () => {
     }
   }
 
-  const scoredJobs = useMemo(
-    () => jobs.map((job) => ({ ...job, matchPercentage: matchScores[job.id] })),
-    [jobs, matchScores],
-  )
-
   const filteredJobs = useMemo(() => {
-    return scoredJobs
+    return jobs
       .filter((job) => {
         const term = searchTerm.toLowerCase().trim()
         const matchesTags = (job.tags || []).some((tag) =>
@@ -173,12 +135,9 @@ export const FindJobs = () => {
         return matchesSearch && matchesCategory && matchesWorkType && matchesExp
       })
       .sort((a, b) => {
-        if (sortBy === 'recent') {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        }
-        return (b.matchPercentage ?? -1) - (a.matchPercentage ?? -1)
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       })
-  }, [scoredJobs, searchTerm, selectedCategory, selectedWorkType, selectedExperience, sortBy])
+  }, [jobs, searchTerm, selectedCategory, selectedWorkType, selectedExperience, sortBy])
 
   const clearAllFilters = () => {
     setSearchTerm('')
@@ -198,7 +157,7 @@ export const FindJobs = () => {
         </div>
         <h1 className="hero-heading">
           Discover high-impact roles <br />
-          <span className="ai-text">matched to your skills</span>
+          <span className="ai-text">to elevate your career</span>
         </h1>
         <p className="hero-subtext">
           Browse verified technical and AI positions directly from employer applicant tracking systems.
@@ -264,7 +223,6 @@ export const FindJobs = () => {
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
             >
-              <option value="match">Highest AI Match</option>
               <option value="recent">Most Recent</option>
             </select>
           </div>

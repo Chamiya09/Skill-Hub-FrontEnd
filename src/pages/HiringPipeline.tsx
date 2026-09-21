@@ -11,6 +11,7 @@ import {
   type DispatchAssessmentResponseDto,
 } from '../services/api';
 import { CandidateProfileReadOnly } from '../components/candidates/CandidateProfileReadOnly';
+
 import {
   SparkleIcon,
   SearchIcon,
@@ -926,6 +927,8 @@ export const HiringPipeline: React.FC = () => {
                           <span>Schedule Interview</span>
                         </button>
                       </div>
+
+
                     </div>
                   );
                 })

@@ -8,7 +8,7 @@ import {
   SearchIcon,
   ArrowRightIcon,
   CheckIcon,
-  TargetIcon,
+
   LightningIcon,
   TrendUpIcon,
 } from '../components/common/Icons'
@@ -97,10 +97,6 @@ export const Home = () => {
           </div>
           <div className="metric-item">
             <CheckIcon />
-            <span>AI-powered matching</span>
-          </div>
-          <div className="metric-item">
-            <CheckIcon />
             <span>Direct employer requisitions</span>
           </div>
         </div>
@@ -108,16 +104,6 @@ export const Home = () => {
 
       {/* Feature Value Proposition Cards */}
       <section className="features-grid">
-        <div className="feature-card">
-          <div className="feature-icon-box">
-            <TargetIcon />
-          </div>
-          <h3 className="feature-title">AI Match Scoring</h3>
-          <p className="feature-description">
-            Our engine analyzes candidate technical profiles against live requisitions to surface top matches.
-          </p>
-        </div>
-
         <div className="feature-card">
           <div className="feature-icon-box">
             <LightningIcon />

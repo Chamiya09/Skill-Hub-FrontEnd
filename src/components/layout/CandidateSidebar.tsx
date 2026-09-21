@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   SparkleIcon,
@@ -11,6 +11,13 @@ interface CandidateSidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const BookOpenIcon: React.FC = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+  </svg>
+);
 
 // Crisp Lucide-style SVG Icons
 const FileTextIcon: React.FC = () => (
@@ -62,6 +69,7 @@ const TargetCompassIcon: React.FC = () => (
 export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onClose }) => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSignOut = () => {
     logout();
@@ -168,10 +176,28 @@ export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onCl
         <NavLink
           to="/candidate/interview-prep"
           onClick={onClose}
-          className={({ isActive }) => `dashboard-nav-item ${isActive ? 'active' : ''}`}
+          className={({ isActive }) =>
+            `dashboard-nav-item ${isActive && !location.pathname.includes('/guide') ? 'active' : ''}`
+          }
         >
           <TargetCompassIcon />
-          <span>Interview Prep</span>
+          <span>Interview Prep Hub</span>
+        </NavLink>
+
+        <NavLink
+          to="/candidate/study-dashboard"
+          onClick={onClose}
+          className={() =>
+            `dashboard-nav-item ${
+              location.pathname.startsWith('/candidate/study-dashboard') ||
+              location.pathname.includes('/interview-prep/guide')
+                ? 'active'
+                : ''
+            }`
+          }
+        >
+          <BookOpenIcon />
+          <span>Study Dashboard</span>
         </NavLink>
 
         <div className="nav-group-label" style={{ marginTop: '16px' }}>SYSTEM & SECURITY</div>

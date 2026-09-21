@@ -836,3 +836,128 @@
     margin-top: 12px;
   }
 }
+
+/* Fallback Card for Ineligible Status (Rejected / Pending) */
+.prep-locked-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 48px 24px;
+  text-align: center;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  margin-bottom: 32px;
+}
+
+.prep-locked-card.rejected {
+  border-color: #fecaca;
+  background: linear-gradient(180deg, #ffffff 0%, #fef2f2 100%);
+}
+
+.prep-locked-icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: #f1f5f9;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.prep-locked-card.rejected .prep-locked-icon-wrap {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.prep-locked-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+
+.prep-locked-msg {
+  max-width: 580px;
+  margin: 0 auto 24px;
+  font-size: 1rem;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.prep-status-pill-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+.prep-status-pill-wrap.status-rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.prep-status-pill-wrap.status-pending {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fcd34d;
+}
+
+.prep-status-pill-wrap.status-eligible {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+/* Stage Gate Flow Indicator */
+.prep-stage-gate-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  max-width: 650px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+.prep-gate-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.825rem;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.prep-gate-step.completed {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.prep-gate-step.current {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.prep-gate-step.locked {
+  background: #f8fafc;
+  color: #94a3b8;
+  opacity: 0.75;
+}
+
+.prep-gate-arrow {
+  color: #cbd5e1;
+  font-size: 0.9rem;
+}

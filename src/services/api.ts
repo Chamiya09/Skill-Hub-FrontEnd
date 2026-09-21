@@ -1936,15 +1936,16 @@ export interface GenerateInterviewPrepRequestDto {
   experienceLevel?: string;
 }
 
-export interface InterviewQuestionDto {
+export interface StudyFocusAreaDto {
   id: string;
-  question: string;
-  category: string;
-  difficulty: 'Junior' | 'Mid-Level' | 'Senior' | string;
-  expectedAnswerGuideline: string;
-  sampleAnswer?: string;
-  keyEvaluationPoints: string[];
-  proTip?: string;
+  title: string;
+  section: string;
+  priority: 'High Priority' | 'Core Requirement' | 'Practical Focus' | string;
+  estimatedStudyTime: string;
+  overview: string;
+  conceptsToReview: string[];
+  practicalApplication: string;
+  coachTip: string;
 }
 
 export interface StarGuidanceDto {
@@ -1962,31 +1963,78 @@ export interface BehavioralQuestionDto {
   whatToAvoid: string;
 }
 
+export interface InterviewQuestionDto {
+  id: string;
+  question: string;
+  category: string;
+  difficulty: 'Junior' | 'Mid-Level' | 'Senior' | string;
+  expectedAnswerGuideline: string;
+  sampleAnswer?: string;
+  keyEvaluationPoints: string[];
+  proTip?: string;
+}
+
 export interface InterviewPrepGuideDto {
   id: string;
+  guideId?: string;
   candidateId: string;
   jobId?: string;
   jobTitle: string;
   targetRole: string;
   jobDescription: string;
   roleOverviewSummary: string;
-  technicalQuestions: InterviewQuestionDto[];
-  behavioralQuestions: BehavioralQuestionDto[];
+  keyTheoreticalAreas: StudyFocusAreaDto[];
+  technicalCoreConcepts: StudyFocusAreaDto[];
+  practicalImplementationFocus: StudyFocusAreaDto[];
   proTips: string[];
   preparationChecklist: string[];
+  technicalQuestions?: InterviewQuestionDto[];
+  behavioralQuestions?: BehavioralQuestionDto[];
   createdAt: string;
+}
+
+export interface InterviewPrepEligibilityDto {
+  isEligible: boolean;
+  applicationStatus: string;
+  message: string;
+}
+
+export interface GenerateInterviewPrepResponseDto {
+  guideId: string;
+  id: string;
+  message: string;
+  guide?: InterviewPrepGuideDto;
 }
 
 export const interviewPrepApi = {
   /**
    * POST /api/interviewprep/generate
-   * Generates a tailored AI Interview Preparation Guide.
+   * Generates a tailored AI Interview Preparation Guide, saves to DB, and returns guideId.
    */
   generate: (payload: GenerateInterviewPrepRequestDto) =>
-    request<InterviewPrepGuideDto>('/interviewprep/generate', {
+    request<GenerateInterviewPrepResponseDto>('/interviewprep/generate', {
       method: 'POST',
       body: JSON.stringify(payload),
     }, 60_000),
+
+  /**
+   * GET /api/interviewprep/{id}
+   * Fetches the saved guide from the database for the Study Dashboard.
+   */
+  getById: (guideId: string) =>
+    request<InterviewPrepGuideDto>(`/interviewprep/${guideId}`),
+
+  /**
+   * GET /api/interviewprep/eligibility
+   * Checks if candidate is eligible to access interview prep.
+   */
+  checkEligibility: (applicationId?: string, jobId?: string) => {
+    const params = new URLSearchParams();
+    if (applicationId) params.append('applicationId', applicationId);
+    if (jobId) params.append('jobId', jobId);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return request<InterviewPrepEligibilityDto>(`/interviewprep/eligibility${query}`);
+  },
 
   /**
    * GET /api/interviewprep/latest

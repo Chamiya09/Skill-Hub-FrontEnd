@@ -27,8 +27,14 @@ import { PublicCompanyProfile } from "./pages/PublicCompanyProfile";
 import { CandidateExam } from "./pages/CandidateExam";
 import { CandidateAssessments } from "./pages/CandidateAssessments";
 import { CandidateInterviewPrep } from "./pages/CandidateInterviewPrep";
-
+import { CandidateStudyDashboard } from "./pages/CandidateStudyDashboard";
+import { useParams } from "react-router-dom";
 import "./App.css";
+
+function InterviewPrepGuideRedirect() {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={`/candidate/interview-prep/guide/${id}`} replace />;
+}
 
 function AppContent() {
   const location = useLocation();
@@ -129,6 +135,9 @@ function AppContent() {
               <Route path="saved" element={<CandidateSavedJobs />} />
               <Route path="assessments" element={<CandidateAssessments />} />
               <Route path="interview-prep" element={<CandidateInterviewPrep />} />
+              <Route path="interview-prep/guide/:id" element={<CandidateStudyDashboard />} />
+              <Route path="study-dashboard" element={<CandidateStudyDashboard />} />
+              <Route path="study-dashboard/:id" element={<CandidateStudyDashboard />} />
               <Route path="settings" element={<CandidateSecurity />} />
               <Route path="security" element={<CandidateSecurity />} />
             </Route>
@@ -147,6 +156,24 @@ function AppContent() {
               element={
                 <ProtectedRoute allowedRoles={['Candidate']} redirectPath="/dashboard">
                   <Navigate to="/candidate/profile" replace />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Direct candidate interview prep redirects */}
+            <Route
+              path="/interview-prep"
+              element={
+                <ProtectedRoute allowedRoles={['Candidate']} redirectPath="/dashboard">
+                  <Navigate to="/candidate/interview-prep" replace />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/interview-prep/guide/:id"
+              element={
+                <ProtectedRoute allowedRoles={['Candidate']} redirectPath="/dashboard">
+                  <InterviewPrepGuideRedirect />
                 </ProtectedRoute>
               }
             />

@@ -44,7 +44,7 @@ const DEFAULT_STARTER_TEMPLATES: Record<string, string> = {
   javascript: `function solution() {\n    // Write your solution here\n}\n\nsolution();`,
   typescript: `function solution(): void {\n    // Write your solution here\n}\n\nsolution();`,
   csharp: `using System;\n\npublic class Solution\n{\n    public static void Main(string[] args)\n    {\n        // Write your solution here\n    }\n}`,
-  java: `import java.util.*;\n\npublic class Solution {\n    public static void main(String[] args) {\n        // Write your solution here\n    }\n}`,
+  java: `import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // Write your solution here\n    }\n}`,
   cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    // Write your solution here\n    return 0;\n}`,
   go: `package main\n\nimport "fmt"\n\nfunc main() {\n    // Write your solution here\n    fmt.Println("Solution")\n}`,
 };

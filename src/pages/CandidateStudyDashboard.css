@@ -1,0 +1,1390 @@
+/* ==========================================================================
+   Candidate Study Dashboard Styles (Student 1 Module)
+   Flawlessly synchronized with Candidate Portal Theme Tokens & Typography
+   ========================================================================== */
+
+:root {
+  --study-primary: #00b074;
+  --study-primary-dark: #009663;
+  --study-primary-light: #ecfdf5;
+  --study-primary-border: #a7f3d0;
+  --study-text-dark: #0f172a;
+  --study-text-muted: #64748b;
+  --study-text-light: #94a3b8;
+  --study-card-border: #dce7e3;
+  --study-card-bg: #ffffff;
+  --study-card-shadow: 0 1px 3px #0f172a08, 0 6px 20px #0f172a05;
+  --study-card-radius: 18px;
+  --study-font-family: var(--font-family, "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+}
+
+/* ==========================================================================
+   1. Main Page Container Layout
+   ========================================================================== */
+.study-dashboard-page {
+  width: min(100%, 1280px);
+  margin: auto;
+  padding: 26px 24px 48px;
+  display: grid;
+  gap: 22px;
+  font-family: var(--study-font-family);
+  color: var(--study-text-dark);
+}
+
+.dashboard-viewport > .study-dashboard-page {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  align-self: flex-start;
+}
+
+/* ==========================================================================
+   2. Dropdown Job Selector (Header Area) & Single-Page Architecture
+   ========================================================================== */
+.study-dropdown-banner {
+  background: var(--study-card-bg);
+  border: 1px solid var(--study-card-border);
+  border-radius: var(--study-card-radius);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  box-shadow: var(--study-card-shadow);
+  transition: all 0.2s ease;
+}
+
+.study-dropdown-banner:hover {
+  border-color: #cbd5e1;
+}
+
+.study-dropdown-left {
+  flex: 1;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.study-dropdown-label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.study-dropdown-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--study-primary-light);
+  color: var(--study-primary);
+  border: 1px solid var(--study-primary-border);
+  flex-shrink: 0;
+}
+
+.study-dropdown-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.study-dropdown-label {
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--study-text-dark);
+  letter-spacing: -0.01em;
+}
+
+.study-dropdown-counter {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: var(--study-primary-light);
+  color: #047857;
+  border: 1px solid var(--study-primary-border);
+  letter-spacing: 0.02em;
+}
+
+.study-select-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+}
+
+.study-select-control {
+  width: 100%;
+  appearance: none;
+  background-color: #ffffff;
+  color: var(--study-text-dark);
+  border: 1.5px solid var(--study-card-border);
+  border-radius: 12px;
+  padding: 11px 42px 11px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.study-select-control:hover {
+  border-color: var(--study-primary);
+  background-color: #fcfdfd;
+}
+
+.study-select-control:focus {
+  outline: none;
+  border-color: var(--study-primary);
+  box-shadow: 0 0 0 3px rgba(0, 176, 116, 0.18);
+  background-color: #ffffff;
+}
+
+.study-select-chevron {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--study-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.study-select-chevron svg {
+  width: 18px;
+  height: 18px;
+}
+
+.study-dropdown-right {
+  display: flex;
+  align-items: center;
+}
+
+.study-quick-switch-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 650;
+  color: #047857;
+  background: var(--study-primary-light);
+  border: 1px solid var(--study-primary-border);
+  border-radius: 10px;
+  padding: 8px 14px;
+}
+
+.study-quick-switch-hint svg {
+  width: 15px;
+  height: 15px;
+  color: var(--study-primary);
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   3. Persistent Top Navigation & Contextual Hero Header
+   ========================================================================== */
+.study-persistent-header {
+  display: grid;
+  gap: 16px;
+}
+
+.study-top-nav-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.btn-back-to-hub {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid #dbe3ec;
+  color: #334155;
+  padding: 9px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+  box-shadow: 0 1px 2px #0f172a08;
+  transition: all 0.18s ease;
+}
+
+.btn-back-to-hub:hover {
+  background: var(--study-primary-light);
+  color: #047857;
+  border-color: var(--study-primary-border);
+  transform: translateX(-2px);
+}
+
+.btn-back-to-hub svg {
+  width: 16px;
+  height: 16px;
+}
+
+.study-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-study-print {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #ffffff;
+  border: 1px solid #dbe3ec;
+  color: #475569;
+  padding: 9px 16px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.btn-study-print:hover {
+  background: #f8fafc;
+  color: var(--study-primary);
+  border-color: var(--study-primary);
+}
+
+.btn-study-print svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Persistent Hero Role Banner */
+.study-hero-banner {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #ffffff;
+  border-radius: var(--study-card-radius);
+  padding: 28px 32px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.28);
+}
+
+.study-hero-banner::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -15%;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 176, 116, 0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.study-hero-top-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.study-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(0, 176, 116, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(0, 176, 116, 0.4);
+  padding: 4px 12px;
+  border-radius: 9999px;
+}
+
+.study-hero-eyebrow svg {
+  width: 14px;
+  height: 14px;
+  color: #34d399;
+}
+
+.study-header-badges-cluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.study-hero-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  letter-spacing: 0.02em;
+}
+
+.study-hero-status-pill .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+}
+
+.study-hero-date-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.study-hero-date-pill svg {
+  width: 12px;
+  height: 12px;
+  color: #94a3b8;
+}
+
+.study-hero-identity-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 6px 0 12px 0;
+}
+
+.study-company-avatar-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(0, 176, 116, 0.2) 0%, rgba(4, 120, 87, 0.35) 100%);
+  border: 1.5px solid rgba(52, 211, 153, 0.4);
+  color: #34d399;
+  font-weight: 850;
+  font-size: 16px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.study-hero-titles-wrap {
+  min-width: 0;
+}
+
+.study-hero-role-title {
+  font-size: clamp(20px, 2.5vw, 26px);
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 6px 0;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+}
+
+.study-hero-role-title .highlight-role {
+  color: #ffffff;
+}
+
+.study-hero-role-title .highlight-company {
+  color: #34d399;
+  text-decoration: underline;
+  text-decoration-color: rgba(52, 211, 153, 0.4);
+  text-underline-offset: 4px;
+}
+
+.study-hero-meta-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12.5px;
+  color: #94a3b8;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.meta-strip-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meta-strip-item svg {
+  width: 14px;
+  height: 14px;
+  color: #cbd5e1;
+}
+
+.meta-strip-item strong {
+  color: #f1f5f9;
+}
+
+.meta-strip-sep {
+  color: #475569;
+}
+
+.guideline-status {
+  color: #34d399;
+  font-weight: 600;
+}
+
+.study-hero-summary-text {
+  position: relative;
+  z-index: 1;
+  font-size: 13.5px;
+  color: #cbd5e1;
+  line-height: 1.6;
+  margin: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: 14px;
+}
+
+/* ==========================================================================
+   4. Study Sections Switcher Bar
+   ========================================================================== */
+.study-sections-switcher-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: var(--study-card-bg);
+  border: 1px solid var(--study-card-border);
+  border-radius: 16px;
+  padding: 10px 16px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.switcher-label-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.switcher-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--study-text-muted);
+  text-transform: uppercase;
+}
+
+.switcher-buttons-cluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.switcher-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.switcher-btn:hover {
+  background: #f1f5f9;
+  color: var(--study-text-dark);
+  border-color: #cbd5e1;
+}
+
+.switcher-btn.active {
+  background: var(--study-primary-light);
+  color: #047857;
+  border-color: var(--study-primary-border);
+  box-shadow: 0 2px 8px rgba(0, 176, 116, 0.12);
+}
+
+.switcher-count {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.06);
+  color: inherit;
+}
+
+.switcher-btn.active .switcher-count {
+  background: var(--study-primary);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   5. Dynamic Content Area & Core Guideline Cards
+   ========================================================================== */
+.study-content-area {
+  display: grid;
+  gap: 22px;
+}
+
+/* Core Guideline Card Container (Matches Candidate Portal Card System) */
+.study-core-section-card {
+  background: var(--study-card-bg);
+  border: 1px solid var(--study-card-border);
+  border-radius: var(--study-card-radius);
+  box-shadow: var(--study-card-shadow);
+  padding: 26px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  transition: all 0.2s ease;
+}
+
+.study-core-section-card:hover {
+  border-color: #cbd5e1;
+}
+
+/* Card Header Banner */
+.study-section-banner {
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 18px;
+}
+
+.study-section-header-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.study-section-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--study-primary-light);
+  border: 1px solid var(--study-primary-border);
+  color: var(--study-primary);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 176, 116, 0.1);
+}
+
+.study-section-icon-box svg {
+  width: 20px;
+  height: 20px;
+}
+
+.study-section-icon-box.practical-icon-box {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  color: #0284c7;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.1);
+}
+
+.study-section-icon-box.coach-icon-box {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);
+}
+
+.study-section-header-titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.study-section-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.section-pill {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #047857;
+  background: var(--study-primary-light);
+  border: 1px solid var(--study-primary-border);
+  padding: 4px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.section-pill.practical-pill {
+  color: #0369a1;
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.section-pill.coach-pill {
+  color: #b45309;
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.study-section-badge-counter {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.study-section-badge-counter.practical-counter {
+  background: #f0fdfa;
+  color: #0d9488;
+  border-color: #99f6e4;
+}
+
+.study-section-badge-counter.coach-counter {
+  background: #fefce8;
+  color: #ca8a04;
+  border-color: #fef08a;
+}
+
+.study-section-title {
+  font-size: 19px;
+  font-weight: 750;
+  color: var(--study-text-dark);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.02em;
+}
+
+.study-section-description {
+  font-size: 13px;
+  color: var(--study-text-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.study-cards-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ==========================================================================
+   6. Nested Focus Area Accordion Cards (StudyFocusAreaCard)
+   ========================================================================== */
+.study-focus-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.study-focus-card:hover {
+  border-color: var(--study-primary-border);
+  box-shadow: 0 4px 14px rgba(0, 176, 116, 0.1);
+}
+
+.study-focus-card.is-expanded {
+  border-color: var(--study-primary-border);
+  box-shadow: 0 4px 18px rgba(0, 176, 116, 0.12);
+}
+
+.study-focus-header {
+  padding: 18px 22px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  user-select: none;
+}
+
+.study-focus-title-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.study-focus-meta-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.study-priority-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.study-priority-badge b {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.study-priority-badge.high-priority {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.study-priority-badge.core-priority,
+.study-priority-badge.core-requirement {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fcd34d;
+}
+
+.study-priority-badge.practical-priority,
+.study-priority-badge.practical-focus {
+  background: var(--study-primary-light);
+  color: #047857;
+  border: 1px solid var(--study-primary-border);
+}
+
+.study-time-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--study-text-muted);
+  background: #f8fafc;
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.study-time-pill svg {
+  width: 12px;
+  height: 12px;
+  color: var(--study-text-light);
+}
+
+.study-section-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.study-focus-heading {
+  font-size: 15.5px;
+  font-weight: 750;
+  color: var(--study-text-dark);
+  line-height: 1.35;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.015em;
+}
+
+.study-focus-summary {
+  font-size: 13px;
+  color: var(--study-text-muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.study-expand-toggle {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: var(--study-text-muted);
+  flex-shrink: 0;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.study-expand-toggle svg {
+  width: 16px;
+  height: 16px;
+}
+
+.study-expand-toggle.is-rotated {
+  transform: rotate(180deg);
+  background: var(--study-primary-light);
+  color: var(--study-primary);
+  border-color: var(--study-primary-border);
+}
+
+/* Expanded Card Body */
+.study-focus-body {
+  padding: 0 22px 20px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.study-detail-block {
+  padding-top: 14px;
+}
+
+.study-block-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #047857;
+  margin-bottom: 10px;
+}
+
+.study-block-heading svg {
+  width: 15px;
+  height: 15px;
+  color: var(--study-primary);
+}
+
+.study-block-heading.practical {
+  color: #0369a1;
+}
+
+.study-block-heading.practical svg {
+  color: #0284c7;
+}
+
+/* Bulleted concepts list */
+.study-concepts-bullets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 9px;
+}
+
+.study-concept-bullet-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.55;
+}
+
+.bullet-point-icon {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--study-primary);
+  margin-top: 7px;
+  flex-shrink: 0;
+}
+
+.bullet-point-text {
+  flex: 1;
+}
+
+/* Practical Implementation Callout */
+.study-practical-callout {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid var(--study-primary);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.6;
+}
+
+/* Career Coach Advice Banner */
+.study-coach-tip-banner {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.coach-tip-icon {
+  color: var(--study-primary);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.coach-tip-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.coach-tip-content {
+  flex: 1;
+}
+
+.coach-tip-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #047857;
+  margin-bottom: 3px;
+}
+
+.coach-tip-text {
+  font-size: 12.5px;
+  color: #065f46;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ==========================================================================
+   7. Coach Tips Grid & Readiness Checklist
+   ========================================================================== */
+.study-coach-tips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.study-coach-tip-card {
+  background: #ffffff;
+  border: 1px solid var(--study-card-border);
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  box-shadow: 0 1px 2px #0f172a06;
+}
+
+.coach-tip-badge-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: var(--study-primary);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.coach-tip-badge-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.coach-tip-card-content h4 {
+  font-size: 13.5px;
+  font-weight: 750;
+  color: var(--study-text-dark);
+  margin: 0 0 4px 0;
+}
+
+.coach-tip-card-content p {
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Interview Day Readiness Checklist */
+.study-readiness-checklist-card {
+  background: #ffffff;
+  border: 1px solid var(--study-card-border);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 1px 3px #0f172a06;
+}
+
+.checklist-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.checklist-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--study-primary-light);
+  border: 1px solid var(--study-primary-border);
+  color: var(--study-primary);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.checklist-icon-wrap svg {
+  width: 17px;
+  height: 17px;
+}
+
+.checklist-card-header h3 {
+  font-size: 15px;
+  font-weight: 750;
+  color: var(--study-text-dark);
+  margin: 0 0 2px 0;
+}
+
+.checklist-card-header p {
+  font-size: 12.5px;
+  color: var(--study-text-muted);
+  margin: 0;
+}
+
+.checklist-items-list {
+  display: grid;
+  gap: 10px;
+}
+
+.checklist-item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.checklist-item-row:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.checklist-item-row.is-checked {
+  background: var(--study-primary-light);
+  border-color: var(--study-primary-border);
+}
+
+.checklist-item-box {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 2px solid #cbd5e1;
+  background: #ffffff;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.checklist-item-row.is-checked .checklist-item-box {
+  background: var(--study-primary);
+  border-color: var(--study-primary);
+  color: #ffffff;
+}
+
+.checklist-item-box svg {
+  width: 12px;
+  height: 12px;
+}
+
+.checklist-item-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.checklist-item-row.is-checked .checklist-item-text {
+  color: var(--study-text-muted);
+  text-decoration: line-through;
+}
+
+/* ==========================================================================
+   8. Persistent Disclaimer Footer (Subtle, Muted Warning/Info Alert)
+   ========================================================================== */
+.study-disclaimer-persistent-footer {
+  margin-top: 4px;
+  background: #fffdf5;
+  border: 1px solid #fef08a;
+  border-left: 4px solid #f59e0b;
+  border-radius: 14px;
+  padding: 14px 20px;
+  box-shadow: 0 1px 3px rgba(245, 158, 11, 0.05);
+}
+
+.study-disclaimer-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.study-disclaimer-icon-box {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #fef3c7;
+  color: #d97706;
+  display: grid;
+  place-items: center;
+}
+
+.study-disclaimer-icon-box svg {
+  width: 16px;
+  height: 16px;
+}
+
+.study-disclaimer-text-wrap {
+  flex: 1;
+}
+
+.study-disclaimer-title {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b45309;
+  margin-bottom: 2px;
+}
+
+.study-disclaimer-body {
+  margin: 0;
+  font-size: 12.5px;
+  color: #92400e;
+  font-weight: 550;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   9. Clean Empty State & Loading State
+   ========================================================================== */
+.study-empty-state-card {
+  background: #ffffff;
+  border: 1px solid var(--study-card-border);
+  border-radius: 20px;
+  padding: 56px 32px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: var(--study-card-shadow);
+}
+
+.study-empty-icon-box {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: var(--study-primary-light);
+  border: 1.5px solid var(--study-primary-border);
+  color: var(--study-primary);
+  display: grid;
+  place-items: center;
+  margin-bottom: 20px;
+}
+
+.study-empty-icon-box svg {
+  width: 32px;
+  height: 32px;
+}
+
+.study-empty-pill {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #047857;
+  background: var(--study-primary-light);
+  border: 1px solid var(--study-primary-border);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  margin-bottom: 12px;
+}
+
+.study-empty-heading {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--study-text-dark);
+  margin: 0 0 10px 0;
+  letter-spacing: -0.02em;
+}
+
+.study-empty-text {
+  font-size: 14px;
+  color: var(--study-text-muted);
+  max-width: 520px;
+  line-height: 1.6;
+  margin: 0 0 28px 0;
+}
+
+.study-empty-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.study-loading-card,
+.study-error-card {
+  background: #ffffff;
+  border: 1px solid var(--study-card-border);
+  border-radius: 18px;
+  padding: 64px 24px;
+  text-align: center;
+  box-shadow: 0 1px 2px #0f172a08;
+}
+
+.study-loading-spinner-wrap {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 18px;
+}
+
+.study-loading-spinner {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 4px solid var(--study-primary-light);
+  border-top-color: var(--study-primary);
+  animation: prepSpin 0.85s linear infinite;
+}
+
+@keyframes prepSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.study-loading-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--study-primary);
+}
+
+.study-loading-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.study-loading-title {
+  font-size: 18px;
+  font-weight: 750;
+  color: var(--study-text-dark);
+  margin: 0 0 6px 0;
+}
+
+.study-loading-subtitle {
+  font-size: 13px;
+  color: var(--study-text-muted);
+  margin: 0;
+}
+
+.study-empty-pane {
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 14px;
+  padding: 36px 20px;
+  text-align: center;
+  color: var(--study-text-muted);
+  font-size: 13px;
+}
+
+/* ==========================================================================
+   10. Responsive Refinements & Print Optimization
+   ========================================================================== */
+@media (max-width: 768px) {
+  .study-dashboard-page {
+    padding: 18px 14px 36px;
+    gap: 18px;
+  }
+
+  .study-dropdown-banner {
+    padding: 16px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .study-select-wrapper {
+    max-width: 100%;
+  }
+
+  .study-hero-banner {
+    padding: 22px 18px;
+  }
+
+  .study-section-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .study-core-section-card {
+    padding: 20px 18px;
+  }
+
+  .study-focus-header {
+    padding: 16px 18px;
+  }
+
+  .study-focus-body {
+    padding: 0 18px 20px;
+  }
+
+  .study-coach-tips-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .study-disclaimer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+
+@media print {
+  .study-top-nav-bar,
+  .study-dropdown-banner,
+  .study-sections-switcher-bar {
+    display: none !important;
+  }
+  .study-core-section-card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    page-break-inside: avoid;
+  }
+  .study-focus-card {
+    page-break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+}

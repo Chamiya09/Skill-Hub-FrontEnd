@@ -1925,3 +1925,140 @@ export const cvEvaluationApi = {
       `/CVEvaluation/latest?candidateId=${candidateId}&jobId=${jobId}`
     ),
 };
+
+// ── Student 1: AI Interview Preparation Guide ────────────────────────────────
+
+export interface GenerateInterviewPrepRequestDto {
+  candidateId?: string;
+  applicationId?: string;
+  jobId?: string;
+  jobTitle?: string;
+  targetRole?: string;
+  jobDescription: string;
+  experienceLevel?: string;
+}
+
+export interface StudyFocusAreaDto {
+  id: string;
+  title: string;
+  section: string;
+  priority: 'High Priority' | 'Core Requirement' | 'Practical Focus' | string;
+  estimatedStudyTime: string;
+  overview: string;
+  conceptsToReview: string[];
+  practicalApplication: string;
+  coachTip: string;
+}
+
+export interface StarGuidanceDto {
+  situation: string;
+  task: string;
+  action: string;
+  result: string;
+}
+
+export interface BehavioralQuestionDto {
+  id: string;
+  question: string;
+  competency: string;
+  starGuidance: StarGuidanceDto;
+  whatToAvoid: string;
+}
+
+export interface InterviewQuestionDto {
+  id: string;
+  question: string;
+  category: string;
+  difficulty: 'Junior' | 'Mid-Level' | 'Senior' | string;
+  expectedAnswerGuideline: string;
+  sampleAnswer?: string;
+  keyEvaluationPoints: string[];
+  proTip?: string;
+}
+
+export interface InterviewPrepGuideDto {
+  id: string;
+  guideId?: string;
+  candidateId: string;
+  applicationId?: string;
+  jobId?: string;
+  jobTitle: string;
+  targetRole: string;
+  companyName?: string;
+  location?: string;
+  employmentType?: string;
+  applicationStatus?: string;
+  appliedDate?: string;
+  interviewDate?: string;
+  jobDescription: string;
+  roleOverviewSummary: string;
+  keyTheoreticalAreas: StudyFocusAreaDto[];
+  technicalCoreConcepts: StudyFocusAreaDto[];
+  practicalImplementationFocus: StudyFocusAreaDto[];
+  proTips: string[];
+  preparationChecklist: string[];
+  technicalQuestions?: InterviewQuestionDto[];
+  behavioralQuestions?: BehavioralQuestionDto[];
+  createdAt: string;
+}
+
+export interface InterviewPrepEligibilityDto {
+  isEligible: boolean;
+  applicationStatus: string;
+  message: string;
+}
+
+export interface GenerateInterviewPrepResponseDto {
+  guideId: string;
+  id: string;
+  message: string;
+  guide?: InterviewPrepGuideDto;
+}
+
+export const interviewPrepApi = {
+  /**
+   * POST /api/interviewprep/generate
+   * Generates a tailored AI Interview Preparation Guide, saves to DB, and returns guideId.
+   */
+  generate: (payload: GenerateInterviewPrepRequestDto) =>
+    request<GenerateInterviewPrepResponseDto>('/interviewprep/generate', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, 60_000),
+
+  /**
+   * GET /api/interviewprep/{id}
+   * Fetches the saved guide from the database for the Study Dashboard.
+   */
+  getById: (guideId: string) =>
+    request<InterviewPrepGuideDto>(`/interviewprep/${guideId}`),
+
+  /**
+   * GET /api/interviewprep/eligibility
+   * Checks if candidate is eligible to access interview prep.
+   */
+  checkEligibility: (applicationId?: string, jobId?: string) => {
+    const params = new URLSearchParams();
+    if (applicationId) params.append('applicationId', applicationId);
+    if (jobId) params.append('jobId', jobId);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return request<InterviewPrepEligibilityDto>(`/interviewprep/eligibility${query}`);
+  },
+
+  /**
+   * GET /api/interviewprep/latest
+   * Retrieves the candidate's most recent preparation guide.
+   */
+  getLatest: (jobId?: string) =>
+    request<InterviewPrepGuideDto>(
+      jobId ? `/interviewprep/latest?jobId=${jobId}` : '/interviewprep/latest'
+    ),
+
+  /**
+   * GET /api/interviewprep/my-guides
+   * Retrieves all interview preparation guides for the current candidate.
+   */
+  getAll: () =>
+    request<InterviewPrepGuideDto[]>('/interviewprep/my-guides'),
+};
+

@@ -58,7 +58,7 @@ export const StudyTabsNavigation: React.FC<StudyTabsNavigationProps> = ({
   const tabs = [
     {
       key: 'theory' as StudyTabKey,
-      label: 'Key Theoretical Areas',
+      label: 'Theoretical Main Concepts',
       icon: <BookOpenIcon />,
       count: theoryCount,
       badge: 'Tab 1',
@@ -72,7 +72,7 @@ export const StudyTabsNavigation: React.FC<StudyTabsNavigationProps> = ({
     },
     {
       key: 'practical' as StudyTabKey,
-      label: 'Practical Implementation Focus',
+      label: 'Practical Implementation Guidelines',
       icon: <WrenchIcon />,
       count: practicalCount,
       badge: 'Tab 3',

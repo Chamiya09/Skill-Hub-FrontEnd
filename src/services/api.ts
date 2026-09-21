@@ -1980,9 +1980,16 @@ export interface InterviewPrepGuideDto {
   id: string;
   guideId?: string;
   candidateId: string;
+  applicationId?: string;
   jobId?: string;
   jobTitle: string;
   targetRole: string;
+  companyName?: string;
+  location?: string;
+  employmentType?: string;
+  applicationStatus?: string;
+  appliedDate?: string;
+  interviewDate?: string;
   jobDescription: string;
   roleOverviewSummary: string;
   keyTheoreticalAreas: StudyFocusAreaDto[];

@@ -192,11 +192,11 @@ export const CandidateStudyDashboard: React.FC = () => {
           <div className="study-tab-pane" key="tab-theory">
             <div className="study-section-banner">
               <div className="study-section-indicator">
-                <span className="section-pill">TAB 1 • THEORETICAL FOUNDATIONS</span>
+                <span className="section-pill">TAB 1 • THEORETICAL MAIN CONCEPTS</span>
               </div>
-              <h2 className="study-section-title">Key Theoretical Areas to Brush Up On</h2>
+              <h2 className="study-section-title">Theoretical Main Concepts to Master</h2>
               <p className="study-section-description">
-                Fundamental software engineering theories, architectural patterns, and algorithmic principles expected for the{' '}
+                Core theoretical principles, computer science foundations, and architectural paradigms expected for the{' '}
                 <strong>{guide.targetRole || guide.jobTitle}</strong> position.
               </p>
             </div>
@@ -225,7 +225,7 @@ export const CandidateStudyDashboard: React.FC = () => {
           <div className="study-tab-pane" key="tab-core">
             <div className="study-section-banner">
               <div className="study-section-indicator">
-                <span className="section-pill">TAB 2 • CORE MECHANICS</span>
+                <span className="section-pill">TAB 2 • TECHNICAL CORE CONCEPTS</span>
               </div>
               <h2 className="study-section-title">Technical Core Concepts Deep Dive</h2>
               <p className="study-section-description">
@@ -252,16 +252,16 @@ export const CandidateStudyDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Tab 3: Practical Implementation Focus */}
+        {/* Tab 3: Practical Implementation Guidelines */}
         {activeTab === 'practical' && (
           <div className="study-tab-pane" key="tab-practical">
             <div className="study-section-banner">
               <div className="study-section-indicator">
-                <span className="section-pill">TAB 3 • PRACTICAL WORKFLOWS</span>
+                <span className="section-pill">TAB 3 • PRACTICAL IMPLEMENTATION GUIDELINES</span>
               </div>
-              <h2 className="study-section-title">Practical Implementation Focus</h2>
+              <h2 className="study-section-title">Practical Implementation Guidelines</h2>
               <p className="study-section-description">
-                Real-world coding workflows, resilient distributed communication patterns, schema migrations, and production diagnostics.
+                Real-world coding workflows, hands-on implementation priorities, schema migrations, and production diagnostics.
               </p>
             </div>
 

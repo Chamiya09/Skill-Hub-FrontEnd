@@ -1722,6 +1722,12 @@ export const assessmentsApi = {
       body: JSON.stringify(payload),
     }),
 
+  generateAi: (jobVacancyId: string, payload?: { focusArea?: string }) =>
+    request<AssessmentResponseDto>(`/Assessments/job/${jobVacancyId}/generate-ai`, {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
+    }),
+
   update: (id: string, payload: UpdateAssessmentPayload) =>
     request<AssessmentResponseDto>(`/Assessments/${id}`, {
       method: 'PUT',

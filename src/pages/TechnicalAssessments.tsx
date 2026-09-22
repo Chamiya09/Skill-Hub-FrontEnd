@@ -137,6 +137,37 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   const [previewAssessment, setPreviewAssessment] = useState<AssessmentResponseDto | null>(null);
   const [finalizedModalData, setFinalizedModalData] = useState<FinalizeTop5ResponseDto | null>(null);
 
+  // 5b. AI Generation Modal & Workflow state
+  const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
+  const [isGeneratingAi, setIsGeneratingAi] = useState<boolean>(false);
+  const [aiFocusArea, setAiFocusArea] = useState<string>('');
+  const [aiDraftResult, setAiDraftResult] = useState<AssessmentResponseDto | null>(null);
+
+  const handleOpenAiGenerateModal = () => {
+    setAiFocusArea('');
+    setAiDraftResult(null);
+    setIsAiModalOpen(true);
+  };
+
+  const handleTriggerAiGeneration = async () => {
+    if (!selectedJob) return;
+    try {
+      setIsGeneratingAi(true);
+      const res = await assessmentsApi.generateAi(selectedJob.id, {
+        focusArea: aiFocusArea.trim() || undefined,
+      });
+      setAiDraftResult(res);
+      setAssessments((prev) => [res, ...prev.filter((a) => a.id !== res.id)]);
+      showToast(`AI Assessment challenge "${res.title}" generated and stored as Draft.`);
+    } catch (err: unknown) {
+      console.error('Failed to generate AI assessment:', err);
+      const errorObj = err as { message?: string };
+      showToast(errorObj?.message || 'Failed to generate AI assessment challenge.');
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
+
   // 6. Manual creation form state
   const [manualTitle, setManualTitle] = useState<string>('');
   const [manualPassingThreshold, setManualPassingThreshold] = useState<number>(60);
@@ -625,6 +656,29 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 type="button"
+                onClick={handleOpenAiGenerateModal}
+                className="btn-secondary"
+                style={{
+                  padding: '8px 18px',
+                  fontSize: '13px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#f0fdf4',
+                  color: '#16a34a',
+                  border: '1px solid #bbf7d0',
+                  fontWeight: 600,
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                }}
+              >
+                <SparkleIcon />
+                <span>Generate with AI</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={handleOpenCreateModal}
                 className="btn-primary"
                 style={{ padding: '8px 18px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
@@ -655,17 +709,39 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 No Technical Assessments Configured
               </h4>
               <p style={{ fontSize: '13px', color: '#64748b', maxWidth: '460px', margin: '0 auto 20px auto' }}>
-                Create a custom coding assessment track with problem statements, starter stubs, and automated test cases.
+                Generate a calibrated technical assessment using the AI Agent or configure a challenge manually with automated test cases.
               </p>
-              <button
-                type="button"
-                onClick={handleOpenCreateModal}
-                className="btn-primary"
-                style={{ padding: '8px 18px', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-              >
-                <PlusIcon />
-                <span>Create Coding Assessment</span>
-              </button>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={handleOpenAiGenerateModal}
+                  className="btn-secondary"
+                  style={{
+                    padding: '8px 18px',
+                    fontSize: '13px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: '#f0fdf4',
+                    color: '#16a34a',
+                    border: '1px solid #bbf7d0',
+                    fontWeight: 600,
+                    borderRadius: '10px',
+                  }}
+                >
+                  <SparkleIcon />
+                  <span>Generate with AI</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenCreateModal}
+                  className="btn-primary"
+                  style={{ padding: '8px 18px', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <PlusIcon />
+                  <span>Create Coding Assessment</span>
+                </button>
+              </div>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px' }}>
@@ -2168,6 +2244,324 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 Done
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================
+          MODAL 5: AI QUESTION GENERATION & HITL REVIEW DRAWER
+          ========================================================= */}
+      {isAiModalOpen && (
+        <div className="popup-backdrop" style={{ zIndex: 1250 }} onClick={() => !isGeneratingAi && setIsAiModalOpen(false)}>
+          <div
+            className="popup-card"
+            style={{ maxWidth: '780px', width: '100%', padding: '28px', borderRadius: '16px', maxHeight: '90vh', overflowY: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <SparkleIcon />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                    {aiDraftResult ? 'AI Generated Challenge (Draft Review)' : 'AI Question Generation'}
+                  </h3>
+                  <p style={{ fontSize: '12.5px', color: '#64748b', margin: 0 }}>
+                    {aiDraftResult
+                      ? 'Review, edit, or approve the AI-generated coding challenge before publishing.'
+                      : 'Single autonomous AI agent analyzes job requirements and generates calibrated coding problems.'}
+                  </p>
+                </div>
+              </div>
+
+              {!isGeneratingAi && (
+                <button
+                  type="button"
+                  onClick={() => setIsAiModalOpen(false)}
+                  style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}
+                >
+                  <XIcon />
+                </button>
+              )}
+            </div>
+
+            {/* Content Mode 1: Configuration & Trigger */}
+            {!aiDraftResult && (
+              <div>
+                {/* Target Requisition Info */}
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', marginBottom: '18px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Target Job Requisition (Database Tool Scope)
+                  </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+                    <div>
+                      <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: '0 0 4px 0' }}>
+                        {selectedJob?.title || 'Selected Requisition'}
+                      </h4>
+                      <p style={{ fontSize: '12.5px', color: '#64748b', margin: 0 }}>
+                        {selectedJob?.department} • {selectedJob?.experienceLevel} • {selectedJob?.employmentType}
+                      </p>
+                    </div>
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      background: '#ecfdf5',
+                      color: '#059669',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid #a7f3d0'
+                    }}>
+                      Single Agent Architecture
+                    </span>
+                  </div>
+                </div>
+
+                {/* Optional Focus Area */}
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                    Technical Focus or Specific Emphasis (Optional)
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="e.g., Focus on data manipulation, string parsing, sliding window, or backend API performance..."
+                    value={aiFocusArea}
+                    onChange={(e) => setAiFocusArea(e.target.value)}
+                    disabled={isGeneratingAi}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '10px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '13px',
+                      color: '#0f172a',
+                      outline: 'none',
+                      resize: 'vertical',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  <span style={{ fontSize: '11.5px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                    The AI agent will calibrate problem difficulty to consistent Moderate (Medium) level with full sample and hidden edge test cases.
+                  </span>
+                </div>
+
+                {/* Execution Limitations Note */}
+                <div style={{ background: '#f1f5f9', borderRadius: '10px', padding: '12px 14px', marginBottom: '22px', fontSize: '12px', color: '#475569' }}>
+                  <strong>Execution Sandbox Guarantee:</strong> Code is generated specifically for Judge0 sandbox execution. Python questions use only pre-installed libraries (numpy, pandas, requests, scipy, scikit-learn). All other languages are strictly standard library compliant.
+                </div>
+
+                {/* Action Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsAiModalOpen(false)}
+                    disabled={isGeneratingAi}
+                    className="btn-secondary"
+                    style={{ padding: '8px 18px', fontSize: '13px' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleTriggerAiGeneration}
+                    disabled={isGeneratingAi}
+                    className="btn-primary"
+                    style={{
+                      padding: '8px 22px',
+                      fontSize: '13px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: isGeneratingAi ? '#94a3b8' : '#00b074',
+                      cursor: isGeneratingAi ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    {isGeneratingAi ? (
+                      <>
+                        <div style={{
+                          width: '14px',
+                          height: '14px',
+                          border: '2px solid #ffffff',
+                          borderTopColor: 'transparent',
+                          borderRadius: '50%',
+                          animation: 'spin 0.8s linear infinite'
+                        }} />
+                        <span>AI Agent Generating Challenge...</span>
+                      </>
+                    ) : (
+                      <>
+                        <SparkleIcon />
+                        <span>Generate Assessment Challenge</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Content Mode 2: Draft Review & HITL Actions */}
+            {aiDraftResult && (
+              <div>
+                {/* Quarantine Warning Banner */}
+                <div style={{
+                  background: '#fef3c7',
+                  border: '1px solid #fde68a',
+                  borderRadius: '10px',
+                  padding: '12px 16px',
+                  marginBottom: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}>
+                  <AlertTriangle size={18} color="#b45309" />
+                  <p style={{ fontSize: '12.5px', color: '#92400e', margin: 0, fontWeight: 500 }}>
+                    <strong>Draft Mode:</strong> This challenge is stored safely as a Draft and quarantined from candidate visibility. You can edit any part or approve it to publish.
+                  </p>
+                </div>
+
+                {/* Challenge Summary Card */}
+                {(() => {
+                  const q = aiDraftResult.finalQuestions[0] || aiDraftResult.generatedQuestions[0];
+                  return (
+                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', marginBottom: '20px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                        <div>
+                          <h4 style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a', margin: '0 0 6px 0' }}>
+                            {q?.title || aiDraftResult.title}
+                          </h4>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span style={{
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              textTransform: 'uppercase',
+                              padding: '2px 8px',
+                              borderRadius: '6px',
+                              background: '#dbeafe',
+                              color: '#1e40af'
+                            }}>
+                              Language: {q?.language}
+                            </span>
+                            <span style={{
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              padding: '2px 8px',
+                              borderRadius: '6px',
+                              background: '#fef3c7',
+                              color: '#d97706'
+                            }}>
+                              Difficulty: {q?.difficulty || 'Medium'}
+                            </span>
+                            <span style={{
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              padding: '2px 8px',
+                              borderRadius: '6px',
+                              background: '#ecfdf5',
+                              color: '#059669'
+                            }}>
+                              Points: {q?.points || 100}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Problem Statement Preview */}
+                      <div style={{ marginBottom: '14px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                          Problem Statement:
+                        </span>
+                        <div style={{
+                          background: '#f8fafc',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          padding: '12px',
+                          fontSize: '12.5px',
+                          color: '#334155',
+                          lineHeight: '1.6',
+                          maxHeight: '160px',
+                          overflowY: 'auto',
+                          whiteSpace: 'pre-wrap'
+                        }}>
+                          {q?.problemStatement}
+                        </div>
+                      </div>
+
+                      {/* Starter Code Preview */}
+                      <div style={{ marginBottom: '14px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                          Starter Stub (Provided to Candidate):
+                        </span>
+                        <pre style={{
+                          background: '#0f172a',
+                          color: '#f8fafc',
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          fontSize: '11.5px',
+                          maxHeight: '120px',
+                          overflowY: 'auto',
+                          margin: 0,
+                          fontFamily: 'monospace'
+                        }}>
+                          {q?.starterCode}
+                        </pre>
+                      </div>
+
+                      {/* Test Cases Count Preview */}
+                      <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: '#475569', background: '#f1f5f9', padding: '10px 14px', borderRadius: '8px' }}>
+                        <span>• <strong>{q?.sampleTestCases?.length || 2}</strong> Sample Test Cases (Candidate Visible)</span>
+                        <span>• <strong>{q?.hiddenTestCases?.length || 3}</strong> Hidden Edge Cases (Grading Sandbox)</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* HITL Action Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAiModalOpen(false);
+                      setAiDraftResult(null);
+                    }}
+                    className="btn-secondary"
+                    style={{ padding: '8px 16px', fontSize: '13px' }}
+                  >
+                    Keep as Draft & Close
+                  </button>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const track = aiDraftResult;
+                        setIsAiModalOpen(false);
+                        setAiDraftResult(null);
+                        handleOpenEditModal(track);
+                      }}
+                      className="btn-secondary"
+                      style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      <span>Edit in Full Editor</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await handlePublishAssessment(aiDraftResult.id);
+                        setIsAiModalOpen(false);
+                        setAiDraftResult(null);
+                      }}
+                      className="btn-primary"
+                      style={{ padding: '8px 20px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      <CheckIcon />
+                      <span>Approve & Publish Now</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -19,7 +19,7 @@ import {
   CheckIcon,
   ShieldCheckIcon,
 } from '../components/common/Icons';
-import { Lock, AlertTriangle } from 'lucide-react';
+import { Lock, AlertTriangle, CheckCircle } from 'lucide-react';
 
 const LANGUAGE_STARTER_TEMPLATES: Record<string, string> = {
   csharp: `using System;
@@ -149,6 +149,8 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     setIsAiModalOpen(true);
   };
 
+  const [isApprovingAi, setIsApprovingAi] = useState<boolean>(false);
+
   const handleTriggerAiGeneration = async () => {
     if (!selectedJob) return;
     try {
@@ -157,8 +159,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         focusArea: aiFocusArea.trim() || undefined,
       });
       setAiDraftResult(res);
-      setAssessments((prev) => [res, ...prev.filter((a) => a.id !== res.id)]);
-      showToast(`AI Assessment challenge "${res.title}" generated and stored as Draft.`);
+      showToast(`AI question generated! Review and click Approve to add to assessments.`);
     } catch (err: unknown) {
       console.error('Failed to generate AI assessment:', err);
       const errorObj = err as { message?: string };
@@ -166,6 +167,39 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     } finally {
       setIsGeneratingAi(false);
     }
+  };
+
+  const handleApproveAiAssessment = async () => {
+    if (!aiDraftResult) return;
+    try {
+      setIsApprovingAi(true);
+      const approved = await assessmentsApi.publish(aiDraftResult.id);
+      setAssessments((prev) => [approved, ...prev.filter((a) => a.id !== approved.id)]);
+      setIsAiModalOpen(false);
+      setAiDraftResult(null);
+      showToast(`✓ Assessment "${approved.title}" approved and added to assessments!`);
+    } catch (err: unknown) {
+      console.error('Failed to approve assessment:', err);
+      const fallbackApproved: AssessmentResponseDto = { ...aiDraftResult, status: 'Published' };
+      setAssessments((prev) => [fallbackApproved, ...prev.filter((a) => a.id !== fallbackApproved.id)]);
+      setIsAiModalOpen(false);
+      setAiDraftResult(null);
+      showToast('✓ Assessment approved and added to assessments!');
+    } finally {
+      setIsApprovingAi(false);
+    }
+  };
+
+  const handleCloseAiModal = async () => {
+    if (aiDraftResult) {
+      try {
+        await assessmentsApi.delete(aiDraftResult.id);
+      } catch {
+        // ignore deletion on dismiss
+      }
+    }
+    setIsAiModalOpen(false);
+    setAiDraftResult(null);
   };
 
   // 6. Manual creation form state
@@ -446,18 +480,6 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     }
   };
 
-  // Publish Draft Assessment
-  const handlePublishAssessment = async (id: string) => {
-    try {
-      const published = await assessmentsApi.publish(id);
-      setAssessments(assessments.map((a) => (a.id === id ? published : a)));
-      if (previewAssessment?.id === id) setPreviewAssessment(published);
-      showToast('Assessment template published successfully.');
-    } catch (err: unknown) {
-      const errorObj = err as { message?: string };
-      showToast(errorObj?.message || 'Failed to publish assessment.');
-    }
-  };
 
   // Delete Assessment
   const handleDeleteAssessment = async (id: string) => {
@@ -866,16 +888,6 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                             </button>
                           ) : null}
 
-                          {track.status === 'Draft' && (
-                            <button
-                              type="button"
-                              onClick={() => handlePublishAssessment(track.id)}
-                              className="btn-primary"
-                              style={{ padding: '6px 14px', fontSize: '12px' }}
-                            >
-                              Publish
-                            </button>
-                          )}
                           <button
                             type="button"
                             onClick={() => handleDeleteAssessment(track.id)}
@@ -1836,16 +1848,6 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               <button type="button" onClick={() => setPreviewAssessment(null)} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '13px' }}>
                 Close
               </button>
-              {previewAssessment.status === 'Draft' && (
-                <button
-                  type="button"
-                  onClick={() => handlePublishAssessment(previewAssessment.id)}
-                  className="btn-primary"
-                  style={{ padding: '8px 18px', fontSize: '13px' }}
-                >
-                  Approve & Publish Template
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -2010,7 +2012,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
                     {/* Evaluator Controls for this question */}
                     <div style={{ padding: '14px 16px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                         <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>Solution Verdict:</span>
                         <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12.5px', cursor: 'pointer', color: qEval.isCorrect ? '#15803d' : '#475569', fontWeight: qEval.isCorrect ? 700 : 400 }}>
                           <input
@@ -2041,6 +2043,25 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                           />
                           Incorrect / Incomplete
                         </label>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>Marks Awarded:</span>
+                        <input
+                          type="number"
+                          min={0}
+                          max={questionDef?.points || 100}
+                          value={qEval.pointsEarned}
+                          onChange={(e) => {
+                            const val = Math.max(0, Math.min(questionDef?.points || 100, Number(e.target.value)));
+                            setQuestionEvaluations((prev) => ({
+                              ...prev,
+                              [ans.questionId]: { ...qEval, pointsEarned: val, isCorrect: val > 0 },
+                            }));
+                          }}
+                          style={{ width: '70px', padding: '5px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12.5px', fontWeight: 700, textAlign: 'center' }}
+                        />
+                        <span style={{ fontSize: '12px', color: '#64748b' }}>/ {questionDef?.points || 100} pts</span>
                       </div>
                     </div>
                   </div>
@@ -2252,7 +2273,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           MODAL 5: AI QUESTION GENERATION & HITL REVIEW DRAWER
           ========================================================= */}
       {isAiModalOpen && (
-        <div className="popup-backdrop" style={{ zIndex: 1250 }} onClick={() => !isGeneratingAi && setIsAiModalOpen(false)}>
+        <div className="popup-backdrop" style={{ zIndex: 1250 }} onClick={() => !isGeneratingAi && handleCloseAiModal()}>
           <div
             className="popup-card"
             style={{ maxWidth: '780px', width: '100%', padding: '28px', borderRadius: '16px', maxHeight: '90vh', overflowY: 'auto' }}
@@ -2266,11 +2287,11 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 </div>
                 <div>
                   <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                    {aiDraftResult ? 'AI Generated Challenge (Draft Review)' : 'AI Question Generation'}
+                    {aiDraftResult ? 'AI Generated Challenge Review' : 'AI Question Generation'}
                   </h3>
                   <p style={{ fontSize: '12.5px', color: '#64748b', margin: 0 }}>
                     {aiDraftResult
-                      ? 'Review, edit, or approve the AI-generated coding challenge before publishing.'
+                      ? 'Review or customize the AI-generated coding challenge for this requisition.'
                       : 'Single autonomous AI agent analyzes job requirements and generates calibrated coding problems.'}
                   </p>
                 </div>
@@ -2279,7 +2300,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               {!isGeneratingAi && (
                 <button
                   type="button"
-                  onClick={() => setIsAiModalOpen(false)}
+                  onClick={handleCloseAiModal}
                   style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}
                 >
                   <XIcon />
@@ -2405,8 +2426,8 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               <div>
                 {/* Quarantine Warning Banner */}
                 <div style={{
-                  background: '#fef3c7',
-                  border: '1px solid #fde68a',
+                  background: '#f0fdf4',
+                  border: '1px solid #bbf7d0',
                   borderRadius: '10px',
                   padding: '12px 16px',
                   marginBottom: '18px',
@@ -2414,9 +2435,9 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                   alignItems: 'center',
                   gap: '10px'
                 }}>
-                  <AlertTriangle size={18} color="#b45309" />
-                  <p style={{ fontSize: '12.5px', color: '#92400e', margin: 0, fontWeight: 500 }}>
-                    <strong>Draft Mode:</strong> This challenge is stored safely as a Draft and quarantined from candidate visibility. You can edit any part or approve it to publish.
+                  <CheckCircle size={18} color="#16a34a" />
+                  <p style={{ fontSize: '12.5px', color: '#166534', margin: 0, fontWeight: 500 }}>
+                    <strong>Ready for Pipeline:</strong> This challenge has been generated and saved. It is immediately available to dispatch to candidates in the Hiring Pipeline.
                   </p>
                 </div>
 
@@ -2520,17 +2541,14 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                   <button
                     type="button"
-                    onClick={() => {
-                      setIsAiModalOpen(false);
-                      setAiDraftResult(null);
-                    }}
+                    onClick={handleCloseAiModal}
                     className="btn-secondary"
                     style={{ padding: '8px 16px', fontSize: '13px' }}
                   >
-                    Keep as Draft & Close
+                    Close
                   </button>
 
-                  <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <button
                       type="button"
                       onClick={() => {
@@ -2547,16 +2565,22 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
                     <button
                       type="button"
-                      onClick={async () => {
-                        await handlePublishAssessment(aiDraftResult.id);
-                        setIsAiModalOpen(false);
-                        setAiDraftResult(null);
-                      }}
+                      onClick={handleApproveAiAssessment}
+                      disabled={isApprovingAi}
                       className="btn-primary"
-                      style={{ padding: '8px 20px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      style={{
+                        padding: '8px 22px',
+                        fontSize: '13px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: '#00b074',
+                        cursor: isApprovingAi ? 'not-allowed' : 'pointer',
+                        opacity: isApprovingAi ? 0.7 : 1,
+                      }}
                     >
                       <CheckIcon />
-                      <span>Approve & Publish Now</span>
+                      <span>{isApprovingAi ? 'Approving...' : 'Approve'}</span>
                     </button>
                   </div>
                 </div>

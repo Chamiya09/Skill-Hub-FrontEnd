@@ -367,6 +367,16 @@
   background: #7e22ce;
 }
 
+.eligible-stage-pill.saved-ready-pill {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.eligible-stage-pill.saved-ready-pill b {
+  background: #00b074;
+}
+
 .eligible-job-meta {
   display: flex;
   align-items: center;
@@ -458,6 +468,16 @@
   background: #009663;
   transform: translateY(-1px);
   box-shadow: 0 10px 22px #00b07434;
+}
+
+.btn-generate-prep.btn-view-prep {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 8px 18px rgba(5, 150, 105, 0.28);
+}
+
+.btn-generate-prep.btn-view-prep:hover {
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+  box-shadow: 0 10px 22px rgba(5, 150, 105, 0.38);
 }
 
 .btn-generate-prep:disabled {

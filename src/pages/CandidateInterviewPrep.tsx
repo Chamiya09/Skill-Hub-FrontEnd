@@ -4,6 +4,7 @@ import {
   interviewPrepApi,
   jobApplicationsApi,
   type CandidateApplicationItemDto,
+  type InterviewPrepGuideDto,
 } from '../services/api';
 import {
   InterviewHubHeader,
@@ -18,21 +19,26 @@ export const CandidateInterviewPrep: React.FC = () => {
   const navigate = useNavigate();
 
   const [applications, setApplications] = useState<CandidateApplicationItemDto[]>([]);
+  const [savedGuides, setSavedGuides] = useState<InterviewPrepGuideDto[]>([]);
   const [isLoadingApps, setIsLoadingApps] = useState(true);
   const [generatingAppId, setGeneratingAppId] = useState<string | null>(null);
   const [activeGeneratingApp, setActiveGeneratingApp] = useState<CandidateApplicationItemDto | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Load candidate applications on mount
+  // Load candidate applications and any previously generated guides on mount
   useEffect(() => {
     let isMounted = true;
 
     const fetchApplications = async () => {
       try {
         setIsLoadingApps(true);
-        const data = await jobApplicationsApi.getMyApplications();
+        const [appsData, guidesData] = await Promise.all([
+          jobApplicationsApi.getMyApplications().catch(() => [] as CandidateApplicationItemDto[]),
+          interviewPrepApi.getAll().catch(() => [] as InterviewPrepGuideDto[]),
+        ]);
         if (isMounted) {
-          setApplications(data || []);
+          setApplications(appsData || []);
+          setSavedGuides(guidesData || []);
         }
       } catch (err: unknown) {
         console.warn('Failed to fetch real applications, using fallback for testing:', err);
@@ -95,15 +101,32 @@ export const CandidateInterviewPrep: React.FC = () => {
     });
   }, [applications]);
 
+  // Find saved guide for an application
+  const getSavedGuideForApp = (app: CandidateApplicationItemDto) => {
+    const appId = app.id || app.applicationId;
+    return savedGuides.find(
+      (g) =>
+        (g.applicationId && (g.applicationId === appId || g.applicationId === app.id)) ||
+        (g.jobId && g.jobId === app.jobId)
+    );
+  };
+
+  // View Existing Saved Guide in Study Dashboard without regenerating
+  const handleViewGuide = (guideId: string) => {
+    localStorage.setItem('skillhub_last_guide_id', guideId);
+    navigate(`/candidate/interview-prep/guide/${guideId}`);
+  };
+
   // Primary Action: Generate AI Prep Guide and Navigate to Page 2 (The Study Dashboard)
   const handleGenerateGuide = async (app: CandidateApplicationItemDto) => {
+    const appId = app.id || app.applicationId || '';
     try {
       setError(null);
-      setGeneratingAppId(app.id);
+      setGeneratingAppId(appId || null);
       setActiveGeneratingApp(app);
 
       const response = await interviewPrepApi.generate({
-        applicationId: app.id,
+        applicationId: appId,
         jobId: app.jobId,
         jobTitle: app.jobTitle,
         targetRole: app.jobTitle,
@@ -184,14 +207,20 @@ export const CandidateInterviewPrep: React.FC = () => {
               </div>
 
               <div className="eligible-jobs-grid">
-                {eligibleApplications.map((app) => (
-                  <EligibleJobCard
-                    key={app.id}
-                    application={app}
-                    isGenerating={generatingAppId === app.id}
-                    onGenerateGuide={handleGenerateGuide}
-                  />
-                ))}
+                {eligibleApplications.map((app) => {
+                  const appId = app.id || app.applicationId;
+                  const saved = getSavedGuideForApp(app);
+                  return (
+                    <EligibleJobCard
+                      key={appId}
+                      application={app}
+                      isGenerating={generatingAppId === appId}
+                      savedGuideId={saved?.id || null}
+                      onGenerateGuide={handleGenerateGuide}
+                      onViewGuide={handleViewGuide}
+                    />
+                  );
+                })}
               </div>
             </section>
           ) : (

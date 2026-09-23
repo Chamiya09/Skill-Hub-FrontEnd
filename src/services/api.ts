@@ -1230,6 +1230,7 @@ export interface ApplicationStatusDto {
 
 export interface CandidateApplicationItemDto {
   id: string;
+  applicationId?: string;
   jobId: string;
   jobTitle: string;
   companyName: string;
@@ -1942,6 +1943,7 @@ export interface GenerateInterviewPrepRequestDto {
   targetRole?: string;
   jobDescription: string;
   experienceLevel?: string;
+  forceRegenerate?: boolean;
 }
 
 export interface StudyFocusAreaDto {
@@ -2066,5 +2068,14 @@ export const interviewPrepApi = {
    */
   getAll: () =>
     request<InterviewPrepGuideDto[]>('/interviewprep/my-guides'),
+
+  /**
+   * DELETE /api/interviewprep/{id}
+   * Deletes a saved interview preparation guide.
+   */
+  deleteGuide: (guideId: string) =>
+    request<void>(`/interviewprep/${guideId}`, {
+      method: 'DELETE',
+    }),
 };
 

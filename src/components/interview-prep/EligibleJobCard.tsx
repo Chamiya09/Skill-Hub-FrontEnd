@@ -11,13 +11,17 @@ import {
 interface EligibleJobCardProps {
   application: CandidateApplicationItemDto;
   isGenerating: boolean;
+  savedGuideId?: string | null;
   onGenerateGuide: (application: CandidateApplicationItemDto) => void;
+  onViewGuide?: (guideId: string) => void;
 }
 
 export const EligibleJobCard: React.FC<EligibleJobCardProps> = ({
   application,
   isGenerating,
+  savedGuideId,
   onGenerateGuide,
+  onViewGuide,
 }) => {
   const companyInitials = (application.companyName || 'EP')
     .split(' ')
@@ -55,10 +59,17 @@ export const EligibleJobCard: React.FC<EligibleJobCardProps> = ({
         </div>
 
         <div className="eligible-job-badge-wrap">
-          <span className="eligible-stage-pill">
-            <b />
-            <span>Interview Stage</span>
-          </span>
+          {savedGuideId ? (
+            <span className="eligible-stage-pill saved-ready-pill">
+              <b />
+              <span>Guide Ready</span>
+            </span>
+          ) : (
+            <span className="eligible-stage-pill">
+              <b />
+              <span>Interview Stage</span>
+            </span>
+          )}
         </div>
       </div>
 
@@ -94,24 +105,38 @@ export const EligibleJobCard: React.FC<EligibleJobCardProps> = ({
         <div className="eligible-job-callout-body">
           <strong>Technical Career Coach Guideline</strong>
           <p>
-            Ready to generate targeted study focus areas covering Key Theoretical Areas, Technical Core Concepts, and Practical Implementation priorities.
+            {savedGuideId
+              ? 'Your personalized interview preparation guidelines are saved in your Study Dashboard. Review core concepts and practical workflows anytime.'
+              : 'Ready to generate targeted study focus areas covering Key Theoretical Areas, Technical Core Concepts, and Practical Implementation priorities.'}
           </p>
         </div>
       </div>
 
       {/* Card Actions: Primary Button */}
       <div className="eligible-job-footer">
-        <button
-          type="button"
-          className="btn-generate-prep"
-          onClick={() => onGenerateGuide(application)}
-          disabled={isGenerating}
-          aria-busy={isGenerating}
-        >
-          <SparkleIcon />
-          <span>{isGenerating ? 'Analyzing Role & Generating...' : 'Generate AI Prep Guide'}</span>
-          <ArrowRightIcon />
-        </button>
+        {savedGuideId ? (
+          <button
+            type="button"
+            className="btn-generate-prep btn-view-prep"
+            onClick={() => (onViewGuide ? onViewGuide(savedGuideId) : onGenerateGuide(application))}
+          >
+            <SparkleIcon />
+            <span>View Saved Prep Guide</span>
+            <ArrowRightIcon />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn-generate-prep"
+            onClick={() => onGenerateGuide(application)}
+            disabled={isGenerating}
+            aria-busy={isGenerating}
+          >
+            <SparkleIcon />
+            <span>{isGenerating ? 'Analyzing Role & Generating...' : 'Generate AI Prep Guide'}</span>
+            <ArrowRightIcon />
+          </button>
+        )}
       </div>
     </div>
   );

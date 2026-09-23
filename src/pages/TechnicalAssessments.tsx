@@ -20,6 +20,7 @@ import {
   ShieldCheckIcon,
 } from '../components/common/Icons';
 import { Lock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ProblemStatementViewer } from '../components/assessment';
 
 const LANGUAGE_STARTER_TEMPLATES: Record<string, string> = {
   csharp: `using System;
@@ -1820,9 +1821,13 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                     </span>
                   </div>
 
-                  <p style={{ fontSize: '13px', color: '#334155', margin: '0 0 12px 0', lineHeight: 1.5 }}>
-                    {q.problemStatement}
-                  </p>
+                  <div style={{ margin: '0 0 14px 0' }}>
+                    <ProblemStatementViewer
+                      content={q.problemStatement}
+                      theme="light"
+                      compact={true}
+                    />
+                  </div>
 
                   <div style={{ marginBottom: '10px' }}>
                     <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Starter Code:</span>
@@ -1966,10 +1971,19 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       </div>
                     </div>
 
-                    {/* Question Problem Statement if available */}
+                    {/* Question Problem Statement Rendered Cleanly for HR Review */}
                     {questionDef?.problemStatement && (
-                      <div style={{ padding: '12px 16px', background: '#fcfcfd', borderBottom: '1px solid #f1f5f9', fontSize: '12.5px', color: '#334155' }}>
-                        <strong style={{ color: '#0f172a' }}>Problem Prompt:</strong> {questionDef.problemStatement}
+                      <div style={{ padding: '16px 20px', background: '#fcfcfd', borderBottom: '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            Problem Specification & Guidelines
+                          </span>
+                        </div>
+                        <ProblemStatementViewer
+                          content={questionDef.problemStatement}
+                          theme="light"
+                          compact={true}
+                        />
                       </div>
                     )}
 
@@ -2493,18 +2507,18 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                           Problem Statement:
                         </span>
                         <div style={{
-                          background: '#f8fafc',
+                          background: '#ffffff',
                           border: '1px solid #e2e8f0',
                           borderRadius: '8px',
-                          padding: '12px',
-                          fontSize: '12.5px',
-                          color: '#334155',
-                          lineHeight: '1.6',
-                          maxHeight: '160px',
+                          padding: '12px 14px',
+                          maxHeight: '260px',
                           overflowY: 'auto',
-                          whiteSpace: 'pre-wrap'
                         }}>
-                          {q?.problemStatement}
+                          <ProblemStatementViewer
+                            content={q?.problemStatement}
+                            theme="light"
+                            compact={true}
+                          />
                         </div>
                       </div>
 

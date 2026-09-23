@@ -15,6 +15,7 @@ import {
   ShieldCheckIcon,
   ArrowRightIcon,
 } from '../components/common/Icons';
+import { ProblemStatementViewer } from '../components/assessment';
 
 // Lazy-load Monaco Editor so it only loads when the assessment screen mounts
 const MonacoEditor = React.lazy(() => import('@monaco-editor/react'));
@@ -1437,17 +1438,12 @@ export const CandidateExam: React.FC = () => {
             {currentQuestion.title}
           </h2>
 
-          {/* Problem Statement */}
-          <div
-            style={{
-              color: '#cbd5e1',
-              fontSize: '0.88rem',
-              lineHeight: 1.65,
-              whiteSpace: 'pre-wrap',
-              marginBottom: '22px',
-            }}
-          >
-            {currentQuestion.problemStatement}
+          {/* Formatted Problem Statement with Rich UI Sections */}
+          <div style={{ marginBottom: '22px' }}>
+            <ProblemStatementViewer
+              content={currentQuestion.problemStatement}
+              theme="dark"
+            />
           </div>
 
           {/* Input/Output Format & Constraints (if present in problem or structured) */}

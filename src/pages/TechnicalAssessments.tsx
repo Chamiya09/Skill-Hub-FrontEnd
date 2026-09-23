@@ -19,7 +19,7 @@ import {
   CheckIcon,
   ShieldCheckIcon,
 } from "../components/common/Icons";
-import { Lock, AlertTriangle, CheckCircle } from "lucide-react";
+import { Lock, AlertTriangle, CheckCircle, Pencil } from "lucide-react";
 import { ProblemStatementViewer } from "../components/assessment";
 
 const LANGUAGE_STARTER_TEMPLATES: Record<string, string> = {
@@ -158,16 +158,16 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
   const [isGeneratingAi, setIsGeneratingAi] = useState<boolean>(false);
   const [aiFocusArea, setAiFocusArea] = useState<string>("");
+  const [aiDifficulty, setAiDifficulty] = useState<string>("Medium");
   const [aiDraftResult, setAiDraftResult] =
     useState<AssessmentResponseDto | null>(null);
 
   const handleOpenAiGenerateModal = () => {
     setAiFocusArea("");
+    setAiDifficulty("Medium");
     setAiDraftResult(null);
     setIsAiModalOpen(true);
   };
-
-  const [isApprovingAi, setIsApprovingAi] = useState<boolean>(false);
 
   const handleTriggerAiGeneration = async () => {
     if (!selectedJob) return;
@@ -177,10 +177,11 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
       setSelectedJob(currentJob);
       const res = await assessmentsApi.generateAi(currentJob.id, {
         focusArea: aiFocusArea.trim() || undefined,
+        difficulty: aiDifficulty,
       });
       setAiDraftResult(res);
       showToast(
-        `AI question generated! Review and click Approve to add to assessments.`,
+        `AI question generated! Review and click Edit in Full Editor to set expiry date and publish.`,
       );
     } catch (err: unknown) {
       console.error("Failed to generate AI assessment:", err);
@@ -212,38 +213,6 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
       }
     } finally {
       setIsGeneratingAi(false);
-    }
-  };
-
-  const handleApproveAiAssessment = async () => {
-    if (!aiDraftResult) return;
-    try {
-      setIsApprovingAi(true);
-      const approved = await assessmentsApi.publish(aiDraftResult.id);
-      setAssessments((prev) => [
-        approved,
-        ...prev.filter((a) => a.id !== approved.id),
-      ]);
-      setIsAiModalOpen(false);
-      setAiDraftResult(null);
-      showToast(
-        `✓ Assessment "${approved.title}" approved and added to assessments!`,
-      );
-    } catch (err: unknown) {
-      console.error("Failed to approve assessment:", err);
-      const fallbackApproved: AssessmentResponseDto = {
-        ...aiDraftResult,
-        status: "Published",
-      };
-      setAssessments((prev) => [
-        fallbackApproved,
-        ...prev.filter((a) => a.id !== fallbackApproved.id),
-      ]);
-      setIsAiModalOpen(false);
-      setAiDraftResult(null);
-      showToast("✓ Assessment approved and added to assessments!");
-    } finally {
-      setIsApprovingAi(false);
     }
   };
 
@@ -520,7 +489,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         : null;
 
       if (editingAssessment) {
-        const updated = await assessmentsApi.update(editingAssessment.id, {
+        let updated = await assessmentsApi.update(editingAssessment.id, {
           title: manualTitle.trim(),
           passingThreshold: manualPassingThreshold,
           timeLimitMinutes: manualTimeLimit,
@@ -528,15 +497,26 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           expiresAt: expiresAtIso,
         });
 
-        setAssessments(
-          assessments.map((a) => (a.id === editingAssessment.id ? updated : a)),
-        );
+        if (publish && updated.status !== "Published") {
+          updated = await assessmentsApi.publish(editingAssessment.id);
+        }
+
+        setAssessments((prev) => {
+          const exists = prev.some((a) => a.id === updated.id);
+          return exists
+            ? prev.map((a) => (a.id === updated.id ? updated : a))
+            : [updated, ...prev];
+        });
         setIsManualModalOpen(false);
         setEditingAssessment(null);
         setManualTitle("");
         setManualQuestions([]);
         setManualExpiresAt("");
-        showToast(`Assessment "${updated.title}" updated successfully.`);
+        showToast(
+          publish
+            ? `Assessment "${updated.title}" published successfully.`
+            : `Assessment "${updated.title}" saved as draft.`,
+        );
       } else {
         const created = await assessmentsApi.createManual({
           jobVacancyId: selectedJob.id,
@@ -4475,6 +4455,42 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                   </div>
                 </div>
 
+                {/* Question Difficulty Level */}
+                <div style={{ marginBottom: "16px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#334155",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    Question Difficulty Level
+                  </label>
+                  <select
+                    value={aiDifficulty}
+                    onChange={(e) => setAiDifficulty(e.target.value)}
+                    disabled={isGeneratingAi}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: "10px",
+                      border: "1px solid #cbd5e1",
+                      fontSize: "13px",
+                      color: "#0f172a",
+                      backgroundColor: "#ffffff",
+                      outline: "none",
+                      boxSizing: "border-box",
+                      cursor: isGeneratingAi ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    <option value="Easy">Easy — Fundamental logic & straightforward data manipulation</option>
+                    <option value="Medium">Medium — Moderate complexity, standard data structures & edge cases</option>
+                    <option value="Hard">Hard — Advanced algorithmic optimization & complex edge cases</option>
+                  </select>
+                </div>
+
                 {/* Optional Focus Area */}
                 <div style={{ marginBottom: "20px" }}>
                   <label
@@ -4514,8 +4530,8 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       display: "block",
                     }}
                   >
-                    The AI agent will calibrate problem difficulty to consistent
-                    Moderate (Medium) level with full sample and hidden edge
+                    The AI agent will calibrate problem difficulty to consistent{" "}
+                    <strong>{aiDifficulty}</strong> level with full sample and hidden edge
                     test cases.
                   </span>
                 </div>
@@ -4620,9 +4636,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       fontWeight: 500,
                     }}
                   >
-                    <strong>Ready for Pipeline:</strong> This challenge has been
-                    generated and saved. It is immediately available to dispatch
-                    to candidates in the Hiring Pipeline.
+                    <strong>Challenge Generated:</strong> Review the challenge below, then click "Edit in Full Editor" to set the expiration date, adjust time limits, and publish the assessment.
                   </p>
                 </div>
 
@@ -4829,36 +4843,19 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         setAiDraftResult(null);
                         handleOpenEditModal(track);
                       }}
-                      className="btn-secondary"
-                      style={{
-                        padding: "8px 16px",
-                        fontSize: "13px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                      }}
-                    >
-                      <span>Edit in Full Editor</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleApproveAiAssessment}
-                      disabled={isApprovingAi}
                       className="btn-primary"
                       style={{
-                        padding: "8px 22px",
+                        padding: "8px 20px",
                         fontSize: "13px",
                         display: "flex",
                         alignItems: "center",
                         gap: "6px",
                         background: "#00b074",
-                        cursor: isApprovingAi ? "not-allowed" : "pointer",
-                        opacity: isApprovingAi ? 0.7 : 1,
+                        cursor: "pointer",
                       }}
                     >
-                      <CheckIcon />
-                      <span>{isApprovingAi ? "Approving..." : "Approve"}</span>
+                      <Pencil size={15} />
+                      <span>Edit in Full Editor</span>
                     </button>
                   </div>
                 </div>

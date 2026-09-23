@@ -113,7 +113,7 @@ export const authStorage = {
 async function request<T>(
   endpoint: string,
   options: RequestInit = {},
-  timeoutMs = 10000,
+  timeoutMs = 30000,
 ): Promise<T> {
   const token = authStorage.getToken();
   
@@ -1727,7 +1727,7 @@ export const assessmentsApi = {
     request<AssessmentResponseDto>(`/Assessments/job/${jobVacancyId}/generate-ai`, {
       method: 'POST',
       body: JSON.stringify(payload || {}),
-    }),
+    }, 120_000 /* 2-min timeout — AI agent generates challenge, starter stub & test cases */),
 
   update: (id: string, payload: UpdateAssessmentPayload) =>
     request<AssessmentResponseDto>(`/Assessments/${id}`, {
@@ -1774,13 +1774,13 @@ export const assessmentsApi = {
     request<RunCodeResponseDto>(`/Assessments/take/${submissionId}/run`, {
       method: 'POST',
       body: JSON.stringify(payload),
-    }),
+    }, 45_000 /* 45s timeout for Judge0 remote sandbox compilation & execution */),
 
   submitExam: (submissionId: string, payload: SubmitAnswersPayload) =>
     request<SubmissionDetailDto>(`/Assessments/take/${submissionId}/submit`, {
       method: 'POST',
       body: JSON.stringify(payload),
-    }),
+    }, 60_000 /* 60s timeout for complete test suite grading */),
 
   saveDraft: (submissionId: string, payload: SaveDraftPayload) =>
     request<{ success: boolean }>(`/Assessments/take/${submissionId}/draft`, {
@@ -2032,7 +2032,7 @@ export const interviewPrepApi = {
     request<GenerateInterviewPrepResponseDto>('/interviewprep/generate', {
       method: 'POST',
       body: JSON.stringify(payload),
-    }, 60_000),
+    }, 120_000 /* 2-min timeout matching backend */),
 
   /**
    * GET /api/interviewprep/{id}

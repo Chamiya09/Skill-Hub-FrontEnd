@@ -2119,6 +2119,15 @@ export interface CreateEventPayload {
   eventTime: string; // "HH:mm"
 }
 
+export interface NationalHolidayDto {
+  id: string;
+  title: string;
+  description: string;
+  date: string; // "YYYY-MM-DD"
+  country: string;
+  countryCode: string;
+}
+
 export const eventsApi = {
   /**
    * GET /api/Events
@@ -2132,6 +2141,19 @@ export const eventsApi = {
     if (params?.endDate) q.append('endDate', params.endDate);
     const queryString = q.toString() ? `?${q.toString()}` : '';
     return request<EventResponseDto[]>(`/Events${queryString}`);
+  },
+
+  /**
+   * GET /api/Events/holidays
+   * Retrieves national and public holidays for the specified country and month/year from ASP.NET Core backend.
+   */
+  getHolidays: (params?: { year?: number; month?: number; country?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.year) q.append('year', params.year.toString());
+    if (params?.month) q.append('month', params.month.toString());
+    if (params?.country) q.append('country', params.country);
+    const queryString = q.toString() ? `?${q.toString()}` : '';
+    return request<NationalHolidayDto[]>(`/Events/holidays${queryString}`);
   },
 
   /**

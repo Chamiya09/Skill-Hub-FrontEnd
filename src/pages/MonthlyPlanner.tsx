@@ -14,8 +14,15 @@ import {
   CheckCircle2,
   RefreshCw,
   Pencil,
+  Globe,
 } from 'lucide-react';
 import { eventsApi, type EventResponseDto, type CreateEventPayload } from '../services/api';
+import {
+  googleCalendarService,
+  type GoogleCalendarHoliday,
+  HOLIDAY_CALENDARS,
+  DEFAULT_HOLIDAY_CALENDAR,
+} from '../services/googleCalendarService';
 
 // Days of week header
 const DAYS_OF_WEEK = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -139,6 +146,100 @@ export const MonthlyPlanner: React.FC = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchEvents();
   }, [fetchEvents]);
+
+  // Google Calendar & National Holidays State (Powered by ASP.NET Core Backend)
+  const [holidays, setHolidays] = useState<GoogleCalendarHoliday[]>([]);
+  const [, setHolidaysLoading] = useState<boolean>(false);
+  const [holidaysError, setHolidaysError] = useState<string | null>(null);
+  const [holidaysEnabled, setHolidaysEnabled] = useState<boolean>(() => googleCalendarService.isEnabled());
+  const [selectedCalendarId, setSelectedCalendarId] = useState<string>(() => googleCalendarService.getSelectedCalendarId());
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
+  const [settingsCalendarIdInput, setSettingsCalendarIdInput] = useState<string>(() => googleCalendarService.getSelectedCalendarId());
+
+  // Load holidays from backend
+  const fetchHolidays = useCallback(async () => {
+    if (!holidaysEnabled) {
+      setHolidays([]);
+      setHolidaysError(null);
+      return;
+    }
+
+    try {
+      setHolidaysLoading(true);
+      setHolidaysError(null);
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      const data = await googleCalendarService.fetchHolidays({
+        year,
+        month,
+        calendarId: selectedCalendarId,
+      });
+      setHolidays(data || []);
+    } catch (err: unknown) {
+      console.warn('Failed to load national holidays:', err);
+      const msg = err instanceof Error ? err.message : 'Failed to fetch national holidays from server.';
+      setHolidaysError(msg);
+      setHolidays([]);
+    } finally {
+      setHolidaysLoading(false);
+    }
+  }, [currentDate, selectedCalendarId, holidaysEnabled]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchHolidays();
+  }, [fetchHolidays]);
+
+  // Group holidays by date string "YYYY-MM-DD"
+  const holidaysByDate = useMemo(() => {
+    const map = new Map<string, GoogleCalendarHoliday[]>();
+    if (!holidaysEnabled) return map;
+    for (const h of holidays) {
+      const list = map.get(h.date) || [];
+      list.push(h);
+      map.set(h.date, list);
+    }
+    return map;
+  }, [holidays, holidaysEnabled]);
+
+  // Holidays on the currently selected date
+  const selectedDayHolidays = useMemo(() => {
+    return holidaysByDate.get(selectedDateStr) || [];
+  }, [holidaysByDate, selectedDateStr]);
+
+  const handleOpenSettingsModal = () => {
+    setSettingsCalendarIdInput(selectedCalendarId);
+    setIsSettingsModalOpen(true);
+  };
+
+  const handleSaveSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    googleCalendarService.setSelectedCalendarId(settingsCalendarIdInput);
+    setSelectedCalendarId(settingsCalendarIdInput);
+    setIsSettingsModalOpen(false);
+    showToast('Holiday region updated. Syncing national holidays...', 'success');
+  };
+
+  const handleToggleHolidays = () => {
+    const nextVal = !holidaysEnabled;
+    setHolidaysEnabled(nextVal);
+    googleCalendarService.setEnabled(nextVal);
+    if (!nextVal) {
+      showToast('National holidays hidden from calendar.', 'success');
+    } else {
+      showToast('National holidays enabled.', 'success');
+    }
+  };
+
+  const currentCalendarOption = useMemo(() => {
+    return (
+      HOLIDAY_CALENDARS.find(
+        (c) =>
+          c.code.toLowerCase() === selectedCalendarId.toLowerCase() ||
+          c.id.toLowerCase() === selectedCalendarId.toLowerCase()
+      ) || DEFAULT_HOLIDAY_CALENDAR
+    );
+  }, [selectedCalendarId]);
 
   // Navigate months
   const handlePrevMonth = () => {
@@ -483,11 +584,53 @@ export const MonthlyPlanner: React.FC = () => {
             </div>
           </div>
 
+          {holidaysEnabled && (
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1px solid #fde68a',
+                borderRadius: '12px',
+                padding: '10px 18px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+              }}
+            >
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  background: '#fffbeb',
+                  color: '#b45309',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '18px',
+                }}
+              >
+                {currentCalendarOption.flag}
+              </div>
+              <div>
+                <div style={{ fontSize: '11px', color: '#92400e', fontWeight: 700, textTransform: 'uppercase' }}>
+                  {currentCalendarOption.code} Holidays
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: '#78350f' }}>
+                  {holidays.length}
+                </div>
+              </div>
+            </div>
+          )}
+
           <button
             type="button"
-            onClick={fetchEvents}
+            onClick={() => {
+              fetchEvents();
+              fetchHolidays();
+            }}
             disabled={loading}
-            title="Refresh events from database"
+            title="Refresh events and holidays"
             style={{
               padding: '10px',
               borderRadius: '10px',
@@ -552,29 +695,93 @@ export const MonthlyPlanner: React.FC = () => {
           gap: '12px',
         }}
       >
-        {/* Left: Add Event Button */}
-        <button
-          type="button"
-          onClick={() => handleOpenAddEventModal(selectedDateStr)}
-          className="btn-primary"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '11px 22px',
-            borderRadius: '12px',
-            fontSize: '14px',
-            fontWeight: 700,
-            background: 'linear-gradient(135deg, #059669 0%, #00b074 100%)',
-            color: '#ffffff',
-            boxShadow: '0 4px 12px rgba(0, 176, 116, 0.25)',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-          }}
-        >
-          <Plus size={18} strokeWidth={2.5} />
-          <span>Add Event</span>
-        </button>
+        {/* Left Action Buttons: Add Event + Google Calendar Holiday Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => handleOpenAddEventModal(selectedDateStr)}
+            className="btn-primary"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '11px 22px',
+              borderRadius: '12px',
+              fontSize: '14px',
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, #059669 0%, #00b074 100%)',
+              color: '#ffffff',
+              boxShadow: '0 4px 12px rgba(0, 176, 116, 0.25)',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Plus size={18} strokeWidth={2.5} />
+            <span>Add Event</span>
+          </button>
+
+          {/* Google Calendar Holiday Toggle & Settings */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <button
+              type="button"
+              onClick={handleToggleHolidays}
+              title={holidaysEnabled ? 'Click to hide national holidays' : 'Click to show national holidays'}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '9.5px 14px',
+                borderRadius: '11px',
+                border: holidaysEnabled ? '1px solid #fde68a' : '1px solid #cbd5e1',
+                background: holidaysEnabled ? '#fffbeb' : '#f8fafc',
+                color: holidaysEnabled ? '#92400e' : '#64748b',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span style={{ fontSize: '15px' }}>{currentCalendarOption.flag}</span>
+              <span>{currentCalendarOption.country} Holidays</span>
+              <span
+                style={{
+                  fontSize: '10.5px',
+                  padding: '2px 7px',
+                  borderRadius: '999px',
+                  background: holidaysEnabled ? (holidays.length > 0 ? '#fef3c7' : '#e0e7ff') : '#e2e8f0',
+                  color: holidaysEnabled ? (holidays.length > 0 ? '#b45309' : '#3730a3') : '#64748b',
+                  fontWeight: 800,
+                }}
+              >
+                {holidaysEnabled ? (holidays.length > 0 ? `${holidays.length} Synced` : 'ON') : 'OFF'}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleOpenSettingsModal}
+              title="Select National Holiday Country / Region"
+              style={{
+                padding: '9.5px 12px',
+                borderRadius: '11px',
+                border: '1px solid #cbd5e1',
+                background: '#ffffff',
+                color: '#475569',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontSize: '12.5px',
+                fontWeight: 650,
+                boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+              }}
+            >
+              <Globe size={15} />
+              <span>Country</span>
+            </button>
+          </div>
+        </div>
 
         {/* Right: Navigation Controls: Today + Prev / Next Month */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -651,6 +858,52 @@ export const MonthlyPlanner: React.FC = () => {
         </div>
       </div>
 
+      {/* Holidays Error / Warning Banner */}
+      {holidaysEnabled && holidaysError && (
+        <div
+          style={{
+            background: '#fffbeb',
+            border: '1px solid #fde68a',
+            borderRadius: '14px',
+            padding: '12px 18px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '14px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <AlertCircle size={18} color="#b45309" />
+            <div>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#92400e' }}>
+                National Holidays Notice:
+              </span>{' '}
+              <span style={{ fontSize: '12.5px', color: '#78350f' }}>
+                {holidaysError}
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={fetchHolidays}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '8px',
+              background: '#b45309',
+              color: '#ffffff',
+              border: 'none',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Retry Sync
+          </button>
+        </div>
+      )}
+
       {/* 3. Main Two-Column Layout (Calendar & Daily Schedule aligned at the exact same top level) */}
       <div
         style={{
@@ -707,16 +960,32 @@ export const MonthlyPlanner: React.FC = () => {
           >
             {calendarCells.map((cell) => {
               const dayEvents = eventsByDate.get(cell.dateStr) || [];
+              const dayHolidays = holidaysEnabled ? holidaysByDate.get(cell.dateStr) || [] : [];
               const hasEvents = dayEvents.length > 0;
+              const hasHolidays = dayHolidays.length > 0;
               const isSelected = cell.dateStr === selectedDateStr;
 
-              // Tooltip on hovering any date shows all event titles & times scheduled on that day
+              // Tooltip on hovering any date shows holidays and all event titles & times scheduled on that day
               const cellDate = new Date(cell.dateStr + 'T00:00:00');
-              const cellFormattedDate = cellDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-              const cellTooltip = hasEvents
-                ? `${cellFormattedDate}:\n` +
-                  dayEvents.map((ev) => `• ${formatTimeDisplay(ev.eventTime)} - ${ev.title}`).join('\n')
-                : cellFormattedDate;
+              const cellFormattedDate = cellDate.toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              });
+
+              const tooltipLines: string[] = [cellFormattedDate];
+              if (hasHolidays) {
+                dayHolidays.forEach((h) => {
+                  tooltipLines.push(`🌴 ${h.countryName} Holiday: ${h.title}${h.description ? ` (${h.description})` : ''}`);
+                });
+              }
+              if (hasEvents) {
+                dayEvents.forEach((ev) => {
+                  tooltipLines.push(`• ${formatTimeDisplay(ev.eventTime)} - ${ev.title}`);
+                });
+              }
+              const cellTooltip = tooltipLines.join('\n');
 
               return (
                 <div
@@ -727,11 +996,13 @@ export const MonthlyPlanner: React.FC = () => {
                     minHeight: '105px',
                     background: isSelected
                       ? '#f0fdf4'
-                      : hasEvents
-                        ? '#fcfdfd'
-                        : cell.isCurrentMonth
-                          ? '#ffffff'
-                          : '#f8fafc',
+                      : hasHolidays
+                        ? '#fffdf5'
+                        : hasEvents
+                          ? '#fcfdfd'
+                          : cell.isCurrentMonth
+                            ? '#ffffff'
+                            : '#f8fafc',
                     padding: '8px',
                     cursor: 'pointer',
                     display: 'flex',
@@ -742,7 +1013,7 @@ export const MonthlyPlanner: React.FC = () => {
                     boxSizing: 'border-box',
                   }}
                 >
-                    {/* Top Row: Day Number + Event Count / Indicator */}
+                    {/* Top Row: Day Number + Event & Holiday Count / Indicator */}
                     <div
                       style={{
                         display: 'flex',
@@ -774,26 +1045,76 @@ export const MonthlyPlanner: React.FC = () => {
                         {cell.dayNumber}
                       </span>
 
-                      {/* Visual Marker / Count Badge for Dates Containing Events */}
-                      {hasEvents && (
-                        <span
-                          style={{
-                            fontSize: '10.5px',
-                            fontWeight: 800,
-                            padding: '1px 6px',
-                            borderRadius: '999px',
-                            background: '#ecfdf5',
-                            color: '#059669',
-                            border: '1px solid #a7f3d0',
-                          }}
-                        >
-                          {dayEvents.length} {dayEvents.length === 1 ? 'event' : 'events'}
-                        </span>
-                      )}
+                      {/* Visual Marker / Count Badge for Dates Containing Events & Holidays */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        {hasHolidays && (
+                          <span
+                            title={dayHolidays.map((h) => h.title).join(', ')}
+                            style={{
+                              fontSize: '10px',
+                              padding: '1px 5px',
+                              borderRadius: '999px',
+                              background: '#fef3c7',
+                              color: '#92400e',
+                              border: '1px solid #fde68a',
+                              fontWeight: 800,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '2px',
+                            }}
+                          >
+                            <span>🌴</span>
+                            <span>{dayHolidays.length > 1 ? `${dayHolidays.length}` : 'Holiday'}</span>
+                          </span>
+                        )}
+
+                        {hasEvents && (
+                          <span
+                            style={{
+                              fontSize: '10.5px',
+                              fontWeight: 800,
+                              padding: '1px 6px',
+                              borderRadius: '999px',
+                              background: '#ecfdf5',
+                              color: '#059669',
+                              border: '1px solid #a7f3d0',
+                            }}
+                          >
+                            {dayEvents.length} {dayEvents.length === 1 ? 'event' : 'events'}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Event Preview Pills (Handles multiple events gracefully) */}
+                    {/* Preview Pills (Holidays + Events) */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '2px', overflow: 'hidden' }}>
+                      {/* Holiday Pills */}
+                      {dayHolidays.map((h) => (
+                        <div
+                          key={h.id}
+                          title={`🌴 ${h.countryName} Holiday: ${h.title}`}
+                          style={{
+                            padding: '2.5px 6px',
+                            borderRadius: '5px',
+                            background: '#fef3c7',
+                            color: '#78350f',
+                            border: '1px solid #fde68a',
+                            fontSize: '10.5px',
+                            fontWeight: 700,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                          }}
+                        >
+                          <span style={{ fontSize: '10px' }}>🌴</span>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.title}</span>
+                        </div>
+                      ))}
+
+                      {/* Event Preview Pills (Handles multiple events gracefully) */}
                       {dayEvents.slice(0, 2).map((ev) => (
                         <div
                           key={ev.id}
@@ -884,6 +1205,54 @@ export const MonthlyPlanner: React.FC = () => {
 
           {/* Events List for Selected Day */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+            {/* National Holiday Card if selected date is a holiday */}
+            {selectedDayHolidays.map((holiday) => (
+              <div
+                key={holiday.id}
+                style={{
+                  background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                  border: '1px solid #fde68a',
+                  borderRadius: '12px',
+                  padding: '14px 16px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  boxShadow: '0 2px 4px rgba(245, 158, 11, 0.08)',
+                }}
+              >
+                <div style={{ fontSize: '24px', lineHeight: 1, marginTop: '2px' }}>
+                  {currentCalendarOption.flag}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                    <span
+                      style={{
+                        fontSize: '10.5px',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        color: '#b45309',
+                        background: '#fef3c7',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        border: '1px solid #fde68a',
+                      }}
+                    >
+                      Official Holiday • {currentCalendarOption.country}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '15px', fontWeight: 800, color: '#78350f' }}>
+                    {holiday.title}
+                  </div>
+                  {holiday.description && (
+                    <div style={{ fontSize: '12px', color: '#92400e', marginTop: '3px', lineHeight: 1.4 }}>
+                      {holiday.description}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+
             {selectedDayEvents.length === 0 ? (
               <div
                 style={{
@@ -913,10 +1282,12 @@ export const MonthlyPlanner: React.FC = () => {
                   <CalendarDays size={22} />
                 </div>
                 <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '4px' }}>
-                  No events on this day
+                  {selectedDayHolidays.length > 0 ? 'No internal company events' : 'No events on this day'}
                 </div>
                 <p style={{ fontSize: '12.5px', color: '#64748b', margin: '0 0 16px 0', maxWidth: '240px' }}>
-                  There are no interviews or meetings scheduled for {selectedDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.
+                  {selectedDayHolidays.length > 0
+                    ? `This date is an official national holiday (${selectedDayHolidays.map((h) => h.title).join(', ')}). No interviews are scheduled.`
+                    : `There are no interviews or meetings scheduled for ${selectedDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.`}
                 </p>
                 <button
                   type="button"
@@ -1501,6 +1872,182 @@ export const MonthlyPlanner: React.FC = () => {
                   {isSaving
                     ? (editingEventId ? 'Updating Event...' : 'Saving Event...')
                     : (editingEventId ? 'Update Event' : 'Save Event')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================
+          NATIONAL HOLIDAY REGION SETTINGS MODAL
+          ========================================================= */}
+      {isSettingsModalOpen && (
+        <div
+          className="popup-backdrop"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(3px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1300,
+            padding: '20px',
+          }}
+          onClick={() => setIsSettingsModalOpen(false)}
+        >
+          <div
+            className="popup-card"
+            style={{
+              maxWidth: '480px',
+              width: '100%',
+              background: '#ffffff',
+              borderRadius: '16px',
+              padding: '26px',
+              boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                marginBottom: '18px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '10px',
+                    background: '#eff6ff',
+                    color: '#2563eb',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Globe size={22} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    Holiday Region / Country
+                  </h3>
+                  <p style={{ fontSize: '12.5px', color: '#64748b', margin: 0 }}>
+                    Select which country's public holidays to display on your planner.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsSettingsModalOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  padding: '4px',
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Country Selector */}
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    color: '#334155',
+                    marginBottom: '6px',
+                  }}
+                >
+                  Country / Region
+                </label>
+                <select
+                  value={settingsCalendarIdInput}
+                  onChange={(e) => setSettingsCalendarIdInput(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '13.5px',
+                    outline: 'none',
+                    color: '#0f172a',
+                    background: '#ffffff',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {HOLIDAY_CALENDARS.map((cal) => (
+                    <option key={cal.id} value={cal.id}>
+                      {cal.flag} {cal.country} ({cal.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Secure backend notice */}
+              <div
+                style={{
+                  background: '#f0fdf4',
+                  border: '1px solid #bbf7d0',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  fontSize: '12px',
+                  color: '#166534',
+                  lineHeight: 1.5,
+                }}
+              >
+                <div style={{ fontWeight: 700, color: '#15803d', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Sparkles size={14} color="#16a34a" />
+                  <span>Secure Server Integration</span>
+                </div>
+                National holidays are fetched and cached directly through your secure ASP.NET Core backend. No API keys are required on the browser.
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '4px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsSettingsModalOpen(false)}
+                  style={{
+                    padding: '9px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    background: '#ffffff',
+                    color: '#475569',
+                    fontSize: '13px',
+                    fontWeight: 650,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    padding: '9px 18px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #059669 0%, #00b074 100%)',
+                    color: '#ffffff',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(0, 176, 116, 0.25)',
+                  }}
+                >
+                  Save Region
                 </button>
               </div>
             </form>

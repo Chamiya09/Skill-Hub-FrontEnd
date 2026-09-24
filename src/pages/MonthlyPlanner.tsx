@@ -15,8 +15,17 @@ import {
   RefreshCw,
   Pencil,
   Globe,
+  Bot,
 } from 'lucide-react';
-import { eventsApi, type EventResponseDto, type CreateEventPayload } from '../services/api';
+import {
+  eventsApi,
+  type EventResponseDto,
+  type CreateEventPayload,
+  jobsApi,
+  type JobDto,
+  type ScheduleProposalResponseDto,
+  type ConfirmInterviewScheduleDto,
+} from '../services/api';
 import {
   googleCalendarService,
   type GoogleCalendarHoliday,
@@ -125,6 +134,121 @@ export const MonthlyPlanner: React.FC = () => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  // AI Interview Scheduler Modal State (Student 3 - Meeting Orchestration)
+  const [isAiSchedulerModalOpen, setIsAiSchedulerModalOpen] = useState<boolean>(false);
+  const [vacancies, setVacancies] = useState<JobDto[]>([]);
+  const [, setVacanciesLoading] = useState<boolean>(false);
+  const [selectedVacancyId, setSelectedVacancyId] = useState<string>('');
+  const [aiStartDate, setAiStartDate] = useState<string>(() => formatDateOnlyString(new Date()));
+  const [aiEndDate, setAiEndDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 4);
+    return formatDateOnlyString(d);
+  });
+  const [aiDuration, setAiDuration] = useState<number>(30);
+  const [aiTracks, setAiTracks] = useState<number>(2);
+  const [aiWorkStart, setAiWorkStart] = useState<string>('09:00');
+  const [aiWorkEnd, setAiWorkEnd] = useState<string>('17:00');
+  const [aiBuffer, setAiBuffer] = useState<number>(10);
+  const [isGeneratingSchedule, setIsGeneratingSchedule] = useState<boolean>(false);
+  const [aiSchedulerError, setAiSchedulerError] = useState<string | null>(null);
+  const [scheduleProposal, setScheduleProposal] = useState<ScheduleProposalResponseDto | null>(null);
+  const [isConfirmingSchedule, setIsConfirmingSchedule] = useState<boolean>(false);
+
+  const fetchVacancies = useCallback(async () => {
+    try {
+      setVacanciesLoading(true);
+      const jobs = await jobsApi.getJobs();
+      const activeJobs = (jobs || []).filter((j) => j.status?.toLowerCase() !== 'deleted');
+      setVacancies(activeJobs);
+      if (activeJobs.length > 0) {
+        setSelectedVacancyId((prev) => prev || activeJobs[0].id);
+      }
+    } catch (err) {
+      console.warn('Could not load company vacancies for AI scheduler:', err);
+    } finally {
+      setVacanciesLoading(false);
+    }
+  }, []);
+
+  const handleOpenAiSchedulerFromAddEvent = () => {
+    setIsModalOpen(false);
+    fetchVacancies();
+    setAiSchedulerError(null);
+    setScheduleProposal(null);
+    setIsAiSchedulerModalOpen(true);
+  };
+
+  const handleGenerateSchedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedVacancyId) {
+      setAiSchedulerError('Please select a job vacancy to schedule interviews for.');
+      return;
+    }
+
+    try {
+      setIsGeneratingSchedule(true);
+      setAiSchedulerError(null);
+      const proposal = await eventsApi.generateInterviewSchedule({
+        jobVacancyId: selectedVacancyId,
+        startDate: aiStartDate,
+        endDate: aiEndDate,
+        interviewDurationMinutes: aiDuration,
+        parallelTracks: aiTracks,
+        workingHoursStart: aiWorkStart,
+        workingHoursEnd: aiWorkEnd,
+        bufferMinutes: aiBuffer,
+      });
+
+      setScheduleProposal(proposal);
+      if (proposal.proposedSlots.length === 0) {
+        setAiSchedulerError(
+          'No candidate interview slots could be generated. Ensure candidates are shortlisted or selected for interview for this role.'
+        );
+      }
+    } catch (err: unknown) {
+      console.error('Failed to generate interview schedule proposal:', err);
+      const msg = err instanceof Error ? err.message : 'Failed to generate interview schedule with AI Agent.';
+      setAiSchedulerError(msg);
+    } finally {
+      setIsGeneratingSchedule(false);
+    }
+  };
+
+  const handleConfirmSchedule = async () => {
+    if (!scheduleProposal || scheduleProposal.proposedSlots.length === 0) return;
+
+    try {
+      setIsConfirmingSchedule(true);
+      const payload: ConfirmInterviewScheduleDto = {
+        jobVacancyId: scheduleProposal.jobVacancyId,
+        jobTitle: scheduleProposal.jobTitle,
+        slots: scheduleProposal.proposedSlots.map((s) => ({
+          candidateId: s.candidateId,
+          candidateName: s.candidateName,
+          candidateEmail: s.candidateEmail,
+          date: s.date,
+          startTime: s.startTime,
+          endTime: s.endTime,
+          trackNumber: s.trackNumber,
+          trackName: s.trackName,
+        })),
+      };
+
+      const result = await eventsApi.confirmInterviewSchedule(payload);
+      showToast(result.message || `Successfully scheduled ${result.scheduledCount} interviews!`, 'success');
+      setIsAiSchedulerModalOpen(false);
+      setScheduleProposal(null);
+      await fetchEvents();
+    } catch (err: unknown) {
+      console.error('Failed to confirm interview schedule:', err);
+      const msg = err instanceof Error ? err.message : 'Failed to save confirmed interview schedule.';
+      setAiSchedulerError(msg);
+    } finally {
+      setIsConfirmingSchedule(false);
+    }
+  };
+
   // Load events from backend
   const fetchEvents = useCallback(async () => {
     try {
@@ -143,7 +267,6 @@ export const MonthlyPlanner: React.FC = () => {
   }, [currentDate]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchEvents();
   }, [fetchEvents]);
 
@@ -718,6 +841,31 @@ export const MonthlyPlanner: React.FC = () => {
           >
             <Plus size={18} strokeWidth={2.5} />
             <span>Add Event</span>
+          </button>
+
+          {/* AI Interview Slot Generator Trigger (Student 3 - Meeting Orchestration) */}
+          <button
+            type="button"
+            onClick={handleOpenAiSchedulerFromAddEvent}
+            title="AI Interview Slot Generator (Student 3)"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '11px 18px',
+              borderRadius: '12px',
+              fontSize: '13.5px',
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+              color: '#ffffff',
+              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)',
+              cursor: 'pointer',
+              border: 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Sparkles size={16} />
+            <span>AI Schedule</span>
           </button>
 
           {/* Google Calendar Holiday Toggle & Settings */}
@@ -1520,8 +1668,12 @@ export const MonthlyPlanner: React.FC = () => {
               width: '100%',
               background: '#ffffff',
               borderRadius: '16px',
-              padding: '28px',
+              padding: '24px 26px',
               boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -1598,6 +1750,72 @@ export const MonthlyPlanner: React.FC = () => {
 
             {/* Form */}
             <form onSubmit={handleSaveEvent} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Feature Trigger: AI Schedule Interviews (Student 3 - Meeting Orchestration) */}
+              {!editingEventId && (
+                <div
+                  style={{
+                    background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)',
+                    border: '1px solid #ddd6fe',
+                    borderRadius: '12px',
+                    padding: '13px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '9px',
+                        background: '#7c3aed',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 6px rgba(124, 58, 237, 0.3)',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Sparkles size={18} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#5b21b6' }}>
+                        Batch Candidate Interviews?
+                      </div>
+                      <div style={{ fontSize: '11.5px', color: '#6d28d9', marginTop: '1px' }}>
+                        Auto-generate clash-free slots across parallel rooms with AI.
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleOpenAiSchedulerFromAddEvent}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontSize: '12.5px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 2px 6px rgba(124, 58, 237, 0.3)',
+                    }}
+                  >
+                    <Sparkles size={13} />
+                    <span>AI Schedule Interviews</span>
+                  </button>
+                </div>
+              )}
+
               {/* Field 1: Title */}
               <div>
                 <label
@@ -1645,22 +1863,23 @@ export const MonthlyPlanner: React.FC = () => {
                   Description
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   placeholder="e.g., Round 2 System Architecture & Coding challenge evaluation..."
                   value={modalDescription}
                   onChange={(e) => setModalDescription(e.target.value)}
                   disabled={isSaving}
                   style={{
                     width: '100%',
-                    padding: '10px 14px',
+                    padding: '8px 12px',
                     borderRadius: '10px',
                     border: '1px solid #cbd5e1',
-                    fontSize: '13.5px',
+                    fontSize: '13px',
                     color: '#0f172a',
                     outline: 'none',
                     boxSizing: 'border-box',
                     fontFamily: 'inherit',
                     resize: 'vertical',
+                    minHeight: '52px',
                   }}
                 />
               </div>
@@ -1829,9 +2048,10 @@ export const MonthlyPlanner: React.FC = () => {
               <div
                 style={{
                   display: 'flex',
+                  alignItems: 'center',
                   justifyContent: 'flex-end',
                   gap: '10px',
-                  marginTop: '10px',
+                  marginTop: '12px',
                   borderTop: '1px solid #f1f5f9',
                   paddingTop: '16px',
                 }}
@@ -1841,14 +2061,14 @@ export const MonthlyPlanner: React.FC = () => {
                   onClick={() => setIsModalOpen(false)}
                   disabled={isSaving}
                   style={{
-                    padding: '9px 16px',
+                    padding: '9px 18px',
                     borderRadius: '10px',
                     border: '1px solid #cbd5e1',
                     background: '#ffffff',
                     color: '#475569',
                     fontSize: '13px',
                     fontWeight: 650,
-                    cursor: 'pointer',
+                    cursor: isSaving ? 'not-allowed' : 'pointer',
                   }}
                 >
                   Cancel
@@ -1858,20 +2078,33 @@ export const MonthlyPlanner: React.FC = () => {
                   type="submit"
                   disabled={isSaving}
                   style={{
-                    padding: '9px 22px',
+                    padding: '9px 24px',
                     borderRadius: '10px',
                     border: 'none',
-                    background: 'linear-gradient(135deg, #059669 0%, #00b074 100%)',
+                    background: isSaving
+                      ? '#94a3b8'
+                      : 'linear-gradient(135deg, #059669 0%, #00b074 100%)',
                     color: '#ffffff',
-                    fontSize: '13px',
+                    fontSize: '13.5px',
                     fontWeight: 700,
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 6px rgba(0, 176, 116, 0.25)',
+                    cursor: isSaving ? 'not-allowed' : 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: isSaving ? 'none' : '0 2px 8px rgba(0, 176, 116, 0.3)',
                   }}
                 >
-                  {isSaving
-                    ? (editingEventId ? 'Updating Event...' : 'Saving Event...')
-                    : (editingEventId ? 'Update Event' : 'Save Event')}
+                  {isSaving ? (
+                    <>
+                      <RefreshCw size={15} className="animate-spin" />
+                      <span>{editingEventId ? 'Updating...' : 'Saving Event...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={16} />
+                      <span>{editingEventId ? 'Update Event' : 'Save Event'}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -1907,6 +2140,8 @@ export const MonthlyPlanner: React.FC = () => {
               borderRadius: '16px',
               padding: '26px',
               boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+              maxHeight: '90vh',
+              overflowY: 'auto',
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -2051,6 +2286,747 @@ export const MonthlyPlanner: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================
+          AI INTERVIEW SLOT GENERATOR MODAL (STUDENT 3)
+          ========================================================= */}
+      {isAiSchedulerModalOpen && (
+        <div
+          className="popup-backdrop"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1400,
+            padding: '20px',
+          }}
+          onClick={() => !isGeneratingSchedule && !isConfirmingSchedule && setIsAiSchedulerModalOpen(false)}
+        >
+          <div
+            className="popup-card"
+            style={{
+              maxWidth: scheduleProposal ? '880px' : '580px',
+              width: '100%',
+              background: '#ffffff',
+              borderRadius: '18px',
+              padding: '28px',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              transition: 'all 0.2s ease',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                marginBottom: '20px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div
+                  style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)',
+                    color: '#6d28d9',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 8px rgba(109, 40, 217, 0.15)',
+                  }}
+                >
+                  <Bot size={26} />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h3 style={{ fontSize: '19px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                      AI Interview Slot Generator
+                    </h3>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        padding: '2px 8px',
+                        borderRadius: '999px',
+                        background: '#f3e8ff',
+                        color: '#7e22ce',
+                        border: '1px solid #d8b4fe',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.4px',
+                      }}
+                    >
+                      Student 3 Agent
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '12.5px', color: '#64748b', margin: '3px 0 0 0' }}>
+                    Meeting Orchestration • Automated clash-free scheduling with forward-search overflow
+                  </p>
+                </div>
+              </div>
+
+              {!isGeneratingSchedule && !isConfirmingSchedule && (
+                <button
+                  type="button"
+                  onClick={() => setIsAiSchedulerModalOpen(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    padding: '4px',
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+
+            {/* Error Banner */}
+            {aiSchedulerError && (
+              <div
+                style={{
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  color: '#b91c1c',
+                  padding: '12px 16px',
+                  borderRadius: '10px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  marginBottom: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                }}
+              >
+                <AlertCircle size={18} />
+                <span>{aiSchedulerError}</span>
+              </div>
+            )}
+
+            {/* VIEW A: Configuration Form */}
+            {!scheduleProposal && (
+              <form onSubmit={handleGenerateSchedule} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                {/* Vacancy Selector */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                    Target Job Vacancy <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    value={selectedVacancyId}
+                    onChange={(e) => setSelectedVacancyId(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '11px 14px',
+                      borderRadius: '10px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '13.5px',
+                      color: '#0f172a',
+                      background: '#ffffff',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    {vacancies.length === 0 ? (
+                      <option value="">No active job vacancies found</option>
+                    ) : (
+                      vacancies.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.title} — {v.department} ({v.experienceLevel})
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  <p style={{ fontSize: '11.5px', color: '#64748b', margin: '4px 0 0 2px' }}>
+                    The AI agent will fetch candidates in "Interview Selection" (or Shortlisted) for this requisition.
+                  </p>
+                </div>
+
+                {/* Date Window */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                      Start Date <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={aiStartDate}
+                      onChange={(e) => setAiStartDate(e.target.value)}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '13.5px',
+                        color: '#0f172a',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                      Target End Date <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={aiEndDate}
+                      onChange={(e) => setAiEndDate(e.target.value)}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '13.5px',
+                        color: '#0f172a',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Duration, Tracks & Buffer */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                      Interview Duration
+                    </label>
+                    <select
+                      value={aiDuration}
+                      onChange={(e) => setAiDuration(Number(e.target.value))}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: '10px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '13.5px',
+                        color: '#0f172a',
+                        background: '#ffffff',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    >
+                      <option value={15}>15 Minutes</option>
+                      <option value={30}>30 Minutes</option>
+                      <option value={45}>45 Minutes</option>
+                      <option value={60}>60 Minutes</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                      Parallel Tracks
+                    </label>
+                    <select
+                      value={aiTracks}
+                      onChange={(e) => setAiTracks(Number(e.target.value))}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: '10px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '13.5px',
+                        color: '#0f172a',
+                        background: '#ffffff',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    >
+                      <option value={1}>1 Track (Single Room)</option>
+                      <option value={2}>2 Tracks (Concurrent)</option>
+                      <option value={3}>3 Tracks (Panels A/B/C)</option>
+                      <option value={4}>4 Tracks (Full Board)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                      Transition Buffer
+                    </label>
+                    <select
+                      value={aiBuffer}
+                      onChange={(e) => setAiBuffer(Number(e.target.value))}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: '10px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '13.5px',
+                        color: '#0f172a',
+                        background: '#ffffff',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    >
+                      <option value={5}>5 Minutes</option>
+                      <option value={10}>10 Minutes</option>
+                      <option value={15}>15 Minutes</option>
+                      <option value={0}>0 Minutes</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Working Hours */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                      Working Hours Start
+                    </label>
+                    <input
+                      type="time"
+                      value={aiWorkStart}
+                      onChange={(e) => setAiWorkStart(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '13.5px',
+                        color: '#0f172a',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                      Working Hours End
+                    </label>
+                    <input
+                      type="time"
+                      value={aiWorkEnd}
+                      onChange={(e) => setAiWorkEnd(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '13.5px',
+                        color: '#0f172a',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Info Card on Agent Intelligence */}
+                <div
+                  style={{
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    padding: '13px 16px',
+                    fontSize: '12.5px',
+                    color: '#475569',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <div style={{ fontWeight: 800, color: '#1e293b', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Sparkles size={14} color="#7c3aed" />
+                    <span>Multi-Agent Constraint Solving:</span>
+                  </div>
+                  The agent checks company calendar bookings, excludes weekends and holidays, distributes candidates evenly across parallel tracks, and automatically applies forward-search overflow (up to 14 days) if candidates exceed the target window.
+                </div>
+
+                {/* Form Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsAiSchedulerModalOpen(false)}
+                    disabled={isGeneratingSchedule}
+                    style={{
+                      padding: '10px 18px',
+                      borderRadius: '10px',
+                      border: '1px solid #cbd5e1',
+                      background: '#ffffff',
+                      color: '#475569',
+                      fontSize: '13.5px',
+                      fontWeight: 650,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isGeneratingSchedule || vacancies.length === 0}
+                    style={{
+                      padding: '10px 22px',
+                      borderRadius: '10px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
+                      color: '#ffffff',
+                      fontSize: '13.5px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 12px rgba(124, 58, 237, 0.3)',
+                    }}
+                  >
+                    {isGeneratingSchedule ? (
+                      <>
+                        <RefreshCw size={16} className="animate-spin" />
+                        <span>AI Agent Generating Proposal...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={16} />
+                        <span>Generate Clash-Free Schedule</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* VIEW B: Proposal Review & Confirmation (Human-In-The-Loop) */}
+            {scheduleProposal && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                {/* Metric Summary Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                  <div
+                    style={{
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '12px',
+                      padding: '12px 14px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+                      Candidates
+                    </div>
+                    <div style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>
+                      {scheduleProposal.summary.totalCandidates}
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      background: '#ecfdf5',
+                      border: '1px solid #a7f3d0',
+                      borderRadius: '12px',
+                      padding: '12px 14px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#047857', textTransform: 'uppercase' }}>
+                      Scheduled
+                    </div>
+                    <div style={{ fontSize: '22px', fontWeight: 800, color: '#065f46', marginTop: '2px' }}>
+                      {scheduleProposal.summary.scheduledCount}
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      background: scheduleProposal.summary.unscheduledCount > 0 ? '#fef2f2' : '#f8fafc',
+                      border: scheduleProposal.summary.unscheduledCount > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0',
+                      borderRadius: '12px',
+                      padding: '12px 14px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        color: scheduleProposal.summary.unscheduledCount > 0 ? '#b91c1c' : '#64748b',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Unscheduled
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '22px',
+                        fontWeight: 800,
+                        color: scheduleProposal.summary.unscheduledCount > 0 ? '#dc2626' : '#0f172a',
+                        marginTop: '2px',
+                      }}
+                    >
+                      {scheduleProposal.summary.unscheduledCount}
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      background: '#eff6ff',
+                      border: '1px solid #bfdbfe',
+                      borderRadius: '12px',
+                      padding: '12px 14px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase' }}>
+                      Parallel Tracks
+                    </div>
+                    <div style={{ fontSize: '22px', fontWeight: 800, color: '#1e40af', marginTop: '2px' }}>
+                      {scheduleProposal.summary.tracksUtilized}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Forward-Search Notification Banner */}
+                {scheduleProposal.summary.forwardDaysExtended > 0 && (
+                  <div
+                    style={{
+                      background: '#fffbeb',
+                      border: '1px solid #fde68a',
+                      borderRadius: '12px',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                    }}
+                  >
+                    <Sparkles size={20} color="#b45309" />
+                    <div>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#92400e' }}>
+                        Forward Search Overflow Extension:
+                      </span>{' '}
+                      <span style={{ fontSize: '12.5px', color: '#78350f' }}>
+                        The AI agent automatically extended the schedule by {scheduleProposal.summary.forwardDaysExtended} day(s)
+                        (effective window: {scheduleProposal.summary.effectiveDateRange}) to avoid clashes and schedule all candidates.
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Unscheduled Candidate Alert */}
+                {scheduleProposal.unscheduledCandidates.length > 0 && (
+                  <div
+                    style={{
+                      background: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      borderRadius: '12px',
+                      padding: '12px 16px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                      <AlertCircle size={18} color="#dc2626" />
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#991b1b' }}>
+                        {scheduleProposal.unscheduledCandidates.length} Candidate(s) Exceeded Search Limit
+                      </span>
+                    </div>
+                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '12px', color: '#b91c1c' }}>
+                      {scheduleProposal.unscheduledCandidates.map((u) => (
+                        <li key={u.candidateId}>
+                          <strong>{u.candidateName}</strong> ({u.candidateEmail}): {u.reason}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* AI Assumptions & Validation Box */}
+                <div
+                  style={{
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    padding: '14px 16px',
+                    fontSize: '12.5px',
+                    color: '#334155',
+                  }}
+                >
+                  <div style={{ fontWeight: 800, color: '#0f172a', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Bot size={15} color="#6366f1" />
+                    <span>Agent Rationale & Stated Assumptions:</span>
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: '18px', lineHeight: 1.6 }}>
+                    {scheduleProposal.summary.assumptionsMade.map((a, i) => (
+                      <li key={i}>{a}</li>
+                    ))}
+                    {scheduleProposal.summary.aiValidationNotes.map((n, i) => (
+                      <li key={`v-${i}`} style={{ color: '#059669', fontWeight: 600 }}>{n}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Proposed Slots Table */}
+                <div>
+                  <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
+                    Proposed Interview Appointments ({scheduleProposal.proposedSlots.length})
+                  </div>
+
+                  <div
+                    style={{
+                      maxHeight: '300px',
+                      overflowY: 'auto',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '12px',
+                    }}
+                  >
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                      <thead>
+                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
+                          <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700 }}>Candidate</th>
+                          <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700 }}>Date</th>
+                          <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700 }}>Time Slot</th>
+                          <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700 }}>Room / Track</th>
+                          <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700 }}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {scheduleProposal.proposedSlots.map((slot) => (
+                          <tr key={slot.slotId} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '10px 14px' }}>
+                              <div style={{ fontWeight: 700, color: '#0f172a' }}>{slot.candidateName}</div>
+                              <div style={{ fontSize: '11px', color: '#64748b' }}>{slot.candidateEmail}</div>
+                            </td>
+                            <td style={{ padding: '10px 14px', fontWeight: 600, color: '#1e293b' }}>
+                              {slot.date}
+                            </td>
+                            <td style={{ padding: '10px 14px', color: '#059669', fontWeight: 700 }}>
+                              {formatSingleTime(slot.startTime)} - {formatSingleTime(slot.endTime)}
+                            </td>
+                            <td style={{ padding: '10px 14px' }}>
+                              <span
+                                style={{
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  padding: '2px 8px',
+                                  borderRadius: '6px',
+                                  background: slot.trackNumber % 2 === 1 ? '#ede9fe' : '#e0f2fe',
+                                  color: slot.trackNumber % 2 === 1 ? '#6d28d9' : '#0369a1',
+                                }}
+                              >
+                                {slot.trackName}
+                              </span>
+                            </td>
+                            <td style={{ padding: '10px 14px' }}>
+                              {slot.isExtendedSearch ? (
+                                <span
+                                  style={{
+                                    fontSize: '10.5px',
+                                    fontWeight: 800,
+                                    padding: '2px 7px',
+                                    borderRadius: '999px',
+                                    background: '#fef3c7',
+                                    color: '#b45309',
+                                    border: '1px solid #fde68a',
+                                  }}
+                                >
+                                  Extended Search
+                                </span>
+                              ) : (
+                                <span
+                                  style={{
+                                    fontSize: '10.5px',
+                                    fontWeight: 800,
+                                    padding: '2px 7px',
+                                    borderRadius: '999px',
+                                    background: '#ecfdf5',
+                                    color: '#059669',
+                                    border: '1px solid #a7f3d0',
+                                  }}
+                                >
+                                  Target Window
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Review Action Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setScheduleProposal(null)}
+                    disabled={isConfirmingSchedule}
+                    style={{
+                      padding: '10px 16px',
+                      borderRadius: '10px',
+                      border: '1px solid #cbd5e1',
+                      background: '#ffffff',
+                      color: '#475569',
+                      fontSize: '13px',
+                      fontWeight: 650,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ← Modify Parameters
+                  </button>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsAiSchedulerModalOpen(false)}
+                      disabled={isConfirmingSchedule}
+                      style={{
+                        padding: '10px 16px',
+                        borderRadius: '10px',
+                        border: '1px solid #cbd5e1',
+                        background: '#ffffff',
+                        color: '#475569',
+                        fontSize: '13px',
+                        fontWeight: 650,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleConfirmSchedule}
+                      disabled={isConfirmingSchedule || scheduleProposal.proposedSlots.length === 0}
+                      style={{
+                        padding: '10px 22px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #059669 0%, #00b074 100%)',
+                        color: '#ffffff',
+                        fontSize: '13.5px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        boxShadow: '0 4px 12px rgba(0, 176, 116, 0.3)',
+                      }}
+                    >
+                      {isConfirmingSchedule ? (
+                        <>
+                          <RefreshCw size={16} className="animate-spin" />
+                          <span>Persisting to Calendar...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 size={16} />
+                          <span>Approve & Schedule All ({scheduleProposal.proposedSlots.length} Events)</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

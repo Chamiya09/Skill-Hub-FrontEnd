@@ -2190,5 +2190,100 @@ export const eventsApi = {
     request<void>(`/Events/${id}`, {
       method: 'DELETE',
     }),
+
+  /**
+   * POST /api/Events/generate-interview-schedule
+   * Generates clash-free draft interview schedule proposal using AI Agent.
+   */
+  generateInterviewSchedule: (payload: GenerateScheduleRequestDto) =>
+    request<ScheduleProposalResponseDto>('/Events/generate-interview-schedule', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  /**
+   * POST /api/Events/confirm-interview-schedule
+   * Persists approved interview slots to database (Human-in-the-loop).
+   */
+  confirmInterviewSchedule: (payload: ConfirmInterviewScheduleDto) =>
+    request<ConfirmInterviewScheduleResultDto>('/Events/confirm-interview-schedule', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
+
+export interface GenerateScheduleRequestDto {
+  jobVacancyId: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  interviewDurationMinutes?: number;
+  parallelTracks?: number;
+  workingHoursStart?: string;
+  workingHoursEnd?: string;
+  bufferMinutes?: number;
+}
+
+export interface ProposedSlotDto {
+  slotId: string;
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  trackNumber: number;
+  trackName: string;
+  isExtendedSearch: boolean;
+}
+
+export interface UnscheduledCandidateDto {
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  reason: string;
+}
+
+export interface ScheduleSummaryDto {
+  totalCandidates: number;
+  scheduledCount: number;
+  unscheduledCount: number;
+  originalDateRange: string;
+  effectiveDateRange: string;
+  forwardDaysExtended: number;
+  tracksUtilized: number;
+  assumptionsMade: string[];
+  aiValidationNotes: string[];
+}
+
+export interface ScheduleProposalResponseDto {
+  jobVacancyId: string;
+  jobTitle: string;
+  proposedSlots: ProposedSlotDto[];
+  unscheduledCandidates: UnscheduledCandidateDto[];
+  summary: ScheduleSummaryDto;
+  isDraft: boolean;
+}
+
+export interface ConfirmedSlotItemDto {
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  trackNumber: number;
+  trackName: string;
+}
+
+export interface ConfirmInterviewScheduleDto {
+  jobVacancyId: string;
+  jobTitle: string;
+  slots: ConfirmedSlotItemDto[];
+}
+
+export interface ConfirmInterviewScheduleResultDto {
+  scheduledCount: number;
+  message: string;
+  createdEventIds: string[];
+}
 

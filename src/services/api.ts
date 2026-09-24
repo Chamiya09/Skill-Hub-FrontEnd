@@ -2097,3 +2097,76 @@ export const interviewPrepApi = {
     }),
 };
 
+// ============================================================================
+// 15. MONTHLY PLANNER (INTERVIEW SCHEDULING CALENDAR) API
+// ============================================================================
+
+export interface EventResponseDto {
+  id: string;
+  title: string;
+  description?: string | null;
+  eventDate: string; // "YYYY-MM-DD"
+  eventTime: string; // e.g. "14:30" or "02:30 PM"
+  createdBy: string;
+  creatorName?: string | null;
+  createdAt: string;
+}
+
+export interface CreateEventPayload {
+  title: string;
+  description?: string;
+  eventDate: string; // "YYYY-MM-DD"
+  eventTime: string; // "HH:mm"
+}
+
+export const eventsApi = {
+  /**
+   * GET /api/Events
+   * Retrieves events for the HR manager's company, optionally filtered by month/year or date range.
+   */
+  getEvents: (params?: { year?: number; month?: number; startDate?: string; endDate?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.year) q.append('year', params.year.toString());
+    if (params?.month) q.append('month', params.month.toString());
+    if (params?.startDate) q.append('startDate', params.startDate);
+    if (params?.endDate) q.append('endDate', params.endDate);
+    const queryString = q.toString() ? `?${q.toString()}` : '';
+    return request<EventResponseDto[]>(`/Events${queryString}`);
+  },
+
+  /**
+   * GET /api/Events/{id}
+   * Retrieves a single event by ID.
+   */
+  getById: (id: string) => request<EventResponseDto>(`/Events/${id}`),
+
+  /**
+   * POST /api/Events
+   * Creates a new event on the Monthly Planner.
+   */
+  create: (payload: CreateEventPayload) =>
+    request<EventResponseDto>('/Events', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  /**
+   * PUT /api/Events/{id}
+   * Updates an existing event on the Monthly Planner.
+   */
+  update: (id: string, payload: CreateEventPayload) =>
+    request<EventResponseDto>(`/Events/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
+  /**
+   * DELETE /api/Events/{id}
+   * Deletes an event by ID.
+   */
+  delete: (id: string) =>
+    request<void>(`/Events/${id}`, {
+      method: 'DELETE',
+    }),
+};
+

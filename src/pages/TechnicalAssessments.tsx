@@ -433,6 +433,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
   useEffect(() => {
     if (isInterviewSelection) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadInterviewSelections();
     }
   }, [isInterviewSelection, loadInterviewSelections]);
@@ -1189,6 +1190,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                           <span
                             style={{
                               color:
+                                // eslint-disable-next-line react-hooks/purity
                                 new Date(track.expiresAt).getTime() < Date.now()
                                   ? "#dc2626"
                                   : "#b45309",

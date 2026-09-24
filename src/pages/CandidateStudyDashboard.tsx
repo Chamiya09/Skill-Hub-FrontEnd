@@ -45,6 +45,7 @@ export const CandidateStudyDashboard: React.FC = () => {
   const [selectedGuide, setSelectedGuide] = useState<InterviewPrepGuideDto | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Active section filter: 'both' (default) | 'theory' | 'practical' | 'coach'
@@ -165,6 +166,39 @@ export const CandidateStudyDashboard: React.FC = () => {
     }));
   };
 
+  // Handle Guide Deletion
+  const handleDeleteGuide = async (guideId: string) => {
+    const confirmDelete = window.confirm(
+      'Are you sure you want to delete this interview preparation guide? You can regenerate it later from the Interview Prep Hub.'
+    );
+    if (!confirmDelete) return;
+
+    try {
+      setIsDeleting(true);
+      setError(null);
+      await interviewPrepApi.deleteGuide(guideId);
+
+      const remainingGuides = guides.filter((g) => g.id !== guideId);
+      setGuides(remainingGuides);
+
+      if (remainingGuides.length > 0) {
+        const nextGuide = remainingGuides[0];
+        setSelectedGuide(nextGuide);
+        localStorage.setItem('skillhub_last_guide_id', nextGuide.id);
+        navigate(`/candidate/interview-prep/guide/${nextGuide.id}`, { replace: true });
+      } else {
+        setSelectedGuide(null);
+        localStorage.removeItem('skillhub_last_guide_id');
+        navigate('/candidate/interview-prep', { replace: true });
+      }
+    } catch (err: any) {
+      console.error('Failed to delete interview prep guide:', err);
+      setError(err?.message || 'Failed to delete interview preparation guide.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Loading State
   if (isLoading) {
     return (
@@ -245,7 +279,13 @@ export const CandidateStudyDashboard: React.FC = () => {
       )}
 
       {/* 2. Contextual Persistent Header identifying the Selected Interview */}
-      {selectedGuide && <StudyDashboardHeader guide={selectedGuide} />}
+      {selectedGuide && (
+        <StudyDashboardHeader
+          guide={selectedGuide}
+          onDeleteGuide={handleDeleteGuide}
+          isDeleting={isDeleting}
+        />
+      )}
 
       {/* View Switcher Pill Bar (View Both, Theoretical Only, Practical Only, Coach Tips) */}
       {selectedGuide && (

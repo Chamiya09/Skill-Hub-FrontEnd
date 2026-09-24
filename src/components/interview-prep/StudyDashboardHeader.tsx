@@ -1,7 +1,10 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   SparkleIcon,
   PrinterIcon,
+  TrashIcon,
+  ArrowLeftIcon,
   BriefcaseIcon,
   ClockIcon,
   MapPinIcon,
@@ -10,9 +13,15 @@ import type { InterviewPrepGuideDto } from '../../services/api';
 
 interface StudyDashboardHeaderProps {
   guide: InterviewPrepGuideDto;
+  onDeleteGuide?: (guideId: string) => void;
+  isDeleting?: boolean;
 }
 
-export const StudyDashboardHeader: React.FC<StudyDashboardHeaderProps> = ({ guide }) => {
+export const StudyDashboardHeader: React.FC<StudyDashboardHeaderProps> = ({
+  guide,
+  onDeleteGuide,
+  isDeleting = false,
+}) => {
   const handlePrint = () => {
     window.print();
   };
@@ -56,7 +65,23 @@ export const StudyDashboardHeader: React.FC<StudyDashboardHeaderProps> = ({ guid
     <header className="study-persistent-header">
       {/* Top Navigation Row: Actions */}
       <div className="study-top-nav-bar">
+        <Link to="/candidate/interview-prep" className="btn-back-to-hub">
+          <ArrowLeftIcon />
+          <span>Interview Prep Hub</span>
+        </Link>
         <div className="study-header-actions">
+          {onDeleteGuide && (
+            <button
+              type="button"
+              className="btn-study-delete"
+              onClick={() => onDeleteGuide(guide.id)}
+              disabled={isDeleting}
+              title="Delete this interview preparation guide"
+            >
+              <TrashIcon />
+              <span>{isDeleting ? 'Deleting...' : 'Delete Guide'}</span>
+            </button>
+          )}
           <button
             type="button"
             className="btn-study-print"

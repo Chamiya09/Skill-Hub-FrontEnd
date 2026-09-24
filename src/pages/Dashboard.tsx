@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { Star } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import {
   dashboardApi,
@@ -44,6 +45,7 @@ export type DashboardTab =
   | 'performance-hub'
   | 'assessment-submissions'
   | 'assessment-leaderboard'
+  | 'interview-selection'
   | 'settings'
   | 'security';
 
@@ -360,6 +362,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             <span className="nav-badge-count" style={{ background: '#e0e7ff', color: '#4338ca' }}>Top 5</span>
           </button>
 
+          <button
+            type="button"
+            className={`dashboard-nav-item ${activeTab === 'interview-selection' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('interview-selection')
+              setSidebarOpen(false)
+            }}
+          >
+            <Star size={18} />
+            <span>Interview Selection</span>
+            <span className="nav-badge-count" style={{ background: '#f5f3ff', color: '#7c3aed' }}>Selected</span>
+          </button>
+
           <div className="nav-group-label" style={{ marginTop: '16px' }}>SYSTEM</div>
 
           <button
@@ -451,6 +466,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
                 {activeTab === 'hiring-pipeline' && 'Hiring Pipeline'}
                 {activeTab === 'assessment-templates' && 'Assessments'}
                 {(activeTab === 'performance-hub' || activeTab === 'assessment-submissions' || activeTab === 'assessment-leaderboard') && 'Performance Hub'}
+                {activeTab === 'interview-selection' && 'Interview Selection'}
                 {activeTab === 'assessments' && 'Assessments'}
                 {activeTab === 'settings' && 'Settings'}
                 {activeTab === 'security' && 'Security'}
@@ -484,6 +500,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             <TechnicalAssessments activeSection="performance-hub" initialPerformanceTab="submissions" />
           ) : activeTab === 'assessment-leaderboard' ? (
             <TechnicalAssessments activeSection="performance-hub" initialPerformanceTab="leaderboard" />
+          ) : activeTab === 'interview-selection' ? (
+            <TechnicalAssessments activeSection="interview-selection" />
           ) : activeTab === 'assessments' ? (
             <TechnicalAssessments activeSection="templates" />
           ) : activeTab === 'settings' ? (

@@ -113,7 +113,7 @@ export const authStorage = {
 async function request<T>(
   endpoint: string,
   options: RequestInit = {},
-  timeoutMs = 10000,
+  timeoutMs = 30000,
 ): Promise<T> {
   const token = authStorage.getToken();
   
@@ -170,7 +170,7 @@ async function request<T>(
     return response.json();
   } catch (error: unknown) {
     if (didTimeout && error instanceof DOMException && error.name === 'AbortError') {
-      throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)} seconds.`);
+      throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)} seconds.`, { cause: error });
     }
     throw error;
   } finally {
@@ -337,7 +337,8 @@ export const companyProfileApi = {
   },
 
   async getProfile(): Promise<CompanyProfileDto> {
-    const user = authStorage.getUser();
+    const rawUser = authStorage.getUser();
+    const user = rawUser as (Record<string, unknown> & { id?: string; companyId?: string; companyName?: string; fullName?: string; email?: string; createdAt?: string; updatedAt?: string }) | null;
     const companyId = user?.companyId || user?.id || '';
 
     // Attempt backend sync directly from PostgreSQL database
@@ -346,19 +347,19 @@ export const companyProfileApi = {
       const combined: CompanyProfileDto = {
         id: me.companyId || me.id || companyId,
         companyName: me.companyName || user?.companyName || '',
-        adminName: me.adminName || me.fullName || (user as any)?.adminName || user?.fullName || '',
-        contactEmail: me.contactEmail || me.email || (user as any)?.contactEmail || user?.email || '',
-        phone: me.phone || (user as any)?.phone || '',
-        companySize: me.companySize || (user as any)?.companySize || '',
-        foundedYear: me.foundedYear || (user as any)?.foundedYear || '',
-        logoUrl: me.logoUrl || (user as any)?.logoUrl || '',
-        website: me.website || (user as any)?.website || '',
-        linkedinUrl: me.linkedinUrl || (user as any)?.linkedinUrl || '',
-        twitterUrl: me.twitterUrl || (user as any)?.twitterUrl || '',
-        githubUrl: me.githubUrl || (user as any)?.githubUrl || '',
-        location: me.location || (user as any)?.location || '',
-        industry: me.industry || (user as any)?.industry || '',
-        about: me.about || (user as any)?.about || '',
+        adminName: me.adminName || me.fullName || (user?.adminName as string) || user?.fullName || '',
+        contactEmail: me.contactEmail || me.email || (user?.contactEmail as string) || user?.email || '',
+        phone: me.phone || (user?.phone as string) || '',
+        companySize: me.companySize || (user?.companySize as string) || '',
+        foundedYear: me.foundedYear || (user?.foundedYear as string) || '',
+        logoUrl: me.logoUrl || (user?.logoUrl as string) || '',
+        website: me.website || (user?.website as string) || '',
+        linkedinUrl: me.linkedinUrl || (user?.linkedinUrl as string) || '',
+        twitterUrl: me.twitterUrl || (user?.twitterUrl as string) || '',
+        githubUrl: me.githubUrl || (user?.githubUrl as string) || '',
+        location: me.location || (user?.location as string) || '',
+        industry: me.industry || (user?.industry as string) || '',
+        about: me.about || (user?.about as string) || '',
         createdAt: me.createdAt || user?.createdAt || new Date().toISOString(),
         updatedAt: me.updatedAt || user?.updatedAt || new Date().toISOString(),
       };
@@ -368,19 +369,19 @@ export const companyProfileApi = {
       return {
         id: companyId,
         companyName: user?.companyName || '',
-        adminName: (user as any)?.adminName || user?.fullName || '',
-        contactEmail: (user as any)?.contactEmail || user?.email || '',
-        phone: (user as any)?.phone || '',
-        companySize: (user as any)?.companySize || '',
-        foundedYear: (user as any)?.foundedYear || '',
-        logoUrl: (user as any)?.logoUrl || '',
-        website: (user as any)?.website || '',
-        linkedinUrl: (user as any)?.linkedinUrl || '',
-        twitterUrl: (user as any)?.twitterUrl || '',
-        githubUrl: (user as any)?.githubUrl || '',
-        location: (user as any)?.location || '',
-        industry: (user as any)?.industry || '',
-        about: (user as any)?.about || '',
+        adminName: (user?.adminName as string) || user?.fullName || '',
+        contactEmail: (user?.contactEmail as string) || user?.email || '',
+        phone: (user?.phone as string) || '',
+        companySize: (user?.companySize as string) || '',
+        foundedYear: (user?.foundedYear as string) || '',
+        logoUrl: (user?.logoUrl as string) || '',
+        website: (user?.website as string) || '',
+        linkedinUrl: (user?.linkedinUrl as string) || '',
+        twitterUrl: (user?.twitterUrl as string) || '',
+        githubUrl: (user?.githubUrl as string) || '',
+        location: (user?.location as string) || '',
+        industry: (user?.industry as string) || '',
+        about: (user?.about as string) || '',
         createdAt: user?.createdAt || new Date().toISOString(),
         updatedAt: user?.updatedAt || new Date().toISOString(),
       };
@@ -397,7 +398,7 @@ export const companyProfileApi = {
 
     // Attempt backend update
     try {
-      const backendResponse = await request<any>('/company/profile', {
+      const backendResponse = await request<Partial<CompanyProfileDto> & { fullName?: string; email?: string }>('/company/profile', {
         method: 'PUT',
         body: JSON.stringify({
           companyName: payload.companyName,
@@ -477,13 +478,13 @@ export const companyProfileApi = {
     }
 
     // 1. Fetch strictly from backend dedicated public company endpoint by ID or slug
-    let result: any = null;
+    let result: { company?: CompanyProfileDto; jobs?: JobDto[]; id?: string } | null;
     try {
       result = await request<{ company: CompanyProfileDto; jobs: JobDto[] }>(
         `/companies/${encodeURIComponent(rawIdentifier)}`,
         { method: 'GET' }
       );
-    } catch (err) {
+    } catch {
       // Fallback attempt to alternate public jobs company route
       result = await request<{ company: CompanyProfileDto; jobs: JobDto[] }>(
         `/public/jobs/company/${encodeURIComponent(rawIdentifier)}`,
@@ -492,7 +493,7 @@ export const companyProfileApi = {
     }
 
     if (result && (result.company || result.id)) {
-      const companyData = result.company || result;
+      const companyData = (result.company || result) as CompanyProfileDto;
       return {
         company: {
           ...companyData,
@@ -540,7 +541,7 @@ export interface CreateJobPayload {
   employmentType: string;
   experienceLevel: string;
   salaryRange?: string;
-  status: string;
+  status?: string;
   description: string;
   whatWeOffer?: string;
   tags?: string[];
@@ -554,7 +555,7 @@ export interface UpdateJobPayload {
   employmentType: string;
   experienceLevel: string;
   salaryRange?: string;
-  status: string;
+  status?: string;
   description: string;
   whatWeOffer?: string;
   tags?: string[];
@@ -572,7 +573,9 @@ export const extractJobTags = (job: Partial<JobDto>): string[] => {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-    } catch {}
+    } catch {
+      // Ignore localStorage read errors
+    }
   }
   // Dynamic inference from title and department for backward compatibility
   const inferred: string[] = [];
@@ -637,7 +640,9 @@ export const jobsApi = {
     if (payload.tags && created?.id && typeof window !== 'undefined') {
       try {
         localStorage.setItem(`skillhub_job_tags_${created.id}`, JSON.stringify(payload.tags));
-      } catch {}
+      } catch {
+        // Ignore localStorage write errors
+      }
     }
     return {
       ...created,
@@ -657,7 +662,9 @@ export const jobsApi = {
     if (payload.tags && typeof window !== 'undefined') {
       try {
         localStorage.setItem(`skillhub_job_tags_${id}`, JSON.stringify(payload.tags));
-      } catch {}
+      } catch {
+        // Ignore localStorage write errors
+      }
     }
     return {
       ...updated,
@@ -673,7 +680,9 @@ export const jobsApi = {
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem(`skillhub_job_tags_${id}`);
-      } catch {}
+      } catch {
+        // Ignore localStorage removal errors
+      }
     }
     return request<void>(`/jobs/${id}`, {
       method: 'DELETE',
@@ -1230,6 +1239,7 @@ export interface ApplicationStatusDto {
 
 export interface CandidateApplicationItemDto {
   id: string;
+  applicationId?: string;
   jobId: string;
   jobTitle: string;
   companyName: string;
@@ -1305,8 +1315,9 @@ export const jobApplicationsApi = {
       return await request<JobApplicantDto[]>(`/jobs/${jobId}/applications`, {
         method: 'GET',
       });
-    } catch (err: any) {
-      if (err?.message?.includes('404')) {
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string } | undefined;
+      if (errorObj?.message?.includes('404')) {
         return [];
       }
       throw err;
@@ -1368,8 +1379,9 @@ export const jobApplicationsApi = {
       return await request<ShortlistedApplicantDto[]>(`/jobs/${jobId}/shortlisted`, {
         method: 'GET',
       });
-    } catch (err: any) {
-      if (err?.message?.includes('404')) return [];
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string } | undefined;
+      if (errorObj?.message?.includes('404')) return [];
       throw err;
     }
   },
@@ -1601,6 +1613,8 @@ export interface SubmissionDetailDto {
   candidateEmail?: string;
   applicationId: string;
   jobVacancyId: string;
+  jobTitle?: string;
+  department?: string;
   examScore: number;
   cvScore: number;
   finalWeightedScore: number;
@@ -1701,6 +1715,11 @@ export const assessmentsApi = {
   getSubmissionsByJob: (jobVacancyId: string) =>
     request<SubmissionDetailDto[]>(`/Assessments/job/${jobVacancyId}/submissions`),
 
+  getInterviewSelections: (jobVacancyId?: string) => {
+    const params = jobVacancyId ? `?jobVacancyId=${encodeURIComponent(jobVacancyId)}` : '';
+    return request<SubmissionDetailDto[]>(`/Assessments/interview-selections${params}`);
+  },
+
   reviewSubmission: (submissionId: string, payload: ManualReviewSubmissionPayload) =>
     request<SubmissionDetailDto>(`/Assessments/submissions/${submissionId}/review`, {
       method: 'POST',
@@ -1721,6 +1740,12 @@ export const assessmentsApi = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+  generateAi: (jobVacancyId: string, payload?: { focusArea?: string; difficulty?: string }) =>
+    request<AssessmentResponseDto>(`/Assessments/job/${jobVacancyId}/generate-ai`, {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
+    }, 120_000 /* 2-min timeout — AI agent generates challenge, starter stub & test cases */),
 
   update: (id: string, payload: UpdateAssessmentPayload) =>
     request<AssessmentResponseDto>(`/Assessments/${id}`, {
@@ -1767,13 +1792,13 @@ export const assessmentsApi = {
     request<RunCodeResponseDto>(`/Assessments/take/${submissionId}/run`, {
       method: 'POST',
       body: JSON.stringify(payload),
-    }),
+    }, 45_000 /* 45s timeout for Judge0 remote sandbox compilation & execution */),
 
   submitExam: (submissionId: string, payload: SubmitAnswersPayload) =>
     request<SubmissionDetailDto>(`/Assessments/take/${submissionId}/submit`, {
       method: 'POST',
       body: JSON.stringify(payload),
-    }),
+    }, 60_000 /* 60s timeout for complete test suite grading */),
 
   saveDraft: (submissionId: string, payload: SaveDraftPayload) =>
     request<{ success: boolean }>(`/Assessments/take/${submissionId}/draft`, {
@@ -1936,6 +1961,7 @@ export interface GenerateInterviewPrepRequestDto {
   targetRole?: string;
   jobDescription: string;
   experienceLevel?: string;
+  forceRegenerate?: boolean;
 }
 
 export interface StudyFocusAreaDto {
@@ -2024,7 +2050,7 @@ export const interviewPrepApi = {
     request<GenerateInterviewPrepResponseDto>('/interviewprep/generate', {
       method: 'POST',
       body: JSON.stringify(payload),
-    }, 60_000),
+    }, 120_000 /* 2-min timeout matching backend */),
 
   /**
    * GET /api/interviewprep/{id}
@@ -2060,5 +2086,14 @@ export const interviewPrepApi = {
    */
   getAll: () =>
     request<InterviewPrepGuideDto[]>('/interviewprep/my-guides'),
+
+  /**
+   * DELETE /api/interviewprep/{id}
+   * Deletes a saved interview preparation guide.
+   */
+  deleteGuide: (guideId: string) =>
+    request<void>(`/interviewprep/${guideId}`, {
+      method: 'DELETE',
+    }),
 };
 

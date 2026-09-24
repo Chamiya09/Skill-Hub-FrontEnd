@@ -15,6 +15,7 @@ import {
   ShieldCheckIcon,
   ArrowRightIcon,
 } from '../components/common/Icons';
+import { ProblemStatementViewer } from '../components/assessment';
 
 // Lazy-load Monaco Editor so it only loads when the assessment screen mounts
 const MonacoEditor = React.lazy(() => import('@monaco-editor/react'));
@@ -566,8 +567,6 @@ export const CandidateExam: React.FC = () => {
       setLastRunResult(res);
       if (res.isRateLimited) {
         setExecutionError('Execution service is busy (HTTP 429). Please wait a few seconds and try again.');
-      } else if (res.isError && res.errorMessage) {
-        setExecutionError(res.errorMessage);
       }
     } catch (err: unknown) {
       console.error('Run code error:', err);
@@ -1439,17 +1438,12 @@ export const CandidateExam: React.FC = () => {
             {currentQuestion.title}
           </h2>
 
-          {/* Problem Statement */}
-          <div
-            style={{
-              color: '#cbd5e1',
-              fontSize: '0.88rem',
-              lineHeight: 1.65,
-              whiteSpace: 'pre-wrap',
-              marginBottom: '22px',
-            }}
-          >
-            {currentQuestion.problemStatement}
+          {/* Formatted Problem Statement with Rich UI Sections */}
+          <div style={{ marginBottom: '22px' }}>
+            <ProblemStatementViewer
+              content={currentQuestion.problemStatement}
+              theme="dark"
+            />
           </div>
 
           {/* Input/Output Format & Constraints (if present in problem or structured) */}
@@ -1831,21 +1825,6 @@ export const CandidateExam: React.FC = () => {
                   <span>Execution Output</span>
                 </button>
 
-                {lastRunResult?.samplePassed !== null && lastRunResult?.samplePassed !== undefined && (
-                  <span
-                    style={{
-                      padding: '2px 8px',
-                      borderRadius: '6px',
-                      fontSize: '0.7rem',
-                      fontWeight: 800,
-                      backgroundColor: lastRunResult.samplePassed ? '#065f4630' : '#991b1b30',
-                      border: `1px solid ${lastRunResult.samplePassed ? '#059669' : '#dc2626'}`,
-                      color: lastRunResult.samplePassed ? '#34d399' : '#f87171',
-                    }}
-                  >
-                    Sample Case 1: {lastRunResult.samplePassed ? 'PASSED ✓' : 'FAILED ✕'}
-                  </span>
-                )}
               </div>
 
               {/* Execution Time & Exit Code */}
@@ -1884,8 +1863,8 @@ export const CandidateExam: React.FC = () => {
                   />
                   <span>Executing code in secure sandbox ({currentRuntime.label})...</span>
                 </div>
-              ) : executionError ? (
-                /* 2. Error / Rate Limit State */
+              ) : executionError && !lastRunResult ? (
+                /* 2. System / Network Error State */
                 <div
                   style={{
                     backgroundColor: '#ef444415',
@@ -1898,32 +1877,46 @@ export const CandidateExam: React.FC = () => {
                 >
                   <div style={{ fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <AlertTriangleIcon size={16} />
-                    <span>{lastRunResult?.isRateLimited ? 'Rate Limit Exceeded (429)' : 'Execution Error'}</span>
+                    <span>Execution Error</span>
                   </div>
                   <div style={{ fontSize: '0.8rem', lineHeight: 1.5 }}>{executionError}</div>
-                  {lastRunResult?.isRateLimited && (
-                    <button
-                      type="button"
-                      onClick={handleRunCode}
-                      style={{
-                        marginTop: '10px',
-                        padding: '5px 12px',
-                        borderRadius: '6px',
-                        backgroundColor: '#ef4444',
-                        color: '#ffffff',
-                        border: 'none',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Retry Run
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={handleRunCode}
+                    style={{
+                      marginTop: '10px',
+                      padding: '5px 12px',
+                      borderRadius: '6px',
+                      backgroundColor: '#ef4444',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Retry Run
+                  </button>
                 </div>
               ) : lastRunResult ? (
-                /* 3. Output Results */
+                /* 3. Output Results (Clean Terminal Runner) */
                 <div>
+                  {executionError && (
+                    <div
+                      style={{
+                        backgroundColor: '#ef444415',
+                        border: '1px solid #ef4444',
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        color: '#fca5a5',
+                        marginBottom: '14px',
+                        fontSize: '0.8rem',
+                      }}
+                    >
+                      {executionError}
+                    </div>
+                  )}
+
                   {/* Compiler Errors if any */}
                   {lastRunResult.compileOutput && (
                     <div style={{ marginBottom: '14px' }}>
@@ -1947,32 +1940,11 @@ export const CandidateExam: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Standard Output */}
-                  <div style={{ marginBottom: '14px' }}>
-                    <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>
-                      STDOUT:
-                    </span>
-                    <pre
-                      style={{
-                        margin: '4px 0 0',
-                        backgroundColor: '#0f172a',
-                        border: '1px solid #1e293b',
-                        borderRadius: '6px',
-                        padding: '10px 12px',
-                        color: '#f1f5f9',
-                        whiteSpace: 'pre-wrap',
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      {lastRunResult.stdout || '<No standard output>'}
-                    </pre>
-                  </div>
-
-                  {/* Standard Error */}
+                  {/* Runtime Error / Standard Error */}
                   {lastRunResult.stderr && (
                     <div style={{ marginBottom: '14px' }}>
                       <span style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 700, textTransform: 'uppercase' }}>
-                        STDERR:
+                        {lastRunResult.exitCode !== 0 ? 'RUNTIME ERROR / STDERR:' : 'STDERR:'}
                       </span>
                       <pre
                         style={{
@@ -1991,59 +1963,77 @@ export const CandidateExam: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Sample Test Comparison */}
-                  {(lastRunResult.expectedOutput || (currentQuestion?.sampleTestCases && currentQuestion.sampleTestCases.length > 0)) && (
-                    <div
-                      style={{
-                        backgroundColor: '#1e293b80',
-                        border: '1px solid #334155',
-                        borderRadius: '8px',
-                        padding: '12px 14px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                        fontSize: '0.8rem',
-                      }}
-                    >
-                      <div style={{ fontWeight: 700, color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase' }}>
-                        Sample Test Case 1 Evaluation:
-                      </div>
-                      <div>
-                        <span style={{ color: '#94a3b8' }}>Input: </span>
-                        <code style={{ color: '#e2e8f0', backgroundColor: '#0f172a', padding: '2px 6px', borderRadius: '4px' }}>
-                          {lastRunResult.sampleInputUsed || currentQuestion?.sampleTestCases?.[0]?.input || '<none>'}
-                        </code>
-                      </div>
-                      <div>
-                        <span style={{ color: '#94a3b8' }}>Expected Output: </span>
-                        <code style={{ color: '#10b981', backgroundColor: '#0f172a', padding: '2px 6px', borderRadius: '4px' }}>
-                          {lastRunResult.expectedOutput || currentQuestion?.sampleTestCases?.[0]?.expectedOutput || '<none>'}
-                        </code>
-                      </div>
-                      <div>
-                        <span style={{ color: '#94a3b8' }}>Your Output: </span>
-                        <code style={{
-                          color: lastRunResult.samplePassed ? '#10b981' : '#f87171',
-                          backgroundColor: '#0f172a',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                        }}>
-                          {lastRunResult.stdout?.trim() || '<empty>'}
-                        </code>
-                      </div>
-                      {lastRunResult.samplePassed === false && (
-                        <div style={{ fontSize: '0.75rem', color: '#fbbf24', marginTop: '4px', lineHeight: 1.4 }}>
-                          <strong>Format Tip:</strong> Automated test grading expects exact matching. If the problem asks for <code>42</code>, use <code>print(maximum)</code> instead of <code>print(&quot;Maximum number:&quot;, maximum)</code>.
-                        </div>
-                      )}
+                  {/* Execution Error (if no stderr or compileOutput) */}
+                  {lastRunResult.isError && !lastRunResult.compileOutput && !lastRunResult.stderr && lastRunResult.errorMessage && (
+                    <div style={{ marginBottom: '14px' }}>
+                      <span style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 700, textTransform: 'uppercase' }}>
+                        EXECUTION ERROR:
+                      </span>
+                      <pre
+                        style={{
+                          margin: '4px 0 0',
+                          backgroundColor: '#1f1515',
+                          border: '1px solid #7f1d1d',
+                          borderRadius: '6px',
+                          padding: '10px 12px',
+                          color: '#fca5a5',
+                          whiteSpace: 'pre-wrap',
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {lastRunResult.errorMessage}
+                      </pre>
                     </div>
                   )}
+
+                  {/* Non-zero Exit Code Notice */}
+                  {lastRunResult.exitCode !== 0 && !lastRunResult.compileOutput && !lastRunResult.stderr && !lastRunResult.errorMessage && (
+                    <div style={{ marginBottom: '14px' }}>
+                      <span style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 700, textTransform: 'uppercase' }}>
+                        TERMINAL STATUS:
+                      </span>
+                      <div
+                        style={{
+                          margin: '4px 0 0',
+                          backgroundColor: '#1f1515',
+                          border: '1px solid #7f1d1d',
+                          borderRadius: '6px',
+                          padding: '10px 12px',
+                          color: '#fca5a5',
+                          fontSize: '0.82rem',
+                        }}
+                      >
+                        Process terminated with non-zero exit code ({lastRunResult.exitCode}).
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Standard Output */}
+                  <div style={{ marginBottom: '14px' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>
+                      STDOUT:
+                    </span>
+                    <pre
+                      style={{
+                        margin: '4px 0 0',
+                        backgroundColor: '#0f172a',
+                        border: '1px solid #1e293b',
+                        borderRadius: '6px',
+                        padding: '10px 12px',
+                        color: '#f1f5f9',
+                        whiteSpace: 'pre-wrap',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {lastRunResult.stdout || (lastRunResult.exitCode !== 0 ? '<No standard output produced>' : '<No standard output>')}
+                    </pre>
+                  </div>
                 </div>
               ) : (
                 /* 4. Empty State */
                 <div style={{ color: '#64748b', fontStyle: 'italic', padding: '12px 0' }}>
-                  Click &ldquo;<strong>Run</strong>&rdquo; to execute your code against the sample test case in the sandbox,
-                  or &ldquo;<strong>Submit</strong>&rdquo; to evaluate against all test cases and finalize your exam.
+                  Click &ldquo;<strong>Run</strong>&rdquo; to execute your code in the sandbox,
+                  or &ldquo;<strong>Submit</strong>&rdquo; to finalize your exam.
                 </div>
               )}
             </div>

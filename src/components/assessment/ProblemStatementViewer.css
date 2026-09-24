@@ -1,0 +1,624 @@
+/* ==========================================================================
+   PROBLEM STATEMENT VIEWER STYLES
+   Supports: .psv-dark-theme (Candidate Live Exam) & .psv-light-theme (HR Review)
+   ========================================================================== */
+
+.psv-container {
+  width: 100%;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.psv-sections-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.psv-compact .psv-sections-wrap {
+  gap: 14px;
+}
+
+/* ==========================================================================
+   1. Section Layout & Headers (Clean replacements for raw ###)
+   ========================================================================== */
+.psv-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.psv-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid transparent;
+}
+
+.psv-section-icon-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.psv-compact .psv-section-icon-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+.psv-section-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+}
+
+.psv-compact .psv-section-title {
+  font-size: 0.88rem;
+}
+
+/* Section Body & Paragraphs */
+.psv-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
+.psv-compact .psv-section-body {
+  font-size: 0.82rem;
+  gap: 8px;
+}
+
+.psv-paragraph {
+  margin: 0;
+  word-break: break-word;
+}
+
+/* ==========================================================================
+   2. Inline Formatting: Code, Bold, Italic
+   ========================================================================== */
+.psv-inline-code {
+  font-family: 'JetBrains Mono', Consolas, Monaco, 'Courier New', monospace;
+  font-size: 0.82em;
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.psv-bold {
+  font-weight: 750;
+}
+
+.psv-italic {
+  font-style: italic;
+}
+
+/* ==========================================================================
+   3. Lists & Bullet Points (Constraints, Formats, Notes)
+   ========================================================================== */
+.psv-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.psv-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.55;
+}
+
+.psv-list-bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 8px;
+  flex-shrink: 0;
+}
+
+.psv-list-text {
+  flex: 1;
+}
+
+/* ==========================================================================
+   4. Code Blocks with Copy Action
+   ========================================================================== */
+.psv-code-block {
+  border-radius: 9px;
+  overflow: hidden;
+  margin: 4px 0;
+}
+
+.psv-code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.psv-copy-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  transition: all 0.15s ease;
+}
+
+.psv-code-pre {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', Consolas, Monaco, 'Courier New', monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   5. Structured Example Cards (Input, Output, Explanation)
+   ========================================================================== */
+.psv-example-card {
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.psv-example-preamble {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.psv-example-io-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.psv-example-io-cell {
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.psv-io-cell-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.psv-io-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.psv-io-code-snippet {
+  margin: 0;
+  font-family: 'JetBrains Mono', Consolas, Monaco, 'Courier New', monospace;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.psv-example-explanation-box {
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.psv-explanation-title {
+  font-weight: 800;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.psv-explanation-body {
+  margin: 0;
+}
+
+/* ==========================================================================
+   6. Collapsible Bar (For Modals and Review Headers)
+   ========================================================================== */
+.psv-collapsible-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  user-select: none;
+  transition: all 0.18s ease;
+}
+
+.psv-collapsible-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+  font-weight: 750;
+}
+
+.psv-collapsible-toggle {
+  background: transparent;
+  border: none;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.psv-empty-notice {
+  font-size: 0.85rem;
+  font-style: italic;
+  margin: 0;
+}
+
+/* ==========================================================================
+   THEME 1: DARK THEME (.psv-dark-theme) — For Candidate Live Exam
+   ========================================================================== */
+.psv-dark-theme {
+  color: #cbd5e1;
+}
+
+/* Section Headers */
+.psv-dark-theme .psv-section-header {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.psv-dark-theme .psv-section-title {
+  color: #f8fafc;
+}
+
+/* Category Specific Icons & Headers (Dark Theme) */
+.psv-dark-theme .psv-section-problem .psv-section-icon-badge {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.psv-dark-theme .psv-section-input .psv-section-icon-badge {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.psv-dark-theme .psv-section-output .psv-section-icon-badge {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.psv-dark-theme .psv-section-constraints .psv-section-icon-badge {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.psv-dark-theme .psv-section-example .psv-section-icon-badge {
+  background: rgba(14, 165, 233, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+.psv-dark-theme .psv-section-notes .psv-section-icon-badge {
+  background: rgba(236, 72, 153, 0.15);
+  color: #f472b6;
+  border: 1px solid rgba(236, 72, 153, 0.3);
+}
+
+.psv-dark-theme .psv-section-general .psv-section-icon-badge {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+/* Inline Code & Bold (Dark) */
+.psv-dark-theme .psv-inline-code {
+  background: #1e293b;
+  color: #38bdf8;
+  border: 1px solid #334155;
+}
+
+.psv-dark-theme .psv-bold {
+  color: #f1f5f9;
+}
+
+/* Lists & Bullets (Dark) */
+.psv-dark-theme .psv-list-bullet {
+  background: #38bdf8;
+}
+
+.psv-dark-theme .psv-section-constraints .psv-list-bullet {
+  background: #fbbf24;
+}
+
+/* Code Blocks (Dark) */
+.psv-dark-theme .psv-code-block {
+  background: #020617;
+  border: 1px solid #1e293b;
+}
+
+.psv-dark-theme .psv-code-header {
+  background: #0f172a;
+  color: #94a3b8;
+  border-bottom: 1px solid #1e293b;
+}
+
+.psv-dark-theme .psv-copy-btn {
+  color: #94a3b8;
+  background: #1e293b;
+}
+
+.psv-dark-theme .psv-copy-btn:hover {
+  background: #334155;
+  color: #f8fafc;
+}
+
+.psv-dark-theme .psv-code-pre {
+  color: #f8fafc;
+}
+
+/* Example Card (Dark) */
+.psv-dark-theme .psv-example-card {
+  background: #090e1a;
+  border: 1px solid #1e293b;
+}
+
+.psv-dark-theme .psv-example-io-cell.input-cell {
+  background: #0d1527;
+  border: 1px solid #1e293b;
+}
+
+.psv-dark-theme .input-dot {
+  background: #38bdf8;
+}
+
+.psv-dark-theme .psv-example-io-cell.output-cell {
+  background: #0b1a1c;
+  border: 1px solid #133e38;
+}
+
+.psv-dark-theme .output-dot {
+  background: #10b981;
+}
+
+.psv-dark-theme .psv-io-cell-label {
+  color: #94a3b8;
+}
+
+.psv-dark-theme .psv-example-io-cell.input-cell .psv-io-cell-label {
+  color: #38bdf8;
+}
+
+.psv-dark-theme .psv-example-io-cell.output-cell .psv-io-cell-label {
+  color: #34d399;
+}
+
+.psv-dark-theme .psv-io-code-snippet {
+  color: #f8fafc;
+}
+
+.psv-dark-theme .psv-example-explanation-box {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  color: #cbd5e1;
+}
+
+.psv-dark-theme .psv-explanation-title {
+  color: #94a3b8;
+}
+
+.psv-dark-theme .psv-empty-notice {
+  color: #64748b;
+}
+
+/* ==========================================================================
+   THEME 2: LIGHT THEME (.psv-light-theme) — For HR Assessment Review Portal
+   ========================================================================== */
+.psv-light-theme {
+  color: #334155;
+}
+
+/* Section Headers */
+.psv-light-theme .psv-section-header {
+  border-bottom-color: #f1f5f9;
+}
+
+.psv-light-theme .psv-section-title {
+  color: #0f172a;
+}
+
+/* Category Specific Icons & Headers (Light Theme) */
+.psv-light-theme .psv-section-problem .psv-section-icon-badge {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.psv-light-theme .psv-section-input .psv-section-icon-badge {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.psv-light-theme .psv-section-output .psv-section-icon-badge {
+  background: #faf5ff;
+  color: #7c3aed;
+  border: 1px solid #e9d5ff;
+}
+
+.psv-light-theme .psv-section-constraints .psv-section-icon-badge {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.psv-light-theme .psv-section-example .psv-section-icon-badge {
+  background: #f0f9ff;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
+}
+
+.psv-light-theme .psv-section-notes .psv-section-icon-badge {
+  background: #fdf2f8;
+  color: #db2777;
+  border: 1px solid #fbcfe8;
+}
+
+.psv-light-theme .psv-section-general .psv-section-icon-badge {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+/* Inline Code & Bold (Light) */
+.psv-light-theme .psv-inline-code {
+  background: #f1f5f9;
+  color: #0284c7;
+  border: 1px solid #e2e8f0;
+}
+
+.psv-light-theme .psv-bold {
+  color: #0f172a;
+}
+
+/* Lists & Bullets (Light) */
+.psv-light-theme .psv-list-bullet {
+  background: #0284c7;
+}
+
+.psv-light-theme .psv-section-constraints .psv-list-bullet {
+  background: #d97706;
+}
+
+/* Code Blocks (Light) — Dark inner for maximum syntax readability */
+.psv-light-theme .psv-code-block {
+  background: #0f172a;
+  border: 1px solid #334155;
+}
+
+.psv-light-theme .psv-code-header {
+  background: #1e293b;
+  color: #94a3b8;
+  border-bottom: 1px solid #334155;
+}
+
+.psv-light-theme .psv-copy-btn {
+  color: #cbd5e1;
+  background: #334155;
+}
+
+.psv-light-theme .psv-copy-btn:hover {
+  background: #475569;
+  color: #ffffff;
+}
+
+.psv-light-theme .psv-code-pre {
+  color: #f8fafc;
+}
+
+/* Example Card (Light) */
+.psv-light-theme .psv-example-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.psv-light-theme .psv-example-io-cell.input-cell {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+}
+
+.psv-light-theme .input-dot {
+  background: #0284c7;
+}
+
+.psv-light-theme .psv-example-io-cell.output-cell {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.psv-light-theme .output-dot {
+  background: #16a34a;
+}
+
+.psv-light-theme .psv-example-io-cell.input-cell .psv-io-cell-label {
+  color: #0369a1;
+}
+
+.psv-light-theme .psv-example-io-cell.output-cell .psv-io-cell-label {
+  color: #15803d;
+}
+
+.psv-light-theme .psv-io-code-snippet {
+  color: #0f172a;
+}
+
+.psv-light-theme .psv-example-explanation-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+}
+
+.psv-light-theme .psv-explanation-title {
+  color: #64748b;
+}
+
+.psv-light-theme .psv-collapsible-bar {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
+}
+
+.psv-light-theme .psv-collapsible-bar:hover {
+  background: #f1f5f9;
+}
+
+.psv-light-theme .psv-collapsible-toggle {
+  color: #0284c7;
+  background: #eff6ff;
+}
+
+.psv-light-theme .psv-empty-notice {
+  color: #94a3b8;
+}
+

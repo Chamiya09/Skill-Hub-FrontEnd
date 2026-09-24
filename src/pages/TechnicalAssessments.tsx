@@ -198,8 +198,10 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         difficulty: aiDifficulty,
       });
       setAiDraftResult(res);
+      // Immediately reflect newly created draft assessment in the active list
+      setAssessments((prev) => [res, ...prev.filter((a) => a.id !== res.id)]);
       showToast(
-        `AI question generated! Review and click Edit in Full Editor to set expiry date and publish.`,
+        `AI question generated! Saved as Draft in database. Review and click Edit in Full Editor to set expiry date and publish.`,
       );
     } catch (err: unknown) {
       console.error("Failed to generate AI assessment:", err);
@@ -234,12 +236,20 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     }
   };
 
-  const handleCloseAiModal = async () => {
+  const handleCloseAiModal = () => {
+    // Preserve the created draft in the database and list — do NOT delete!
+    setIsAiModalOpen(false);
+    setAiDraftResult(null);
+  };
+
+  const handleDiscardAiDraft = async () => {
     if (aiDraftResult) {
       try {
         await assessmentsApi.delete(aiDraftResult.id);
+        setAssessments((prev) => prev.filter((a) => a.id !== aiDraftResult.id));
+        showToast("AI draft challenge discarded.");
       } catch {
-        // ignore deletion on dismiss
+        // ignore
       }
     }
     setIsAiModalOpen(false);
@@ -292,8 +302,20 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           (j) => (j.status || "Active").toLowerCase() !== "draft",
         );
         setJobs(active);
-        if (active.length > 0) {
+        const savedJobId = sessionStorage.getItem(
+          "skillhub_active_job_requisition_id",
+        );
+        const matched = savedJobId
+          ? active.find((j) => j.id === savedJobId)
+          : null;
+        if (matched) {
+          setSelectedJob(matched);
+        } else if (active.length > 0) {
           setSelectedJob(active[0]);
+          sessionStorage.setItem(
+            "skillhub_active_job_requisition_id",
+            active[0].id,
+          );
         }
       } catch (err) {
         console.error("Failed to load jobs:", err);
@@ -774,7 +796,13 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               value={selectedJob?.id || ""}
               onChange={(e) => {
                 const j = jobs.find((item) => item.id === e.target.value);
-                if (j) setSelectedJob(j);
+                if (j) {
+                  setSelectedJob(j);
+                  sessionStorage.setItem(
+                    "skillhub_active_job_requisition_id",
+                    j.id,
+                  );
+                }
               }}
               style={{
                 padding: "10px 14px",
@@ -4449,22 +4477,59 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 </button>
 
                 {editingAssessment ? (
-                  <button
-                    type="button"
-                    onClick={() => handleSaveManualAssessment(false)}
-                    disabled={isSavingManual}
-                    className="btn-primary"
-                    style={{
-                      padding: "8px 20px",
-                      fontSize: "13px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                  >
-                    <CheckIcon />
-                    <span>{isSavingManual ? "Saving..." : "Save Changes"}</span>
-                  </button>
+                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveManualAssessment(false)}
+                      disabled={isSavingManual}
+                      className="btn-secondary"
+                      style={{ padding: "8px 16px", fontSize: "13px" }}
+                    >
+                      {isSavingManual ? "Saving..." : "Save Draft"}
+                    </button>
+                    {editingAssessment.status === "Draft" ? (
+                      <button
+                        type="button"
+                        onClick={() => handleSaveManualAssessment(true)}
+                        disabled={isSavingManual}
+                        className="btn-primary"
+                        style={{
+                          padding: "8px 20px",
+                          fontSize: "13px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          background: "#00b074",
+                        }}
+                      >
+                        <CheckIcon />
+                        <span>
+                          {isSavingManual
+                            ? "Publishing..."
+                            : "Publish Assessment"}
+                        </span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleSaveManualAssessment(false)}
+                        disabled={isSavingManual}
+                        className="btn-primary"
+                        style={{
+                          padding: "8px 20px",
+                          fontSize: "13px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <CheckIcon />
+                        <span>
+                          {isSavingManual ? "Saving..." : "Save Changes"}
+                        </span>
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <>
                     <button
@@ -6223,14 +6288,32 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                     gap: "10px",
                   }}
                 >
-                  <button
-                    type="button"
-                    onClick={handleCloseAiModal}
-                    className="btn-secondary"
-                    style={{ padding: "8px 16px", fontSize: "13px" }}
-                  >
-                    Close
-                  </button>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <button
+                      type="button"
+                      onClick={handleCloseAiModal}
+                      className="btn-secondary"
+                      style={{ padding: "8px 16px", fontSize: "13px" }}
+                    >
+                      Close (Keep as Draft)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDiscardAiDraft}
+                      style={{
+                        padding: "8px 14px",
+                        fontSize: "12.5px",
+                        fontWeight: 600,
+                        color: "#ef4444",
+                        background: "none",
+                        border: "1px solid #fecaca",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Discard Draft
+                    </button>
+                  </div>
 
                   <div
                     style={{

@@ -19,7 +19,7 @@ import {
   CheckIcon,
   ShieldCheckIcon,
 } from "../components/common/Icons";
-import { Lock, AlertTriangle, CheckCircle, Pencil } from "lucide-react";
+import { Lock, AlertTriangle, CheckCircle, Pencil, Star, Filter, Search, RotateCw, Eye, Trash2 } from "lucide-react";
 import { ProblemStatementViewer } from "../components/assessment";
 
 const LANGUAGE_STARTER_TEMPLATES: Record<string, string> = {
@@ -84,7 +84,8 @@ export interface TechnicalAssessmentsProps {
     | "templates"
     | "performance-hub"
     | "submissions"
-    | "leaderboard";
+    | "leaderboard"
+    | "interview-selection";
   initialPerformanceTab?: "submissions" | "leaderboard";
 }
 
@@ -97,7 +98,8 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   const [selectedJob, setSelectedJob] = useState<JobDto | null>(null);
   const [, setLoadingJobs] = useState<boolean>(true);
 
-  // 2. Active Section: 'templates' vs 'performance-hub'
+  // 2. Active Section: 'templates' vs 'performance-hub' vs 'interview-selection'
+  const isInterviewSelection = activeSection === "interview-selection";
   const isPerformanceHub =
     activeSection === "performance-hub" ||
     activeSection === "submissions" ||
@@ -118,6 +120,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     setPrevTargetPerfTab(targetPerfTab);
     setPerfTab(targetPerfTab);
   }
+
 
   // 3. Assessments state
   const [assessments, setAssessments] = useState<AssessmentResponseDto[]>([]);
@@ -146,6 +149,21 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   // 6. Leaderboard state
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntryDto[]>([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState<boolean>(false);
+
+  // 6b. Interview Selection state
+  const [interviewSelections, setInterviewSelections] = useState<
+    SubmissionDetailDto[]
+  >([]);
+  const [loadingInterviewSelections, setLoadingInterviewSelections] =
+    useState<boolean>(false);
+  const [interviewJobFilter, setInterviewJobFilter] = useState<string>("all");
+  const [interviewSearch, setInterviewSearch] = useState<string>("");
+  const [interviewScoreFilter, setInterviewScoreFilter] = useState<
+    "all" | "top" | "high" | "passed"
+  >("all");
+  const [interviewIntegrityFilter, setInterviewIntegrityFilter] = useState<
+    "all" | "clean" | "flagged"
+  >("all");
 
   // 5. Modals
   const [isManualModalOpen, setIsManualModalOpen] = useState<boolean>(false);
@@ -312,6 +330,47 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     }
   }, []);
 
+  const loadInterviewSelections = useCallback(async (jobId?: string) => {
+    try {
+      setLoadingInterviewSelections(true);
+      const res = await assessmentsApi.getInterviewSelections(jobId);
+      setInterviewSelections(res || []);
+    } catch (err) {
+      console.error("Failed to load interview selections:", err);
+      setInterviewSelections([]);
+    } finally {
+      setLoadingInterviewSelections(false);
+    }
+  }, []);
+
+  const handleDeselectFromInterview = async (sub: SubmissionDetailDto) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to remove ${sub.candidateName || "this candidate"} from technical interview selection?`
+      )
+    ) {
+      return;
+    }
+    try {
+      await assessmentsApi.reviewSubmission(sub.id, {
+        examScore: sub.examScore,
+        isSelectedForInterview: false,
+        reviewerFeedback: sub.reviewerFeedback,
+      });
+      showToast(
+        `✓ Removed ${sub.candidateName || "candidate"} from interview selection.`
+      );
+      loadInterviewSelections();
+      if (selectedJob) {
+        loadJobSubmissions(selectedJob.id);
+        loadJobLeaderboard(selectedJob.id);
+      }
+    } catch (err) {
+      console.error("Failed to remove candidate from interview selection:", err);
+      showToast("Failed to remove candidate from interview selection.");
+    }
+  };
+
   useEffect(() => {
     if (!selectedJob) return;
     const jobId = selectedJob.id;
@@ -319,16 +378,18 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
     const fetchAll = async () => {
       try {
-        const [assessmentsData, submissionsData, leaderboardData] =
+        const [assessmentsData, submissionsData, leaderboardData, interviewData] =
           await Promise.all([
             assessmentsApi.getAssessmentsByJob(jobId),
             assessmentsApi.getSubmissionsByJob(jobId),
             assessmentsApi.getLeaderboard(jobId),
+            assessmentsApi.getInterviewSelections(),
           ]);
         if (isMounted) {
           setAssessments(assessmentsData || []);
           setSubmissions(submissionsData || []);
           setLeaderboard(leaderboardData || []);
+          setInterviewSelections(interviewData || []);
         }
       } catch (err) {
         console.error("Failed to load job assessment data:", err);
@@ -337,6 +398,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           setLoadingAssessments(false);
           setLoadingSubmissions(false);
           setLoadingLeaderboard(false);
+          setLoadingInterviewSelections(false);
         }
       }
     };
@@ -346,6 +408,12 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
       isMounted = false;
     };
   }, [selectedJob]);
+
+  useEffect(() => {
+    if (isInterviewSelection) {
+      loadInterviewSelections();
+    }
+  }, [isInterviewSelection, loadInterviewSelections]);
 
   const handleOpenReview = (sub: SubmissionDetailDto) => {
     setReviewingSubmission(sub);
@@ -394,6 +462,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
       );
 
       setReviewingSubmission(null);
+      loadInterviewSelections();
       if (selectedJob) {
         loadJobSubmissions(selectedJob.id);
         loadJobLeaderboard(selectedJob.id);
@@ -624,16 +693,34 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           <div
             className="badge-tag"
             style={{
-              background: "#ecfdf5",
-              color: "#059669",
-              border: "1px solid #a7f3d0",
+              background: isInterviewSelection
+                ? "#f5f3ff"
+                : !isPerformanceHub
+                  ? "#ecfdf5"
+                  : "#eff6ff",
+              color: isInterviewSelection
+                ? "#7c3aed"
+                : !isPerformanceHub
+                  ? "#059669"
+                  : "#4338ca",
+              border: isInterviewSelection
+                ? "1px solid #ddd6fe"
+                : !isPerformanceHub
+                  ? "1px solid #a7f3d0"
+                  : "1px solid #c7d2fe",
             }}
           >
-            <SparkleIcon />
+            {isInterviewSelection ? (
+              <Star size={13} fill="#7c3aed" />
+            ) : (
+              <SparkleIcon />
+            )}
             <span>
-              {!isPerformanceHub
-                ? "TECHNICAL ASSESSMENT ENGINE"
-                : "PERFORMANCE HUB"}
+              {isInterviewSelection
+                ? "INTERVIEW SELECTION HUB"
+                : !isPerformanceHub
+                  ? "TECHNICAL ASSESSMENT ENGINE"
+                  : "PERFORMANCE HUB"}
             </span>
           </div>
           <h1
@@ -645,151 +732,161 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               marginTop: "8px",
             }}
           >
-            {!isPerformanceHub ? "Assessments" : "Performance Hub"}
+            {isInterviewSelection
+              ? "Interview Selection"
+              : !isPerformanceHub
+                ? "Assessments"
+                : "Performance Hub"}
           </h1>
           <p
             className="pipeline-page-subtitle"
             style={{ fontSize: "14px", color: "#64748b", maxWidth: "800px" }}
           >
-            {!isPerformanceHub
-              ? "Design custom coding problem tracks, configure language starter code, and publish technical assessment benchmarks for active requisitions."
-              : "Review candidate code solutions, inspect anti-cheat proctor telemetry, evaluate question performance, and promote the Top 5 finalists directly to Student 3's Meeting Orchestration Hub."}
+            {isInterviewSelection
+              ? "Review candidates shortlisted for technical interviews, examine their technical scores and proctoring trust ratings, and coordinate next steps across requisitions."
+              : !isPerformanceHub
+                ? "Design custom coding problem tracks, configure language starter code, and publish technical assessment benchmarks for active requisitions."
+                : "Review candidate code solutions, inspect anti-cheat proctor telemetry, evaluate question performance, and promote the Top 5 finalists directly to Student 3's Meeting Orchestration Hub."}
           </p>
         </div>
 
-        {/* Job Requisition Switcher */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "6px",
-            minWidth: "320px",
-          }}
-        >
-          <label
+        {/* Job Requisition Switcher (shown when not in Interview Selection) */}
+        {!isInterviewSelection && (
+          <div
             style={{
-              fontSize: "12px",
-              fontWeight: 700,
-              color: "#475569",
-              textTransform: "uppercase",
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+              minWidth: "320px",
             }}
           >
-            Active Job Requisition:
-          </label>
-          <select
-            value={selectedJob?.id || ""}
-            onChange={(e) => {
-              const j = jobs.find((item) => item.id === e.target.value);
-              if (j) setSelectedJob(j);
-            }}
-            style={{
-              padding: "10px 14px",
-              borderRadius: "10px",
-              border: "1px solid #cbd5e1",
-              fontSize: "13.5px",
-              fontWeight: 600,
-              color: "#0f172a",
-              background: "#ffffff",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-              outline: "none",
-            }}
-          >
-            {jobs.map((j) => (
-              <option key={j.id} value={j.id}>
-                {j.title} ({j.department})
-              </option>
-            ))}
-          </select>
-        </div>
+            <label
+              style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "#475569",
+                textTransform: "uppercase",
+              }}
+            >
+              Active Job Requisition:
+            </label>
+            <select
+              value={selectedJob?.id || ""}
+              onChange={(e) => {
+                const j = jobs.find((item) => item.id === e.target.value);
+                if (j) setSelectedJob(j);
+              }}
+              style={{
+                padding: "10px 14px",
+                borderRadius: "10px",
+                border: "1px solid #cbd5e1",
+                fontSize: "13.5px",
+                fontWeight: 600,
+                color: "#0f172a",
+                background: "#ffffff",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                outline: "none",
+              }}
+            >
+              {jobs.map((j) => (
+                <option key={j.id} value={j.id}>
+                  {j.title} ({j.department})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Active Section / Performance Hub Tabs */}
-      <div
-        style={{
-          display: "flex",
-          gap: "12px",
-          borderBottom: "2px solid #e2e8f0",
-          marginBottom: "24px",
-        }}
-      >
-        {!isPerformanceHub ? (
-          <div
-            style={{
-              padding: "12px 20px",
-              fontSize: "14.5px",
-              fontWeight: 700,
-              color: "#00b074",
-              borderBottom: "3px solid #00b074",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              marginBottom: "-2px",
-            }}
-          >
-            <BriefcaseIcon />
-            <span>Assessments ({assessments.length})</span>
-          </div>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={() => setPerfTab("submissions")}
+      {!isInterviewSelection && (
+        <div
+          style={{
+            display: "flex",
+            gap: "12px",
+            borderBottom: "2px solid #e2e8f0",
+            marginBottom: "24px",
+          }}
+        >
+          {!isPerformanceHub ? (
+            <div
               style={{
                 padding: "12px 20px",
                 fontSize: "14.5px",
                 fontWeight: 700,
-                color: perfTab === "submissions" ? "#00b074" : "#64748b",
-                borderBottom:
-                  perfTab === "submissions"
-                    ? "3px solid #00b074"
-                    : "3px solid transparent",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
+                color: "#00b074",
+                borderBottom: "3px solid #00b074",
                 display: "flex",
                 alignItems: "center",
                 gap: "8px",
                 marginBottom: "-2px",
               }}
             >
-              <SparkleIcon />
-              <span>
-                Candidate Submissions &amp; Review ({submissions.length})
-              </span>
-            </button>
+              <BriefcaseIcon />
+              <span>Assessments ({assessments.length})</span>
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setPerfTab("submissions")}
+                style={{
+                  padding: "12px 20px",
+                  fontSize: "14.5px",
+                  fontWeight: 700,
+                  color: perfTab === "submissions" ? "#00b074" : "#64748b",
+                  borderBottom:
+                    perfTab === "submissions"
+                      ? "3px solid #00b074"
+                      : "3px solid transparent",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginBottom: "-2px",
+                }}
+              >
+                <SparkleIcon />
+                <span>
+                  Candidate Submissions &amp; Review ({submissions.length})
+                </span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setPerfTab("leaderboard")}
-              style={{
-                padding: "12px 20px",
-                fontSize: "14.5px",
-                fontWeight: 700,
-                color: perfTab === "leaderboard" ? "#00b074" : "#64748b",
-                borderBottom:
-                  perfTab === "leaderboard"
-                    ? "3px solid #00b074"
-                    : "3px solid transparent",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                marginBottom: "-2px",
-              }}
-            >
-              <TrophyIcon />
-              <span>Top 5 Leaderboard ({leaderboard.length})</span>
-            </button>
-          </>
-        )}
-      </div>
+              <button
+                type="button"
+                onClick={() => setPerfTab("leaderboard")}
+                style={{
+                  padding: "12px 20px",
+                  fontSize: "14.5px",
+                  fontWeight: 700,
+                  color: perfTab === "leaderboard" ? "#00b074" : "#64748b",
+                  borderBottom:
+                    perfTab === "leaderboard"
+                      ? "3px solid #00b074"
+                      : "3px solid transparent",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginBottom: "-2px",
+                }}
+              >
+                <TrophyIcon />
+                <span>Top 5 Leaderboard ({leaderboard.length})</span>
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* =========================================================
           VIEW 1: ASSESSMENTS
           ========================================================= */}
-      {!isPerformanceHub && (
+      {!isPerformanceHub && !isInterviewSelection && (
         <div>
           {/* Action Row */}
           <div
@@ -2248,6 +2345,1313 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 </table>
               </div>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* =========================================================
+          VIEW 4: INTERVIEW SELECTION & REQUISITION FILTER
+          ========================================================= */}
+      {isInterviewSelection && (
+        <div>
+          {/* Section Header */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "20px",
+              flexWrap: "wrap",
+              gap: "16px",
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  marginBottom: "4px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "8px",
+                    background: "#f5f3ff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#7c3aed",
+                  }}
+                >
+                  <Star size={18} fill="#7c3aed" />
+                </div>
+                <h3
+                  style={{
+                    fontSize: "17px",
+                    fontWeight: 800,
+                    color: "#0f172a",
+                    margin: 0,
+                  }}
+                >
+                  Technical Interview Selection
+                </h3>
+                <span
+                  style={{
+                    padding: "3px 10px",
+                    borderRadius: "999px",
+                    background: "#f5f3ff",
+                    color: "#7c3aed",
+                    border: "1px solid #ddd6fe",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                  }}
+                >
+                  {interviewSelections.length} Selected
+                </span>
+              </div>
+              <p
+                style={{
+                  fontSize: "12.5px",
+                  color: "#64748b",
+                  margin: 0,
+                }}
+              >
+                Candidates evaluated and explicitly selected by HR during assessment reviews for technical interview rounds.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => loadInterviewSelections()}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "8px 14px",
+                borderRadius: "10px",
+                border: "1px solid #cbd5e1",
+                background: "#ffffff",
+                color: "#334155",
+                fontSize: "12.5px",
+                fontWeight: 600,
+                cursor: "pointer",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <RotateCw size={13} />
+              <span>Refresh List</span>
+            </button>
+          </div>
+
+          {/* Quick Metrics KPI Cards */}
+          {(() => {
+            const totalSelected = interviewSelections.length;
+            const avgScore =
+              totalSelected > 0
+                ? (
+                    interviewSelections.reduce(
+                      (acc, s) => acc + (s.examScore || 0),
+                      0,
+                    ) / totalSelected
+                  ).toFixed(1)
+                : "0.0";
+            const uniqueRoles = new Set(
+              interviewSelections.map((s) => s.jobVacancyId).filter(Boolean),
+            ).size;
+            const cleanCount = interviewSelections.filter(
+              (s) => (s.proctorSummary?.tabSwitches ?? 0) === 0,
+            ).length;
+            const cleanRate =
+              totalSelected > 0
+                ? Math.round((cleanCount / totalSelected) * 100)
+                : 100;
+
+            return (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+                  gap: "14px",
+                  marginBottom: "24px",
+                }}
+              >
+                <div
+                  style={{
+                    background: "#ffffff",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "14px",
+                    padding: "16px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        color: "#64748b",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Selected Candidates
+                    </span>
+                    <div
+                      style={{
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "7px",
+                        background: "#f5f3ff",
+                        color: "#7c3aed",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Star size={15} fill="#7c3aed" />
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "24px",
+                      fontWeight: 800,
+                      color: "#0f172a",
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {totalSelected}
+                  </div>
+                  <span style={{ fontSize: "11.5px", color: "#7c3aed", fontWeight: 600 }}>
+                    Promoted to interview round
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    background: "#ffffff",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "14px",
+                    padding: "16px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        color: "#64748b",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Avg. Technical Score
+                    </span>
+                    <div
+                      style={{
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "7px",
+                        background: "#ecfdf5",
+                        color: "#059669",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <TrophyIcon />
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "24px",
+                      fontWeight: 800,
+                      color: "#047857",
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {avgScore}%
+                  </div>
+                  <span style={{ fontSize: "11.5px", color: "#64748b" }}>
+                    Across all selected exams
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    background: "#ffffff",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "14px",
+                    padding: "16px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        color: "#64748b",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Job Roles Represented
+                    </span>
+                    <div
+                      style={{
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "7px",
+                        background: "#eff6ff",
+                        color: "#2563eb",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <BriefcaseIcon />
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "24px",
+                      fontWeight: 800,
+                      color: "#0f172a",
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {uniqueRoles}
+                  </div>
+                  <span style={{ fontSize: "11.5px", color: "#64748b" }}>
+                    Active requisitions with talent
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    background: "#ffffff",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "14px",
+                    padding: "16px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        color: "#64748b",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Integrity Compliance
+                    </span>
+                    <div
+                      style={{
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "7px",
+                        background: "#f0fdf4",
+                        color: "#16a34a",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <ShieldCheckIcon />
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "24px",
+                      fontWeight: 800,
+                      color: "#16a34a",
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {cleanRate}%
+                  </div>
+                  <span style={{ fontSize: "11.5px", color: "#64748b" }}>
+                    {cleanCount} clean proctor sessions
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Filtering Controls Bar */}
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "14px",
+              padding: "14px 18px",
+              marginBottom: "20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "14px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+            }}
+          >
+            {/* Left Controls: Job Requisition Filter Dropdown */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                flexWrap: "wrap",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span
+                  style={{
+                    fontSize: "12.5px",
+                    fontWeight: 700,
+                    color: "#475569",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
+                  }}
+                >
+                  <Filter size={14} color="#64748b" />
+                  Filter by Job:
+                </span>
+                <select
+                  value={interviewJobFilter}
+                  onChange={(e) => setInterviewJobFilter(e.target.value)}
+                  style={{
+                    padding: "8px 14px",
+                    borderRadius: "10px",
+                    border: "1px solid #cbd5e1",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#0f172a",
+                    background: "#ffffff",
+                    outline: "none",
+                    cursor: "pointer",
+                    minWidth: "220px",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+                  }}
+                >
+                  <option value="all">
+                    All Job Requisitions ({interviewSelections.length} candidates)
+                  </option>
+                  {jobs.map((j) => {
+                    const count = interviewSelections.filter(
+                      (s) => s.jobVacancyId === j.id,
+                    ).length;
+                    return (
+                      <option key={j.id} value={j.id}>
+                        {j.title} ({j.department}) — {count} selected
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {/* Quick Score Filters */}
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={() => setInterviewScoreFilter("all")}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "999px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    border: "1px solid",
+                    borderColor:
+                      interviewScoreFilter === "all" ? "#7c3aed" : "#e2e8f0",
+                    background:
+                      interviewScoreFilter === "all" ? "#f5f3ff" : "#ffffff",
+                    color:
+                      interviewScoreFilter === "all" ? "#7c3aed" : "#64748b",
+                    cursor: "pointer",
+                  }}
+                >
+                  All Scores
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInterviewScoreFilter("top")}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "999px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    border: "1px solid",
+                    borderColor:
+                      interviewScoreFilter === "top" ? "#00b074" : "#e2e8f0",
+                    background:
+                      interviewScoreFilter === "top" ? "#ecfdf5" : "#ffffff",
+                    color:
+                      interviewScoreFilter === "top" ? "#047857" : "#64748b",
+                    cursor: "pointer",
+                  }}
+                >
+                  Top Performers (≥85%)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInterviewScoreFilter("passed")}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "999px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    border: "1px solid",
+                    borderColor:
+                      interviewScoreFilter === "passed" ? "#2563eb" : "#e2e8f0",
+                    background:
+                      interviewScoreFilter === "passed" ? "#eff6ff" : "#ffffff",
+                    color:
+                      interviewScoreFilter === "passed" ? "#1d4ed8" : "#64748b",
+                    cursor: "pointer",
+                  }}
+                >
+                  Passing (≥Threshold)
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setInterviewIntegrityFilter(
+                      interviewIntegrityFilter === "clean" ? "all" : "clean",
+                    )
+                  }
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "999px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    border: "1px solid",
+                    borderColor:
+                      interviewIntegrityFilter === "clean"
+                        ? "#10b981"
+                        : "#e2e8f0",
+                    background:
+                      interviewIntegrityFilter === "clean"
+                        ? "#ecfdf5"
+                        : "#ffffff",
+                    color:
+                      interviewIntegrityFilter === "clean"
+                        ? "#047857"
+                        : "#64748b",
+                    cursor: "pointer",
+                  }}
+                >
+                  🛡️ Clean Proctor Only
+                </button>
+              </div>
+            </div>
+
+            {/* Right Controls: Search Input */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                background: "#ffffff",
+                border: "1px solid #cbd5e1",
+                borderRadius: "10px",
+                padding: "6px 12px",
+                minWidth: "260px",
+              }}
+            >
+              <Search size={14} color="#94a3b8" />
+              <input
+                type="text"
+                placeholder="Search candidate, email, or role..."
+                value={interviewSearch}
+                onChange={(e) => setInterviewSearch(e.target.value)}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  outline: "none",
+                  fontSize: "13px",
+                  width: "100%",
+                  color: "#0f172a",
+                }}
+              />
+              {interviewSearch && (
+                <button
+                  type="button"
+                  onClick={() => setInterviewSearch("")}
+                  style={{
+                    border: "none",
+                    background: "none",
+                    color: "#94a3b8",
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Table or Empty State */}
+          {loadingInterviewSelections ? (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "60px 20px",
+                color: "#64748b",
+                fontSize: "13.5px",
+                background: "#ffffff",
+                borderRadius: "16px",
+                border: "1px solid #e2e8f0",
+              }}
+            >
+              <div
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  border: "3px solid #7c3aed",
+                  borderTopColor: "transparent",
+                  borderRadius: "50%",
+                  animation: "spin 0.8s linear infinite",
+                  margin: "0 auto 12px auto",
+                }}
+              />
+              Loading candidate interview selections...
+            </div>
+          ) : (
+            (() => {
+              const filtered = interviewSelections.filter((s) => {
+                // 1. Job requisition filter
+                if (
+                  interviewJobFilter !== "all" &&
+                  s.jobVacancyId !== interviewJobFilter
+                ) {
+                  return false;
+                }
+
+                // 2. Score filter
+                if (interviewScoreFilter === "top" && (s.examScore || 0) < 85)
+                  return false;
+                if (interviewScoreFilter === "high" && (s.examScore || 0) < 70)
+                  return false;
+                if (
+                  interviewScoreFilter === "passed" &&
+                  (s.examScore || 0) < (s.passingThreshold || 60)
+                )
+                  return false;
+
+                // 3. Proctor filter
+                const infractions = s.proctorSummary?.tabSwitches ?? 0;
+                if (interviewIntegrityFilter === "clean" && infractions > 0)
+                  return false;
+                if (interviewIntegrityFilter === "flagged" && infractions === 0)
+                  return false;
+
+                // 4. Search query
+                if (interviewSearch.trim()) {
+                  const q = interviewSearch.toLowerCase();
+                  const nameMatch = (s.candidateName || "")
+                    .toLowerCase()
+                    .includes(q);
+                  const emailMatch = (s.candidateEmail || "")
+                    .toLowerCase()
+                    .includes(q);
+                  const jobMatch = (s.jobTitle || "")
+                    .toLowerCase()
+                    .includes(q);
+                  const deptMatch = (s.department || "")
+                    .toLowerCase()
+                    .includes(q);
+                  const assessMatch = (s.assessmentTitle || "")
+                    .toLowerCase()
+                    .includes(q);
+                  return (
+                    nameMatch ||
+                    emailMatch ||
+                    jobMatch ||
+                    deptMatch ||
+                    assessMatch
+                  );
+                }
+
+                return true;
+              });
+
+              if (interviewSelections.length === 0) {
+                return (
+                  <div
+                    style={{
+                      background: "#ffffff",
+                      border: "2px dashed #cbd5e1",
+                      borderRadius: "16px",
+                      padding: "60px 24px",
+                      textAlign: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "56px",
+                        height: "56px",
+                        borderRadius: "50%",
+                        background: "#f5f3ff",
+                        color: "#7c3aed",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        margin: "0 auto 16px auto",
+                      }}
+                    >
+                      <Star size={28} fill="#7c3aed" />
+                    </div>
+                    <h4
+                      style={{
+                        fontSize: "17px",
+                        fontWeight: 700,
+                        color: "#0f172a",
+                        margin: "0 0 8px 0",
+                      }}
+                    >
+                      No Candidates Selected for Technical Interview Yet
+                    </h4>
+                    <p
+                      style={{
+                        fontSize: "13.5px",
+                        color: "#64748b",
+                        maxWidth: "520px",
+                        margin: "0 auto 20px auto",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      When reviewing candidate code submissions in the{" "}
+                      <strong>Candidate Submissions &amp; Review</strong> tab,
+                      check the <strong>⭐ Select Candidate for Technical Interview</strong>{" "}
+                      option. Shortlisted candidates will automatically appear in this section.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setPerfTab("submissions")}
+                      style={{
+                        padding: "10px 20px",
+                        borderRadius: "10px",
+                        background: "#00b074",
+                        color: "#ffffff",
+                        fontWeight: 700,
+                        fontSize: "13px",
+                        border: "none",
+                        cursor: "pointer",
+                        boxShadow: "0 2px 8px rgba(0,176,116,0.25)",
+                      }}
+                    >
+                      Go to Candidate Submissions
+                    </button>
+                  </div>
+                );
+              }
+
+              if (filtered.length === 0) {
+                return (
+                  <div
+                    style={{
+                      background: "#f8fafc",
+                      border: "2px dashed #cbd5e1",
+                      borderRadius: "16px",
+                      padding: "48px 24px",
+                      textAlign: "center",
+                    }}
+                  >
+                    <h4
+                      style={{
+                        fontSize: "16px",
+                        fontWeight: 700,
+                        color: "#0f172a",
+                        margin: "0 0 6px 0",
+                      }}
+                    >
+                      No Candidates Match Selected Criteria
+                    </h4>
+                    <p
+                      style={{
+                        fontSize: "13px",
+                        color: "#64748b",
+                        maxWidth: "460px",
+                        margin: "0 auto 16px auto",
+                      }}
+                    >
+                      Try clearing the search query or selecting "All Job Requisitions".
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInterviewJobFilter("all");
+                        setInterviewSearch("");
+                        setInterviewScoreFilter("all");
+                        setInterviewIntegrityFilter("all");
+                      }}
+                      style={{
+                        padding: "8px 16px",
+                        borderRadius: "8px",
+                        background: "#ffffff",
+                        border: "1px solid #cbd5e1",
+                        color: "#334155",
+                        fontWeight: 600,
+                        fontSize: "12.5px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Reset Filters
+                    </button>
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  style={{
+                    background: "#ffffff",
+                    borderRadius: "16px",
+                    border: "1px solid #e2e8f0",
+                    overflow: "hidden",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+                  }}
+                >
+                  <div style={{ overflowX: "auto" }}>
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        textAlign: "left",
+                        fontSize: "13px",
+                      }}
+                    >
+                      <thead>
+                        <tr
+                          style={{
+                            background: "#f8fafc",
+                            borderBottom: "1px solid #e2e8f0",
+                            color: "#475569",
+                            fontWeight: 700,
+                          }}
+                        >
+                          <th style={{ padding: "14px 18px" }}>Candidate</th>
+                          <th style={{ padding: "14px 18px" }}>
+                            Job Requisition &amp; Dept
+                          </th>
+                          <th style={{ padding: "14px 18px" }}>
+                            Assessment Track
+                          </th>
+                          <th
+                            style={{
+                              padding: "14px 18px",
+                              textAlign: "center",
+                            }}
+                          >
+                            Technical Score
+                          </th>
+                          <th
+                            style={{
+                              padding: "14px 18px",
+                              textAlign: "center",
+                            }}
+                          >
+                            Final &amp; CV Match
+                          </th>
+                          <th
+                            style={{
+                              padding: "14px 18px",
+                              textAlign: "center",
+                            }}
+                          >
+                            Proctor Telemetry
+                          </th>
+                          <th
+                            style={{
+                              padding: "14px 18px",
+                              textAlign: "center",
+                            }}
+                          >
+                            Selected Date
+                          </th>
+                          <th style={{ padding: "14px 18px" }}>
+                            Reviewer Feedback
+                          </th>
+                          <th
+                            style={{
+                              padding: "14px 18px",
+                              textAlign: "center",
+                            }}
+                          >
+                            Interview Status
+                          </th>
+                          <th
+                            style={{
+                              padding: "14px 18px",
+                              textAlign: "right",
+                            }}
+                          >
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.map((s) => {
+                          const infractions =
+                            s.proctorSummary?.tabSwitches ?? 0;
+                          const dateFormatted = s.gradedAt
+                            ? new Date(s.gradedAt).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : s.submittedAt
+                              ? new Date(s.submittedAt).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  },
+                                )
+                              : "Recent";
+
+                          const matchedJob = jobs.find(
+                            (j) => j.id === s.jobVacancyId,
+                          );
+                          const jobTitle =
+                            s.jobTitle ||
+                            matchedJob?.title ||
+                            selectedJob?.title ||
+                            "Job Requisition";
+                          const department =
+                            s.department ||
+                            matchedJob?.department ||
+                            selectedJob?.department ||
+                            "General";
+
+                          const initials = (s.candidateName || "Candidate")
+                            .split(" ")
+                            .map((p) => p[0])
+                            .slice(0, 2)
+                            .join("")
+                            .toUpperCase();
+
+                          const isPassed =
+                            (s.examScore || 0) >= (s.passingThreshold || 60);
+
+                          return (
+                            <tr
+                              key={s.id}
+                              style={{
+                                borderBottom: "1px solid #f1f5f9",
+                                background: "#ffffff",
+                                transition: "background 0.1s ease",
+                              }}
+                            >
+                              {/* Candidate Info */}
+                              <td style={{ padding: "14px 18px" }}>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "10px",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      width: "36px",
+                                      height: "36px",
+                                      borderRadius: "50%",
+                                      background:
+                                        "linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)",
+                                      color: "#ffffff",
+                                      fontSize: "12.5px",
+                                      fontWeight: 800,
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      flexShrink: 0,
+                                      boxShadow:
+                                        "0 2px 4px rgba(124, 58, 237, 0.2)",
+                                    }}
+                                  >
+                                    {initials}
+                                  </div>
+                                  <div>
+                                    <div
+                                      style={{
+                                        fontWeight: 700,
+                                        color: "#0f172a",
+                                        fontSize: "13.5px",
+                                      }}
+                                    >
+                                      {s.candidateName || "Candidate"}
+                                    </div>
+                                    <div
+                                      style={{
+                                        fontSize: "11.5px",
+                                        color: "#64748b",
+                                      }}
+                                    >
+                                      {s.candidateEmail}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Job Requisition & Dept */}
+                              <td style={{ padding: "14px 18px" }}>
+                                <div
+                                  style={{
+                                    fontWeight: 650,
+                                    color: "#1e293b",
+                                    fontSize: "13px",
+                                  }}
+                                >
+                                  {jobTitle}
+                                </div>
+                                <div style={{ marginTop: "3px" }}>
+                                  <span
+                                    style={{
+                                      padding: "2px 8px",
+                                      borderRadius: "6px",
+                                      background: "#f1f5f9",
+                                      color: "#475569",
+                                      fontSize: "11px",
+                                      fontWeight: 600,
+                                      border: "1px solid #e2e8f0",
+                                    }}
+                                  >
+                                    {department}
+                                  </span>
+                                </div>
+                              </td>
+
+                              {/* Assessment Track */}
+                              <td style={{ padding: "14px 18px" }}>
+                                <div
+                                  style={{
+                                    fontWeight: 600,
+                                    color: "#334155",
+                                    fontSize: "12.5px",
+                                  }}
+                                >
+                                  {s.assessmentTitle || "Skill Assessment"}
+                                </div>
+                                <div
+                                  style={{
+                                    fontSize: "11.5px",
+                                    color: "#94a3b8",
+                                    marginTop: "2px",
+                                  }}
+                                >
+                                  {s.answers?.length || 0} Challenge(s)
+                                </div>
+                              </td>
+
+                              {/* Technical Score */}
+                              <td
+                                style={{
+                                  padding: "14px 18px",
+                                  textAlign: "center",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    display: "inline-flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    gap: "2px",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      padding: "4px 10px",
+                                      borderRadius: "8px",
+                                      background: isPassed
+                                        ? "#ecfdf5"
+                                        : "#fff1f2",
+                                      color: isPassed
+                                        ? "#047857"
+                                        : "#b91c1c",
+                                      fontWeight: 800,
+                                      fontSize: "14px",
+                                      border: isPassed
+                                        ? "1px solid #a7f3d0"
+                                        : "1px solid #fecaca",
+                                    }}
+                                  >
+                                    {s.examScore}%
+                                  </span>
+                                  <span
+                                    style={{
+                                      fontSize: "10.5px",
+                                      color: "#64748b",
+                                    }}
+                                  >
+                                    Pass: {s.passingThreshold || 60}%
+                                  </span>
+                                </div>
+                              </td>
+
+                              {/* Final & CV Match */}
+                              <td
+                                style={{
+                                  padding: "14px 18px",
+                                  textAlign: "center",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    fontWeight: 800,
+                                    color: "#0f172a",
+                                    fontSize: "13.5px",
+                                  }}
+                                >
+                                  {s.finalWeightedScore}%
+                                </div>
+                                {s.cvScore > 0 && (
+                                  <div style={{ marginTop: "2px" }}>
+                                    <span
+                                      style={{
+                                        padding: "1px 6px",
+                                        borderRadius: "4px",
+                                        background: "#eff6ff",
+                                        color: "#1d4ed8",
+                                        fontSize: "10.5px",
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      CV {s.cvScore}%
+                                    </span>
+                                  </div>
+                                )}
+                              </td>
+
+                              {/* Proctor Telemetry */}
+                              <td
+                                style={{
+                                  padding: "14px 18px",
+                                  textAlign: "center",
+                                }}
+                              >
+                                {infractions > 0 ? (
+                                  <span
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "4px",
+                                      padding: "3px 8px",
+                                      borderRadius: "6px",
+                                      background: "#fee2e2",
+                                      color: "#b91c1c",
+                                      fontSize: "11.5px",
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    <AlertTriangle
+                                      size={12}
+                                      strokeWidth={2.2}
+                                    />
+                                    <span>{infractions} Alert(s)</span>
+                                  </span>
+                                ) : (
+                                  <span
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "4px",
+                                      padding: "3px 8px",
+                                      borderRadius: "6px",
+                                      background: "#ecfdf5",
+                                      color: "#059669",
+                                      fontSize: "11.5px",
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    <CheckIcon />
+                                    <span>Clean (0)</span>
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Selected / Graded Date */}
+                              <td
+                                style={{
+                                  padding: "14px 18px",
+                                  textAlign: "center",
+                                  color: "#64748b",
+                                  fontSize: "12px",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {dateFormatted}
+                              </td>
+
+                              {/* Reviewer Feedback */}
+                              <td style={{ padding: "14px 18px" }}>
+                                {s.reviewerFeedback ? (
+                                  <div
+                                    title={s.reviewerFeedback}
+                                    style={{
+                                      maxWidth: "180px",
+                                      fontSize: "12px",
+                                      color: "#334155",
+                                      background: "#f8fafc",
+                                      border: "1px solid #e2e8f0",
+                                      padding: "4px 8px",
+                                      borderRadius: "6px",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    "{s.reviewerFeedback}"
+                                  </div>
+                                ) : (
+                                  <span
+                                    style={{
+                                      color: "#94a3b8",
+                                      fontSize: "12px",
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    No notes added
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Interview Status Badge */}
+                              <td
+                                style={{
+                                  padding: "14px 18px",
+                                  textAlign: "center",
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "5px",
+                                    padding: "4px 12px",
+                                    borderRadius: "999px",
+                                    background: "#f5f3ff",
+                                    color: "#7c3aed",
+                                    border: "1px solid #ddd6fe",
+                                    fontSize: "12px",
+                                    fontWeight: 800,
+                                    boxShadow:
+                                      "0 1px 3px rgba(124, 58, 237, 0.1)",
+                                  }}
+                                >
+                                  <Star size={13} fill="#7c3aed" color="#7c3aed" />
+                                  <span>Selected</span>
+                                </span>
+                              </td>
+
+                              {/* Actions */}
+                              <td
+                                style={{
+                                  padding: "14px 18px",
+                                  textAlign: "right",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                  }}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenReview(s)}
+                                    title="View candidate typed code, question scoring, and full review"
+                                    style={{
+                                      padding: "6px 12px",
+                                      borderRadius: "8px",
+                                      fontSize: "12px",
+                                      fontWeight: 700,
+                                      border: "1px solid #7c3aed",
+                                      background: "#f5f3ff",
+                                      color: "#7c3aed",
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "5px",
+                                      transition: "all 0.15s ease",
+                                    }}
+                                  >
+                                    <Eye size={13} />
+                                    <span>Review Code</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeselectFromInterview(s)}
+                                    title="Remove from Technical Interview Selection"
+                                    style={{
+                                      padding: "6px 10px",
+                                      borderRadius: "8px",
+                                      fontSize: "12px",
+                                      fontWeight: 600,
+                                      border: "1px solid #fee2e2",
+                                      background: "#fff1f2",
+                                      color: "#b91c1c",
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "4px",
+                                      transition: "all 0.15s ease",
+                                    }}
+                                  >
+                                    <Trash2 size={13} />
+                                    <span>Remove</span>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()
           )}
         </div>
       )}

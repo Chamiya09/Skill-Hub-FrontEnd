@@ -1613,6 +1613,8 @@ export interface SubmissionDetailDto {
   candidateEmail?: string;
   applicationId: string;
   jobVacancyId: string;
+  jobTitle?: string;
+  department?: string;
   examScore: number;
   cvScore: number;
   finalWeightedScore: number;
@@ -1712,6 +1714,11 @@ export const assessmentsApi = {
 
   getSubmissionsByJob: (jobVacancyId: string) =>
     request<SubmissionDetailDto[]>(`/Assessments/job/${jobVacancyId}/submissions`),
+
+  getInterviewSelections: (jobVacancyId?: string) => {
+    const params = jobVacancyId ? `?jobVacancyId=${encodeURIComponent(jobVacancyId)}` : '';
+    return request<SubmissionDetailDto[]>(`/Assessments/interview-selections${params}`);
+  },
 
   reviewSubmission: (submissionId: string, payload: ManualReviewSubmissionPayload) =>
     request<SubmissionDetailDto>(`/Assessments/submissions/${submissionId}/review`, {

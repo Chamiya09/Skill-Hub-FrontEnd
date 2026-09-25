@@ -19,6 +19,8 @@ import {
   Building2,
   Briefcase,
   Filter,
+  Video,
+  MapPin,
 } from 'lucide-react';
 import {
   eventsApi,
@@ -165,6 +167,8 @@ export const MonthlyPlanner: React.FC = () => {
   const [scheduleProposal, setScheduleProposal] = useState<ScheduleProposalResponseDto | null>(null);
   const [isConfirmingSchedule, setIsConfirmingSchedule] = useState<boolean>(false);
   const [selectedProposedSlotIds, setSelectedProposedSlotIds] = useState<string[]>([]);
+  const [meetingMode, setMeetingMode] = useState<'Online' | 'Physical'>('Online');
+  const [meetingLocation, setMeetingLocation] = useState<string>('https://meet.google.com/interview-room');
 
   // Live count derived from HR's manual checkbox selections
   const liveScheduledCount = selectedProposedSlotIds.length;
@@ -221,6 +225,8 @@ export const MonthlyPlanner: React.FC = () => {
     setAiSchedulerError(null);
     setScheduleProposal(null);
     setSelectedProposedSlotIds([]);
+    setMeetingMode('Online');
+    setMeetingLocation('https://meet.google.com/interview-room');
     if (selectedDepartment && vacancies.length > 0) {
       const match = vacancies.find(
         (v) => v.department?.toLowerCase() === selectedDepartment.toLowerCase()
@@ -282,6 +288,16 @@ export const MonthlyPlanner: React.FC = () => {
       return;
     }
 
+    const trimmedLocation = meetingLocation.trim();
+    if (!trimmedLocation) {
+      setAiSchedulerError(
+        meetingMode === 'Online'
+          ? 'Please enter the meeting link or platform URL (e.g. Google Meet or Zoom link) for the candidate interviews.'
+          : 'Please enter the physical venue or office address for the candidate interviews.'
+      );
+      return;
+    }
+
     try {
       setIsConfirmingSchedule(true);
       const payload: ConfirmInterviewScheduleDto = {
@@ -296,6 +312,8 @@ export const MonthlyPlanner: React.FC = () => {
           endTime: s.endTime,
           trackNumber: s.trackNumber,
           trackName: s.trackName,
+          meetingMode: meetingMode,
+          location: trimmedLocation,
         })),
       };
 
@@ -3405,6 +3423,7 @@ export const MonthlyPlanner: React.FC = () => {
                           <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700 }}>Date</th>
                           <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700 }}>Time Slot</th>
                           <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700 }}>Room / Track</th>
+                          <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700 }}>Delivery Mode</th>
                           <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700 }}>Status</th>
                         </tr>
                       </thead>
@@ -3459,6 +3478,24 @@ export const MonthlyPlanner: React.FC = () => {
                                 </span>
                               </td>
                               <td style={{ padding: '10px 14px' }}>
+                                <span
+                                  style={{
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    padding: '2px 8px',
+                                    borderRadius: '6px',
+                                    background: meetingMode === 'Online' ? '#e0f2fe' : '#fef3c7',
+                                    color: meetingMode === 'Online' ? '#0369a1' : '#b45309',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                  }}
+                                >
+                                  {meetingMode === 'Online' ? <Video size={12} /> : <MapPin size={12} />}
+                                  <span>{meetingMode}</span>
+                                </span>
+                              </td>
+                              <td style={{ padding: '10px 14px' }}>
                                 {slot.isExtendedSearch ? (
                                   <span
                                     style={{
@@ -3494,6 +3531,134 @@ export const MonthlyPlanner: React.FC = () => {
                         })}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+
+                {/* Interview Delivery Setup Card (Meeting Mode & Place) */}
+                <div
+                  style={{
+                    background: '#f8fafc',
+                    border: '1.5px solid #cbd5e1',
+                    borderRadius: '14px',
+                    padding: '16px 20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div
+                        style={{
+                          width: '34px',
+                          height: '34px',
+                          borderRadius: '10px',
+                          background: meetingMode === 'Online' ? '#ecfdf5' : '#fffbeb',
+                          color: meetingMode === 'Online' ? '#059669' : '#d97706',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: meetingMode === 'Online' ? '1px solid #a7f3d0' : '1px solid #fde68a',
+                        }}
+                      >
+                        {meetingMode === 'Online' ? <Video size={18} /> : <MapPin size={18} />}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a' }}>
+                          Candidate Interview Mode & Place
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#64748b' }}>
+                          This informs the selected candidates via their Candidate Dashboard (&quot;My Interviews&quot;).
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Mode Toggle Buttons */}
+                    <div style={{ display: 'inline-flex', background: '#e2e8f0', padding: '4px', borderRadius: '10px', gap: '4px' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMeetingMode('Online');
+                          if (!meetingLocation || meetingLocation.includes('Office') || meetingLocation.includes('Floor')) {
+                            setMeetingLocation('https://meet.google.com/interview-room');
+                          }
+                        }}
+                        style={{
+                          padding: '7px 16px',
+                          borderRadius: '8px',
+                          border: 'none',
+                          background: meetingMode === 'Online' ? '#059669' : 'transparent',
+                          color: meetingMode === 'Online' ? '#ffffff' : '#475569',
+                          fontSize: '12.5px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.15s ease',
+                          boxShadow: meetingMode === 'Online' ? '0 2px 6px rgba(5, 150, 105, 0.25)' : 'none',
+                        }}
+                      >
+                        <Video size={14} />
+                        <span>Online</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMeetingMode('Physical');
+                          if (!meetingLocation || meetingLocation.includes('meet.google') || meetingLocation.includes('http')) {
+                            setMeetingLocation('Skill-Hub HQ, 4th Floor, Boardroom 2, Colombo 03');
+                          }
+                        }}
+                        style={{
+                          padding: '7px 16px',
+                          borderRadius: '8px',
+                          border: 'none',
+                          background: meetingMode === 'Physical' ? '#059669' : 'transparent',
+                          color: meetingMode === 'Physical' ? '#ffffff' : '#475569',
+                          fontSize: '12.5px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.15s ease',
+                          boxShadow: meetingMode === 'Physical' ? '0 2px 6px rgba(5, 150, 105, 0.25)' : 'none',
+                        }}
+                      >
+                        <MapPin size={14} />
+                        <span>Physical (In-Person)</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '6px' }}>
+                      {meetingMode === 'Online' ? 'Meeting Link / Platform URL (Online)' : 'Interview Place / Office Venue Address (Physical)'}
+                    </label>
+                    <input
+                      type="text"
+                      value={meetingLocation}
+                      onChange={(e) => setMeetingLocation(e.target.value)}
+                      placeholder={
+                        meetingMode === 'Online'
+                          ? 'e.g. https://meet.google.com/abc-defg-hij or Zoom / Teams Link'
+                          : 'e.g. Skill-Hub HQ, Level 4, Boardroom 2, Colombo 03'
+                      }
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '9px',
+                        border: '1.5px solid #cbd5e1',
+                        fontSize: '13px',
+                        color: '#0f172a',
+                        outline: 'none',
+                        background: '#ffffff',
+                        boxSizing: 'border-box',
+                      }}
+                    />
                   </div>
                 </div>
 

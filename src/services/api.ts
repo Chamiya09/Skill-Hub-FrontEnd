@@ -2222,6 +2222,13 @@ export const eventsApi = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+  /**
+   * GET /api/Events/my-interviews
+   * Retrieves scheduled interviews for the authenticated candidate.
+   */
+  getMyInterviews: () =>
+    request<CandidateInterviewDto[]>('/Events/my-interviews'),
 };
 
 export interface GenerateScheduleRequestDto {
@@ -2285,6 +2292,8 @@ export interface ConfirmedSlotItemDto {
   endTime: string; // HH:mm
   trackNumber: number;
   trackName: string;
+  meetingMode?: string; // "Online" | "Physical"
+  location?: string; // Meeting link or venue
 }
 
 export interface ConfirmInterviewScheduleDto {
@@ -2297,5 +2306,21 @@ export interface ConfirmInterviewScheduleResultDto {
   scheduledCount: number;
   message: string;
   createdEventIds: string[];
+}
+
+export interface CandidateInterviewDto {
+  id: string;
+  title: string;
+  jobVacancyId?: string;
+  jobTitle?: string;
+  companyName?: string;
+  department?: string;
+  eventDate: string; // YYYY-MM-DD
+  eventTime: string; // e.g. "10:00 - 10:30"
+  meetingMode: string; // "Online" or "Physical"
+  location?: string;
+  description?: string;
+  status: string; // "Upcoming" | "Completed"
+  createdAt: string;
 }
 

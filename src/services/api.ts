@@ -2109,6 +2109,9 @@ export interface EventResponseDto {
   eventTime: string; // e.g. "14:30" or "02:30 PM"
   createdBy: string;
   creatorName?: string | null;
+  jobVacancyId?: string | null;
+  jobVacancyTitle?: string | null;
+  department?: string | null;
   createdAt: string;
 }
 
@@ -2117,6 +2120,8 @@ export interface CreateEventPayload {
   description?: string;
   eventDate: string; // "YYYY-MM-DD"
   eventTime: string; // "HH:mm"
+  jobVacancyId?: string;
+  department?: string;
 }
 
 export interface NationalHolidayDto {
@@ -2131,17 +2136,24 @@ export interface NationalHolidayDto {
 export const eventsApi = {
   /**
    * GET /api/Events
-   * Retrieves events for the HR manager's company, optionally filtered by month/year or date range.
+   * Retrieves events for the HR manager's company, optionally filtered by department, month/year or date range.
    */
-  getEvents: (params?: { year?: number; month?: number; startDate?: string; endDate?: string }) => {
+  getEvents: (params?: { year?: number; month?: number; startDate?: string; endDate?: string; department?: string }) => {
     const q = new URLSearchParams();
     if (params?.year) q.append('year', params.year.toString());
     if (params?.month) q.append('month', params.month.toString());
     if (params?.startDate) q.append('startDate', params.startDate);
     if (params?.endDate) q.append('endDate', params.endDate);
+    if (params?.department) q.append('department', params.department);
     const queryString = q.toString() ? `?${q.toString()}` : '';
     return request<EventResponseDto[]>(`/Events${queryString}`);
   },
+
+  /**
+   * GET /api/Events/departments
+   * Retrieves departments that currently have at least one active job vacancy.
+   */
+  getActiveDepartments: () => request<string[]>('/Events/departments'),
 
   /**
    * GET /api/Events/holidays

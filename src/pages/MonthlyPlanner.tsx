@@ -16,6 +16,9 @@ import {
   Pencil,
   Globe,
   Bot,
+  Building2,
+  Briefcase,
+  Filter,
 } from 'lucide-react';
 import {
   eventsApi,
@@ -130,9 +133,16 @@ export const MonthlyPlanner: React.FC = () => {
   const [modalDate, setModalDate] = useState<string>(() => formatDateOnlyString(new Date()));
   const [modalStartTime, setModalStartTime] = useState<string>('09:00');
   const [modalEndTime, setModalEndTime] = useState<string>('10:00');
+  const [modalDepartment, setModalDepartment] = useState<string>('');
+  const [modalJobVacancyId, setModalJobVacancyId] = useState<string>('');
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Department Filter State (Only departments with active vacancies)
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
+  const [activeDepartments, setActiveDepartments] = useState<string[]>([]);
+  const [, setDepartmentsLoading] = useState<boolean>(false);
 
   // AI Interview Scheduler Modal State (Student 3 - Meeting Orchestration)
   const [isAiSchedulerModalOpen, setIsAiSchedulerModalOpen] = useState<boolean>(false);
@@ -171,11 +181,46 @@ export const MonthlyPlanner: React.FC = () => {
     }
   }, []);
 
+  const fetchActiveDepartments = useCallback(async () => {
+    try {
+      setDepartmentsLoading(true);
+      const depts = await eventsApi.getActiveDepartments();
+      setActiveDepartments(depts || []);
+    } catch (err) {
+      console.error('Failed to load active departments for Monthly Planner:', err);
+    } finally {
+      setDepartmentsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchActiveDepartments();
+    fetchVacancies();
+  }, [fetchActiveDepartments, fetchVacancies]);
+
+  // Filter vacancies matching the active or modal department
+  const departmentVacancies = useMemo(() => {
+    const targetDept = modalDepartment || selectedDepartment;
+    if (!targetDept) return vacancies;
+    return vacancies.filter(
+      (v) => v.department?.toLowerCase() === targetDept.toLowerCase()
+    );
+  }, [vacancies, modalDepartment, selectedDepartment]);
+
   const handleOpenAiSchedulerFromAddEvent = () => {
     setIsModalOpen(false);
     fetchVacancies();
     setAiSchedulerError(null);
     setScheduleProposal(null);
+    if (selectedDepartment && vacancies.length > 0) {
+      const match = vacancies.find(
+        (v) => v.department?.toLowerCase() === selectedDepartment.toLowerCase()
+      );
+      if (match) {
+        setSelectedVacancyId(match.id);
+      }
+    }
     setIsAiSchedulerModalOpen(true);
   };
 
@@ -249,14 +294,24 @@ export const MonthlyPlanner: React.FC = () => {
     }
   };
 
-  // Load events from backend
+  // Load events from backend (filtered by selected department across all its active vacancies)
   const fetchEvents = useCallback(async () => {
+    if (!selectedDepartment) {
+      setEvents([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setErrorMessage(null);
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
-      const data = await eventsApi.getEvents({ year, month });
+      const data = await eventsApi.getEvents({
+        year,
+        month,
+        department: selectedDepartment,
+      });
       setEvents(data || []);
     } catch (err) {
       console.error('Failed to load events:', err);
@@ -264,7 +319,7 @@ export const MonthlyPlanner: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentDate]);
+  }, [currentDate, selectedDepartment]);
 
   useEffect(() => {
     fetchEvents();
@@ -461,7 +516,6 @@ export const MonthlyPlanner: React.FC = () => {
     return cells;
   }, [currentDate]);
 
-  // Open modal handler
   // Open modal handler for adding new event
   const handleOpenAddEventModal = (targetDateStr?: string) => {
     setEditingEventId(null);
@@ -470,6 +524,8 @@ export const MonthlyPlanner: React.FC = () => {
     setModalDate(targetDateStr || selectedDateStr || formatDateOnlyString(new Date()));
     setModalStartTime('09:00');
     setModalEndTime('10:00');
+    setModalDepartment(selectedDepartment || (activeDepartments.length > 0 ? activeDepartments[0] : ''));
+    setModalJobVacancyId('');
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -480,6 +536,8 @@ export const MonthlyPlanner: React.FC = () => {
     setModalTitle(ev.title);
     setModalDescription(ev.description || '');
     setModalDate(ev.eventDate);
+    setModalDepartment(ev.department || selectedDepartment || '');
+    setModalJobVacancyId(ev.jobVacancyId || '');
 
     if (ev.eventTime && ev.eventTime.includes(' - ')) {
       const [start, end] = ev.eventTime.split(' - ');
@@ -547,6 +605,8 @@ export const MonthlyPlanner: React.FC = () => {
         description: modalDescription.trim() || undefined,
         eventDate: modalDate,
         eventTime: `${modalStartTime} - ${modalEndTime}`,
+        department: modalDepartment || selectedDepartment || undefined,
+        jobVacancyId: modalJobVacancyId || undefined,
       };
 
       let targetDate = modalDate;
@@ -576,6 +636,7 @@ export const MonthlyPlanner: React.FC = () => {
 
       setIsModalOpen(false);
       setEditingEventId(null);
+      await fetchEvents();
     } catch (err: unknown) {
       console.error('Failed to save event:', err);
       const errorObj = err as { message?: string };
@@ -1052,7 +1113,152 @@ export const MonthlyPlanner: React.FC = () => {
         </div>
       )}
 
-      {/* 3. Main Two-Column Layout (Calendar & Daily Schedule aligned at the exact same top level) */}
+      {/* 3. Department Filter Bar (HR Department Filter - Only Departments with Active Job Vacancies) */}
+      <div
+        style={{
+          background: selectedDepartment
+            ? 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)'
+            : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+          border: selectedDepartment ? '1.5px solid #a7f3d0' : '1.5px solid #e2e8f0',
+          borderRadius: '14px',
+          padding: '14px 20px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '16px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              background: selectedDepartment ? '#059669' : '#64748b',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: selectedDepartment ? '0 2px 6px rgba(5, 150, 105, 0.25)' : 'none',
+            }}
+          >
+            <Building2 size={20} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>
+                Department Filter
+              </span>
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  padding: '2px 8px',
+                  borderRadius: '999px',
+                  background: activeDepartments.length > 0 ? '#dbeafe' : '#f1f5f9',
+                  color: activeDepartments.length > 0 ? '#1e40af' : '#64748b',
+                }}
+              >
+                {activeDepartments.length} Active {activeDepartments.length === 1 ? 'Dept' : 'Depts'}
+              </span>
+            </div>
+            <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0 0 0' }}>
+              {selectedDepartment
+                ? `Showing events & interviews across all active vacancies under ${selectedDepartment}`
+                : 'Select an active department to display scheduled events and interviews'}
+            </p>
+          </div>
+        </div>
+
+        {/* Dropdown & Quick Selection Pills */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {/* Dropdown */}
+          <div>
+            <select
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              style={{
+                padding: '9px 16px',
+                borderRadius: '10px',
+                border: selectedDepartment ? '1.5px solid #059669' : '1.5px solid #cbd5e1',
+                background: '#ffffff',
+                color: selectedDepartment ? '#065f46' : '#334155',
+                fontSize: '13.5px',
+                fontWeight: 700,
+                outline: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                minWidth: '220px',
+              }}
+            >
+              <option value="">-- Select a Department --</option>
+              {activeDepartments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Quick Filter Pill Buttons */}
+          {activeDepartments.map((dept) => {
+            const isSelected = selectedDepartment.toLowerCase() === dept.toLowerCase();
+            return (
+              <button
+                key={dept}
+                type="button"
+                onClick={() => setSelectedDepartment(isSelected ? '' : dept)}
+                style={{
+                  padding: '7px 12px',
+                  borderRadius: '8px',
+                  border: isSelected ? '1px solid #059669' : '1px solid #cbd5e1',
+                  background: isSelected ? '#059669' : '#ffffff',
+                  color: isSelected ? '#ffffff' : '#475569',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Filter size={12} />
+                <span>{dept}</span>
+              </button>
+            );
+          })}
+
+          {selectedDepartment && (
+            <button
+              type="button"
+              onClick={() => setSelectedDepartment('')}
+              title="Clear department filter"
+              style={{
+                padding: '7px 10px',
+                borderRadius: '8px',
+                border: '1px solid #fecaca',
+                background: '#fef2f2',
+                color: '#dc2626',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              <X size={13} />
+              <span>Clear</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 4. Main Two-Column Layout (Calendar & Daily Schedule aligned at the exact same top level) */}
       <div
         style={{
           display: 'grid',
@@ -1097,15 +1303,92 @@ export const MonthlyPlanner: React.FC = () => {
             ))}
           </div>
 
-          {/* Monthly Day Grid */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(7, 1fr)',
-              background: '#e2e8f0',
-              gap: '1px', // Grid line dividers
-            }}
-          >
+          {!selectedDepartment ? (
+            <div
+              style={{
+                padding: '60px 24px',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#ffffff',
+                minHeight: '440px',
+              }}
+            >
+              <div
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '16px',
+                  background: '#ecfdf5',
+                  border: '1px solid #a7f3d0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#059669',
+                  marginBottom: '16px',
+                }}
+              >
+                <Building2 size={32} />
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
+                Select a Department to View Calendar
+              </h3>
+              <p
+                style={{
+                  fontSize: '13px',
+                  color: '#64748b',
+                  maxWidth: '460px',
+                  margin: '0 0 20px 0',
+                  lineHeight: 1.5,
+                }}
+              >
+                Choose an active department from the filter above to view its candidate interviews and calendar
+                events across all active job vacancies.
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+                {activeDepartments.map((dept) => (
+                  <button
+                    key={dept}
+                    type="button"
+                    onClick={() => setSelectedDepartment(dept)}
+                    style={{
+                      padding: '9px 18px',
+                      borderRadius: '10px',
+                      border: '1px solid #059669',
+                      background: '#ecfdf5',
+                      color: '#047857',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <Building2 size={14} />
+                    <span>View {dept}</span>
+                  </button>
+                ))}
+                {activeDepartments.length === 0 && (
+                  <span style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' }}>
+                    No departments currently have active job vacancies.
+                  </span>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* Monthly Day Grid */
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(7, 1fr)',
+                background: '#e2e8f0',
+                gap: '1px', // Grid line dividers
+              }}
+            >
             {calendarCells.map((cell) => {
               const dayEvents = eventsByDate.get(cell.dateStr) || [];
               const dayHolidays = holidaysEnabled ? holidaysByDate.get(cell.dateStr) || [] : [];
@@ -1307,7 +1590,8 @@ export const MonthlyPlanner: React.FC = () => {
                 );
               })}
             </div>
-          </div>
+          )}
+        </div>
 
         {/* RIGHT COLUMN: Detail View for Selected Date */}
         <div
@@ -1401,7 +1685,42 @@ export const MonthlyPlanner: React.FC = () => {
               </div>
             ))}
 
-            {selectedDayEvents.length === 0 ? (
+            {!selectedDepartment ? (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '48px 20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#64748b',
+                }}
+              >
+                <div
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: '#f8fafc',
+                    border: '1px dashed #cbd5e1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#94a3b8',
+                    marginBottom: '12px',
+                  }}
+                >
+                  <Building2 size={24} />
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '4px' }}>
+                  No Department Selected
+                </div>
+                <p style={{ fontSize: '12.5px', color: '#64748b', margin: '0 0 16px 0', maxWidth: '240px', lineHeight: 1.4 }}>
+                  Choose a department from the filter above to view its interviews and events for this date.
+                </p>
+              </div>
+            ) : selectedDayEvents.length === 0 ? (
               <div
                 style={{
                   textAlign: 'center',
@@ -1435,7 +1754,7 @@ export const MonthlyPlanner: React.FC = () => {
                 <p style={{ fontSize: '12.5px', color: '#64748b', margin: '0 0 16px 0', maxWidth: '240px' }}>
                   {selectedDayHolidays.length > 0
                     ? `This date is an official national holiday (${selectedDayHolidays.map((h) => h.title).join(', ')}). No interviews are scheduled.`
-                    : `There are no interviews or meetings scheduled for ${selectedDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.`}
+                    : `There are no interviews or meetings scheduled for ${selectedDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} under ${selectedDepartment}.`}
                 </p>
                 <button
                   type="button"
@@ -1492,21 +1811,64 @@ export const MonthlyPlanner: React.FC = () => {
                       >
                         {ev.title}
                       </h4>
-                      <div
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          background: '#ecfdf5',
-                          color: '#059669',
-                          fontSize: '12px',
-                          fontWeight: 700,
-                        }}
-                      >
-                        <Clock size={13} />
-                        <span>{formatTimeDisplay(ev.eventTime)}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                        <div
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            background: '#ecfdf5',
+                            color: '#059669',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                          }}
+                        >
+                          <Clock size={13} />
+                          <span>{formatTimeDisplay(ev.eventTime)}</span>
+                        </div>
+
+                        {ev.jobVacancyTitle && (
+                          <div
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              background: '#eff6ff',
+                              color: '#1d4ed8',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              border: '1px solid #bfdbfe',
+                            }}
+                            title={`Vacancy: ${ev.jobVacancyTitle}`}
+                          >
+                            <Briefcase size={12} />
+                            <span>{ev.jobVacancyTitle}</span>
+                          </div>
+                        )}
+
+                        {ev.department && (
+                          <div
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              background: '#f8fafc',
+                              color: '#475569',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              border: '1px solid #e2e8f0',
+                            }}
+                          >
+                            <Building2 size={12} />
+                            <span>{ev.department}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -2043,6 +2405,87 @@ export const MonthlyPlanner: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Field 5: Department */}
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    color: '#334155',
+                    marginBottom: '6px',
+                  }}
+                >
+                  Department
+                </label>
+                <select
+                  value={modalDepartment}
+                  onChange={(e) => {
+                    setModalDepartment(e.target.value);
+                    setModalJobVacancyId('');
+                  }}
+                  disabled={isSaving}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '10px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '13.5px',
+                    color: '#0f172a',
+                    outline: 'none',
+                    background: '#ffffff',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <option value="">General / No Specific Department</option>
+                  {activeDepartments.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Field 6: Associated Job Vacancy (Optional) */}
+              {modalDepartment && departmentVacancies.length > 0 && (
+                <div>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontSize: '12.5px',
+                      fontWeight: 700,
+                      color: '#334155',
+                      marginBottom: '6px',
+                    }}
+                  >
+                    Associated Job Vacancy <span style={{ fontSize: '11px', color: '#64748b' }}>(Optional)</span>
+                  </label>
+                  <select
+                    value={modalJobVacancyId}
+                    onChange={(e) => setModalJobVacancyId(e.target.value)}
+                    disabled={isSaving}
+                    style={{
+                      width: '100%',
+                      padding: '9px 12px',
+                      borderRadius: '10px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '13.5px',
+                      color: '#0f172a',
+                      outline: 'none',
+                      background: '#ffffff',
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    <option value="">None / Department-wide Event</option>
+                    {departmentVacancies.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.title} ({v.jobType || v.experienceLevel || 'Vacancy'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div

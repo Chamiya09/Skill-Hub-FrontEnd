@@ -164,6 +164,13 @@ export const MonthlyPlanner: React.FC = () => {
   const [aiSchedulerError, setAiSchedulerError] = useState<string | null>(null);
   const [scheduleProposal, setScheduleProposal] = useState<ScheduleProposalResponseDto | null>(null);
   const [isConfirmingSchedule, setIsConfirmingSchedule] = useState<boolean>(false);
+  const [selectedProposedSlotIds, setSelectedProposedSlotIds] = useState<string[]>([]);
+
+  // Live count derived from HR's manual checkbox selections
+  const liveScheduledCount = selectedProposedSlotIds.length;
+  const liveUnscheduledCount = scheduleProposal
+    ? Math.max(0, scheduleProposal.summary.totalCandidates - liveScheduledCount)
+    : 0;
 
   const fetchVacancies = useCallback(async () => {
     try {
@@ -213,6 +220,7 @@ export const MonthlyPlanner: React.FC = () => {
     fetchVacancies();
     setAiSchedulerError(null);
     setScheduleProposal(null);
+    setSelectedProposedSlotIds([]);
     if (selectedDepartment && vacancies.length > 0) {
       const match = vacancies.find(
         (v) => v.department?.toLowerCase() === selectedDepartment.toLowerCase()
@@ -246,6 +254,8 @@ export const MonthlyPlanner: React.FC = () => {
       });
 
       setScheduleProposal(proposal);
+      setSelectedProposedSlotIds((proposal.proposedSlots || []).map((s) => s.slotId));
+
       if (proposal.proposedSlots.length === 0) {
         setAiSchedulerError(
           'No candidate interview slots could be generated. Ensure candidates are shortlisted or selected for interview for this role.'
@@ -263,12 +273,21 @@ export const MonthlyPlanner: React.FC = () => {
   const handleConfirmSchedule = async () => {
     if (!scheduleProposal || scheduleProposal.proposedSlots.length === 0) return;
 
+    const confirmedSlots = scheduleProposal.proposedSlots.filter((s) =>
+      selectedProposedSlotIds.includes(s.slotId)
+    );
+
+    if (confirmedSlots.length === 0) {
+      setAiSchedulerError('Please select at least one interview slot (tick the checkbox) to approve and schedule.');
+      return;
+    }
+
     try {
       setIsConfirmingSchedule(true);
       const payload: ConfirmInterviewScheduleDto = {
         jobVacancyId: scheduleProposal.jobVacancyId,
         jobTitle: scheduleProposal.jobTitle,
-        slots: scheduleProposal.proposedSlots.map((s) => ({
+        slots: confirmedSlots.map((s) => ({
           candidateId: s.candidateId,
           candidateName: s.candidateName,
           candidateEmail: s.candidateEmail,
@@ -284,6 +303,7 @@ export const MonthlyPlanner: React.FC = () => {
       showToast(result.message || `Successfully scheduled ${result.scheduledCount} interviews!`, 'success');
       setIsAiSchedulerModalOpen(false);
       setScheduleProposal(null);
+      setSelectedProposedSlotIds([]);
       await fetchEvents();
     } catch (err: unknown) {
       console.error('Failed to confirm interview schedule:', err);
@@ -2480,7 +2500,7 @@ export const MonthlyPlanner: React.FC = () => {
                     <option value="">None / Department-wide Event</option>
                     {departmentVacancies.map((v) => (
                       <option key={v.id} value={v.id}>
-                        {v.title} ({v.jobType || v.experienceLevel || 'Vacancy'})
+                        {v.title} ({v.employmentType || v.experienceLevel || 'Vacancy'})
                       </option>
                     ))}
                   </select>
@@ -3166,35 +3186,37 @@ export const MonthlyPlanner: React.FC = () => {
 
                   <div
                     style={{
-                      background: '#ecfdf5',
-                      border: '1px solid #a7f3d0',
+                      background: liveScheduledCount > 0 ? '#ecfdf5' : '#f8fafc',
+                      border: liveScheduledCount > 0 ? '1px solid #a7f3d0' : '1px solid #e2e8f0',
                       borderRadius: '12px',
                       padding: '12px 14px',
                       textAlign: 'center',
+                      transition: 'all 0.2s ease',
                     }}
                   >
-                    <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#047857', textTransform: 'uppercase' }}>
+                    <div style={{ fontSize: '11.5px', fontWeight: 700, color: liveScheduledCount > 0 ? '#047857' : '#64748b', textTransform: 'uppercase' }}>
                       Scheduled
                     </div>
-                    <div style={{ fontSize: '22px', fontWeight: 800, color: '#065f46', marginTop: '2px' }}>
-                      {scheduleProposal.summary.scheduledCount}
+                    <div style={{ fontSize: '22px', fontWeight: 800, color: liveScheduledCount > 0 ? '#065f46' : '#0f172a', marginTop: '2px' }}>
+                      {liveScheduledCount}
                     </div>
                   </div>
 
                   <div
                     style={{
-                      background: scheduleProposal.summary.unscheduledCount > 0 ? '#fef2f2' : '#f8fafc',
-                      border: scheduleProposal.summary.unscheduledCount > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0',
+                      background: liveUnscheduledCount > 0 ? '#fef2f2' : '#f8fafc',
+                      border: liveUnscheduledCount > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0',
                       borderRadius: '12px',
                       padding: '12px 14px',
                       textAlign: 'center',
+                      transition: 'all 0.2s ease',
                     }}
                   >
                     <div
                       style={{
                         fontSize: '11.5px',
                         fontWeight: 700,
-                        color: scheduleProposal.summary.unscheduledCount > 0 ? '#b91c1c' : '#64748b',
+                        color: liveUnscheduledCount > 0 ? '#b91c1c' : '#64748b',
                         textTransform: 'uppercase',
                       }}
                     >
@@ -3204,11 +3226,11 @@ export const MonthlyPlanner: React.FC = () => {
                       style={{
                         fontSize: '22px',
                         fontWeight: 800,
-                        color: scheduleProposal.summary.unscheduledCount > 0 ? '#dc2626' : '#0f172a',
+                        color: liveUnscheduledCount > 0 ? '#dc2626' : '#0f172a',
                         marginTop: '2px',
                       }}
                     >
-                      {scheduleProposal.summary.unscheduledCount}
+                      {liveUnscheduledCount}
                     </div>
                   </div>
 
@@ -3282,6 +3304,28 @@ export const MonthlyPlanner: React.FC = () => {
                   </div>
                 )}
 
+                {/* Notice for Candidates Unselected by HR */}
+                {scheduleProposal.proposedSlots.length > selectedProposedSlotIds.length && (
+                  <div
+                    style={{
+                      background: '#fffbeb',
+                      border: '1px solid #fde68a',
+                      borderRadius: '12px',
+                      padding: '10px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '12.5px',
+                      color: '#92400e',
+                    }}
+                  >
+                    <AlertCircle size={16} color="#b45309" />
+                    <span>
+                      <strong>{scheduleProposal.proposedSlots.length - selectedProposedSlotIds.length} candidate(s)</strong> unselected by HR. Their status will remain &quot;Selected&quot; until scheduled in future runs.
+                    </span>
+                  </div>
+                )}
+
                 {/* AI Assumptions & Validation Box */}
                 <div
                   style={{
@@ -3309,8 +3353,23 @@ export const MonthlyPlanner: React.FC = () => {
 
                 {/* Proposed Slots Table */}
                 <div>
-                  <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
-                    Proposed Interview Appointments ({scheduleProposal.proposedSlots.length})
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a' }}>
+                      Proposed Interview Appointments ({scheduleProposal.proposedSlots.length})
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        color: selectedProposedSlotIds.length > 0 ? '#059669' : '#64748b',
+                        background: selectedProposedSlotIds.length > 0 ? '#ecfdf5' : '#f1f5f9',
+                        padding: '3px 10px',
+                        borderRadius: '12px',
+                        border: selectedProposedSlotIds.length > 0 ? '1px solid #a7f3d0' : '1px solid #e2e8f0',
+                      }}
+                    >
+                      Selected: {selectedProposedSlotIds.length} of {scheduleProposal.proposedSlots.length}
+                    </div>
                   </div>
 
                   <div
@@ -3324,6 +3383,24 @@ export const MonthlyPlanner: React.FC = () => {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
                       <thead>
                         <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
+                          <th style={{ padding: '10px 14px', width: '42px', textAlign: 'center' }}>
+                            <input
+                              type="checkbox"
+                              checked={
+                                scheduleProposal.proposedSlots.length > 0 &&
+                                selectedProposedSlotIds.length === scheduleProposal.proposedSlots.length
+                              }
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedProposedSlotIds(scheduleProposal.proposedSlots.map((s) => s.slotId));
+                                } else {
+                                  setSelectedProposedSlotIds([]);
+                                }
+                              }}
+                              style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#059669' }}
+                              title="Select All / Deselect All"
+                            />
+                          </th>
                           <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700 }}>Candidate</th>
                           <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700 }}>Date</th>
                           <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700 }}>Time Slot</th>
@@ -3332,65 +3409,89 @@ export const MonthlyPlanner: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {scheduleProposal.proposedSlots.map((slot) => (
-                          <tr key={slot.slotId} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                            <td style={{ padding: '10px 14px' }}>
-                              <div style={{ fontWeight: 700, color: '#0f172a' }}>{slot.candidateName}</div>
-                              <div style={{ fontSize: '11px', color: '#64748b' }}>{slot.candidateEmail}</div>
-                            </td>
-                            <td style={{ padding: '10px 14px', fontWeight: 600, color: '#1e293b' }}>
-                              {slot.date}
-                            </td>
-                            <td style={{ padding: '10px 14px', color: '#059669', fontWeight: 700 }}>
-                              {formatSingleTime(slot.startTime)} - {formatSingleTime(slot.endTime)}
-                            </td>
-                            <td style={{ padding: '10px 14px' }}>
-                              <span
-                                style={{
-                                  fontSize: '11px',
-                                  fontWeight: 700,
-                                  padding: '2px 8px',
-                                  borderRadius: '6px',
-                                  background: slot.trackNumber % 2 === 1 ? '#ede9fe' : '#e0f2fe',
-                                  color: slot.trackNumber % 2 === 1 ? '#6d28d9' : '#0369a1',
-                                }}
-                              >
-                                {slot.trackName}
-                              </span>
-                            </td>
-                            <td style={{ padding: '10px 14px' }}>
-                              {slot.isExtendedSearch ? (
+                        {scheduleProposal.proposedSlots.map((slot) => {
+                          const isChecked = selectedProposedSlotIds.includes(slot.slotId);
+                          return (
+                            <tr
+                              key={slot.slotId}
+                              style={{
+                                borderBottom: '1px solid #f1f5f9',
+                                background: isChecked ? '#fafffc' : '#ffffff',
+                                transition: 'background-color 0.15s ease',
+                              }}
+                            >
+                              <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedProposedSlotIds((prev) => [...prev, slot.slotId]);
+                                    } else {
+                                      setSelectedProposedSlotIds((prev) => prev.filter((id) => id !== slot.slotId));
+                                    }
+                                  }}
+                                  style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#059669' }}
+                                />
+                              </td>
+                              <td style={{ padding: '10px 14px' }}>
+                                <div style={{ fontWeight: 700, color: '#0f172a' }}>{slot.candidateName}</div>
+                                <div style={{ fontSize: '11px', color: '#64748b' }}>{slot.candidateEmail}</div>
+                              </td>
+                              <td style={{ padding: '10px 14px', fontWeight: 600, color: '#1e293b' }}>
+                                {slot.date}
+                              </td>
+                              <td style={{ padding: '10px 14px', color: '#059669', fontWeight: 700 }}>
+                                {formatSingleTime(slot.startTime)} - {formatSingleTime(slot.endTime)}
+                              </td>
+                              <td style={{ padding: '10px 14px' }}>
                                 <span
                                   style={{
-                                    fontSize: '10.5px',
-                                    fontWeight: 800,
-                                    padding: '2px 7px',
-                                    borderRadius: '999px',
-                                    background: '#fef3c7',
-                                    color: '#b45309',
-                                    border: '1px solid #fde68a',
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    padding: '2px 8px',
+                                    borderRadius: '6px',
+                                    background: slot.trackNumber % 2 === 1 ? '#ede9fe' : '#e0f2fe',
+                                    color: slot.trackNumber % 2 === 1 ? '#6d28d9' : '#0369a1',
                                   }}
                                 >
-                                  Extended Search
+                                  {slot.trackName}
                                 </span>
-                              ) : (
-                                <span
-                                  style={{
-                                    fontSize: '10.5px',
-                                    fontWeight: 800,
-                                    padding: '2px 7px',
-                                    borderRadius: '999px',
-                                    background: '#ecfdf5',
-                                    color: '#059669',
-                                    border: '1px solid #a7f3d0',
-                                  }}
-                                >
-                                  Target Window
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
+                              </td>
+                              <td style={{ padding: '10px 14px' }}>
+                                {slot.isExtendedSearch ? (
+                                  <span
+                                    style={{
+                                      fontSize: '10.5px',
+                                      fontWeight: 800,
+                                      padding: '2px 7px',
+                                      borderRadius: '999px',
+                                      background: '#fef3c7',
+                                      color: '#b45309',
+                                      border: '1px solid #fde68a',
+                                    }}
+                                  >
+                                    Extended Search
+                                  </span>
+                                ) : (
+                                  <span
+                                    style={{
+                                      fontSize: '10.5px',
+                                      fontWeight: 800,
+                                      padding: '2px 7px',
+                                      borderRadius: '999px',
+                                      background: '#ecfdf5',
+                                      color: '#059669',
+                                      border: '1px solid #a7f3d0',
+                                    }}
+                                  >
+                                    Target Window
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -3438,20 +3539,26 @@ export const MonthlyPlanner: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleConfirmSchedule}
-                      disabled={isConfirmingSchedule || scheduleProposal.proposedSlots.length === 0}
+                      disabled={isConfirmingSchedule || selectedProposedSlotIds.length === 0}
                       style={{
                         padding: '10px 22px',
                         borderRadius: '10px',
                         border: 'none',
-                        background: 'linear-gradient(135deg, #059669 0%, #00b074 100%)',
+                        background:
+                          selectedProposedSlotIds.length === 0
+                            ? '#94a3b8'
+                            : 'linear-gradient(135deg, #059669 0%, #00b074 100%)',
                         color: '#ffffff',
                         fontSize: '13.5px',
                         fontWeight: 700,
-                        cursor: 'pointer',
+                        cursor: selectedProposedSlotIds.length === 0 ? 'not-allowed' : 'pointer',
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '8px',
-                        boxShadow: '0 4px 12px rgba(0, 176, 116, 0.3)',
+                        boxShadow:
+                          selectedProposedSlotIds.length === 0
+                            ? 'none'
+                            : '0 4px 12px rgba(0, 176, 116, 0.3)',
                       }}
                     >
                       {isConfirmingSchedule ? (
@@ -3462,7 +3569,11 @@ export const MonthlyPlanner: React.FC = () => {
                       ) : (
                         <>
                           <CheckCircle2 size={16} />
-                          <span>Approve & Schedule All ({scheduleProposal.proposedSlots.length} Events)</span>
+                          <span>
+                            {selectedProposedSlotIds.length === scheduleProposal.proposedSlots.length
+                              ? `Approve & Schedule All (${selectedProposedSlotIds.length} Events)`
+                              : `Approve & Schedule (${selectedProposedSlotIds.length} Events)`}
+                          </span>
                         </>
                       )}
                     </button>

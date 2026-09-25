@@ -2439,8 +2439,23 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                     fontWeight: 700,
                   }}
                 >
-                  {interviewSelections.length} Selected
+                  {interviewSelections.filter((s) => s.status?.toLowerCase() !== "ready for interview" && s.status?.toLowerCase() !== "ready_for_interview" && s.status?.toLowerCase() !== "scheduled").length} Selected
                 </span>
+                {interviewSelections.some((s) => s.status?.toLowerCase() === "ready for interview" || s.status?.toLowerCase() === "ready_for_interview" || s.status?.toLowerCase() === "scheduled") && (
+                  <span
+                    style={{
+                      padding: "3px 10px",
+                      borderRadius: "999px",
+                      background: "#ecfdf5",
+                      color: "#059669",
+                      border: "1px solid #a7f3d0",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {interviewSelections.filter((s) => s.status?.toLowerCase() === "ready for interview" || s.status?.toLowerCase() === "ready_for_interview" || s.status?.toLowerCase() === "scheduled").length} Ready for Interview
+                  </span>
+                )}
               </div>
               <p
                 style={{
@@ -3591,25 +3606,48 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                   textAlign: "center",
                                 }}
                               >
-                                <span
-                                  style={{
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: "5px",
-                                    padding: "4px 12px",
-                                    borderRadius: "999px",
-                                    background: "#f5f3ff",
-                                    color: "#7c3aed",
-                                    border: "1px solid #ddd6fe",
-                                    fontSize: "12px",
-                                    fontWeight: 800,
-                                    boxShadow:
-                                      "0 1px 3px rgba(124, 58, 237, 0.1)",
-                                  }}
-                                >
-                                  <Star size={13} fill="#7c3aed" color="#7c3aed" />
-                                  <span>Selected</span>
-                                </span>
+                                {s.status?.toLowerCase() === "ready for interview" ||
+                                s.status?.toLowerCase() === "ready_for_interview" ||
+                                s.status?.toLowerCase() === "scheduled" ? (
+                                  <span
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "5px",
+                                      padding: "4px 12px",
+                                      borderRadius: "999px",
+                                      background: "#ecfdf5",
+                                      color: "#059669",
+                                      border: "1px solid #a7f3d0",
+                                      fontSize: "12px",
+                                      fontWeight: 800,
+                                      boxShadow: "0 1px 3px rgba(5, 150, 105, 0.12)",
+                                    }}
+                                  >
+                                    <CheckCircle size={13} color="#059669" />
+                                    <span>Ready for Interview</span>
+                                  </span>
+                                ) : (
+                                  <span
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "5px",
+                                      padding: "4px 12px",
+                                      borderRadius: "999px",
+                                      background: "#f5f3ff",
+                                      color: "#7c3aed",
+                                      border: "1px solid #ddd6fe",
+                                      fontSize: "12px",
+                                      fontWeight: 800,
+                                      boxShadow:
+                                        "0 1px 3px rgba(124, 58, 237, 0.1)",
+                                    }}
+                                  >
+                                    <Star size={13} fill="#7c3aed" color="#7c3aed" />
+                                    <span>Selected</span>
+                                  </span>
+                                )}
                               </td>
 
                               {/* Actions */}

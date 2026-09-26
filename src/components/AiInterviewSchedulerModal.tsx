@@ -7,6 +7,7 @@ import {
   X,
   Link as LinkIcon,
   Copy,
+  MapPin,
 } from 'lucide-react';
 import {
   type JobDto,
@@ -79,6 +80,7 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
     Record<string, { meetingMode: 'Online' | 'Physical'; meetingLink: string; location: string }>
   >({});
   const [commonMeetingLinkInput, setCommonMeetingLinkInput] = useState<string>('');
+  const [commonLocationInput, setCommonLocationInput] = useState<string>('');
 
   // Live count derived from HR's manual checkbox selections
   const liveScheduledCount = selectedProposedSlotIds.length;
@@ -202,6 +204,32 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
           meetingMode: 'Online',
           meetingLink: trimmed,
           location: 'Online',
+        };
+      });
+      return next;
+    });
+  };
+
+  const handleApplyCommonLocationToSelected = () => {
+    const trimmed = commonLocationInput.trim();
+    if (!trimmed) {
+      setAiSchedulerError('Please enter a physical venue or office location to apply.');
+      return;
+    }
+    if (selectedProposedSlotIds.length === 0) {
+      setAiSchedulerError('Please select at least one candidate (tick the checkbox) to apply the physical location.');
+      return;
+    }
+
+    setAiSchedulerError(null);
+    setSlotConfigs((prev) => {
+      const next = { ...prev };
+      selectedProposedSlotIds.forEach((slotId) => {
+        next[slotId] = {
+          ...(next[slotId] || {}),
+          meetingMode: 'Physical',
+          location: trimmed,
+          meetingLink: 'Physical',
         };
       });
       return next;
@@ -818,56 +846,111 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                   gap: '12px',
                 }}
               >
-                {/* Left side: Bulk Apply Common Link */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    background: '#f8fafc',
-                    border: '1.5px solid #cbd5e1',
-                    borderRadius: '10px',
-                    padding: '4px 8px',
-                  }}
-                >
-                  <LinkIcon size={14} color="#64748b" />
-                  <input
-                    type="text"
-                    placeholder="Paste common meeting link here..."
-                    value={commonMeetingLinkInput}
-                    onChange={(e) => setCommonMeetingLinkInput(e.target.value)}
+                {/* Left side: Bulk Apply Tools (Link & Location) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  {/* Bulk Apply Common Link */}
+                  <div
                     style={{
-                      border: 'none',
-                      background: 'transparent',
-                      outline: 'none',
-                      fontSize: '12.5px',
-                      width: '240px',
-                      color: '#0f172a',
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleApplyCommonLinkToSelected}
-                    title="Apply this common meeting link to all currently checked candidates"
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: 'linear-gradient(135deg, #059669 0%, #00b074 100%)',
-                      color: '#ffffff',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
+                      display: 'flex',
                       alignItems: 'center',
-                      gap: '5px',
-                      whiteSpace: 'nowrap',
-                      boxShadow: '0 2px 4px rgba(5, 150, 105, 0.2)',
+                      gap: '8px',
+                      background: '#f8fafc',
+                      border: '1.5px solid #cbd5e1',
+                      borderRadius: '10px',
+                      padding: '4px 8px',
                     }}
                   >
-                    <Copy size={12} />
-                    <span>Apply Same Link to Selected</span>
-                  </button>
+                    <LinkIcon size={14} color="#059669" />
+                    <input
+                      type="text"
+                      placeholder="Paste common meeting link here..."
+                      value={commonMeetingLinkInput}
+                      onChange={(e) => setCommonMeetingLinkInput(e.target.value)}
+                      style={{
+                        border: 'none',
+                        background: 'transparent',
+                        outline: 'none',
+                        fontSize: '12px',
+                        width: '180px',
+                        color: '#0f172a',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyCommonLinkToSelected}
+                      title="Apply this common meeting link to all currently checked candidates"
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #059669 0%, #00b074 100%)',
+                        color: '#ffffff',
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        whiteSpace: 'nowrap',
+                        boxShadow: '0 2px 4px rgba(5, 150, 105, 0.2)',
+                      }}
+                    >
+                      <Copy size={12} />
+                      <span>Apply Same Link to Selected</span>
+                    </button>
+                  </div>
+
+                  {/* Bulk Apply Common Location */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: '#f8fafc',
+                      border: '1.5px solid #cbd5e1',
+                      borderRadius: '10px',
+                      padding: '4px 8px',
+                    }}
+                  >
+                    <MapPin size={14} color="#d97706" />
+                    <input
+                      type="text"
+                      placeholder="Enter common venue / location..."
+                      value={commonLocationInput}
+                      onChange={(e) => setCommonLocationInput(e.target.value)}
+                      style={{
+                        border: 'none',
+                        background: 'transparent',
+                        outline: 'none',
+                        fontSize: '12px',
+                        width: '180px',
+                        color: '#0f172a',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyCommonLocationToSelected}
+                      title="Apply this common interview venue/location to all currently checked candidates"
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+                        color: '#ffffff',
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        whiteSpace: 'nowrap',
+                        boxShadow: '0 2px 4px rgba(217, 119, 6, 0.2)',
+                      }}
+                    >
+                      <MapPin size={12} />
+                      <span>Apply Same Location to Selected</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Right side: Count & Selection info */}

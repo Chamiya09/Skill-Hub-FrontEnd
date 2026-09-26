@@ -30,7 +30,6 @@ import {
   Filter,
   Search,
   RotateCw,
-  Eye,
   Trash2,
   CalendarPlus,
   CalendarClock,
@@ -41,6 +40,7 @@ import {
   Copy,
   Users,
   Sparkles,
+  CheckCircle2,
 } from "lucide-react";
 import { ProblemStatementViewer } from "../components/assessment";
 import { AiInterviewSchedulerModal } from "../components/AiInterviewSchedulerModal";
@@ -607,7 +607,41 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     }
   };
 
+  // ==========================================
+  // HIRE CANDIDATE ACTION
+  // ==========================================
+  const [hiringCandidate, setHiringCandidate] = useState<SubmissionDetailDto | null>(null);
+  const [isHiringSubmitting, setIsHiringSubmitting] = useState<boolean>(false);
 
+  const handleOpenHireModal = (sub: SubmissionDetailDto) => {
+    setHiringCandidate(sub);
+  };
+
+  const handleConfirmHire = async () => {
+    if (!hiringCandidate) return;
+    try {
+      setIsHiringSubmitting(true);
+      await assessmentsApi.hireCandidate(hiringCandidate.id);
+      showToast(
+        `🎉 Congratulations! ${hiringCandidate.candidateName || "Candidate"} has been officially hired for ${hiringCandidate.jobTitle || "the position"}!`
+      );
+      setInterviewSelections((prev) =>
+        prev.map((item) =>
+          item.id === hiringCandidate.id
+            ? { ...item, status: "Hired", isHired: true }
+            : item
+        )
+      );
+      setHiringCandidate(null);
+      await loadInterviewSelections();
+    } catch (err: unknown) {
+      console.error("Failed to hire candidate:", err);
+      const errObj = err as { message?: string };
+      showToast(errObj?.message || "Failed to hire candidate. Please try again.");
+    } finally {
+      setIsHiringSubmitting(false);
+    }
+  };
 
   // ==========================================
   // BATCH / MULTI-CANDIDATE SCHEDULING & AI SCHEDULING
@@ -3872,7 +3906,27 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                   textAlign: "center",
                                 }}
                               >
-                                {s.scheduledEventId || s.status === "Ready for Interview" || s.status?.toLowerCase().includes("ready") ? (
+                                {s.status === "Hired" || s.isHired ? (
+                                  <span
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "5px",
+                                      padding: "4px 12px",
+                                      borderRadius: "999px",
+                                      background: "#ecfdf5",
+                                      color: "#059669",
+                                      border: "1px solid #86efac",
+                                      fontSize: "12px",
+                                      fontWeight: 800,
+                                      boxShadow:
+                                        "0 1px 3px rgba(5, 150, 105, 0.15)",
+                                    }}
+                                  >
+                                    <Sparkles size={13} color="#059669" />
+                                    <span>Hired</span>
+                                  </span>
+                                ) : s.scheduledEventId || s.status === "Ready for Interview" || s.status?.toLowerCase().includes("ready") ? (
                                   <span
                                     style={{
                                       display: "inline-flex",
@@ -4208,28 +4262,57 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                     gap: "6px",
                                   }}
                                 >
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenReview(s)}
-                                    title="View candidate typed code, question scoring, and full review"
-                                    style={{
-                                      padding: "6px 12px",
-                                      borderRadius: "8px",
-                                      fontSize: "12px",
-                                      fontWeight: 700,
-                                      border: "1px solid #7c3aed",
-                                      background: "#f5f3ff",
-                                      color: "#7c3aed",
-                                      cursor: "pointer",
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: "5px",
-                                      transition: "all 0.15s ease",
-                                    }}
-                                  >
-                                    <Eye size={13} />
-                                    <span>Review Code</span>
-                                  </button>
+                                  {s.status === "Hired" || s.isHired ? (
+                                    <span
+                                      style={{
+                                        padding: "6px 14px",
+                                        borderRadius: "8px",
+                                        fontSize: "12px",
+                                        fontWeight: 750,
+                                        border: "1px solid #86efac",
+                                        background: "#ecfdf5",
+                                        color: "#059669",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "5px",
+                                        boxShadow: "0 1px 3px rgba(5, 150, 105, 0.12)",
+                                      }}
+                                      title="Candidate is officially hired for this role"
+                                    >
+                                      <CheckCircle2 size={13} color="#059669" />
+                                      <span>Hired</span>
+                                    </span>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenHireModal(s)}
+                                      title={`Officially hire ${s.candidateName || "Candidate"} for ${s.jobTitle || "this position"}`}
+                                      style={{
+                                        padding: "6px 14px",
+                                        borderRadius: "8px",
+                                        fontSize: "12px",
+                                        fontWeight: 750,
+                                        border: "1px solid #059669",
+                                        background: "#059669",
+                                        color: "#ffffff",
+                                        cursor: "pointer",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "5px",
+                                        transition: "all 0.15s ease",
+                                        boxShadow: "0 2px 4px rgba(5, 150, 105, 0.2)",
+                                      }}
+                                      onMouseOver={(e) => {
+                                        e.currentTarget.style.background = "#047857";
+                                      }}
+                                      onMouseOut={(e) => {
+                                        e.currentTarget.style.background = "#059669";
+                                      }}
+                                    >
+                                      <Sparkles size={13} />
+                                      <span>Hire</span>
+                                    </button>
+                                  )}
 
                                   <button
                                     type="button"
@@ -6932,6 +7015,236 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================
+          CONFIRM HIRE CANDIDATE MODAL
+          ========================================================= */}
+      {hiringCandidate && (
+        <div
+          className="popup-backdrop"
+          style={{
+            zIndex: 1350,
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(15, 23, 42, 0.65)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isHiringSubmitting) {
+              setHiringCandidate(null);
+            }
+          }}
+        >
+          <div
+            className="popup-card"
+            style={{
+              background: "#ffffff",
+              borderRadius: "18px",
+              boxShadow: "0 20px 45px -10px rgba(15, 23, 42, 0.25)",
+              maxWidth: "520px",
+              width: "100%",
+              overflow: "hidden",
+              border: "1px solid #e2e8f0",
+              animation: "scaleIn 0.2s ease-out",
+            }}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: "22px 24px",
+                background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
+                color: "#ffffff",
+                position: "relative",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div
+                  style={{
+                    width: "42px",
+                    height: "42px",
+                    borderRadius: "12px",
+                    background: "rgba(255, 255, 255, 0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Sparkles size={22} color="#fde047" />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 800, color: "#ffffff" }}>
+                    Confirm Candidate Hiring
+                  </h3>
+                  <p style={{ margin: "3px 0 0", fontSize: "12.5px", color: "#a7f3d0", fontWeight: 500 }}>
+                    Official job offer & hire placement decision
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => !isHiringSubmitting && setHiringCandidate(null)}
+                style={{
+                  position: "absolute",
+                  top: "18px",
+                  right: "18px",
+                  background: "rgba(255, 255, 255, 0.15)",
+                  border: "none",
+                  borderRadius: "8px",
+                  width: "32px",
+                  height: "32px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: "#ffffff",
+                }}
+              >
+                <XIcon />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div
+                style={{
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "12px",
+                  padding: "16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>Candidate</span>
+                  <span style={{ fontSize: "13.5px", color: "#0f172a", fontWeight: 750 }}>
+                    {hiringCandidate.candidateName || "Candidate"}
+                  </span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>Email</span>
+                  <span style={{ fontSize: "12.5px", color: "#334155", fontWeight: 600 }}>
+                    {hiringCandidate.candidateEmail || "—"}
+                  </span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>Target Role</span>
+                  <span style={{ fontSize: "13px", color: "#059669", fontWeight: 750 }}>
+                    {hiringCandidate.jobTitle || selectedJob?.title || "Position"}
+                  </span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>Technical Score</span>
+                  <span style={{ fontSize: "13px", color: "#0f172a", fontWeight: 750 }}>
+                    {hiringCandidate.examScore ?? 0}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Celebratory Notice / Explanation */}
+              <div
+                style={{
+                  background: "#ecfdf5",
+                  border: "1px solid #a7f3d0",
+                  borderRadius: "12px",
+                  padding: "14px 16px",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "12px",
+                }}
+              >
+                <div
+                  style={{
+                    background: "#d1fae5",
+                    padding: "6px",
+                    borderRadius: "8px",
+                    color: "#059669",
+                    marginTop: "2px",
+                  }}
+                >
+                  <TrophyIcon />
+                </div>
+                <div style={{ fontSize: "12.5px", color: "#065f46", lineHeight: 1.55 }}>
+                  <strong>Candidate Dashboard Notification:</strong> Upon clicking <strong>Confirm & Hire</strong>, this candidate's <em>My Interviews</em> section will immediately display an official congratulatory hiring card with onboarding next steps.
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div
+              style={{
+                padding: "16px 24px",
+                background: "#f8fafc",
+                borderTop: "1px solid #e2e8f0",
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "10px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setHiringCandidate(null)}
+                disabled={isHiringSubmitting}
+                style={{
+                  padding: "9px 18px",
+                  borderRadius: "10px",
+                  border: "1px solid #cbd5e1",
+                  background: "#ffffff",
+                  color: "#475569",
+                  fontSize: "13px",
+                  fontWeight: 650,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmHire}
+                disabled={isHiringSubmitting}
+                style={{
+                  padding: "9px 22px",
+                  borderRadius: "10px",
+                  border: "none",
+                  background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
+                  color: "#ffffff",
+                  fontSize: "13px",
+                  fontWeight: 750,
+                  cursor: isHiringSubmitting ? "not-allowed" : "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  boxShadow: "0 2px 6px rgba(5, 150, 105, 0.3)",
+                  opacity: isHiringSubmitting ? 0.7 : 1,
+                }}
+              >
+                {isHiringSubmitting ? (
+                  <>
+                    <RotateCw size={14} className="animate-spin" />
+                    <span>Processing Hire...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={14} color="#fde047" />
+                    <span>Confirm & Hire Candidate 🎉</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1632,6 +1632,7 @@ export interface SubmissionDetailDto {
   scheduledTime?: string;
   scheduledMeetingMode?: string;
   scheduledLocation?: string;
+  isHired?: boolean;
 }
 
 export interface LeaderboardEntryDto {
@@ -1729,6 +1730,11 @@ export const assessmentsApi = {
     request<SubmissionDetailDto>(`/Assessments/submissions/${submissionId}/review`, {
       method: 'POST',
       body: JSON.stringify(payload),
+    }),
+
+  hireCandidate: (submissionId: string) =>
+    request<SubmissionDetailDto>(`/Assessments/submissions/${submissionId}/hire`, {
+      method: 'POST',
     }),
 
   getTracksByJob: (jobVacancyId: string) =>
@@ -2359,7 +2365,9 @@ export interface CandidateInterviewDto {
   meetingMode: string; // "Online" or "Physical"
   location?: string;
   description?: string;
-  status: string; // "Upcoming" | "Completed"
+  status: string; // "Upcoming" | "Completed" | "Hired"
+  isHired?: boolean;
+  hiredMessage?: string;
   createdAt: string;
 }
 

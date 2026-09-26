@@ -15,6 +15,9 @@ import {
   Code,
   BookOpen,
   ArrowRight,
+  PartyPopper,
+  Trophy,
+  CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -266,6 +269,7 @@ export function CandidateDashboard() {
         ) : (
           <div className="interviews-grid">
             {interviews.map((interview) => {
+              const isHired = Boolean(interview.isHired || interview.status?.toLowerCase() === 'hired');
               const isOnline = interview.meetingMode?.toLowerCase() === 'online';
               const hasUrl = Boolean(
                 interview.location &&
@@ -282,24 +286,56 @@ export function CandidateDashboard() {
               return (
                 <div
                   key={interview.id}
-                  className={`scheduled-interview-card ${isOnline ? 'mode-online' : 'mode-physical'}`}
+                  className={`scheduled-interview-card ${isHired ? 'is-hired' : ''} ${isOnline ? 'mode-online' : 'mode-physical'}`}
                 >
                   {/* Top Section */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {/* Hired Celebratory Banner */}
+                    {isHired && (
+                      <div className="hired-celebration-hero">
+                        <div className="hired-celebration-ribbon">
+                          <Sparkles className="w-4 h-4 text-amber-300" />
+                          <span>OFFICIAL HIRING OFFER EXTENDED</span>
+                          <PartyPopper className="w-4 h-4 text-amber-300" />
+                        </div>
+                        <h3 className="hired-celebration-title">
+                          🎉 Congratulations! You Are Hired!
+                        </h3>
+                        <p className="hired-celebration-text">
+                          {interview.hiredMessage ||
+                            `We are thrilled to inform you that following your outstanding performance, the hiring committee has officially selected and hired you for the ${interview.jobTitle || 'Role'} position at ${interview.companyName || 'Skill-Hub'}!`}
+                        </p>
+                      </div>
+                    )}
+
                     {/* Header Badges */}
                     <div className="card-header-badges">
-                      <span
-                        className={`interview-mode-tag ${isOnline ? 'tag-online' : 'tag-physical'}`}
-                      >
-                        {isOnline ? <Video className="w-3.5 h-3.5" /> : <MapPin className="w-3.5 h-3.5" />}
-                        <span>{isOnline ? 'Online Video Interview' : 'In-Person / Physical'}</span>
-                      </span>
+                      {isHired ? (
+                        <span
+                          className="interview-mode-tag"
+                          style={{
+                            background: '#ecfdf5',
+                            color: '#047857',
+                            border: '1px solid #a7f3d0',
+                          }}
+                        >
+                          <Trophy className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Hired & Selected</span>
+                        </span>
+                      ) : (
+                        <span
+                          className={`interview-mode-tag ${isOnline ? 'tag-online' : 'tag-physical'}`}
+                        >
+                          {isOnline ? <Video className="w-3.5 h-3.5" /> : <MapPin className="w-3.5 h-3.5" />}
+                          <span>{isOnline ? 'Online Video Interview' : 'In-Person / Physical'}</span>
+                        </span>
+                      )}
 
-                      <span className="interview-status-tag">
-                        {interview.status !== 'Completed' && (
+                      <span className={`interview-status-tag ${isHired ? 'hired-tag' : ''}`}>
+                        {!isHired && interview.status !== 'Completed' && (
                           <span className="status-dot-pulse" />
                         )}
-                        <span>{interview.status || 'Confirmed'}</span>
+                        <span>{isHired ? 'Officially Hired 🎉' : (interview.status || 'Confirmed')}</span>
                       </span>
                     </div>
 
@@ -319,103 +355,137 @@ export function CandidateDashboard() {
                       </div>
                     </div>
 
-                    {/* Executive Schedule Tiles (Date & Time) */}
-                    <div className="schedule-tiles-row">
-                      <div className="schedule-tile-box">
-                        <div className="tile-icon-wrap">
-                          <Calendar className="w-4 h-4" />
+                    {/* Hired Next Steps / Onboarding Box */}
+                    {isHired && (
+                      <div className="hired-onboarding-box">
+                        <div className="hired-onboarding-header">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          <span>Next Steps & Onboarding Process</span>
                         </div>
-                        <div className="tile-text-content">
-                          <span className="tile-label">Date</span>
-                          <span className="tile-value" title={interview.eventDate}>
-                            {formatDisplayDate(interview.eventDate)}
+                        <p className="hired-onboarding-desc">
+                          Our Human Resources and People Operations team will reach out directly to your registered email address with your formal offer letter, onboarding documentation, compensation details, and induction schedule. Welcome to the team!
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Executive Schedule Tiles (Date & Time) - Only show for upcoming/pending interviews */}
+                    {!isHired && (
+                      <div className="schedule-tiles-row">
+                        <div className="schedule-tile-box">
+                          <div className="tile-icon-wrap">
+                            <Calendar className="w-4 h-4" />
+                          </div>
+                          <div className="tile-text-content">
+                            <span className="tile-label">Date</span>
+                            <span className="tile-value" title={interview.eventDate}>
+                              {formatDisplayDate(interview.eventDate)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="schedule-tile-box">
+                          <div className="tile-icon-wrap">
+                            <Clock className="w-4 h-4" />
+                          </div>
+                          <div className="tile-text-content">
+                            <span className="tile-label">Time Slot</span>
+                            <span className="tile-value" title={interview.eventTime}>
+                              {formatTimeSlot(interview.eventTime)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Meeting Platform or Physical Location Box - Only show for upcoming/pending interviews */}
+                    {!isHired && interview.meetingMode !== 'Offer' && (
+                      <div
+                        className={`interview-location-block ${isOnline ? 'mode-online' : 'mode-physical'}`}
+                      >
+                        <div className="location-block-header">
+                          <span className="location-label-wrap">
+                            {isOnline ? <Video className="w-3.5 h-3.5" /> : <MapPin className="w-3.5 h-3.5" />}
+                            <span>{isOnline ? 'Meeting Link / Platform' : 'Interview Place / Venue'}</span>
                           </span>
+
+                          {interview.location && (
+                            <button
+                              type="button"
+                              onClick={() => handleCopyLink(interview.location || '', interview.id)}
+                              className={`copy-button ${copiedId === interview.id ? 'copied' : ''}`}
+                              title={isOnline ? 'Copy Meeting Link' : 'Copy Venue Address'}
+                            >
+                              {copiedId === interview.id ? (
+                                <>
+                                  <Check className="w-3 h-3 text-emerald-600" />
+                                  <span>Copied</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  <span>{isOnline ? 'Copy Link' : 'Copy Address'}</span>
+                                </>
+                              )}
+                            </button>
+                          )}
                         </div>
-                      </div>
 
-                      <div className="schedule-tile-box">
-                        <div className="tile-icon-wrap">
-                          <Clock className="w-4 h-4" />
+                        <div className="location-value-text">
+                          {interview.location || (isOnline ? 'Google Meet / Online Room (Link provided by HR)' : 'Company Office / Confirmed Venue')}
                         </div>
-                        <div className="tile-text-content">
-                          <span className="tile-label">Time Slot</span>
-                          <span className="tile-value" title={interview.eventTime}>
-                            {formatTimeSlot(interview.eventTime)}
-                          </span>
-                        </div>
+
+                        <p className="location-note-hint">
+                          {isOnline
+                            ? 'Please test your camera, microphone, and internet connection before joining.'
+                            : 'Please arrive 10–15 minutes early at reception with your identification.'}
+                        </p>
                       </div>
-                    </div>
-
-                    {/* Meeting Platform or Physical Location Box */}
-                    <div
-                      className={`interview-location-block ${isOnline ? 'mode-online' : 'mode-physical'}`}
-                    >
-                      <div className="location-block-header">
-                        <span className="location-label-wrap">
-                          {isOnline ? <Video className="w-3.5 h-3.5" /> : <MapPin className="w-3.5 h-3.5" />}
-                          <span>{isOnline ? 'Meeting Link / Platform' : 'Interview Place / Venue'}</span>
-                        </span>
-
-                        {interview.location && (
-                          <button
-                            type="button"
-                            onClick={() => handleCopyLink(interview.location || '', interview.id)}
-                            className={`copy-button ${copiedId === interview.id ? 'copied' : ''}`}
-                            title={isOnline ? 'Copy Meeting Link' : 'Copy Venue Address'}
-                          >
-                            {copiedId === interview.id ? (
-                              <>
-                                <Check className="w-3 h-3 text-emerald-600" />
-                                <span>Copied</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3 h-3" />
-                                <span>{isOnline ? 'Copy Link' : 'Copy Address'}</span>
-                              </>
-                            )}
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="location-value-text">
-                        {interview.location || (isOnline ? 'Google Meet / Online Room (Link provided by HR)' : 'Company Office / Confirmed Venue')}
-                      </div>
-
-                      <p className="location-note-hint">
-                        {isOnline
-                          ? 'Please test your camera, microphone, and internet connection before joining.'
-                          : 'Please arrive 10–15 minutes early at reception with your identification.'}
-                      </p>
-                    </div>
+                    )}
                   </div>
 
                   {/* Card Bottom CTAs */}
                   <div className="card-bottom-actions">
-                    <Link
-                      to="/candidate/interview-prep"
-                      className="btn-prep-hub-link"
-                      title="Prepare for this interview with AI"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>AI Interview Prep</span>
-                    </Link>
-
-                    {isOnline && joinUrl ? (
-                      <a
-                        href={joinUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn-join-meeting-cta"
+                    {isHired ? (
+                      <div
+                        className="hired-welcome-badge"
+                        style={{
+                          width: '100%',
+                          justifyContent: 'center',
+                          padding: '10px 18px',
+                          fontSize: '13.5px',
+                        }}
                       >
-                        <span>Join Meeting</span>
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
+                        <Sparkles className="w-4 h-4 text-emerald-600" />
+                        <span>Welcome to {interview.companyName || 'BCD Company'}!</span>
+                      </div>
                     ) : (
-                      <span className="physical-venue-badge">
-                        <MapPin className="w-3 h-3 text-amber-600" />
-                        <span>{isOnline ? 'Online Session' : 'Venue Confirmed'}</span>
-                      </span>
+                      <>
+                        <Link
+                          to="/candidate/interview-prep"
+                          className="btn-prep-hub-link"
+                          title="Prepare for this interview with AI"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>AI Interview Prep</span>
+                        </Link>
+
+                        {isOnline && joinUrl ? (
+                          <a
+                            href={joinUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-join-meeting-cta"
+                          >
+                            <span>Join Meeting</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        ) : (
+                          <span className="physical-venue-badge">
+                            <MapPin className="w-3 h-3 text-amber-600" />
+                            <span>{isOnline ? 'Online Session' : 'Venue Confirmed'}</span>
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

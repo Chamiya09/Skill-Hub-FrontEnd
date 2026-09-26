@@ -18,7 +18,6 @@ import {
   Bot,
   Building2,
   Briefcase,
-  Filter,
   Video,
   MapPin,
 } from 'lucide-react';
@@ -1211,9 +1210,8 @@ export const MonthlyPlanner: React.FC = () => {
           </div>
         </div>
 
-        {/* Dropdown & Quick Selection Pills */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {/* Dropdown */}
+        {/* Department Dropdown Selection */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div>
             <select
               value={selectedDepartment}
@@ -1229,7 +1227,7 @@ export const MonthlyPlanner: React.FC = () => {
                 outline: 'none',
                 cursor: 'pointer',
                 boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                minWidth: '220px',
+                minWidth: '240px',
               }}
             >
               <option value="">-- Select a Department --</option>
@@ -1240,59 +1238,6 @@ export const MonthlyPlanner: React.FC = () => {
               ))}
             </select>
           </div>
-
-          {/* Quick Filter Pill Buttons */}
-          {activeDepartments.map((dept) => {
-            const isSelected = selectedDepartment.toLowerCase() === dept.toLowerCase();
-            return (
-              <button
-                key={dept}
-                type="button"
-                onClick={() => setSelectedDepartment(isSelected ? '' : dept)}
-                style={{
-                  padding: '7px 12px',
-                  borderRadius: '8px',
-                  border: isSelected ? '1px solid #059669' : '1px solid #cbd5e1',
-                  background: isSelected ? '#059669' : '#ffffff',
-                  color: isSelected ? '#ffffff' : '#475569',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <Filter size={12} />
-                <span>{dept}</span>
-              </button>
-            );
-          })}
-
-          {selectedDepartment && (
-            <button
-              type="button"
-              onClick={() => setSelectedDepartment('')}
-              title="Clear department filter"
-              style={{
-                padding: '7px 10px',
-                borderRadius: '8px',
-                border: '1px solid #fecaca',
-                background: '#fef2f2',
-                color: '#dc2626',
-                fontSize: '12px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              <X size={13} />
-              <span>Clear</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -1315,34 +1260,39 @@ export const MonthlyPlanner: React.FC = () => {
             boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
           }}
         >
-          {/* Day of Week Header Row */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(7, 1fr)',
-              background: '#f8fafc',
-              borderBottom: '1px solid #e2e8f0',
-            }}
-          >
-            {DAYS_OF_WEEK.map((day, idx) => (
+          {!selectedDepartment ? (
+            <div>
+              {/* Day of Week Header Row with vertical separator lines */}
               <div
-                key={day}
                 style={{
-                  padding: '12px 8px',
-                  textAlign: 'center',
-                  fontSize: '11.5px',
-                  fontWeight: 800,
-                  color: idx === 0 || idx === 6 ? '#94a3b8' : '#475569',
-                  letterSpacing: '0.5px',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+                  background: '#e2e8f0',
+                  gap: '1px',
+                  borderBottom: '1px solid #e2e8f0',
                 }}
               >
-                {day}
+                {DAYS_OF_WEEK.map((day, idx) => (
+                  <div
+                    key={day}
+                    style={{
+                      background: '#f8fafc',
+                      padding: '12px 8px',
+                      textAlign: 'center',
+                      fontSize: '11.5px',
+                      fontWeight: 800,
+                      color: idx === 0 || idx === 6 ? '#94a3b8' : '#475569',
+                      letterSpacing: '0.5px',
+                      minWidth: 0,
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    {day}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          {!selectedDepartment ? (
-            <div
+              <div
               style={{
                 padding: '60px 24px',
                 textAlign: 'center',
@@ -1417,71 +1367,99 @@ export const MonthlyPlanner: React.FC = () => {
                 )}
               </div>
             </div>
+            </div>
           ) : (
-            /* Monthly Day Grid */
+            /* Unified Monthly Calendar Grid: Day Headers (Row 1) & Date Cells (Rows 2+) in ONE single 7-column CSS Grid */
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(7, 1fr)',
+                gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
                 background: '#e2e8f0',
-                gap: '1px', // Grid line dividers
+                gap: '1px', // Seamless 1px vertical and horizontal grid lines
+                width: '100%',
+                boxSizing: 'border-box',
               }}
             >
-            {calendarCells.map((cell) => {
-              const dayEvents = eventsByDate.get(cell.dateStr) || [];
-              const dayHolidays = holidaysEnabled ? holidaysByDate.get(cell.dateStr) || [] : [];
-              const hasEvents = dayEvents.length > 0;
-              const hasHolidays = dayHolidays.length > 0;
-              const isSelected = cell.dateStr === selectedDateStr;
-
-              // Tooltip on hovering any date shows holidays and all event titles & times scheduled on that day
-              const cellDate = new Date(cell.dateStr + 'T00:00:00');
-              const cellFormattedDate = cellDate.toLocaleDateString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              });
-
-              const tooltipLines: string[] = [cellFormattedDate];
-              if (hasHolidays) {
-                dayHolidays.forEach((h) => {
-                  tooltipLines.push(`🌴 ${h.countryName} Holiday: ${h.title}${h.description ? ` (${h.description})` : ''}`);
-                });
-              }
-              if (hasEvents) {
-                dayEvents.forEach((ev) => {
-                  tooltipLines.push(`• ${formatTimeDisplay(ev.eventTime)} - ${ev.title}`);
-                });
-              }
-              const cellTooltip = tooltipLines.join('\n');
-
-              return (
+              {/* Row 1: Day of Week Headers with continuous vertical separators */}
+              {DAYS_OF_WEEK.map((day, idx) => (
                 <div
-                  key={cell.dateStr}
-                  onClick={() => setSelectedDateStr(cell.dateStr)}
-                  title={cellTooltip}
+                  key={day}
                   style={{
-                    minHeight: '105px',
-                    background: isSelected
-                      ? '#f0fdf4'
-                      : hasHolidays
-                        ? '#fffdf5'
-                        : hasEvents
-                          ? '#fcfdfd'
-                          : cell.isCurrentMonth
-                            ? '#ffffff'
-                            : '#f8fafc',
-                    padding: '8px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    position: 'relative',
-                    transition: 'all 0.15s ease',
-                    border: isSelected ? '2px solid #00b074' : '2px solid transparent',
+                    background: '#f8fafc',
+                    padding: '12px 8px',
+                    textAlign: 'center',
+                    fontSize: '11.5px',
+                    fontWeight: 800,
+                    color: idx === 0 || idx === 6 ? '#94a3b8' : '#475569',
+                    letterSpacing: '0.5px',
+                    minWidth: 0,
                     boxSizing: 'border-box',
+                    borderBottom: '1px solid #e2e8f0',
                   }}
                 >
+                  {day}
+                </div>
+              ))}
+
+              {/* Rows 2+: Calendar Date Cells sharing the exact same column tracks */}
+              {calendarCells.map((cell) => {
+                const dayEvents = eventsByDate.get(cell.dateStr) || [];
+                const dayHolidays = holidaysEnabled ? holidaysByDate.get(cell.dateStr) || [] : [];
+                const hasEvents = dayEvents.length > 0;
+                const hasHolidays = dayHolidays.length > 0;
+                const isSelected = cell.dateStr === selectedDateStr;
+
+                // Tooltip on hovering any date shows holidays and all event titles & times scheduled on that day
+                const cellDate = new Date(cell.dateStr + 'T00:00:00');
+                const cellFormattedDate = cellDate.toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                });
+
+                const tooltipLines: string[] = [cellFormattedDate];
+                if (hasHolidays) {
+                  dayHolidays.forEach((h) => {
+                    tooltipLines.push(`🌴 ${h.countryName} Holiday: ${h.title}${h.description ? ` (${h.description})` : ''}`);
+                  });
+                }
+                if (hasEvents) {
+                  dayEvents.forEach((ev) => {
+                    tooltipLines.push(`• ${formatTimeDisplay(ev.eventTime)} - ${ev.title}`);
+                  });
+                }
+                const cellTooltip = tooltipLines.join('\n');
+
+                return (
+                  <div
+                    key={cell.dateStr}
+                    onClick={() => setSelectedDateStr(cell.dateStr)}
+                    title={cellTooltip}
+                    style={{
+                      minHeight: '105px',
+                      minWidth: 0,
+                      width: '100%',
+                      overflow: 'hidden',
+                      background: isSelected
+                        ? '#f0fdf4'
+                        : hasHolidays
+                          ? '#fffdf5'
+                          : hasEvents
+                            ? '#fcfdfd'
+                            : cell.isCurrentMonth
+                              ? '#ffffff'
+                              : '#f8fafc',
+                      padding: '8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      position: 'relative',
+                      transition: 'all 0.15s ease',
+                      border: isSelected ? '2px solid #00b074' : '2px solid transparent',
+                      boxSizing: 'border-box',
+                    }}
+                  >
                     {/* Top Row: Day Number + Event & Holiday Count / Indicator */}
                     <div
                       style={{
@@ -1489,6 +1467,8 @@ export const MonthlyPlanner: React.FC = () => {
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         marginBottom: '4px',
+                        minWidth: 0,
+                        width: '100%',
                       }}
                     >
                       <span
@@ -1509,13 +1489,14 @@ export const MonthlyPlanner: React.FC = () => {
                           display: 'inline-flex',
                           alignItems: 'center',
                           justifyContent: 'center',
+                          flexShrink: 0,
                         }}
                       >
                         {cell.dayNumber}
                       </span>
 
                       {/* Visual Marker / Count Badge for Dates Containing Events & Holidays */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '3px', minWidth: 0, overflow: 'hidden' }}>
                         {hasHolidays && (
                           <span
                             title={dayHolidays.map((h) => h.title).join(', ')}
@@ -1530,6 +1511,10 @@ export const MonthlyPlanner: React.FC = () => {
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '2px',
+                              whiteSpace: 'nowrap',
+                              flexShrink: 1,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
                             }}
                           >
                             <span>🌴</span>
@@ -1547,6 +1532,10 @@ export const MonthlyPlanner: React.FC = () => {
                               background: '#ecfdf5',
                               color: '#059669',
                               border: '1px solid #a7f3d0',
+                              whiteSpace: 'nowrap',
+                              flexShrink: 1,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
                             }}
                           >
                             {dayEvents.length} {dayEvents.length === 1 ? 'event' : 'events'}
@@ -1556,7 +1545,7 @@ export const MonthlyPlanner: React.FC = () => {
                     </div>
 
                     {/* Preview Pills (Holidays + Events) */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '2px', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '2px', overflow: 'hidden', minWidth: 0, width: '100%' }}>
                       {/* Holiday Pills */}
                       {dayHolidays.map((h) => (
                         <div
@@ -1576,10 +1565,13 @@ export const MonthlyPlanner: React.FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '3px',
+                            minWidth: 0,
+                            maxWidth: '100%',
+                            boxSizing: 'border-box',
                           }}
                         >
-                          <span style={{ fontSize: '10px' }}>🌴</span>
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.title}</span>
+                          <span style={{ fontSize: '10px', flexShrink: 0 }}>🌴</span>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flex: 1 }}>{h.title}</span>
                         </div>
                       ))}
 
@@ -1602,12 +1594,15 @@ export const MonthlyPlanner: React.FC = () => {
                             alignItems: 'center',
                             gap: '4px',
                             borderLeft: '3px solid #00b074',
+                            minWidth: 0,
+                            maxWidth: '100%',
+                            boxSizing: 'border-box',
                           }}
                         >
-                          <span style={{ color: '#059669', fontSize: '10px', fontWeight: 800 }}>
+                          <span style={{ color: '#059669', fontSize: '10px', fontWeight: 800, flexShrink: 0 }}>
                             {formatTimeDisplay(ev.eventTime)}
                           </span>
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.title}</span>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flex: 1 }}>{ev.title}</span>
                         </div>
                       ))}
 

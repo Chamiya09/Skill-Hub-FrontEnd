@@ -618,6 +618,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   const [batchDeptFilter, setBatchDeptFilter] = useState<string>("all");
   const [batchDate, setBatchDate] = useState<string>("");
   const [commonMeetingLinkInput, setCommonMeetingLinkInput] = useState<string>("");
+  const [commonLocationInput, setCommonLocationInput] = useState<string>("");
   const [batchCandidatesMap, setBatchCandidatesMap] = useState<
     Record<
       string,
@@ -648,6 +649,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     setBatchDate(dateStr);
     setBatchDeptFilter("all");
     setCommonMeetingLinkInput("");
+    setCommonLocationInput("");
     setBatchError(null);
 
     const initialMap: Record<
@@ -775,6 +777,37 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
       showToast("No candidates are currently ticked. Please select candidates using the checkboxes first.");
     } else {
       showToast(`✓ Applied common meeting link to ${count} selected candidate${count > 1 ? "s" : ""}!`);
+    }
+  };
+
+  const handleApplyCommonLocationToSelected = () => {
+    const trimmed = commonLocationInput.trim();
+    if (!trimmed) {
+      showToast("Please enter an interview location or venue address to apply.");
+      return;
+    }
+
+    let count = 0;
+    setBatchCandidatesMap((prev) => {
+      const next = { ...prev };
+      for (const id in next) {
+        if (next[id]?.selected) {
+          next[id] = {
+            ...next[id],
+            meetingMode: "Physical",
+            location: trimmed,
+            meetingLink: "Physical",
+          };
+          count++;
+        }
+      }
+      return next;
+    });
+
+    if (count === 0) {
+      showToast("No candidates are currently ticked. Please select candidates using the checkboxes first.");
+    } else {
+      showToast(`✓ Applied common location "${trimmed}" to ${count} selected candidate${count > 1 ? "s" : ""}!`);
     }
   };
 
@@ -7659,8 +7692,9 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 </p>
               </div>
 
-              {/* Top Right Corner Feature: Apply Same Link to Selected Candidates */}
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              {/* Top Right Corner Feature: Apply Same Link or Location to Selected Candidates */}
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                {/* Apply Common Link Tool */}
                 <div
                   style={{
                     display: "flex",
@@ -7672,18 +7706,18 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                     padding: "4px 8px 4px 12px",
                   }}
                 >
-                  <Link size={14} color="#64748b" />
+                  <Link size={14} color="#7c3aed" />
                   <input
                     type="text"
-                    placeholder="Paste common meeting link here..."
+                    placeholder="Paste common meeting link..."
                     value={commonMeetingLinkInput}
                     onChange={(e) => setCommonMeetingLinkInput(e.target.value)}
                     style={{
                       border: "none",
                       background: "transparent",
                       outline: "none",
-                      fontSize: "12.5px",
-                      width: "230px",
+                      fontSize: "12px",
+                      width: "190px",
                       color: "#0f172a",
                     }}
                   />
@@ -7709,6 +7743,58 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                   >
                     <Copy size={12} />
                     <span>Apply Same Link to Selected</span>
+                  </button>
+                </div>
+
+                {/* Apply Common Location Tool */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    background: "#f8fafc",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: "10px",
+                    padding: "4px 8px 4px 12px",
+                  }}
+                >
+                  <MapPin size={14} color="#059669" />
+                  <input
+                    type="text"
+                    placeholder="Enter common venue / location..."
+                    value={commonLocationInput}
+                    onChange={(e) => setCommonLocationInput(e.target.value)}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      outline: "none",
+                      fontSize: "12px",
+                      width: "190px",
+                      color: "#0f172a",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCommonLocationToSelected}
+                    title="Apply this common interview venue/location to all currently checked candidates"
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      border: "none",
+                      background: "#059669",
+                      color: "#ffffff",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      whiteSpace: "nowrap",
+                      boxShadow: "0 2px 4px rgba(5, 150, 105, 0.2)",
+                    }}
+                  >
+                    <MapPin size={12} />
+                    <span>Apply Same Location to Selected</span>
                   </button>
                 </div>
 

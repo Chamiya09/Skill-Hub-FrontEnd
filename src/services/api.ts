@@ -2117,6 +2117,9 @@ export interface EventResponseDto {
   jobVacancyId?: string | null;
   jobVacancyTitle?: string | null;
   department?: string | null;
+  candidateId?: string | null;
+  meetingMode?: string | null;
+  location?: string | null;
   createdAt: string;
 }
 

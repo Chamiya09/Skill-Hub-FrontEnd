@@ -439,7 +439,14 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   const [isSubmittingSchedule, setIsSubmittingSchedule] = useState<boolean>(false);
   const [existingCalendarEvents, setExistingCalendarEvents] = useState<EventResponseDto[]>([]);
 
-  const checkClash = (date: string, start: string, end: string, excludeId?: string) => {
+  const checkClash = (
+    date: string,
+    start: string,
+    end: string,
+    excludeId?: string,
+    targetDepartment?: string,
+    candidateId?: string
+  ) => {
     if (!date || !start || !end) return null;
     const toMins = (t: string) => {
       const parts = t.trim().split(":");
@@ -458,9 +465,23 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
       return null;
     };
 
+    const cleanTargetDept = (targetDepartment || "").trim().toLowerCase();
+
     return existingCalendarEvents.find((ev) => {
       if (ev.eventDate !== date) return false;
       if (excludeId && ev.id === excludeId) return false;
+
+      // Department scoping: Check if event is in the same department, company-wide, or for this specific candidate
+      const evDept = (ev.department || "").trim().toLowerCase();
+      const isSameCandidate = Boolean(candidateId && ev.candidateId && ev.candidateId === candidateId);
+      const isSameDepartment = Boolean(cleanTargetDept && evDept && cleanTargetDept === evDept);
+      const isCompanyWide = !evDept || evDept === "all" || evDept === "company" || evDept === "general";
+
+      // If this candidate has a target department, events in other distinct departments do not clash
+      if (cleanTargetDept && !isSameCandidate && !isSameDepartment && !isCompanyWide) {
+        return false;
+      }
+
       const range = parseEvRange(ev.eventTime);
       if (!range) return false;
       return sMin < range.e && eMin > range.s;
@@ -536,10 +557,18 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
       return;
     }
 
-    const clash = checkClash(scheduleDate, scheduleStartTime, scheduleEndTime, schedulingCandidate.scheduledEventId);
+    const targetDept = schedulingCandidate.department || selectedJob?.department;
+    const clash = checkClash(
+      scheduleDate,
+      scheduleStartTime,
+      scheduleEndTime,
+      schedulingCandidate.scheduledEventId,
+      targetDept,
+      schedulingCandidate.candidateId
+    );
     if (clash) {
       setScheduleError(
-        `The time gap selected (${scheduleStartTime} - ${scheduleEndTime}) on ${scheduleDate} is already taken by "${clash.title}" (${clash.eventTime}). Please choose another time or date.`
+        `The time gap selected (${scheduleStartTime} - ${scheduleEndTime}) on ${scheduleDate} is already taken by "${clash.title}" (${clash.eventTime})${clash.department ? ` in ${clash.department}` : ""}. Please choose another time or date.`
       );
       return;
     }
@@ -778,10 +807,18 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         return;
       }
 
-      const clash = checkClash(batchDate, cfg.startTime, cfg.endTime, s.scheduledEventId);
+      const targetDept = s.department || selectedJob?.department;
+      const clash = checkClash(
+        batchDate,
+        cfg.startTime,
+        cfg.endTime,
+        s.scheduledEventId,
+        targetDept,
+        s.candidateId
+      );
       if (clash) {
         setBatchError(
-          `Schedule Conflict for ${s.candidateName || "Candidate"}: Time (${cfg.startTime} - ${cfg.endTime}) clashes with '${clash.title}' (${clash.eventTime}) on Monthly Planner. Please select an available slot.`
+          `Schedule Conflict for ${s.candidateName || "Candidate"}: Time (${cfg.startTime} - ${cfg.endTime}) clashes with '${clash.title}' (${clash.eventTime})${clash.department ? ` in ${clash.department}` : ""} on Monthly Planner. Please select an available slot.`
         );
         return;
       }
@@ -7355,11 +7392,14 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
               {/* Live Clash Warning Alert */}
               {(() => {
+                const targetDept = schedulingCandidate.department || selectedJob?.department;
                 const clash = checkClash(
                   scheduleDate,
                   scheduleStartTime,
                   scheduleEndTime,
-                  schedulingCandidate.scheduledEventId
+                  schedulingCandidate.scheduledEventId,
+                  targetDept,
+                  schedulingCandidate.candidateId
                 );
                 if (clash) {
                   return (
@@ -7384,7 +7424,8 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                           The selected time slot ({scheduleStartTime} - {scheduleEndTime}) on {scheduleDate} is already booked for:
                           <strong style={{ marginLeft: "4px" }}>
                             "{clash.title}" ({clash.eventTime})
-                          </strong>.
+                          </strong>
+                          {clash.department ? ` (${clash.department})` : ""}.
                           Please select an available time slot.
                         </div>
                       </div>
@@ -7455,7 +7496,9 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       scheduleDate,
                       scheduleStartTime,
                       scheduleEndTime,
-                      schedulingCandidate.scheduledEventId
+                      schedulingCandidate.scheduledEventId,
+                      schedulingCandidate.department || selectedJob?.department,
+                      schedulingCandidate.candidateId
                     )
                   )
                 }
@@ -7476,7 +7519,9 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         scheduleDate,
                         scheduleStartTime,
                         scheduleEndTime,
-                        schedulingCandidate.scheduledEventId
+                        schedulingCandidate.scheduledEventId,
+                        schedulingCandidate.department || selectedJob?.department,
+                        schedulingCandidate.candidateId
                       )
                     )
                       ? "not-allowed"
@@ -7488,7 +7533,9 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         scheduleDate,
                         scheduleStartTime,
                         scheduleEndTime,
-                        schedulingCandidate.scheduledEventId
+                        schedulingCandidate.scheduledEventId,
+                        schedulingCandidate.department || selectedJob?.department,
+                        schedulingCandidate.candidateId
                       )
                     )
                       ? 0.6
@@ -7880,7 +7927,15 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                           location: "Online",
                         };
                         const isSelected = Boolean(cfg.selected);
-                        const clash = checkClash(batchDate, cfg.startTime, cfg.endTime, s.scheduledEventId);
+                        const targetDept = s.department || selectedJob?.department;
+                        const clash = checkClash(
+                          batchDate,
+                          cfg.startTime,
+                          cfg.endTime,
+                          s.scheduledEventId,
+                          targetDept,
+                          s.candidateId
+                        );
 
                         return (
                           <tr

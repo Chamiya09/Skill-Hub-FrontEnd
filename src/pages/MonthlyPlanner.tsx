@@ -3123,7 +3123,7 @@ export const MonthlyPlanner: React.FC = () => {
                     <Sparkles size={14} color="#7c3aed" />
                     <span>Multi-Agent Constraint Solving:</span>
                   </div>
-                  The agent checks company calendar bookings, excludes weekends and holidays, distributes candidates evenly across parallel tracks, and automatically applies forward-search overflow (up to 14 days) if candidates exceed the target window.
+                  The AI agent queries all company calendar events saved in the database to prevent clashes, prioritizes your selected interview dates, distributes candidates across parallel tracks, and automatically applies forward-search overflow (up to 14 days) if candidates exceed the target window.
                 </div>
 
                 {/* Form Buttons */}

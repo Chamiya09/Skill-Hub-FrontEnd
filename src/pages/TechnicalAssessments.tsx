@@ -40,8 +40,10 @@ import {
   Link,
   Copy,
   Users,
+  Sparkles,
 } from "lucide-react";
 import { ProblemStatementViewer } from "../components/assessment";
+import { AiInterviewSchedulerModal } from "../components/AiInterviewSchedulerModal";
 
 const LANGUAGE_STARTER_TEMPLATES: Record<string, string> = {
   csharp: `using System;
@@ -570,11 +572,15 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   };
 
   // ==========================================
-  // MEETING LINK INLINE EDITING
+  // MEETING LINK & LOCATION INLINE EDITING
   // ==========================================
   const [editingMeetingLinkId, setEditingMeetingLinkId] = useState<string | null>(null);
   const [editingMeetingLinkValue, setEditingMeetingLinkValue] = useState<string>("");
   const [isSavingMeetingLink, setIsSavingMeetingLink] = useState<boolean>(false);
+
+  const [editingLocationId, setEditingLocationId] = useState<string | null>(null);
+  const [editingLocationValue, setEditingLocationValue] = useState<string>("");
+  const [isSavingLocation, setIsSavingLocation] = useState<boolean>(false);
 
   const handleSaveMeetingLink = async (sub: SubmissionDetailDto) => {
     if (!sub.scheduledEventId) {
@@ -589,10 +595,10 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
     try {
       setIsSavingMeetingLink(true);
-      await eventsApi.updateMeetingLink(sub.scheduledEventId, trimmed);
+      await eventsApi.updateMeetingLink(sub.scheduledEventId, trimmed, 'Online');
       setInterviewSelections((prev) =>
         prev.map((item) =>
-          item.id === sub.id ? { ...item, scheduledLocation: trimmed } : item
+          item.id === sub.id ? { ...item, scheduledLocation: trimmed, scheduledMeetingMode: 'Online' } : item
         )
       );
       setEditingMeetingLinkId(null);
@@ -606,15 +612,93 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     }
   };
 
+  const handleSaveLocation = async (sub: SubmissionDetailDto) => {
+    if (!sub.scheduledEventId) {
+      showToast("Please schedule an interview for this candidate first before modifying the location.");
+      return;
+    }
+    const trimmed = editingLocationValue.trim();
+    if (!trimmed) {
+      showToast("Interview location cannot be empty.");
+      return;
+    }
+
+    try {
+      setIsSavingLocation(true);
+      await eventsApi.updateMeetingLink(sub.scheduledEventId, trimmed, 'Physical');
+      setInterviewSelections((prev) =>
+        prev.map((item) =>
+          item.id === sub.id ? { ...item, scheduledLocation: trimmed, scheduledMeetingMode: 'Physical' } : item
+        )
+      );
+      setEditingLocationId(null);
+      showToast(`✓ Interview venue updated for ${sub.candidateName || "Candidate"} and synced to candidate dashboard!`);
+    } catch (err: unknown) {
+      console.error("Failed to update interview location:", err);
+      const errObj = err as { message?: string };
+      showToast(errObj?.message || "Failed to update interview location.");
+    } finally {
+      setIsSavingLocation(false);
+    }
+  };
+
+  const handleChangeDeliveryMode = async (sub: SubmissionDetailDto, newMode: 'Online' | 'Physical') => {
+    if (!sub.scheduledEventId) {
+      showToast("Please schedule an interview for this candidate first before configuring delivery mode.");
+      return;
+    }
+    const currentMode = sub.scheduledMeetingMode || 'Online';
+    if (newMode === currentMode) return;
+
+    let targetLocation = sub.scheduledLocation || '';
+    if (newMode === 'Online') {
+      if (!targetLocation || !targetLocation.startsWith('http')) {
+        targetLocation = 'https://meet.google.com/interview-room';
+      }
+    } else {
+      if (!targetLocation || targetLocation.startsWith('http') || targetLocation.toLowerCase() === 'online') {
+        targetLocation = 'Skill-Hub HQ, 4th Floor, Boardroom 2, Colombo 03';
+      }
+    }
+
+    try {
+      await eventsApi.updateMeetingLink(sub.scheduledEventId, targetLocation, newMode);
+      setInterviewSelections((prev) =>
+        prev.map((item) =>
+          item.id === sub.id
+            ? { ...item, scheduledMeetingMode: newMode, scheduledLocation: targetLocation }
+            : item
+        )
+      );
+      showToast(`✓ Switched delivery mode to ${newMode} for ${sub.candidateName || "Candidate"}!`);
+    } catch (err: unknown) {
+      console.error("Failed to change delivery mode:", err);
+      const errObj = err as { message?: string };
+      showToast(errObj?.message || "Failed to update delivery mode.");
+    }
+  };
+
   // ==========================================
-  // BATCH / MULTI-CANDIDATE SCHEDULING
+  // BATCH / MULTI-CANDIDATE SCHEDULING & AI SCHEDULING
   // ==========================================
+  const [isAiInterviewSchedulerModalOpen, setIsAiInterviewSchedulerModalOpen] =
+    useState<boolean>(false);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState<boolean>(false);
   const [batchDeptFilter, setBatchDeptFilter] = useState<string>("all");
   const [batchDate, setBatchDate] = useState<string>("");
   const [commonMeetingLinkInput, setCommonMeetingLinkInput] = useState<string>("");
   const [batchCandidatesMap, setBatchCandidatesMap] = useState<
-    Record<string, { selected: boolean; startTime: string; endTime: string; meetingLink: string }>
+    Record<
+      string,
+      {
+        selected: boolean;
+        startTime: string;
+        endTime: string;
+        meetingMode: 'Online' | 'Physical';
+        meetingLink: string;
+        location: string;
+      }
+    >
   >({});
   const [isSubmittingBatch, setIsSubmittingBatch] = useState<boolean>(false);
   const [batchError, setBatchError] = useState<string | null>(null);
@@ -635,7 +719,17 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     setCommonMeetingLinkInput("");
     setBatchError(null);
 
-    const initialMap: Record<string, { selected: boolean; startTime: string; endTime: string; meetingLink: string }> = {};
+    const initialMap: Record<
+      string,
+      {
+        selected: boolean;
+        startTime: string;
+        endTime: string;
+        meetingMode: 'Online' | 'Physical';
+        meetingLink: string;
+        location: string;
+      }
+    > = {};
     interviewSelections.forEach((s, idx) => {
       const baseHour = 9 + Math.floor((idx * 30) / 60);
       const baseMin = (idx * 30) % 60;
@@ -645,17 +739,26 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
       const defaultStart = `${pad(baseHour)}:${pad(baseMin)}`;
       const defaultEnd = `${pad(endHour)}:${pad(endMin)}`;
 
-      let initialLink = s.scheduledLocation || "";
-      if (!initialLink) {
+      const isPhysical = s.scheduledMeetingMode === 'Physical';
+      const mode: 'Online' | 'Physical' = isPhysical ? 'Physical' : 'Online';
+
+      let initialLink = isPhysical ? 'Physical' : (s.scheduledLocation || "");
+      if (!isPhysical && !initialLink) {
         const safeName = (s.candidateName || "cand").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 6);
         initialLink = `https://meet.google.com/int-${safeName || "slot"}-${idx + 101}`;
       }
+
+      const initialLoc = isPhysical
+        ? (s.scheduledLocation || 'Skill-Hub HQ, 4th Floor, Boardroom 2, Colombo 03')
+        : 'Online';
 
       initialMap[s.id] = {
         selected: false,
         startTime: (s.scheduledTime && s.scheduledTime.includes("-")) ? s.scheduledTime.split("-")[0].trim() : defaultStart,
         endTime: (s.scheduledTime && s.scheduledTime.includes("-")) ? s.scheduledTime.split("-")[1].trim() : defaultEnd,
+        meetingMode: mode,
         meetingLink: initialLink,
+        location: initialLoc,
       };
     });
 
@@ -675,16 +778,42 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
   const handleUpdateCandidateConfig = (
     subId: string,
-    field: "startTime" | "endTime" | "meetingLink",
+    field: "startTime" | "endTime" | "meetingLink" | "location" | "meetingMode",
     val: string
   ) => {
-    setBatchCandidatesMap((prev) => ({
-      ...prev,
-      [subId]: {
-        ...prev[subId],
-        [field]: val,
-      },
-    }));
+    setBatchCandidatesMap((prev) => {
+      const current = prev[subId];
+      if (!current) return prev;
+      if (field === "meetingMode") {
+        const newMode = val as "Online" | "Physical";
+        return {
+          ...prev,
+          [subId]: {
+            ...current,
+            meetingMode: newMode,
+            location:
+              newMode === "Online"
+                ? "Online"
+                : current.location && current.location !== "Online"
+                ? current.location
+                : "Skill-Hub HQ, 4th Floor, Boardroom 2, Colombo 03",
+            meetingLink:
+              newMode === "Physical"
+                ? "Physical"
+                : current.meetingLink && current.meetingLink !== "Physical"
+                ? current.meetingLink
+                : "https://meet.google.com/interview-room",
+          },
+        };
+      }
+      return {
+        ...prev,
+        [subId]: {
+          ...current,
+          [field]: val,
+        },
+      };
+    });
   };
 
   const handleApplyCommonLinkToSelected = () => {
@@ -701,6 +830,8 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         if (next[id]?.selected) {
           next[id] = {
             ...next[id],
+            meetingMode: "Online",
+            location: "Online",
             meetingLink: trimmed,
           };
           count++;
@@ -733,8 +864,15 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         setBatchError(`Missing start or end time for ${s.candidateName || "Candidate"}.`);
         return;
       }
-      if (!cfg.meetingLink.trim()) {
+      if (cfg.meetingMode === "Online" && !cfg.meetingLink.trim()) {
         setBatchError(`Missing meeting link for ${s.candidateName || "Candidate"}.`);
+        return;
+      }
+      if (
+        cfg.meetingMode === "Physical" &&
+        (!cfg.location.trim() || cfg.location.trim().toLowerCase() === "online")
+      ) {
+        setBatchError(`Missing interview venue/location for ${s.candidateName || "Candidate"}.`);
         return;
       }
 
@@ -753,14 +891,15 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
       for (const s of selected) {
         const cfg = batchCandidatesMap[s.id];
+        const isOnline = (cfg.meetingMode || "Online") === "Online";
         await eventsApi.scheduleCandidateInterview({
           candidateId: s.candidateId,
           jobVacancyId: s.jobVacancyId,
           eventDate: batchDate,
           startTime: cfg.startTime,
           endTime: cfg.endTime,
-          meetingMode: "Online",
-          location: cfg.meetingLink.trim(),
+          meetingMode: cfg.meetingMode || "Online",
+          location: isOnline ? cfg.meetingLink.trim() : (cfg.location.trim() || "Skill-Hub HQ, 4th Floor, Colombo 03"),
           notes: `Batch scheduled interview for ${s.candidateName || "Candidate"}`,
           existingEventId: s.scheduledEventId || undefined,
         });
@@ -2826,23 +2965,8 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                     fontWeight: 700,
                   }}
                 >
-                  {interviewSelections.filter((s) => s.status?.toLowerCase() !== "ready for interview" && s.status?.toLowerCase() !== "ready_for_interview" && s.status?.toLowerCase() !== "scheduled").length} Selected
+                  {interviewSelections.length} Selected
                 </span>
-                {interviewSelections.some((s) => s.status?.toLowerCase() === "ready for interview" || s.status?.toLowerCase() === "ready_for_interview" || s.status?.toLowerCase() === "scheduled") && (
-                  <span
-                    style={{
-                      padding: "3px 10px",
-                      borderRadius: "999px",
-                      background: "#ecfdf5",
-                      color: "#059669",
-                      border: "1px solid #a7f3d0",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {interviewSelections.filter((s) => s.status?.toLowerCase() === "ready for interview" || s.status?.toLowerCase() === "ready_for_interview" || s.status?.toLowerCase() === "scheduled").length} Ready for Interview
-                  </span>
-                )}
               </div>
               <p
                 style={{
@@ -3213,100 +3337,6 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                   })}
                 </select>
               </div>
-
-              {/* Quick Score Filters */}
-              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  onClick={() => setInterviewScoreFilter("all")}
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: "999px",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    border: "1px solid",
-                    borderColor:
-                      interviewScoreFilter === "all" ? "#7c3aed" : "#e2e8f0",
-                    background:
-                      interviewScoreFilter === "all" ? "#f5f3ff" : "#ffffff",
-                    color:
-                      interviewScoreFilter === "all" ? "#7c3aed" : "#64748b",
-                    cursor: "pointer",
-                  }}
-                >
-                  All Scores
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInterviewScoreFilter("top")}
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: "999px",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    border: "1px solid",
-                    borderColor:
-                      interviewScoreFilter === "top" ? "#00b074" : "#e2e8f0",
-                    background:
-                      interviewScoreFilter === "top" ? "#ecfdf5" : "#ffffff",
-                    color:
-                      interviewScoreFilter === "top" ? "#047857" : "#64748b",
-                    cursor: "pointer",
-                  }}
-                >
-                  Top Performers (≥85%)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInterviewScoreFilter("passed")}
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: "999px",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    border: "1px solid",
-                    borderColor:
-                      interviewScoreFilter === "passed" ? "#2563eb" : "#e2e8f0",
-                    background:
-                      interviewScoreFilter === "passed" ? "#eff6ff" : "#ffffff",
-                    color:
-                      interviewScoreFilter === "passed" ? "#1d4ed8" : "#64748b",
-                    cursor: "pointer",
-                  }}
-                >
-                  Passing (≥Threshold)
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setInterviewIntegrityFilter(
-                      interviewIntegrityFilter === "clean" ? "all" : "clean",
-                    )
-                  }
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: "999px",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    border: "1px solid",
-                    borderColor:
-                      interviewIntegrityFilter === "clean"
-                        ? "#10b981"
-                        : "#e2e8f0",
-                    background:
-                      interviewIntegrityFilter === "clean"
-                        ? "#ecfdf5"
-                        : "#ffffff",
-                    color:
-                      interviewIntegrityFilter === "clean"
-                        ? "#047857"
-                        : "#64748b",
-                    cursor: "pointer",
-                  }}
-                >
-                  🛡️ Clean Proctor Only
-                </button>
-              </div>
             </div>
 
             {/* Right Controls: Search Input */}
@@ -3355,57 +3385,17 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
             </div>
           </div>
 
-          {/* Action Bar: Batch Schedule Button between Filters and Table */}
+          {/* Action Bar: Schedule Selected Candidates and AI Schedule Buttons */}
           <div
             style={{
               display: "flex",
-              justifyContent: "space-between",
+              justifyContent: "flex-start",
               alignItems: "center",
-              background: "linear-gradient(135deg, #fbfbfe 0%, #f5f3ff 100%)",
-              border: "1px solid #e0e7ff",
-              borderRadius: "14px",
-              padding: "14px 20px",
+              gap: "12px",
               marginBottom: "16px",
-              boxShadow: "0 2px 6px rgba(99, 102, 241, 0.05)",
+              flexWrap: "wrap",
             }}
           >
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "8px",
-                    background: "#7c3aed",
-                    color: "#ffffff",
-                  }}
-                >
-                  <CalendarPlus size={15} />
-                </span>
-                <h4 style={{ margin: 0, fontSize: "14px", fontWeight: 800, color: "#1e1b4b" }}>
-                  Candidate Interview Scheduling
-                </h4>
-                <span
-                  style={{
-                    background: "#ede9fe",
-                    color: "#6d28d9",
-                    padding: "2px 8px",
-                    borderRadius: "999px",
-                    fontSize: "11px",
-                    fontWeight: 700,
-                  }}
-                >
-                  {interviewSelections.length} Shortlisted
-                </span>
-              </div>
-              <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#64748b" }}>
-                Select multiple candidates to coordinate interview dates, assign clash-free time slots, and dispatch meeting links.
-              </p>
-            </div>
-
             <button
               type="button"
               onClick={handleOpenBatchModal}
@@ -3416,17 +3406,42 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 padding: "9px 20px",
                 borderRadius: "10px",
                 border: "none",
-                background: "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)",
+                background: "linear-gradient(135deg, #059669 0%, #00b074 100%)",
                 color: "#ffffff",
                 fontSize: "13px",
                 fontWeight: 700,
                 cursor: "pointer",
-                boxShadow: "0 4px 12px rgba(124, 58, 237, 0.25)",
+                boxShadow: "0 4px 12px rgba(0, 176, 116, 0.25)",
                 transition: "all 0.15s ease",
               }}
             >
               <CalendarPlus size={16} />
               <span>Schedule Selected Candidates</span>
+            </button>
+
+            {/* AI Schedule Button (Student 3 - Meeting Orchestration) */}
+            <button
+              type="button"
+              onClick={() => setIsAiInterviewSchedulerModalOpen(true)}
+              title="AI Interview Slot Generator (Student 3)"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "9px 20px",
+                borderRadius: "10px",
+                fontSize: "13px",
+                fontWeight: 700,
+                background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+                color: "#ffffff",
+                boxShadow: "0 4px 12px rgba(99, 102, 241, 0.25)",
+                cursor: "pointer",
+                border: "none",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <Sparkles size={16} />
+              <span>AI Schedule</span>
             </button>
           </div>
 
@@ -3693,6 +3708,22 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                           <th
                             style={{
                               padding: "14px 18px",
+                              textAlign: "center",
+                            }}
+                          >
+                            Delivery Mode
+                          </th>
+                          <th
+                            style={{
+                              padding: "14px 18px",
+                              textAlign: "left",
+                            }}
+                          >
+                            Location
+                          </th>
+                          <th
+                            style={{
+                              padding: "14px 18px",
                               textAlign: "left",
                             }}
                           >
@@ -3758,6 +3789,8 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                             .slice(0, 2)
                             .join("")
                             .toUpperCase();
+
+                          const isPhysical = s.scheduledMeetingMode === "Physical";
 
                           return (
                             <tr
@@ -3867,7 +3900,27 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                   textAlign: "center",
                                 }}
                               >
-                                {s.scheduledEventId || s.status?.toLowerCase() === "selected" ? (
+                                {s.scheduledEventId || s.status === "Ready for Interview" || s.status?.toLowerCase().includes("ready") ? (
+                                  <span
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "5px",
+                                      padding: "4px 12px",
+                                      borderRadius: "999px",
+                                      background: "#ecfdf5",
+                                      color: "#059669",
+                                      border: "1px solid #a7f3d0",
+                                      fontSize: "12px",
+                                      fontWeight: 800,
+                                      boxShadow:
+                                        "0 1px 3px rgba(5, 150, 105, 0.1)",
+                                    }}
+                                  >
+                                    <CheckCircle size={13} color="#059669" />
+                                    <span>Ready for Interview</span>
+                                  </span>
+                                ) : (
                                   <span
                                     style={{
                                       display: "inline-flex",
@@ -3887,166 +3940,348 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                     <Star size={13} fill="#7c3aed" color="#7c3aed" />
                                     <span>Selected</span>
                                   </span>
+                                )}
+                              </td>
+
+                              {/* Delivery Mode */}
+                              <td style={{ padding: "14px 18px", textAlign: "center" }}>
+                                {s.scheduledEventId ? (
+                                  <select
+                                    value={s.scheduledMeetingMode || "Online"}
+                                    onChange={(e) =>
+                                      handleChangeDeliveryMode(
+                                        s,
+                                        e.target.value as "Online" | "Physical"
+                                      )
+                                    }
+                                    style={{
+                                      padding: "5px 8px",
+                                      borderRadius: "7px",
+                                      border: "1px solid #cbd5e1",
+                                      fontSize: "12px",
+                                      fontWeight: 650,
+                                      color: isPhysical ? "#b45309" : "#0369a1",
+                                      background: isPhysical ? "#fef3c7" : "#e0f2fe",
+                                      cursor: "pointer",
+                                      outline: "none",
+                                    }}
+                                  >
+                                    <option value="Online">Online</option>
+                                    <option value="Physical">Physical</option>
+                                  </select>
                                 ) : (
                                   <span
                                     style={{
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: "5px",
-                                      padding: "4px 12px",
-                                      borderRadius: "999px",
-                                      background: "#ecfdf5",
-                                      color: "#059669",
-                                      border: "1px solid #a7f3d0",
+                                      color: "#94a3b8",
                                       fontSize: "12px",
-                                      fontWeight: 800,
-                                      boxShadow: "0 1px 3px rgba(5, 150, 105, 0.12)",
+                                      fontStyle: "italic",
                                     }}
                                   >
-                                    <CheckCircle size={13} color="#059669" />
-                                    <span>Ready for Interview</span>
+                                    —
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Location */}
+                              <td style={{ padding: "14px 18px" }}>
+                                {s.scheduledEventId ? (
+                                  !isPhysical ? (
+                                    <span
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "5px",
+                                        padding: "4px 9px",
+                                        borderRadius: "6px",
+                                        background: "#f1f5f9",
+                                        border: "1px solid #e2e8f0",
+                                        color: "#64748b",
+                                        fontSize: "12px",
+                                        fontWeight: 600,
+                                      }}
+                                      title="Location is Online for virtual interviews"
+                                    >
+                                      <Video size={12} color="#64748b" />
+                                      <span>Online</span>
+                                    </span>
+                                  ) : editingLocationId === s.id ? (
+                                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                      <input
+                                        type="text"
+                                        value={editingLocationValue}
+                                        onChange={(e) => setEditingLocationValue(e.target.value)}
+                                        placeholder="e.g. Skill-Hub HQ, 4th Floor..."
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter") handleSaveLocation(s);
+                                          if (e.key === "Escape") setEditingLocationId(null);
+                                        }}
+                                        style={{
+                                          padding: "5px 8px",
+                                          borderRadius: "6px",
+                                          border: "1px solid #d97706",
+                                          fontSize: "12px",
+                                          width: "180px",
+                                          outline: "none",
+                                        }}
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSaveLocation(s)}
+                                        disabled={isSavingLocation}
+                                        title="Save interview location"
+                                        style={{
+                                          border: "none",
+                                          background: "#00b074",
+                                          color: "#ffffff",
+                                          padding: "5px 7px",
+                                          borderRadius: "6px",
+                                          cursor: "pointer",
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                        }}
+                                      >
+                                        <CheckCircle size={13} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditingLocationId(null)}
+                                        title="Cancel"
+                                        style={{
+                                          border: "1px solid #cbd5e1",
+                                          background: "#ffffff",
+                                          color: "#64748b",
+                                          padding: "5px 7px",
+                                          borderRadius: "6px",
+                                          cursor: "pointer",
+                                          fontSize: "11px",
+                                        }}
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "6px",
+                                        background: "#fffbeb",
+                                        border: "1px solid #fde68a",
+                                        padding: "4px 8px",
+                                        borderRadius: "8px",
+                                      }}
+                                    >
+                                      <MapPin size={13} color="#b45309" />
+                                      <span
+                                        title={s.scheduledLocation || "Skill-Hub HQ, Colombo"}
+                                        style={{
+                                          color: "#92400e",
+                                          fontSize: "12px",
+                                          fontWeight: 650,
+                                          maxWidth: "160px",
+                                          overflow: "hidden",
+                                          textOverflow: "ellipsis",
+                                          whiteSpace: "nowrap",
+                                          display: "inline-block",
+                                        }}
+                                      >
+                                        {s.scheduledLocation || "Skill-Hub HQ, Colombo"}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingLocationId(s.id);
+                                          setEditingLocationValue(s.scheduledLocation || "");
+                                        }}
+                                        title="Edit interview location"
+                                        style={{
+                                          border: "none",
+                                          background: "transparent",
+                                          color: "#b45309",
+                                          cursor: "pointer",
+                                          padding: "2px",
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                        }}
+                                      >
+                                        <Pencil size={11} />
+                                      </button>
+                                    </div>
+                                  )
+                                ) : (
+                                  <span
+                                    style={{
+                                      color: "#94a3b8",
+                                      fontSize: "12px",
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    Not scheduled
                                   </span>
                                 )}
                               </td>
 
                               {/* Meeting Link */}
                               <td style={{ padding: "14px 18px" }}>
-                                {editingMeetingLinkId === s.id ? (
-                                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                    <input
-                                      type="text"
-                                      value={editingMeetingLinkValue}
-                                      onChange={(e) => setEditingMeetingLinkValue(e.target.value)}
-                                      placeholder="https://meet.google.com/..."
-                                      autoFocus
-                                      onKeyDown={(e) => {
-                                        if (e.key === "Enter") handleSaveMeetingLink(s);
-                                        if (e.key === "Escape") setEditingMeetingLinkId(null);
-                                      }}
+                                {s.scheduledEventId ? (
+                                  isPhysical ? (
+                                    <span
                                       style={{
-                                        padding: "5px 8px",
-                                        borderRadius: "6px",
-                                        border: "1px solid #7c3aed",
-                                        fontSize: "12px",
-                                        width: "180px",
-                                        outline: "none",
-                                      }}
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => handleSaveMeetingLink(s)}
-                                      disabled={isSavingMeetingLink}
-                                      title="Save meeting link"
-                                      style={{
-                                        border: "none",
-                                        background: "#00b074",
-                                        color: "#ffffff",
-                                        padding: "5px 7px",
-                                        borderRadius: "6px",
-                                        cursor: "pointer",
                                         display: "inline-flex",
                                         alignItems: "center",
-                                      }}
-                                    >
-                                      <CheckCircle size={13} />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => setEditingMeetingLinkId(null)}
-                                      title="Cancel"
-                                      style={{
-                                        border: "1px solid #cbd5e1",
-                                        background: "#ffffff",
-                                        color: "#64748b",
-                                        padding: "5px 7px",
+                                        gap: "5px",
+                                        padding: "4px 9px",
                                         borderRadius: "6px",
-                                        cursor: "pointer",
-                                        fontSize: "11px",
-                                      }}
-                                    >
-                                      ✕
-                                    </button>
-                                  </div>
-                                ) : s.scheduledLocation ? (
-                                  <div
-                                    style={{
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: "6px",
-                                      background: "#f0fdf4",
-                                      border: "1px solid #bbf7d0",
-                                      padding: "4px 8px",
-                                      borderRadius: "8px",
-                                    }}
-                                  >
-                                    <Video size={13} color="#16a34a" />
-                                    <a
-                                      href={
-                                        s.scheduledLocation.startsWith("http")
-                                          ? s.scheduledLocation
-                                          : `https://${s.scheduledLocation}`
-                                      }
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      title={`Open meeting link: ${s.scheduledLocation}`}
-                                      style={{
-                                        color: "#15803d",
-                                        textDecoration: "underline",
+                                        background: "#f1f5f9",
+                                        border: "1px solid #e2e8f0",
+                                        color: "#64748b",
                                         fontSize: "12px",
-                                        fontWeight: 650,
-                                        maxWidth: "160px",
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                        display: "inline-block",
+                                        fontWeight: 600,
+                                      }}
+                                      title="Meeting link is not required for physical interviews"
+                                    >
+                                      <MapPin size={12} color="#64748b" />
+                                      <span>Physical</span>
+                                    </span>
+                                  ) : editingMeetingLinkId === s.id ? (
+                                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                      <input
+                                        type="text"
+                                        value={editingMeetingLinkValue}
+                                        onChange={(e) => setEditingMeetingLinkValue(e.target.value)}
+                                        placeholder="https://meet.google.com/..."
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter") handleSaveMeetingLink(s);
+                                          if (e.key === "Escape") setEditingMeetingLinkId(null);
+                                        }}
+                                        style={{
+                                          padding: "5px 8px",
+                                          borderRadius: "6px",
+                                          border: "1px solid #7c3aed",
+                                          fontSize: "12px",
+                                          width: "180px",
+                                          outline: "none",
+                                        }}
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSaveMeetingLink(s)}
+                                        disabled={isSavingMeetingLink}
+                                        title="Save meeting link"
+                                        style={{
+                                          border: "none",
+                                          background: "#00b074",
+                                          color: "#ffffff",
+                                          padding: "5px 7px",
+                                          borderRadius: "6px",
+                                          cursor: "pointer",
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                        }}
+                                      >
+                                        <CheckCircle size={13} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditingMeetingLinkId(null)}
+                                        title="Cancel"
+                                        style={{
+                                          border: "1px solid #cbd5e1",
+                                          background: "#ffffff",
+                                          color: "#64748b",
+                                          padding: "5px 7px",
+                                          borderRadius: "6px",
+                                          cursor: "pointer",
+                                          fontSize: "11px",
+                                        }}
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  ) : s.scheduledLocation && s.scheduledLocation.startsWith("http") ? (
+                                    <div
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "6px",
+                                        background: "#f0fdf4",
+                                        border: "1px solid #bbf7d0",
+                                        padding: "4px 8px",
+                                        borderRadius: "8px",
                                       }}
                                     >
-                                      {s.scheduledLocation.replace(/^https?:\/\//, "")}
-                                    </a>
+                                      <Video size={13} color="#16a34a" />
+                                      <a
+                                        href={
+                                          s.scheduledLocation.startsWith("http")
+                                            ? s.scheduledLocation
+                                            : `https://${s.scheduledLocation}`
+                                        }
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title={`Open meeting link: ${s.scheduledLocation}`}
+                                        style={{
+                                          color: "#15803d",
+                                          textDecoration: "underline",
+                                          fontSize: "12px",
+                                          fontWeight: 650,
+                                          maxWidth: "160px",
+                                          overflow: "hidden",
+                                          textOverflow: "ellipsis",
+                                          whiteSpace: "nowrap",
+                                          display: "inline-block",
+                                        }}
+                                      >
+                                        {s.scheduledLocation.replace(/^https?:\/\//, "")}
+                                      </a>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingMeetingLinkId(s.id);
+                                          setEditingMeetingLinkValue(s.scheduledLocation || "");
+                                        }}
+                                        title="Edit meeting link"
+                                        style={{
+                                          border: "none",
+                                          background: "transparent",
+                                          color: "#16a34a",
+                                          cursor: "pointer",
+                                          padding: "2px",
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                        }}
+                                      >
+                                        <Pencil size={11} />
+                                      </button>
+                                    </div>
+                                  ) : (
                                     <button
                                       type="button"
                                       onClick={() => {
                                         setEditingMeetingLinkId(s.id);
-                                        setEditingMeetingLinkValue(s.scheduledLocation || "");
+                                        setEditingMeetingLinkValue("");
                                       }}
-                                      title="Edit meeting link"
                                       style={{
-                                        border: "none",
-                                        background: "transparent",
-                                        color: "#16a34a",
+                                        border: "1px dashed #cbd5e1",
+                                        background: "#f8fafc",
+                                        color: "#64748b",
+                                        borderRadius: "6px",
+                                        padding: "4px 8px",
+                                        fontSize: "11.5px",
                                         cursor: "pointer",
-                                        padding: "2px",
                                         display: "inline-flex",
                                         alignItems: "center",
-                                        justifyContent: "center",
+                                        gap: "4px",
                                       }}
                                     >
-                                      <Pencil size={11} />
+                                      <Link size={12} />
+                                      <span>Add Link</span>
                                     </button>
-                                  </div>
-                                ) : s.scheduledEventId ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setEditingMeetingLinkId(s.id);
-                                      setEditingMeetingLinkValue("");
-                                    }}
-                                    style={{
-                                      border: "1px dashed #cbd5e1",
-                                      background: "#f8fafc",
-                                      color: "#64748b",
-                                      borderRadius: "6px",
-                                      padding: "4px 8px",
-                                      fontSize: "11.5px",
-                                      cursor: "pointer",
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: "4px",
-                                    }}
-                                  >
-                                    <Link size={12} />
-                                    <span>Add Link</span>
-                                  </button>
+                                  )
                                 ) : (
                                   <span
                                     style={{
@@ -7557,7 +7792,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           <div
             className="popup-card"
             style={{
-              maxWidth: "1080px",
+              maxWidth: "1180px",
               width: "100%",
               background: "#ffffff",
               borderRadius: "20px",
@@ -7852,9 +8087,11 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       <th style={{ padding: "10px 14px" }}>Candidate</th>
                       <th style={{ padding: "10px 14px" }}>Job Requisition &amp; Dept</th>
                       <th style={{ padding: "10px 14px", textAlign: "center" }}>Interview Status</th>
-                      <th style={{ padding: "10px 14px", width: "135px" }}>Start Time</th>
-                      <th style={{ padding: "10px 14px", width: "135px" }}>End Time</th>
-                      <th style={{ padding: "10px 14px" }}>Meeting Link</th>
+                      <th style={{ padding: "10px 14px", width: "130px" }}>Start Time</th>
+                      <th style={{ padding: "10px 14px", width: "130px" }}>End Time</th>
+                      <th style={{ padding: "10px 14px", width: "120px" }}>Delivery Mode</th>
+                      <th style={{ padding: "10px 14px", minWidth: "150px" }}>Location</th>
+                      <th style={{ padding: "10px 14px", minWidth: "180px" }}>Meeting Link</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -7869,7 +8106,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         return (
                           <tr>
                             <td
-                              colSpan={7}
+                              colSpan={9}
                               style={{
                                 padding: "36px",
                                 textAlign: "center",
@@ -7887,7 +8124,9 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                           selected: false,
                           startTime: "09:00",
                           endTime: "09:30",
+                          meetingMode: "Online",
                           meetingLink: "",
+                          location: "Online",
                         };
                         const isSelected = Boolean(cfg.selected);
                         const clash = checkClash(batchDate, cfg.startTime, cfg.endTime, s.scheduledEventId);
@@ -7947,25 +8186,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
                             {/* Interview Status */}
                             <td style={{ padding: "12px 14px", textAlign: "center" }}>
-                              {s.scheduledEventId || s.status?.toLowerCase() === "selected" ? (
-                                <span
-                                  style={{
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: "4px",
-                                    padding: "3px 8px",
-                                    borderRadius: "999px",
-                                    background: "#f5f3ff",
-                                    color: "#7c3aed",
-                                    border: "1px solid #ddd6fe",
-                                    fontSize: "11px",
-                                    fontWeight: 700,
-                                  }}
-                                >
-                                  <Star size={11} fill="#7c3aed" color="#7c3aed" />
-                                  <span>Selected</span>
-                                </span>
-                              ) : (
+                              {s.scheduledEventId || s.status === "Ready for Interview" || s.status?.toLowerCase().includes("ready") ? (
                                 <span
                                   style={{
                                     display: "inline-flex",
@@ -7982,6 +8203,24 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                 >
                                   <CheckCircle size={11} color="#059669" />
                                   <span>Ready for Interview</span>
+                                </span>
+                              ) : (
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "4px",
+                                    padding: "3px 8px",
+                                    borderRadius: "999px",
+                                    background: "#f5f3ff",
+                                    color: "#7c3aed",
+                                    border: "1px solid #ddd6fe",
+                                    fontSize: "11px",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  <Star size={11} fill="#7c3aed" color="#7c3aed" />
+                                  <span>Selected</span>
                                 </span>
                               )}
                             </td>
@@ -8046,27 +8285,138 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                               )}
                             </td>
 
-                            {/* Meeting Link */}
+                            {/* Delivery Mode Dropdown */}
                             <td style={{ padding: "12px 14px" }}>
-                              <input
-                                type="text"
-                                placeholder="https://meet.google.com/..."
-                                value={cfg.meetingLink}
+                              <select
+                                value={cfg.meetingMode || "Online"}
                                 disabled={!isSelected}
                                 onChange={(e) =>
-                                  handleUpdateCandidateConfig(s.id, "meetingLink", e.target.value)
+                                  handleUpdateCandidateConfig(
+                                    s.id,
+                                    "meetingMode",
+                                    e.target.value
+                                  )
                                 }
                                 style={{
-                                  padding: "6px 10px",
+                                  padding: "6px 8px",
                                   borderRadius: "6px",
                                   border: "1px solid #cbd5e1",
-                                  background: isSelected ? "#ffffff" : "#f8fafc",
                                   fontSize: "12px",
+                                  fontWeight: 650,
+                                  color:
+                                    (cfg.meetingMode || "Online") === "Online"
+                                      ? "#0369a1"
+                                      : "#b45309",
+                                  background:
+                                    (cfg.meetingMode || "Online") === "Online"
+                                      ? "#e0f2fe"
+                                      : "#fef3c7",
+                                  outline: "none",
+                                  cursor: isSelected ? "pointer" : "not-allowed",
                                   width: "100%",
                                   boxSizing: "border-box",
-                                  outline: "none",
                                 }}
-                              />
+                              >
+                                <option value="Online">Online</option>
+                                <option value="Physical">Physical</option>
+                              </select>
+                            </td>
+
+                            {/* Location Column */}
+                            <td style={{ padding: "12px 14px" }}>
+                              {(cfg.meetingMode || "Online") === "Online" ? (
+                                <input
+                                  type="text"
+                                  value="Online"
+                                  disabled
+                                  style={{
+                                    padding: "6px 10px",
+                                    borderRadius: "6px",
+                                    border: "1px solid #e2e8f0",
+                                    background: "#f1f5f9",
+                                    color: "#64748b",
+                                    fontSize: "12px",
+                                    width: "100%",
+                                    boxSizing: "border-box",
+                                    cursor: "not-allowed",
+                                    fontWeight: 600,
+                                  }}
+                                  title="Location is Online for virtual interviews"
+                                />
+                              ) : (
+                                <input
+                                  type="text"
+                                  placeholder="e.g. Skill-Hub HQ, 4th Floor..."
+                                  value={cfg.location}
+                                  disabled={!isSelected}
+                                  onChange={(e) =>
+                                    handleUpdateCandidateConfig(
+                                      s.id,
+                                      "location",
+                                      e.target.value
+                                    )
+                                  }
+                                  style={{
+                                    padding: "6px 10px",
+                                    borderRadius: "6px",
+                                    border: "1px solid #cbd5e1",
+                                    background: isSelected ? "#ffffff" : "#f8fafc",
+                                    color: "#0f172a",
+                                    fontSize: "12px",
+                                    width: "100%",
+                                    boxSizing: "border-box",
+                                    outline: "none",
+                                  }}
+                                />
+                              )}
+                            </td>
+
+                            {/* Meeting Link */}
+                            <td style={{ padding: "12px 14px" }}>
+                              {(cfg.meetingMode || "Online") === "Physical" ? (
+                                <input
+                                  type="text"
+                                  value="Physical"
+                                  disabled
+                                  style={{
+                                    padding: "6px 10px",
+                                    borderRadius: "6px",
+                                    border: "1px solid #e2e8f0",
+                                    background: "#f1f5f9",
+                                    color: "#64748b",
+                                    fontSize: "12px",
+                                    width: "100%",
+                                    boxSizing: "border-box",
+                                    cursor: "not-allowed",
+                                    fontWeight: 600,
+                                  }}
+                                  title="Meeting link is not required for physical interviews"
+                                />
+                              ) : (
+                                <input
+                                  type="text"
+                                  placeholder="https://meet.google.com/..."
+                                  value={cfg.meetingLink}
+                                  disabled={!isSelected}
+                                  onChange={(e) =>
+                                    handleUpdateCandidateConfig(
+                                      s.id,
+                                      "meetingLink",
+                                      e.target.value
+                                    )
+                                  }
+                                  style={{
+                                    padding: "6px 10px",
+                                    borderRadius: "6px",
+                                    border: "1px solid #cbd5e1",
+                                    background: isSelected ? "#ffffff" : "#f8fafc",
+                                    fontSize: "12px",
+                                    width: "100%",
+                                    boxSizing: "border-box",
+                                    outline: "none",
+                                  }}
+                                />
+                              )}
                             </td>
                           </tr>
                         );
@@ -8181,6 +8531,22 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           </div>
         </div>
       )}
+
+      {/* ========================================== */}
+      {/* AI INTERVIEW SLOT GENERATOR MODAL (STUDENT 3) */}
+      {/* ========================================== */}
+      <AiInterviewSchedulerModal
+        isOpen={isAiInterviewSchedulerModalOpen}
+        onClose={() => setIsAiInterviewSchedulerModalOpen(false)}
+        onSuccess={(msg) => {
+          showToast(msg);
+          loadInterviewSelections();
+        }}
+        initialJobVacancyId={
+          interviewJobFilter !== "all" ? interviewJobFilter : selectedJob?.id
+        }
+        availableJobs={jobs}
+      />
     </div>
   );
 };

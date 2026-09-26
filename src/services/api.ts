@@ -2259,10 +2259,10 @@ export const eventsApi = {
    * PUT /api/Events/{id}/meeting-link
    * Updates the meeting link for an event.
    */
-  updateMeetingLink: (id: string, meetingLink: string) =>
+  updateMeetingLink: (id: string, meetingLink: string, meetingMode?: string) =>
     request<EventResponseDto>(`/Events/${id}/meeting-link`, {
       method: 'PUT',
-      body: JSON.stringify({ meetingLink }),
+      body: JSON.stringify({ meetingLink, meetingMode }),
     }),
 };
 

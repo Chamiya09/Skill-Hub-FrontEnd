@@ -1627,6 +1627,11 @@ export interface SubmissionDetailDto {
   proctorSummary: ProctorSummaryDto;
   isSelectedForInterview?: boolean;
   reviewerFeedback?: string;
+  scheduledEventId?: string;
+  scheduledDate?: string;
+  scheduledTime?: string;
+  scheduledMeetingMode?: string;
+  scheduledLocation?: string;
 }
 
 export interface LeaderboardEntryDto {
@@ -2229,6 +2234,26 @@ export const eventsApi = {
    */
   getMyInterviews: () =>
     request<CandidateInterviewDto[]>('/Events/my-interviews'),
+
+  /**
+   * POST /api/Events/schedule-candidate-interview
+   * Manually schedules or reschedules a candidate interview from Interview Selection.
+   */
+  scheduleCandidateInterview: (payload: {
+    candidateId: string;
+    jobVacancyId: string;
+    eventDate: string;
+    startTime: string;
+    endTime: string;
+    meetingMode: 'Online' | 'Physical';
+    location: string;
+    notes?: string;
+    existingEventId?: string;
+  }) =>
+    request<EventResponseDto>('/Events/schedule-candidate-interview', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
 
 export interface GenerateScheduleRequestDto {

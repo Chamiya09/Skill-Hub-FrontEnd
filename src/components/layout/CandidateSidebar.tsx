@@ -149,21 +149,6 @@ export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onCl
         <div className="nav-group-label">CAREER PLATFORM</div>
 
         <NavLink
-          to="/candidate/dashboard"
-          onClick={onClose}
-          className={({ isActive }) =>
-            `dashboard-nav-item ${
-              isActive || location.pathname === '/candidate' || location.pathname === '/candidate/interviews'
-                ? 'active'
-                : ''
-            }`
-          }
-        >
-          <CalendarClockIcon />
-          <span>My Interviews</span>
-        </NavLink>
-
-        <NavLink
           to="/candidate/profile"
           onClick={onClose}
           className={({ isActive }) => `dashboard-nav-item ${isActive ? 'active' : ''}`}
@@ -197,6 +182,21 @@ export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onCl
         >
           <CodeTerminalIcon />
           <span>Technical Assessments</span>
+        </NavLink>
+
+        <NavLink
+          to="/candidate/dashboard"
+          onClick={onClose}
+          className={({ isActive }) =>
+            `dashboard-nav-item ${
+              isActive || location.pathname === '/candidate' || location.pathname === '/candidate/interviews'
+                ? 'active'
+                : ''
+            }`
+          }
+        >
+          <CalendarClockIcon />
+          <span>My Interviews</span>
         </NavLink>
 
         <NavLink

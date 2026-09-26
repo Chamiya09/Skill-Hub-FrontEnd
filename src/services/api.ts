@@ -2199,11 +2199,12 @@ export const eventsApi = {
       body: JSON.stringify(payload),
     }),
 
-  /**
-   * DELETE /api/Events/{id}
-   * Deletes an event by ID.
-   */
   delete: (id: string) =>
+    request<void>(`/Events/${id}`, {
+      method: 'DELETE',
+    }),
+
+  deleteEvent: (id: string) =>
     request<void>(`/Events/${id}`, {
       method: 'DELETE',
     }),

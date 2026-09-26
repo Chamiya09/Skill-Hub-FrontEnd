@@ -397,6 +397,13 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
       return;
     }
     try {
+      if (sub.scheduledEventId) {
+        try {
+          await eventsApi.deleteEvent(sub.scheduledEventId);
+        } catch (e) {
+          console.warn("Could not delete scheduled event during interview deselection:", e);
+        }
+      }
       await assessmentsApi.reviewSubmission(sub.id, {
         examScore: sub.examScore,
         isSelectedForInterview: false,
@@ -571,112 +578,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     }
   };
 
-  // ==========================================
-  // MEETING LINK & LOCATION INLINE EDITING
-  // ==========================================
-  const [editingMeetingLinkId, setEditingMeetingLinkId] = useState<string | null>(null);
-  const [editingMeetingLinkValue, setEditingMeetingLinkValue] = useState<string>("");
-  const [isSavingMeetingLink, setIsSavingMeetingLink] = useState<boolean>(false);
 
-  const [editingLocationId, setEditingLocationId] = useState<string | null>(null);
-  const [editingLocationValue, setEditingLocationValue] = useState<string>("");
-  const [isSavingLocation, setIsSavingLocation] = useState<boolean>(false);
-
-  const handleSaveMeetingLink = async (sub: SubmissionDetailDto) => {
-    if (!sub.scheduledEventId) {
-      showToast("Please schedule an interview for this candidate first before modifying the meeting link.");
-      return;
-    }
-    const trimmed = editingMeetingLinkValue.trim();
-    if (!trimmed) {
-      showToast("Meeting link cannot be empty.");
-      return;
-    }
-
-    try {
-      setIsSavingMeetingLink(true);
-      await eventsApi.updateMeetingLink(sub.scheduledEventId, trimmed, 'Online');
-      setInterviewSelections((prev) =>
-        prev.map((item) =>
-          item.id === sub.id ? { ...item, scheduledLocation: trimmed, scheduledMeetingMode: 'Online' } : item
-        )
-      );
-      setEditingMeetingLinkId(null);
-      showToast(`✓ Meeting link updated for ${sub.candidateName || "Candidate"} and synced to candidate dashboard!`);
-    } catch (err: unknown) {
-      console.error("Failed to update meeting link:", err);
-      const errObj = err as { message?: string };
-      showToast(errObj?.message || "Failed to update meeting link.");
-    } finally {
-      setIsSavingMeetingLink(false);
-    }
-  };
-
-  const handleSaveLocation = async (sub: SubmissionDetailDto) => {
-    if (!sub.scheduledEventId) {
-      showToast("Please schedule an interview for this candidate first before modifying the location.");
-      return;
-    }
-    const trimmed = editingLocationValue.trim();
-    if (!trimmed) {
-      showToast("Interview location cannot be empty.");
-      return;
-    }
-
-    try {
-      setIsSavingLocation(true);
-      await eventsApi.updateMeetingLink(sub.scheduledEventId, trimmed, 'Physical');
-      setInterviewSelections((prev) =>
-        prev.map((item) =>
-          item.id === sub.id ? { ...item, scheduledLocation: trimmed, scheduledMeetingMode: 'Physical' } : item
-        )
-      );
-      setEditingLocationId(null);
-      showToast(`✓ Interview venue updated for ${sub.candidateName || "Candidate"} and synced to candidate dashboard!`);
-    } catch (err: unknown) {
-      console.error("Failed to update interview location:", err);
-      const errObj = err as { message?: string };
-      showToast(errObj?.message || "Failed to update interview location.");
-    } finally {
-      setIsSavingLocation(false);
-    }
-  };
-
-  const handleChangeDeliveryMode = async (sub: SubmissionDetailDto, newMode: 'Online' | 'Physical') => {
-    if (!sub.scheduledEventId) {
-      showToast("Please schedule an interview for this candidate first before configuring delivery mode.");
-      return;
-    }
-    const currentMode = sub.scheduledMeetingMode || 'Online';
-    if (newMode === currentMode) return;
-
-    let targetLocation = sub.scheduledLocation || '';
-    if (newMode === 'Online') {
-      if (!targetLocation || !targetLocation.startsWith('http')) {
-        targetLocation = 'https://meet.google.com/interview-room';
-      }
-    } else {
-      if (!targetLocation || targetLocation.startsWith('http') || targetLocation.toLowerCase() === 'online') {
-        targetLocation = 'Skill-Hub HQ, 4th Floor, Boardroom 2, Colombo 03';
-      }
-    }
-
-    try {
-      await eventsApi.updateMeetingLink(sub.scheduledEventId, targetLocation, newMode);
-      setInterviewSelections((prev) =>
-        prev.map((item) =>
-          item.id === sub.id
-            ? { ...item, scheduledMeetingMode: newMode, scheduledLocation: targetLocation }
-            : item
-        )
-      );
-      showToast(`✓ Switched delivery mode to ${newMode} for ${sub.candidateName || "Candidate"}!`);
-    } catch (err: unknown) {
-      console.error("Failed to change delivery mode:", err);
-      const errObj = err as { message?: string };
-      showToast(errObj?.message || "Failed to update delivery mode.");
-    }
-  };
 
   // ==========================================
   // BATCH / MULTI-CANDIDATE SCHEDULING & AI SCHEDULING
@@ -3946,29 +3848,43 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                               {/* Delivery Mode */}
                               <td style={{ padding: "14px 18px", textAlign: "center" }}>
                                 {s.scheduledEventId ? (
-                                  <select
-                                    value={s.scheduledMeetingMode || "Online"}
-                                    onChange={(e) =>
-                                      handleChangeDeliveryMode(
-                                        s,
-                                        e.target.value as "Online" | "Physical"
-                                      )
-                                    }
-                                    style={{
-                                      padding: "5px 8px",
-                                      borderRadius: "7px",
-                                      border: "1px solid #cbd5e1",
-                                      fontSize: "12px",
-                                      fontWeight: 650,
-                                      color: isPhysical ? "#b45309" : "#0369a1",
-                                      background: isPhysical ? "#fef3c7" : "#e0f2fe",
-                                      cursor: "pointer",
-                                      outline: "none",
-                                    }}
-                                  >
-                                    <option value="Online">Online</option>
-                                    <option value="Physical">Physical</option>
-                                  </select>
+                                  isPhysical ? (
+                                    <span
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "5px",
+                                        padding: "4px 10px",
+                                        borderRadius: "999px",
+                                        background: "#fef3c7",
+                                        color: "#b45309",
+                                        border: "1px solid #fde68a",
+                                        fontSize: "12px",
+                                        fontWeight: 700,
+                                      }}
+                                    >
+                                      <MapPin size={12} color="#b45309" />
+                                      <span>Physical</span>
+                                    </span>
+                                  ) : (
+                                    <span
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "5px",
+                                        padding: "4px 10px",
+                                        borderRadius: "999px",
+                                        background: "#e0f2fe",
+                                        color: "#0369a1",
+                                        border: "1px solid #bae6fd",
+                                        fontSize: "12px",
+                                        fontWeight: 700,
+                                      }}
+                                    >
+                                      <Video size={12} color="#0369a1" />
+                                      <span>Online</span>
+                                    </span>
+                                  )
                                 ) : (
                                   <span
                                     style={{
@@ -4004,62 +3920,6 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                       <Video size={12} color="#64748b" />
                                       <span>Online</span>
                                     </span>
-                                  ) : editingLocationId === s.id ? (
-                                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                      <input
-                                        type="text"
-                                        value={editingLocationValue}
-                                        onChange={(e) => setEditingLocationValue(e.target.value)}
-                                        placeholder="e.g. Skill-Hub HQ, 4th Floor..."
-                                        autoFocus
-                                        onKeyDown={(e) => {
-                                          if (e.key === "Enter") handleSaveLocation(s);
-                                          if (e.key === "Escape") setEditingLocationId(null);
-                                        }}
-                                        style={{
-                                          padding: "5px 8px",
-                                          borderRadius: "6px",
-                                          border: "1px solid #d97706",
-                                          fontSize: "12px",
-                                          width: "180px",
-                                          outline: "none",
-                                        }}
-                                      />
-                                      <button
-                                        type="button"
-                                        onClick={() => handleSaveLocation(s)}
-                                        disabled={isSavingLocation}
-                                        title="Save interview location"
-                                        style={{
-                                          border: "none",
-                                          background: "#00b074",
-                                          color: "#ffffff",
-                                          padding: "5px 7px",
-                                          borderRadius: "6px",
-                                          cursor: "pointer",
-                                          display: "inline-flex",
-                                          alignItems: "center",
-                                        }}
-                                      >
-                                        <CheckCircle size={13} />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => setEditingLocationId(null)}
-                                        title="Cancel"
-                                        style={{
-                                          border: "1px solid #cbd5e1",
-                                          background: "#ffffff",
-                                          color: "#64748b",
-                                          padding: "5px 7px",
-                                          borderRadius: "6px",
-                                          cursor: "pointer",
-                                          fontSize: "11px",
-                                        }}
-                                      >
-                                        ✕
-                                      </button>
-                                    </div>
                                   ) : (
                                     <div
                                       style={{
@@ -4068,7 +3928,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                         gap: "6px",
                                         background: "#fffbeb",
                                         border: "1px solid #fde68a",
-                                        padding: "4px 8px",
+                                        padding: "4px 9px",
                                         borderRadius: "8px",
                                       }}
                                     >
@@ -4079,7 +3939,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                           color: "#92400e",
                                           fontSize: "12px",
                                           fontWeight: 650,
-                                          maxWidth: "160px",
+                                          maxWidth: "180px",
                                           overflow: "hidden",
                                           textOverflow: "ellipsis",
                                           whiteSpace: "nowrap",
@@ -4088,26 +3948,6 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                       >
                                         {s.scheduledLocation || "Skill-Hub HQ, Colombo"}
                                       </span>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setEditingLocationId(s.id);
-                                          setEditingLocationValue(s.scheduledLocation || "");
-                                        }}
-                                        title="Edit interview location"
-                                        style={{
-                                          border: "none",
-                                          background: "transparent",
-                                          color: "#b45309",
-                                          cursor: "pointer",
-                                          padding: "2px",
-                                          display: "inline-flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                        }}
-                                      >
-                                        <Pencil size={11} />
-                                      </button>
                                     </div>
                                   )
                                 ) : (
@@ -4145,63 +3985,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                       <MapPin size={12} color="#64748b" />
                                       <span>Physical</span>
                                     </span>
-                                  ) : editingMeetingLinkId === s.id ? (
-                                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                      <input
-                                        type="text"
-                                        value={editingMeetingLinkValue}
-                                        onChange={(e) => setEditingMeetingLinkValue(e.target.value)}
-                                        placeholder="https://meet.google.com/..."
-                                        autoFocus
-                                        onKeyDown={(e) => {
-                                          if (e.key === "Enter") handleSaveMeetingLink(s);
-                                          if (e.key === "Escape") setEditingMeetingLinkId(null);
-                                        }}
-                                        style={{
-                                          padding: "5px 8px",
-                                          borderRadius: "6px",
-                                          border: "1px solid #7c3aed",
-                                          fontSize: "12px",
-                                          width: "180px",
-                                          outline: "none",
-                                        }}
-                                      />
-                                      <button
-                                        type="button"
-                                        onClick={() => handleSaveMeetingLink(s)}
-                                        disabled={isSavingMeetingLink}
-                                        title="Save meeting link"
-                                        style={{
-                                          border: "none",
-                                          background: "#00b074",
-                                          color: "#ffffff",
-                                          padding: "5px 7px",
-                                          borderRadius: "6px",
-                                          cursor: "pointer",
-                                          display: "inline-flex",
-                                          alignItems: "center",
-                                        }}
-                                      >
-                                        <CheckCircle size={13} />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => setEditingMeetingLinkId(null)}
-                                        title="Cancel"
-                                        style={{
-                                          border: "1px solid #cbd5e1",
-                                          background: "#ffffff",
-                                          color: "#64748b",
-                                          padding: "5px 7px",
-                                          borderRadius: "6px",
-                                          cursor: "pointer",
-                                          fontSize: "11px",
-                                        }}
-                                      >
-                                        ✕
-                                      </button>
-                                    </div>
-                                  ) : s.scheduledLocation && s.scheduledLocation.startsWith("http") ? (
+                                  ) : s.scheduledLocation && (s.scheduledLocation.startsWith("http") || s.scheduledLocation.includes("meet.google.com") || s.scheduledLocation.includes("zoom.us") || s.scheduledLocation.includes("teams.")) ? (
                                     <div
                                       style={{
                                         display: "inline-flex",
@@ -4228,7 +4012,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                           textDecoration: "underline",
                                           fontSize: "12px",
                                           fontWeight: 650,
-                                          maxWidth: "160px",
+                                          maxWidth: "180px",
                                           overflow: "hidden",
                                           textOverflow: "ellipsis",
                                           whiteSpace: "nowrap",
@@ -4237,50 +4021,17 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                       >
                                         {s.scheduledLocation.replace(/^https?:\/\//, "")}
                                       </a>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setEditingMeetingLinkId(s.id);
-                                          setEditingMeetingLinkValue(s.scheduledLocation || "");
-                                        }}
-                                        title="Edit meeting link"
-                                        style={{
-                                          border: "none",
-                                          background: "transparent",
-                                          color: "#16a34a",
-                                          cursor: "pointer",
-                                          padding: "2px",
-                                          display: "inline-flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                        }}
-                                      >
-                                        <Pencil size={11} />
-                                      </button>
                                     </div>
                                   ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setEditingMeetingLinkId(s.id);
-                                        setEditingMeetingLinkValue("");
-                                      }}
+                                    <span
                                       style={{
-                                        border: "1px dashed #cbd5e1",
-                                        background: "#f8fafc",
                                         color: "#64748b",
-                                        borderRadius: "6px",
-                                        padding: "4px 8px",
-                                        fontSize: "11.5px",
-                                        cursor: "pointer",
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "4px",
+                                        fontSize: "12px",
+                                        fontStyle: "italic",
                                       }}
                                     >
-                                      <Link size={12} />
-                                      <span>Add Link</span>
-                                    </button>
+                                      {s.scheduledLocation || "Online"}
+                                    </span>
                                   )
                                 ) : (
                                   <span

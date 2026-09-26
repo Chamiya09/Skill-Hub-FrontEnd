@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  BriefcaseBusiness,
-  Search,
   Calendar,
   Clock,
   Video,
@@ -14,9 +12,20 @@ import {
   RefreshCw,
   Building,
   CalendarCheck2,
+  Code,
+  BookOpen,
+  ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { eventsApi, type CandidateInterviewDto } from '../services/api';
+import {
+  eventsApi,
+  assessmentsApi,
+  interviewPrepApi,
+  type CandidateInterviewDto,
+  type CandidateAssessmentListItemDto,
+  type InterviewPrepGuideDto,
+} from '../services/api';
+import './CandidateDashboard.css';
 
 export function CandidateDashboard() {
   const { currentUser } = useAuth();
@@ -24,6 +33,11 @@ export function CandidateDashboard() {
   const [loadingInterviews, setLoadingInterviews] = useState<boolean>(true);
   const [interviewsError, setInterviewsError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Companion section data states
+  const [assessmentsCount, setAssessmentsCount] = useState<number>(0);
+  const [pendingAssessmentsCount, setPendingAssessmentsCount] = useState<number>(0);
+  const [prepGuidesCount, setPrepGuidesCount] = useState<number>(0);
 
   const fetchMyInterviews = useCallback(async () => {
     try {
@@ -40,9 +54,44 @@ export function CandidateDashboard() {
     }
   }, []);
 
+  const fetchCompanionStats = useCallback(async () => {
+    try {
+      // 1. Fetch assessments
+      let assessmentsList: CandidateAssessmentListItemDto[] = [];
+      try {
+        assessmentsList = await assessmentsApi.getMyAssessments();
+      } catch {
+        if (currentUser?.id) {
+          assessmentsList = await assessmentsApi.getCandidateAssessments(currentUser.id);
+        }
+      }
+      if (Array.isArray(assessmentsList)) {
+        setAssessmentsCount(assessmentsList.length);
+        const pending = assessmentsList.filter((a) => {
+          const s = a.status?.toLowerCase();
+          return s === 'pending' || s === 'assigned' || s === 'in progress';
+        }).length;
+        setPendingAssessmentsCount(pending);
+      }
+    } catch (err) {
+      console.warn('Could not load assessments count:', err);
+    }
+
+    try {
+      // 2. Fetch prep guides
+      const guides = await interviewPrepApi.getAll().catch(() => [] as InterviewPrepGuideDto[]);
+      if (Array.isArray(guides)) {
+        setPrepGuidesCount(guides.length);
+      }
+    } catch (err) {
+      console.warn('Could not load prep guides count:', err);
+    }
+  }, [currentUser?.id]);
+
   useEffect(() => {
     fetchMyInterviews();
-  }, [fetchMyInterviews]);
+    fetchCompanionStats();
+  }, [fetchMyInterviews, fetchCompanionStats]);
 
   const handleCopyLink = (textToCopy: string, id: string) => {
     navigator.clipboard.writeText(textToCopy);
@@ -55,7 +104,7 @@ export function CandidateDashboard() {
       const [year, month, day] = dateStr.split('-').map(Number);
       const d = new Date(year, month - 1, day);
       return d.toLocaleDateString('en-US', {
-        weekday: 'long',
+        weekday: 'short',
         month: 'short',
         day: 'numeric',
         year: 'numeric',
@@ -82,76 +131,84 @@ export function CandidateDashboard() {
       }
       return trimmed;
     });
-    return formatted.join(' - ');
+    return formatted.join(' – ');
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto">
-      {/* 1. Welcome Header */}
-      <div className="mb-8 flex items-center justify-between">
+    <div className="candidate-dashboard-container animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* 1. Candidate Welcome Header & Quick Pipeline Stats */}
+      <div className="candidate-welcome-header">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="candidate-welcome-title">
             Welcome back, {currentUser?.firstName || 'Candidate'}
           </h1>
-          <p className="mt-2 text-slate-600">
-            Track your scheduled interviews, technical assessments, and job application milestones.
+          <p className="candidate-welcome-subtitle">
+            Track your recruitment progress: technical assessments, confirmed interviews, and AI preparation guides.
           </p>
+        </div>
+        <div className="candidate-quick-stats-row">
+          <div className="candidate-stat-pill">
+            <span>Assessments:</span>
+            <span className="candidate-stat-pill-num">{assessmentsCount}</span>
+          </div>
+          <div className="candidate-stat-pill">
+            <span>Interviews:</span>
+            <span className="candidate-stat-pill-num">{interviews.length}</span>
+          </div>
+          <div className="candidate-stat-pill">
+            <span>AI Prep Guides:</span>
+            <span className="candidate-stat-pill-num">{prepGuidesCount}</span>
+          </div>
         </div>
       </div>
 
-      {/* 2. Top Quick Actions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col items-center text-center">
-          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4">
-            <Search className="w-6 h-6" />
+      {/* 2. STAGE 1: Technical Assessments Companion Card */}
+      <div className="recruitment-companion-card">
+        <div className="companion-card-left">
+          <div className="companion-icon-box code-theme">
+            <Code className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900 mb-2">Find Jobs</h3>
-          <p className="text-slate-600 mb-6 flex-grow">
-            Browse our latest open vacancies and discover new career opportunities.
-          </p>
-          <Link
-            to="/jobs"
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
-          >
-            Explore Jobs
-          </Link>
+          <div className="companion-card-info">
+            <span className="companion-step-badge">Stage 1 • Coding Challenges</span>
+            <h3 className="companion-card-title">Technical Assessments</h3>
+            <p className="companion-card-desc">
+              {pendingAssessmentsCount > 0
+                ? `You have ${pendingAssessmentsCount} pending technical assessment(s) assigned by recruiters.`
+                : assessmentsCount > 0
+                ? `All ${assessmentsCount} assigned technical assessment(s) are completed. Review your scores and feedback.`
+                : 'Complete assigned skill tests and algorithmic exams evaluated for your job applications.'}
+            </p>
+          </div>
         </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col items-center text-center">
-          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-4">
-            <BriefcaseBusiness className="w-6 h-6" />
-          </div>
-          <h3 className="text-lg font-bold text-slate-900 mb-2">My Applications</h3>
-          <p className="text-slate-600 mb-6 flex-grow">
-            Track the status, recruitment stages, and AI feedback on your job applications.
-          </p>
+        <div className="companion-card-right">
           <Link
-            to="/candidate/applications"
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-medium transition-colors"
+            to="/candidate/assessments"
+            className="companion-action-btn btn-outline-green"
           >
-            View Applications
+            <span>View Assessments</span>
+            <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </div>
 
-      {/* 3. My Interviews Section */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-8">
+      {/* 3. STAGE 2: My Interviews Section (In the Middle) */}
+      <div className="interviews-section-card">
         {/* Section Header */}
-        <div className="flex items-center justify-between pb-5 border-b border-slate-100 flex-wrap gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-sm">
+        <div className="interviews-section-header">
+          <div className="interviews-header-left">
+            <div className="interviews-icon-wrap">
               <CalendarCheck2 className="w-5 h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-xl font-bold text-slate-900">My Interviews</h2>
+            <div className="interviews-title-group">
+              <div className="interviews-title-row">
+                <h2 className="interviews-main-title">My Interviews</h2>
                 {!loadingInterviews && (
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  <span className="interviews-count-pill">
                     {interviews.length} Scheduled
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="interviews-subtitle">
                 Upcoming and confirmed technical interview sessions coordinated by HR.
               </p>
             </div>
@@ -159,9 +216,12 @@ export function CandidateDashboard() {
 
           <button
             type="button"
-            onClick={fetchMyInterviews}
+            onClick={() => {
+              fetchMyInterviews();
+              fetchCompanionStats();
+            }}
             disabled={loadingInterviews}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer"
+            className="interviews-refresh-btn"
             title="Refresh interviews list"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loadingInterviews ? 'animate-spin' : ''}`} />
@@ -169,181 +229,229 @@ export function CandidateDashboard() {
           </button>
         </div>
 
-        {/* Section Content */}
-        <div className="pt-6">
-          {loadingInterviews ? (
-            <div className="py-12 flex flex-col items-center justify-center text-slate-400">
-              <RefreshCw className="w-7 h-7 animate-spin text-emerald-600 mb-3" />
-              <p className="text-sm font-medium">Checking for scheduled interviews...</p>
+        {/* Section Body */}
+        {loadingInterviews ? (
+          <div className="interviews-loading-wrap">
+            <div className="interviews-loading-spinner" />
+            <p>Checking for scheduled interviews...</p>
+          </div>
+        ) : interviewsError ? (
+          <div className="py-8 px-6 rounded-xl bg-rose-50 border border-rose-200 text-center my-4">
+            <p className="text-sm text-rose-700 font-semibold mb-2">{interviewsError}</p>
+            <button
+              type="button"
+              onClick={fetchMyInterviews}
+              className="px-4 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-bold hover:bg-rose-700 transition"
+            >
+              Retry
+            </button>
+          </div>
+        ) : interviews.length === 0 ? (
+          <div className="interviews-empty-state">
+            <div className="interviews-empty-icon">
+              <Calendar className="w-8 h-8" />
             </div>
-          ) : interviewsError ? (
-            <div className="py-8 px-6 rounded-xl bg-rose-50 border border-rose-200 text-center">
-              <p className="text-sm text-rose-700 font-semibold mb-2">{interviewsError}</p>
-              <button
-                type="button"
-                onClick={fetchMyInterviews}
-                className="px-4 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-bold hover:bg-rose-700 transition"
-              >
-                Retry
-              </button>
-            </div>
-          ) : interviews.length === 0 ? (
-            <div className="py-12 text-center flex flex-col items-center justify-center">
-              <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 mb-4 shadow-sm">
-                <Calendar className="w-7 h-7" />
-              </div>
-              <h3 className="text-base font-bold text-slate-800 mb-1">No Interviews Scheduled Yet</h3>
-              <p className="text-xs text-slate-500 max-w-md mb-6 leading-relaxed">
-                When HR reviews your technical assessments and confirms your interview slot, your appointment date, time, mode (Online/Physical), and place will appear here.
-              </p>
-              <Link
-                to="/candidate/interview-prep"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl text-xs font-bold shadow-sm hover:from-emerald-700 hover:to-teal-700 transition"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>Prepare with AI Interview Guide</span>
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              {interviews.map((interview) => {
-                const isOnline = interview.meetingMode?.toLowerCase() === 'online';
-                const isUrl = interview.location?.startsWith('http://') || interview.location?.startsWith('https://');
+            <h3 className="interviews-empty-title">No Interviews Scheduled Yet</h3>
+            <p className="interviews-empty-desc">
+              When HR reviews your technical assessments and confirms your interview slot, your appointment date, time, mode (Online/Physical), and place will appear here.
+            </p>
+            <Link
+              to="/candidate/interview-prep"
+              className="btn-prep-hub-link"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Prepare with AI Interview Guide</span>
+            </Link>
+          </div>
+        ) : (
+          <div className="interviews-grid">
+            {interviews.map((interview) => {
+              const isOnline = interview.meetingMode?.toLowerCase() === 'online';
+              const hasUrl = Boolean(
+                interview.location &&
+                (interview.location.startsWith('http://') ||
+                 interview.location.startsWith('https://') ||
+                 interview.location.includes('meet.google.com') ||
+                 interview.location.includes('zoom.us') ||
+                 interview.location.includes('teams.microsoft.com'))
+              );
+              const joinUrl = hasUrl
+                ? (interview.location?.startsWith('http') ? interview.location : `https://${interview.location}`)
+                : undefined;
 
-                return (
-                  <div
-                    key={interview.id}
-                    className="border border-slate-200 rounded-xl p-5 hover:border-emerald-300 hover:shadow-md transition-all bg-gradient-to-br from-white to-slate-50/50 flex flex-col justify-between"
-                  >
-                    <div>
-                      {/* Top Badges Bar */}
-                      <div className="flex items-center justify-between gap-2 mb-3">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
-                            isOnline
-                              ? 'bg-sky-50 text-sky-700 border border-sky-200'
-                              : 'bg-amber-50 text-amber-800 border border-amber-200'
-                          }`}
-                        >
-                          {isOnline ? <Video className="w-3.5 h-3.5" /> : <MapPin className="w-3.5 h-3.5" />}
-                          <span>{isOnline ? 'Online Interview' : 'Physical / In-Person'}</span>
-                        </span>
+              return (
+                <div
+                  key={interview.id}
+                  className={`scheduled-interview-card ${isOnline ? 'mode-online' : 'mode-physical'}`}
+                >
+                  {/* Top Section */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {/* Header Badges */}
+                    <div className="card-header-badges">
+                      <span
+                        className={`interview-mode-tag ${isOnline ? 'tag-online' : 'tag-physical'}`}
+                      >
+                        {isOnline ? <Video className="w-3.5 h-3.5" /> : <MapPin className="w-3.5 h-3.5" />}
+                        <span>{isOnline ? 'Online Video Interview' : 'In-Person / Physical'}</span>
+                      </span>
 
-                        <span
-                          className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                            interview.status === 'Completed'
-                              ? 'bg-slate-100 text-slate-600'
-                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5'
-                          }`}
-                        >
-                          {interview.status !== 'Completed' && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          )}
-                          <span>{interview.status}</span>
-                        </span>
-                      </div>
+                      <span className="interview-status-tag">
+                        {interview.status !== 'Completed' && (
+                          <span className="status-dot-pulse" />
+                        )}
+                        <span>{interview.status || 'Confirmed'}</span>
+                      </span>
+                    </div>
 
-                      {/* Job Title & Company */}
-                      <h4 className="text-base font-extrabold text-slate-900 leading-snug mb-1">
-                        {interview.jobTitle || interview.title}
+                    {/* Job Title & Company */}
+                    <div className="card-job-section">
+                      <h4 className="interview-job-title">
+                        {interview.jobTitle || interview.title || 'Technical Interview'}
                       </h4>
-                      <div className="flex items-center gap-3 text-xs text-slate-500 mb-4 flex-wrap">
-                        <div className="flex items-center gap-1 font-medium text-slate-600">
+                      <div className="interview-company-meta">
+                        <span className="company-name-span">
                           <Building className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{interview.companyName || 'Skill-Hub Tech'}</span>
-                        </div>
+                          <span>{interview.companyName || 'Skill-Hub Partner'}</span>
+                        </span>
                         {interview.department && (
-                          <>
-                            <span className="text-slate-300">•</span>
-                            <span className="text-slate-500 font-medium">{interview.department}</span>
-                          </>
+                          <span className="department-pill-span">{interview.department}</span>
                         )}
                       </div>
+                    </div>
 
-                      {/* Schedule Info Box */}
-                      <div className="bg-slate-100/70 border border-slate-200/80 rounded-lg p-3 space-y-2 mb-4 text-xs">
-                        {/* Date */}
-                        <div className="flex items-center gap-2 text-slate-700">
-                          <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <span className="font-bold text-slate-900">
+                    {/* Executive Schedule Tiles (Date & Time) */}
+                    <div className="schedule-tiles-row">
+                      <div className="schedule-tile-box">
+                        <div className="tile-icon-wrap">
+                          <Calendar className="w-4 h-4" />
+                        </div>
+                        <div className="tile-text-content">
+                          <span className="tile-label">Date</span>
+                          <span className="tile-value" title={interview.eventDate}>
                             {formatDisplayDate(interview.eventDate)}
                           </span>
                         </div>
+                      </div>
 
-                        {/* Time Slot */}
-                        <div className="flex items-center gap-2 text-slate-700">
-                          <Clock className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <span className="font-semibold text-slate-800">
+                      <div className="schedule-tile-box">
+                        <div className="tile-icon-wrap">
+                          <Clock className="w-4 h-4" />
+                        </div>
+                        <div className="tile-text-content">
+                          <span className="tile-label">Time Slot</span>
+                          <span className="tile-value" title={interview.eventTime}>
                             {formatTimeSlot(interview.eventTime)}
                           </span>
-                        </div>
-
-                        {/* Place / Venue or Meeting Link */}
-                        <div className="flex items-start gap-2 pt-1 border-t border-slate-200/60">
-                          {isOnline ? (
-                            <Video className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
-                          ) : (
-                            <MapPin className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                          )}
-                          <div className="flex-grow min-w-0">
-                            <span className="font-bold text-slate-700 block">
-                              {isOnline ? 'Meeting Link / Platform:' : 'Interview Place / Venue:'}
-                            </span>
-                            <span className="text-slate-900 font-medium break-all select-all">
-                              {interview.location || (isOnline ? 'Google Meet (Link will be emailed)' : 'Company Office')}
-                            </span>
-                          </div>
-                          {interview.location && (
-                            <button
-                              type="button"
-                              onClick={() => handleCopyLink(interview.location || '', interview.id)}
-                              className="text-slate-400 hover:text-slate-700 p-1 rounded hover:bg-white transition cursor-pointer"
-                              title="Copy Place / Link"
-                            >
-                              {copiedId === interview.id ? (
-                                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                              ) : (
-                                <Copy className="w-3.5 h-3.5" />
-                              )}
-                            </button>
-                          )}
                         </div>
                       </div>
                     </div>
 
-                    {/* Bottom Actions */}
-                    <div className="pt-2 flex items-center justify-between gap-3 flex-wrap">
-                      <Link
-                        to="/candidate/interview-prep"
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>AI Interview Prep</span>
-                      </Link>
-
-                      {isOnline && isUrl ? (
-                        <a
-                          href={interview.location}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition"
-                        >
-                          <span>Join Meeting</span>
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
-                      ) : (
-                        <span className="text-[11px] text-slate-400 font-medium">
-                          {isOnline ? 'Online Session' : 'Please arrive 10m early'}
+                    {/* Meeting Platform or Physical Location Box */}
+                    <div
+                      className={`interview-location-block ${isOnline ? 'mode-online' : 'mode-physical'}`}
+                    >
+                      <div className="location-block-header">
+                        <span className="location-label-wrap">
+                          {isOnline ? <Video className="w-3.5 h-3.5" /> : <MapPin className="w-3.5 h-3.5" />}
+                          <span>{isOnline ? 'Meeting Link / Platform' : 'Interview Place / Venue'}</span>
                         </span>
-                      )}
+
+                        {interview.location && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyLink(interview.location || '', interview.id)}
+                            className={`copy-button ${copiedId === interview.id ? 'copied' : ''}`}
+                            title={isOnline ? 'Copy Meeting Link' : 'Copy Venue Address'}
+                          >
+                            {copiedId === interview.id ? (
+                              <>
+                                <Check className="w-3 h-3 text-emerald-600" />
+                                <span>Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                <span>{isOnline ? 'Copy Link' : 'Copy Address'}</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="location-value-text">
+                        {interview.location || (isOnline ? 'Google Meet / Online Room (Link provided by HR)' : 'Company Office / Confirmed Venue')}
+                      </div>
+
+                      <p className="location-note-hint">
+                        {isOnline
+                          ? 'Please test your camera, microphone, and internet connection before joining.'
+                          : 'Please arrive 10–15 minutes early at reception with your identification.'}
+                      </p>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+
+                  {/* Card Bottom CTAs */}
+                  <div className="card-bottom-actions">
+                    <Link
+                      to="/candidate/interview-prep"
+                      className="btn-prep-hub-link"
+                      title="Prepare for this interview with AI"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>AI Interview Prep</span>
+                    </Link>
+
+                    {isOnline && joinUrl ? (
+                      <a
+                        href={joinUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-join-meeting-cta"
+                      >
+                        <span>Join Meeting</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    ) : (
+                      <span className="physical-venue-badge">
+                        <MapPin className="w-3 h-3 text-amber-600" />
+                        <span>{isOnline ? 'Online Session' : 'Venue Confirmed'}</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 4. STAGE 3: Interview Prep Hub Companion Card */}
+      <div className="recruitment-companion-card">
+        <div className="companion-card-left">
+          <div className="companion-icon-box prep-theme">
+            <BookOpen className="w-6 h-6" />
+          </div>
+          <div className="companion-card-info">
+            <span className="companion-step-badge">Stage 3 • AI-Powered Preparation</span>
+            <h3 className="companion-card-title">Interview Prep Hub</h3>
+            <p className="companion-card-desc">
+              {prepGuidesCount > 0
+                ? `You have ${prepGuidesCount} customized interview preparation guide(s) generated. Review questions and concepts.`
+                : 'Generate tailored AI study guides, mock technical questions, and behavioral interview strategies.'}
+            </p>
+          </div>
+        </div>
+        <div className="companion-card-right">
+          <Link
+            to="/candidate/interview-prep"
+            className="companion-action-btn btn-outline-purple"
+          >
+            <span>Launch Prep Hub</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       </div>
     </div>
   );
 }
+export default CandidateDashboard;

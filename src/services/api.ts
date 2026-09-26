@@ -2254,6 +2254,16 @@ export const eventsApi = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+  /**
+   * PUT /api/Events/{id}/meeting-link
+   * Updates the meeting link for an event.
+   */
+  updateMeetingLink: (id: string, meetingLink: string) =>
+    request<EventResponseDto>(`/Events/${id}/meeting-link`, {
+      method: 'PUT',
+      body: JSON.stringify({ meetingLink }),
+    }),
 };
 
 export interface GenerateScheduleRequestDto {

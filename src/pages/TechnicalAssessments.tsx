@@ -37,6 +37,9 @@ import {
   Video,
   MapPin,
   AlertCircle,
+  Link,
+  Copy,
+  Users,
 } from "lucide-react";
 import { ProblemStatementViewer } from "../components/assessment";
 
@@ -563,6 +566,217 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
       setScheduleError(errObj?.message || "Failed to schedule interview. The selected slot may already be booked.");
     } finally {
       setIsSubmittingSchedule(false);
+    }
+  };
+
+  // ==========================================
+  // MEETING LINK INLINE EDITING
+  // ==========================================
+  const [editingMeetingLinkId, setEditingMeetingLinkId] = useState<string | null>(null);
+  const [editingMeetingLinkValue, setEditingMeetingLinkValue] = useState<string>("");
+  const [isSavingMeetingLink, setIsSavingMeetingLink] = useState<boolean>(false);
+
+  const handleSaveMeetingLink = async (sub: SubmissionDetailDto) => {
+    if (!sub.scheduledEventId) {
+      showToast("Please schedule an interview for this candidate first before modifying the meeting link.");
+      return;
+    }
+    const trimmed = editingMeetingLinkValue.trim();
+    if (!trimmed) {
+      showToast("Meeting link cannot be empty.");
+      return;
+    }
+
+    try {
+      setIsSavingMeetingLink(true);
+      await eventsApi.updateMeetingLink(sub.scheduledEventId, trimmed);
+      setInterviewSelections((prev) =>
+        prev.map((item) =>
+          item.id === sub.id ? { ...item, scheduledLocation: trimmed } : item
+        )
+      );
+      setEditingMeetingLinkId(null);
+      showToast(`✓ Meeting link updated for ${sub.candidateName || "Candidate"} and synced to candidate dashboard!`);
+    } catch (err: unknown) {
+      console.error("Failed to update meeting link:", err);
+      const errObj = err as { message?: string };
+      showToast(errObj?.message || "Failed to update meeting link.");
+    } finally {
+      setIsSavingMeetingLink(false);
+    }
+  };
+
+  // ==========================================
+  // BATCH / MULTI-CANDIDATE SCHEDULING
+  // ==========================================
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState<boolean>(false);
+  const [batchDeptFilter, setBatchDeptFilter] = useState<string>("all");
+  const [batchDate, setBatchDate] = useState<string>("");
+  const [commonMeetingLinkInput, setCommonMeetingLinkInput] = useState<string>("");
+  const [batchCandidatesMap, setBatchCandidatesMap] = useState<
+    Record<string, { selected: boolean; startTime: string; endTime: string; meetingLink: string }>
+  >({});
+  const [isSubmittingBatch, setIsSubmittingBatch] = useState<boolean>(false);
+  const [batchError, setBatchError] = useState<string | null>(null);
+
+  const handleOpenBatchModal = async () => {
+    try {
+      const allEvents = await eventsApi.getEvents();
+      setExistingCalendarEvents(allEvents || []);
+    } catch {
+      // ignore
+    }
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateStr = tomorrow.toISOString().split("T")[0];
+    setBatchDate(dateStr);
+    setBatchDeptFilter("all");
+    setCommonMeetingLinkInput("");
+    setBatchError(null);
+
+    const initialMap: Record<string, { selected: boolean; startTime: string; endTime: string; meetingLink: string }> = {};
+    interviewSelections.forEach((s, idx) => {
+      const baseHour = 9 + Math.floor((idx * 30) / 60);
+      const baseMin = (idx * 30) % 60;
+      const endHour = 9 + Math.floor(((idx * 30) + 30) / 60);
+      const endMin = ((idx * 30) + 30) % 60;
+      const pad = (n: number) => n.toString().padStart(2, "0");
+      const defaultStart = `${pad(baseHour)}:${pad(baseMin)}`;
+      const defaultEnd = `${pad(endHour)}:${pad(endMin)}`;
+
+      let initialLink = s.scheduledLocation || "";
+      if (!initialLink) {
+        const safeName = (s.candidateName || "cand").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 6);
+        initialLink = `https://meet.google.com/int-${safeName || "slot"}-${idx + 101}`;
+      }
+
+      initialMap[s.id] = {
+        selected: false,
+        startTime: (s.scheduledTime && s.scheduledTime.includes("-")) ? s.scheduledTime.split("-")[0].trim() : defaultStart,
+        endTime: (s.scheduledTime && s.scheduledTime.includes("-")) ? s.scheduledTime.split("-")[1].trim() : defaultEnd,
+        meetingLink: initialLink,
+      };
+    });
+
+    setBatchCandidatesMap(initialMap);
+    setIsBatchModalOpen(true);
+  };
+
+  const handleToggleCandidateSelect = (subId: string) => {
+    setBatchCandidatesMap((prev) => ({
+      ...prev,
+      [subId]: {
+        ...prev[subId],
+        selected: !prev[subId]?.selected,
+      },
+    }));
+  };
+
+  const handleUpdateCandidateConfig = (
+    subId: string,
+    field: "startTime" | "endTime" | "meetingLink",
+    val: string
+  ) => {
+    setBatchCandidatesMap((prev) => ({
+      ...prev,
+      [subId]: {
+        ...prev[subId],
+        [field]: val,
+      },
+    }));
+  };
+
+  const handleApplyCommonLinkToSelected = () => {
+    const trimmed = commonMeetingLinkInput.trim();
+    if (!trimmed) {
+      showToast("Please enter a meeting link to apply.");
+      return;
+    }
+
+    let count = 0;
+    setBatchCandidatesMap((prev) => {
+      const next = { ...prev };
+      for (const id in next) {
+        if (next[id]?.selected) {
+          next[id] = {
+            ...next[id],
+            meetingLink: trimmed,
+          };
+          count++;
+        }
+      }
+      return next;
+    });
+
+    if (count === 0) {
+      showToast("No candidates are currently ticked. Please select candidates using the checkboxes first.");
+    } else {
+      showToast(`✓ Applied common meeting link to ${count} selected candidate${count > 1 ? "s" : ""}!`);
+    }
+  };
+
+  const handleApproveBatch = async () => {
+    const selected = interviewSelections.filter((s) => batchCandidatesMap[s.id]?.selected);
+    if (selected.length === 0) {
+      setBatchError("Please select at least one candidate to schedule.");
+      return;
+    }
+    if (!batchDate) {
+      setBatchError("Please select an interview date.");
+      return;
+    }
+
+    for (const s of selected) {
+      const cfg = batchCandidatesMap[s.id];
+      if (!cfg.startTime || !cfg.endTime) {
+        setBatchError(`Missing start or end time for ${s.candidateName || "Candidate"}.`);
+        return;
+      }
+      if (!cfg.meetingLink.trim()) {
+        setBatchError(`Missing meeting link for ${s.candidateName || "Candidate"}.`);
+        return;
+      }
+
+      const clash = checkClash(batchDate, cfg.startTime, cfg.endTime, s.scheduledEventId);
+      if (clash) {
+        setBatchError(
+          `Schedule Conflict for ${s.candidateName || "Candidate"}: Time (${cfg.startTime} - ${cfg.endTime}) clashes with '${clash.title}' (${clash.eventTime}) on Monthly Planner. Please select an available slot.`
+        );
+        return;
+      }
+    }
+
+    try {
+      setIsSubmittingBatch(true);
+      setBatchError(null);
+
+      for (const s of selected) {
+        const cfg = batchCandidatesMap[s.id];
+        await eventsApi.scheduleCandidateInterview({
+          candidateId: s.candidateId,
+          jobVacancyId: s.jobVacancyId,
+          eventDate: batchDate,
+          startTime: cfg.startTime,
+          endTime: cfg.endTime,
+          meetingMode: "Online",
+          location: cfg.meetingLink.trim(),
+          notes: `Batch scheduled interview for ${s.candidateName || "Candidate"}`,
+          existingEventId: s.scheduledEventId || undefined,
+        });
+      }
+
+      showToast(
+        `✓ Successfully scheduled ${selected.length} interview${selected.length > 1 ? "s" : ""} on ${batchDate}! Details sent to candidate dashboards and Monthly Planner.`
+      );
+      setIsBatchModalOpen(false);
+      await loadInterviewSelections();
+    } catch (err: unknown) {
+      console.error("Failed to batch schedule interviews:", err);
+      const errObj = err as { message?: string };
+      setBatchError(errObj?.message || "Failed to schedule candidate interviews. Please check time slots.");
+    } finally {
+      setIsSubmittingBatch(false);
     }
   };
 
@@ -3141,6 +3355,81 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
             </div>
           </div>
 
+          {/* Action Bar: Batch Schedule Button between Filters and Table */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              background: "linear-gradient(135deg, #fbfbfe 0%, #f5f3ff 100%)",
+              border: "1px solid #e0e7ff",
+              borderRadius: "14px",
+              padding: "14px 20px",
+              marginBottom: "16px",
+              boxShadow: "0 2px 6px rgba(99, 102, 241, 0.05)",
+            }}
+          >
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "8px",
+                    background: "#7c3aed",
+                    color: "#ffffff",
+                  }}
+                >
+                  <CalendarPlus size={15} />
+                </span>
+                <h4 style={{ margin: 0, fontSize: "14px", fontWeight: 800, color: "#1e1b4b" }}>
+                  Candidate Interview Scheduling
+                </h4>
+                <span
+                  style={{
+                    background: "#ede9fe",
+                    color: "#6d28d9",
+                    padding: "2px 8px",
+                    borderRadius: "999px",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                  }}
+                >
+                  {interviewSelections.length} Shortlisted
+                </span>
+              </div>
+              <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#64748b" }}>
+                Select multiple candidates to coordinate interview dates, assign clash-free time slots, and dispatch meeting links.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleOpenBatchModal}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "9px 20px",
+                borderRadius: "10px",
+                border: "none",
+                background: "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)",
+                color: "#ffffff",
+                fontSize: "13px",
+                fontWeight: 700,
+                cursor: "pointer",
+                boxShadow: "0 4px 12px rgba(124, 58, 237, 0.25)",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <CalendarPlus size={16} />
+              <span>Schedule Selected Candidates</span>
+            </button>
+          </div>
+
           {/* Table or Empty State */}
           {loadingInterviewSelections ? (
             <div
@@ -3404,6 +3693,14 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                           <th
                             style={{
                               padding: "14px 18px",
+                              textAlign: "left",
+                            }}
+                          >
+                            Meeting Link
+                          </th>
+                          <th
+                            style={{
+                              padding: "14px 18px",
                               textAlign: "center",
                             }}
                           >
@@ -3608,6 +3905,157 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                   >
                                     <CheckCircle size={13} color="#059669" />
                                     <span>Ready for Interview</span>
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Meeting Link */}
+                              <td style={{ padding: "14px 18px" }}>
+                                {editingMeetingLinkId === s.id ? (
+                                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                    <input
+                                      type="text"
+                                      value={editingMeetingLinkValue}
+                                      onChange={(e) => setEditingMeetingLinkValue(e.target.value)}
+                                      placeholder="https://meet.google.com/..."
+                                      autoFocus
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") handleSaveMeetingLink(s);
+                                        if (e.key === "Escape") setEditingMeetingLinkId(null);
+                                      }}
+                                      style={{
+                                        padding: "5px 8px",
+                                        borderRadius: "6px",
+                                        border: "1px solid #7c3aed",
+                                        fontSize: "12px",
+                                        width: "180px",
+                                        outline: "none",
+                                      }}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSaveMeetingLink(s)}
+                                      disabled={isSavingMeetingLink}
+                                      title="Save meeting link"
+                                      style={{
+                                        border: "none",
+                                        background: "#00b074",
+                                        color: "#ffffff",
+                                        padding: "5px 7px",
+                                        borderRadius: "6px",
+                                        cursor: "pointer",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                      }}
+                                    >
+                                      <CheckCircle size={13} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingMeetingLinkId(null)}
+                                      title="Cancel"
+                                      style={{
+                                        border: "1px solid #cbd5e1",
+                                        background: "#ffffff",
+                                        color: "#64748b",
+                                        padding: "5px 7px",
+                                        borderRadius: "6px",
+                                        cursor: "pointer",
+                                        fontSize: "11px",
+                                      }}
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                ) : s.scheduledLocation ? (
+                                  <div
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "6px",
+                                      background: "#f0fdf4",
+                                      border: "1px solid #bbf7d0",
+                                      padding: "4px 8px",
+                                      borderRadius: "8px",
+                                    }}
+                                  >
+                                    <Video size={13} color="#16a34a" />
+                                    <a
+                                      href={
+                                        s.scheduledLocation.startsWith("http")
+                                          ? s.scheduledLocation
+                                          : `https://${s.scheduledLocation}`
+                                      }
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      title={`Open meeting link: ${s.scheduledLocation}`}
+                                      style={{
+                                        color: "#15803d",
+                                        textDecoration: "underline",
+                                        fontSize: "12px",
+                                        fontWeight: 650,
+                                        maxWidth: "160px",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        whiteSpace: "nowrap",
+                                        display: "inline-block",
+                                      }}
+                                    >
+                                      {s.scheduledLocation.replace(/^https?:\/\//, "")}
+                                    </a>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingMeetingLinkId(s.id);
+                                        setEditingMeetingLinkValue(s.scheduledLocation || "");
+                                      }}
+                                      title="Edit meeting link"
+                                      style={{
+                                        border: "none",
+                                        background: "transparent",
+                                        color: "#16a34a",
+                                        cursor: "pointer",
+                                        padding: "2px",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                      }}
+                                    >
+                                      <Pencil size={11} />
+                                    </button>
+                                  </div>
+                                ) : s.scheduledEventId ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingMeetingLinkId(s.id);
+                                      setEditingMeetingLinkValue("");
+                                    }}
+                                    style={{
+                                      border: "1px dashed #cbd5e1",
+                                      background: "#f8fafc",
+                                      color: "#64748b",
+                                      borderRadius: "6px",
+                                      padding: "4px 8px",
+                                      fontSize: "11.5px",
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "4px",
+                                    }}
+                                  >
+                                    <Link size={12} />
+                                    <span>Add Link</span>
+                                  </button>
+                                ) : (
+                                  <span
+                                    style={{
+                                      color: "#94a3b8",
+                                      fontSize: "12px",
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    Not scheduled
                                   </span>
                                 )}
                               </td>
@@ -7078,6 +7526,657 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       : "Approve & Schedule Interview"}
                 </span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* BATCH CANDIDATE INTERVIEWS SCHEDULING MODAL */}
+      {/* ========================================== */}
+      {isBatchModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(15, 23, 42, 0.65)",
+            backdropFilter: "blur(4px)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+          onClick={() => {
+            if (!isSubmittingBatch) setIsBatchModalOpen(false);
+          }}
+        >
+          <div
+            className="popup-card"
+            style={{
+              maxWidth: "1080px",
+              width: "100%",
+              background: "#ffffff",
+              borderRadius: "20px",
+              padding: "28px",
+              boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.3)",
+              maxHeight: "92vh",
+              overflowY: "auto",
+              position: "relative",
+              display: "flex",
+              flexDirection: "column",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginBottom: "20px",
+                borderBottom: "1px solid #f1f5f9",
+                paddingBottom: "16px",
+                gap: "16px",
+                flexWrap: "wrap",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    background: "#f5f3ff",
+                    color: "#7c3aed",
+                    border: "1px solid #ddd6fe",
+                    padding: "3px 10px",
+                    borderRadius: "999px",
+                    fontSize: "11px",
+                    fontWeight: 800,
+                    letterSpacing: "0.5px",
+                    textTransform: "uppercase",
+                    marginBottom: "6px",
+                  }}
+                >
+                  <Users size={12} />
+                  <span>Batch Candidate Scheduling</span>
+                </div>
+                <h2
+                  style={{
+                    fontSize: "20px",
+                    fontWeight: 800,
+                    color: "#0f172a",
+                    margin: 0,
+                  }}
+                >
+                  Schedule Candidate Interviews
+                </h2>
+                <p
+                  style={{
+                    fontSize: "13px",
+                    color: "#64748b",
+                    margin: "4px 0 0 0",
+                  }}
+                >
+                  Select candidates with ticks, assign interview slots, and dispatch meeting links directly to candidate dashboards and the Monthly Planner.
+                </p>
+              </div>
+
+              {/* Top Right Corner Feature: Apply Same Link to Selected Candidates */}
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    background: "#f8fafc",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: "10px",
+                    padding: "4px 8px 4px 12px",
+                  }}
+                >
+                  <Link size={14} color="#64748b" />
+                  <input
+                    type="text"
+                    placeholder="Paste common meeting link here..."
+                    value={commonMeetingLinkInput}
+                    onChange={(e) => setCommonMeetingLinkInput(e.target.value)}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      outline: "none",
+                      fontSize: "12.5px",
+                      width: "230px",
+                      color: "#0f172a",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCommonLinkToSelected}
+                    title="Apply this common meeting link to all currently checked candidates"
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      border: "none",
+                      background: "#7c3aed",
+                      color: "#ffffff",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      whiteSpace: "nowrap",
+                      boxShadow: "0 2px 4px rgba(124, 58, 237, 0.2)",
+                    }}
+                  >
+                    <Copy size={12} />
+                    <span>Apply Same Link to Selected</span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsBatchModalOpen(false)}
+                  disabled={isSubmittingBatch}
+                  style={{
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "10px",
+                    width: "34px",
+                    height: "34px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#64748b",
+                    cursor: "pointer",
+                    fontSize: "16px",
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Filter and Date Row */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                background: "#f8fafc",
+                borderRadius: "12px",
+                padding: "12px 18px",
+                border: "1px solid #e2e8f0",
+                marginBottom: "16px",
+                gap: "14px",
+                flexWrap: "wrap",
+              }}
+            >
+              {/* Department Dropdown Selection */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Filter size={14} color="#64748b" />
+                <label style={{ fontSize: "13px", fontWeight: 700, color: "#334155" }}>
+                  Filter Department:
+                </label>
+                <select
+                  value={batchDeptFilter}
+                  onChange={(e) => setBatchDeptFilter(e.target.value)}
+                  style={{
+                    padding: "7px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #cbd5e1",
+                    background: "#ffffff",
+                    fontSize: "12.5px",
+                    color: "#0f172a",
+                    fontWeight: 600,
+                    outline: "none",
+                  }}
+                >
+                  <option value="all">
+                    All Departments ({interviewSelections.length})
+                  </option>
+                  {Array.from(
+                    new Set(
+                      interviewSelections
+                        .map((s) => s.department || "General")
+                        .filter(Boolean)
+                    )
+                  ).map((d) => (
+                    <option key={d} value={d}>
+                      {d} (
+                      {
+                        interviewSelections.filter(
+                          (s) => (s.department || "General") === d
+                        ).length
+                      }
+                      )
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Target Interview Date */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <ClockIcon />
+                <label style={{ fontSize: "13px", fontWeight: 700, color: "#334155" }}>
+                  Interview Date:
+                </label>
+                <input
+                  type="date"
+                  value={batchDate}
+                  min={new Date().toISOString().split("T")[0]}
+                  onChange={(e) => setBatchDate(e.target.value)}
+                  style={{
+                    padding: "7px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #cbd5e1",
+                    background: "#ffffff",
+                    fontSize: "12.5px",
+                    color: "#0f172a",
+                    fontWeight: 600,
+                    outline: "none",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Candidates Table in Form */}
+            <div
+              style={{
+                border: "1px solid #e2e8f0",
+                borderRadius: "14px",
+                overflow: "hidden",
+                marginBottom: "20px",
+              }}
+            >
+              <div style={{ overflowX: "auto", maxHeight: "48vh" }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    textAlign: "left",
+                    fontSize: "12.5px",
+                  }}
+                >
+                  <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                    <tr
+                      style={{
+                        background: "#f1f5f9",
+                        borderBottom: "1px solid #cbd5e1",
+                        color: "#334155",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {/* Checkbox Header */}
+                      <th style={{ padding: "10px 14px", width: "36px", textAlign: "center" }}>
+                        {(() => {
+                          const visible = interviewSelections.filter(
+                            (s) =>
+                              batchDeptFilter === "all" ||
+                              (s.department || "General") === batchDeptFilter
+                          );
+                          const allChecked =
+                            visible.length > 0 &&
+                            visible.every((s) => batchCandidatesMap[s.id]?.selected);
+                          return (
+                            <input
+                              type="checkbox"
+                              checked={allChecked}
+                              onChange={(e) => {
+                                const checkVal = e.target.checked;
+                                setBatchCandidatesMap((prev) => {
+                                  const next = { ...prev };
+                                  visible.forEach((s) => {
+                                    if (next[s.id]) {
+                                      next[s.id] = { ...next[s.id], selected: checkVal };
+                                    }
+                                  });
+                                  return next;
+                                });
+                              }}
+                              style={{
+                                cursor: "pointer",
+                                width: "16px",
+                                height: "16px",
+                                accentColor: "#7c3aed",
+                              }}
+                            />
+                          );
+                        })()}
+                      </th>
+                      <th style={{ padding: "10px 14px" }}>Candidate</th>
+                      <th style={{ padding: "10px 14px" }}>Job Requisition &amp; Dept</th>
+                      <th style={{ padding: "10px 14px", textAlign: "center" }}>Interview Status</th>
+                      <th style={{ padding: "10px 14px", width: "135px" }}>Start Time</th>
+                      <th style={{ padding: "10px 14px", width: "135px" }}>End Time</th>
+                      <th style={{ padding: "10px 14px" }}>Meeting Link</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      const visible = interviewSelections.filter(
+                        (s) =>
+                          batchDeptFilter === "all" ||
+                          (s.department || "General") === batchDeptFilter
+                      );
+
+                      if (visible.length === 0) {
+                        return (
+                          <tr>
+                            <td
+                              colSpan={7}
+                              style={{
+                                padding: "36px",
+                                textAlign: "center",
+                                color: "#64748b",
+                              }}
+                            >
+                              No shortlisted candidates found for this department.
+                            </td>
+                          </tr>
+                        );
+                      }
+
+                      return visible.map((s) => {
+                        const cfg = batchCandidatesMap[s.id] || {
+                          selected: false,
+                          startTime: "09:00",
+                          endTime: "09:30",
+                          meetingLink: "",
+                        };
+                        const isSelected = Boolean(cfg.selected);
+                        const clash = checkClash(batchDate, cfg.startTime, cfg.endTime, s.scheduledEventId);
+
+                        return (
+                          <tr
+                            key={s.id}
+                            style={{
+                              borderBottom: "1px solid #f1f5f9",
+                              background: isSelected ? "#faf5ff" : "#ffffff",
+                              transition: "background 0.1s ease",
+                            }}
+                          >
+                            {/* Checkbox / Tick */}
+                            <td style={{ padding: "12px 14px", textAlign: "center" }}>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleToggleCandidateSelect(s.id)}
+                                style={{
+                                  cursor: "pointer",
+                                  width: "16px",
+                                  height: "16px",
+                                  accentColor: "#7c3aed",
+                                }}
+                              />
+                            </td>
+
+                            {/* Candidate */}
+                            <td style={{ padding: "12px 14px" }}>
+                              <div style={{ fontWeight: 700, color: "#0f172a" }}>
+                                {s.candidateName || "Candidate"}
+                              </div>
+                              <div style={{ fontSize: "11px", color: "#64748b" }}>
+                                {s.candidateEmail}
+                              </div>
+                            </td>
+
+                            {/* Job Requisition & Dept */}
+                            <td style={{ padding: "12px 14px" }}>
+                              <div style={{ fontWeight: 650, color: "#1e293b" }}>
+                                {s.jobTitle || "Job Requisition"}
+                              </div>
+                              <span
+                                style={{
+                                  fontSize: "10.5px",
+                                  background: "#f1f5f9",
+                                  padding: "2px 6px",
+                                  borderRadius: "4px",
+                                  color: "#475569",
+                                  border: "1px solid #e2e8f0",
+                                }}
+                              >
+                                {s.department || "General"}
+                              </span>
+                            </td>
+
+                            {/* Interview Status */}
+                            <td style={{ padding: "12px 14px", textAlign: "center" }}>
+                              {s.scheduledEventId || s.status?.toLowerCase() === "selected" ? (
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "4px",
+                                    padding: "3px 8px",
+                                    borderRadius: "999px",
+                                    background: "#f5f3ff",
+                                    color: "#7c3aed",
+                                    border: "1px solid #ddd6fe",
+                                    fontSize: "11px",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  <Star size={11} fill="#7c3aed" color="#7c3aed" />
+                                  <span>Selected</span>
+                                </span>
+                              ) : (
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "4px",
+                                    padding: "3px 8px",
+                                    borderRadius: "999px",
+                                    background: "#ecfdf5",
+                                    color: "#059669",
+                                    border: "1px solid #a7f3d0",
+                                    fontSize: "11px",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  <CheckCircle size={11} color="#059669" />
+                                  <span>Ready for Interview</span>
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Start Time */}
+                            <td style={{ padding: "12px 14px" }}>
+                              <input
+                                type="time"
+                                value={cfg.startTime}
+                                disabled={!isSelected}
+                                onChange={(e) =>
+                                  handleUpdateCandidateConfig(s.id, "startTime", e.target.value)
+                                }
+                                style={{
+                                  padding: "6px 8px",
+                                  borderRadius: "6px",
+                                  border: `1px solid ${isSelected && clash ? "#ef4444" : "#cbd5e1"}`,
+                                  background: isSelected ? "#ffffff" : "#f8fafc",
+                                  fontSize: "12px",
+                                  outline: "none",
+                                  width: "100%",
+                                  boxSizing: "border-box",
+                                }}
+                              />
+                            </td>
+
+                            {/* End Time */}
+                            <td style={{ padding: "12px 14px" }}>
+                              <input
+                                type="time"
+                                value={cfg.endTime}
+                                disabled={!isSelected}
+                                onChange={(e) =>
+                                  handleUpdateCandidateConfig(s.id, "endTime", e.target.value)
+                                }
+                                style={{
+                                  padding: "6px 8px",
+                                  borderRadius: "6px",
+                                  border: `1px solid ${isSelected && clash ? "#ef4444" : "#cbd5e1"}`,
+                                  background: isSelected ? "#ffffff" : "#f8fafc",
+                                  fontSize: "12px",
+                                  outline: "none",
+                                  width: "100%",
+                                  boxSizing: "border-box",
+                                }}
+                              />
+                              {isSelected && clash && (
+                                <div
+                                  style={{
+                                    color: "#dc2626",
+                                    fontSize: "10.5px",
+                                    fontWeight: 700,
+                                    marginTop: "4px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "3px",
+                                  }}
+                                >
+                                  <AlertTriangle size={11} color="#dc2626" />
+                                  <span>Clash: '{clash.title}' ({clash.eventTime})</span>
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Meeting Link */}
+                            <td style={{ padding: "12px 14px" }}>
+                              <input
+                                type="text"
+                                placeholder="https://meet.google.com/..."
+                                value={cfg.meetingLink}
+                                disabled={!isSelected}
+                                onChange={(e) =>
+                                  handleUpdateCandidateConfig(s.id, "meetingLink", e.target.value)
+                                }
+                                style={{
+                                  padding: "6px 10px",
+                                  borderRadius: "6px",
+                                  border: "1px solid #cbd5e1",
+                                  background: isSelected ? "#ffffff" : "#f8fafc",
+                                  fontSize: "12px",
+                                  width: "100%",
+                                  boxSizing: "border-box",
+                                  outline: "none",
+                                }}
+                              />
+                            </td>
+                          </tr>
+                        );
+                      });
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Error Banner */}
+            {batchError && (
+              <div
+                style={{
+                  background: "#fff1f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: "10px",
+                  padding: "10px 14px",
+                  marginBottom: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  color: "#991b1b",
+                  fontSize: "12.5px",
+                }}
+              >
+                <AlertTriangle size={16} color="#dc2626" style={{ flexShrink: 0 }} />
+                <span>{batchError}</span>
+              </div>
+            )}
+
+            {/* Modal Footer */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                borderTop: "1px solid #f1f5f9",
+                paddingTop: "16px",
+                flexWrap: "wrap",
+                gap: "12px",
+              }}
+            >
+              <div style={{ fontSize: "13px", color: "#64748b" }}>
+                <strong>
+                  {interviewSelections.filter((s) => batchCandidatesMap[s.id]?.selected).length}
+                </strong>{" "}
+                candidate(s) ticked for interview scheduling on <strong>{batchDate}</strong>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <button
+                  type="button"
+                  onClick={() => setIsBatchModalOpen(false)}
+                  disabled={isSubmittingBatch}
+                  style={{
+                    padding: "9px 18px",
+                    borderRadius: "10px",
+                    border: "1px solid #cbd5e1",
+                    background: "#ffffff",
+                    color: "#475569",
+                    fontSize: "13px",
+                    fontWeight: 650,
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleApproveBatch}
+                  disabled={
+                    isSubmittingBatch ||
+                    interviewSelections.filter((s) => batchCandidatesMap[s.id]?.selected).length === 0
+                  }
+                  style={{
+                    padding: "9px 24px",
+                    borderRadius: "10px",
+                    border: "none",
+                    background: "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)",
+                    color: "#ffffff",
+                    fontSize: "13px",
+                    fontWeight: 800,
+                    cursor:
+                      isSubmittingBatch ||
+                      interviewSelections.filter((s) => batchCandidatesMap[s.id]?.selected).length === 0
+                        ? "not-allowed"
+                        : "pointer",
+                    opacity:
+                      isSubmittingBatch ||
+                      interviewSelections.filter((s) => batchCandidatesMap[s.id]?.selected).length === 0
+                        ? 0.6
+                        : 1,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    boxShadow: "0 2px 8px rgba(124, 58, 237, 0.25)",
+                  }}
+                >
+                  <CheckCircle size={15} />
+                  <span>
+                    {isSubmittingBatch
+                      ? "Scheduling Interviews..."
+                      : `Approve (${
+                          interviewSelections.filter((s) => batchCandidatesMap[s.id]?.selected).length
+                        } Selected)`}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

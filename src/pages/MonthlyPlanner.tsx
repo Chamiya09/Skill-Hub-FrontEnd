@@ -284,6 +284,8 @@ export const MonthlyPlanner: React.FC = () => {
     e.preventDefault();
     googleCalendarService.setSelectedCalendarId(settingsCalendarIdInput);
     setSelectedCalendarId(settingsCalendarIdInput);
+    googleCalendarService.clearCache();
+    fetchHolidays();
     setIsSettingsModalOpen(false);
     showToast('Holiday region updated. Syncing national holidays...', 'success');
   };
@@ -845,14 +847,14 @@ export const MonthlyPlanner: React.FC = () => {
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '5px',
+                gap: '6px',
                 fontSize: '12.5px',
                 fontWeight: 650,
                 boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
               }}
             >
               <Globe size={15} />
-              <span>Country</span>
+              <span>Holiday Region</span>
             </button>
           </div>
         </div>
@@ -1533,6 +1535,20 @@ export const MonthlyPlanner: React.FC = () => {
                     >
                       Official Holiday • {currentCalendarOption.country}
                     </span>
+                    {holiday.source && (
+                      <span
+                        style={{
+                          fontSize: '10px',
+                          fontWeight: 700,
+                          color: holiday.source === 'GoogleCalendar' ? '#15803d' : '#1d4ed8',
+                          background: holiday.source === 'GoogleCalendar' ? '#dcfce7' : '#dbeafe',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        {holiday.source === 'GoogleCalendar' ? 'Google Calendar API' : 'Sri Lanka Gazette'}
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: '15px', fontWeight: 800, color: '#78350f' }}>
                     {holiday.title}
@@ -2372,11 +2388,11 @@ export const MonthlyPlanner: React.FC = () => {
           <div
             className="popup-card"
             style={{
-              maxWidth: '480px',
+              maxWidth: '460px',
               width: '100%',
               background: '#ffffff',
               borderRadius: '16px',
-              padding: '26px',
+              padding: '24px',
               boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
               maxHeight: '90vh',
               overflowY: 'auto',
@@ -2409,7 +2425,7 @@ export const MonthlyPlanner: React.FC = () => {
                 </div>
                 <div>
                   <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                    Holiday Region / Country
+                    Holiday Region
                   </h3>
                   <p style={{ fontSize: '12.5px', color: '#64748b', margin: 0 }}>
                     Select which country's public holidays to display on your planner.
@@ -2469,23 +2485,23 @@ export const MonthlyPlanner: React.FC = () => {
                 </select>
               </div>
 
-              {/* Secure backend notice */}
+              {/* Backend Integration Info Notice */}
               <div
                 style={{
-                  background: '#f0fdf4',
-                  border: '1px solid #bbf7d0',
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
                   borderRadius: '10px',
                   padding: '12px 14px',
                   fontSize: '12px',
-                  color: '#166534',
+                  color: '#475569',
                   lineHeight: 1.5,
                 }}
               >
-                <div style={{ fontWeight: 700, color: '#15803d', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Sparkles size={14} color="#16a34a" />
-                  <span>Secure Server Integration</span>
+                <div style={{ fontWeight: 700, color: '#1e293b', marginBottom: '3px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Sparkles size={14} color="#00b074" />
+                  <span>Secure Backend Integration</span>
                 </div>
-                National holidays are fetched and cached directly through your secure ASP.NET Core backend. No API keys are required on the browser.
+                Public and national holidays are fetched directly via your backend server. API keys and providers are configured securely in <code>appsettings.json</code>.
               </div>
 
               {/* Action Buttons */}

@@ -2164,6 +2164,19 @@ export interface NationalHolidayDto {
   date: string; // "YYYY-MM-DD"
   country: string;
   countryCode: string;
+  source?: string;
+}
+
+export interface HolidayConfigDto {
+  hasApiKey: boolean;
+  maskedApiKey?: string | null;
+  source: string;
+  isGoogleConnected: boolean;
+  lastError?: string | null;
+}
+
+export interface UpdateHolidayConfigDto {
+  apiKey?: string;
 }
 
 export const eventsApi = {
@@ -2200,6 +2213,22 @@ export const eventsApi = {
     const queryString = q.toString() ? `?${q.toString()}` : '';
     return request<NationalHolidayDto[]>(`/Events/holidays${queryString}`);
   },
+
+  /**
+   * GET /api/Events/holidays/config
+   * Retrieves Google Calendar API configuration & status.
+   */
+  getHolidayConfig: () => request<HolidayConfigDto>('/Events/holidays/config'),
+
+  /**
+   * POST /api/Events/holidays/config
+   * Updates and validates the Google Calendar API key on backend.
+   */
+  updateHolidayConfig: (payload: UpdateHolidayConfigDto) =>
+    request<HolidayConfigDto>('/Events/holidays/config', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 
   /**
    * GET /api/Events/{id}

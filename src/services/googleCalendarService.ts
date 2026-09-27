@@ -7,7 +7,7 @@
  * caching results for 24 hours.
  */
 
-import { eventsApi, type NationalHolidayDto } from './api';
+import { eventsApi, type NationalHolidayDto, type HolidayConfigDto } from './api';
 
 export interface GoogleCalendarHoliday {
   id: string;
@@ -17,6 +17,7 @@ export interface GoogleCalendarHoliday {
   calendarId: string;
   countryName: string;
   countryCode: string;
+  source?: string;
 }
 
 export interface HolidayCalendarOption {
@@ -129,9 +130,33 @@ export const googleCalendarService = {
       calendarId: countryCode,
       countryName: h.country || matchedOption.country,
       countryCode: h.countryCode || countryCode,
+      source: h.source,
     }));
 
     holidayCache.set(cacheKey, holidays);
     return holidays;
+  },
+
+  /**
+   * Clears in-memory holiday cache.
+   */
+  clearCache(): void {
+    holidayCache.clear();
+  },
+
+  /**
+   * Fetches Google Calendar API configuration from ASP.NET Core backend.
+   */
+  async getHolidayConfig(): Promise<HolidayConfigDto> {
+    return eventsApi.getHolidayConfig();
+  },
+
+  /**
+   * Updates Google Calendar API key on ASP.NET Core backend and flushes cache.
+   */
+  async updateHolidayConfig(apiKey: string): Promise<HolidayConfigDto> {
+    const res = await eventsApi.updateHolidayConfig({ apiKey });
+    holidayCache.clear();
+    return res;
   },
 };

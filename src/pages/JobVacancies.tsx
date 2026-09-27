@@ -13,6 +13,7 @@ import { JobFormModal, type JobFormData } from '../components/jobs/JobFormModal'
 import { CandidatesListModal } from '../components/candidates/CandidatesListModal';
 import { jobsApi, type JobDto } from '../services/api';
 import { TableRowSkeleton } from '../components/common/SkeletonCard';
+import './JobVacanciesFull.css';
 
 export interface JobVacancyItem {
   id: string;
@@ -220,6 +221,9 @@ export const JobVacancies = () => {
           ========================================================= */}
       <div className="vacancies-page-header">
         <div className="vacancies-header-title-box">
+          <span className="vacancies-header-eyebrow">
+            <BuildingIcon /> Recruitment workspace
+          </span>
           <div className="vacancies-title-row">
             <h1 className="vacancies-page-title">Job Vacancies</h1>
             <span className="vacancies-count-badge">
@@ -245,6 +249,13 @@ export const JobVacancies = () => {
           2. SEARCH & FILTER CONTROLS BAR
           ========================================================= */}
       <div className="vacancies-filter-card">
+        <div className="vacancies-filter-heading">
+          <div>
+            <span>Vacancy management</span>
+            <h2>Find and manage positions</h2>
+          </div>
+          <strong>{filteredVacancies.length} of {vacancies.length} shown</strong>
+        </div>
         <div className="vacancies-search-group">
           <div className="vacancies-input-wrapper">
             <div className="vacancies-input-icon">

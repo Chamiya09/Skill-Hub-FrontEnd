@@ -17,6 +17,8 @@ import {
   Globe,
   Building2,
   Briefcase,
+  Search,
+  RotateCcw,
 } from 'lucide-react';
 import {
   eventsApi,
@@ -136,10 +138,13 @@ export const MonthlyPlanner: React.FC = () => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Department Filter State (Only departments with active vacancies)
+  // Department & Requisition Filter State (matching Job Vacancies System UI)
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [activeDepartments, setActiveDepartments] = useState<string[]>([]);
   const [, setDepartmentsLoading] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedVacancyId, setSelectedVacancyId] = useState<string>('All');
+  const [eventTypeFilter, setEventTypeFilter] = useState<'All' | 'Interviews' | 'General' | 'Holidays'>('All');
 
   // Company vacancies for event assignment
   const [vacancies, setVacancies] = useState<JobDto[]>([]);
@@ -324,16 +329,76 @@ export const MonthlyPlanner: React.FC = () => {
     setSelectedDateStr(formatDateOnlyString(today));
   };
 
+  // Check if an event is an interview / evaluation
+  const isInterviewEvent = useCallback((ev: EventResponseDto) => {
+    return (
+      Boolean(ev.jobVacancyId) ||
+      /interview|assessment|screening|technical|candidate|round/i.test(ev.title) ||
+      /interview|assessment|screening|technical|candidate|round/i.test(ev.description || '')
+    );
+  }, []);
+
+  const interviewCount = useMemo(() => {
+    return events.filter(isInterviewEvent).length;
+  }, [events, isInterviewEvent]);
+
+  const generalCount = useMemo(() => {
+    return Math.max(0, events.length - interviewCount);
+  }, [events.length, interviewCount]);
+
+  // Filtered Events according to Search Query, Vacancy, and Type Tabs
+  const filteredEvents = useMemo(() => {
+    return events.filter((ev) => {
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchesTitle = ev.title?.toLowerCase().includes(q);
+        const matchesDesc = ev.description?.toLowerCase().includes(q);
+        const matchesDept = ev.department?.toLowerCase().includes(q);
+        const matchesTime = ev.eventTime?.toLowerCase().includes(q);
+        if (!matchesTitle && !matchesDesc && !matchesDept && !matchesTime) {
+          return false;
+        }
+      }
+      if (selectedVacancyId && selectedVacancyId !== 'All') {
+        if (ev.jobVacancyId !== selectedVacancyId) {
+          return false;
+        }
+      }
+      if (eventTypeFilter === 'Interviews') {
+        if (!isInterviewEvent(ev)) return false;
+      } else if (eventTypeFilter === 'General') {
+        if (isInterviewEvent(ev)) return false;
+      } else if (eventTypeFilter === 'Holidays') {
+        return false;
+      }
+      return true;
+    });
+  }, [events, searchQuery, selectedVacancyId, eventTypeFilter, isInterviewEvent]);
+
+  const hasActiveFilters = Boolean(
+    searchQuery.trim() ||
+    selectedDepartment ||
+    (selectedVacancyId && selectedVacancyId !== 'All') ||
+    eventTypeFilter !== 'All'
+  );
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setSelectedDepartment('');
+    setSelectedVacancyId('All');
+    setEventTypeFilter('All');
+  };
+
   // Group events by date string "YYYY-MM-DD"
   const eventsByDate = useMemo(() => {
     const map = new Map<string, EventResponseDto[]>();
-    for (const ev of events) {
+    for (const ev of filteredEvents) {
       const list = map.get(ev.eventDate) || [];
       list.push(ev);
       map.set(ev.eventDate, list);
     }
     return map;
-  }, [events]);
+  }, [filteredEvents]);
 
   // Events on the currently selected date
   const selectedDayEvents = useMemo(() => {
@@ -586,145 +651,67 @@ export const MonthlyPlanner: React.FC = () => {
         </div>
       )}
 
-      {/* 1. Header Banner */}
-      <div className="pipeline-selector-header monthly-planner-header" style={{ marginBottom: '24px' }}>
-        <div className="pipeline-header-title-box">
-          <div
-            className="badge-tag"
-            style={{
-              background: '#ecfdf5',
-              color: '#059669',
-              border: '1px solid #a7f3d0',
-            }}
-          >
-            <Sparkles size={13} />
-            <span>INTERVIEW SCHEDULING MODULE</span>
+      {/* =========================================================
+          1. TOP COMPONENT: PLANNER DASHBOARD CARD
+          (Matches Job Vacancies & Candidate Assessments Design System)
+          ========================================================= */}
+      <section className="planner-dashboard-card" aria-labelledby="planner-dashboard-title">
+        <div className="planner-dashboard-header">
+          <div>
+            <span className="planner-dashboard-eyebrow">Corporate calendar & schedule</span>
+            <h2 id="planner-dashboard-title">Monthly Planner Dashboard</h2>
+            <p>Coordinate technical interviews, candidate evaluations, company events, and recruitment milestones with real-time monthly scheduling and Google Calendar holidays.</p>
           </div>
-          <h1
-            className="pipeline-page-title"
-            style={{
-              fontSize: '26px',
-              fontWeight: 800,
-              color: '#0f172a',
-              marginTop: '8px',
-            }}
-          >
-            Monthly Planner
-          </h1>
-          <p
-            className="pipeline-page-subtitle"
-            style={{ fontSize: '14px', color: '#64748b', maxWidth: '850px' }}
-          >
-            Manage and coordinate upcoming technical interviews, candidate evaluations, and recruitment milestones
-            with an internal, real-time monthly calendar view.
-          </p>
+          <div className="planner-dashboard-header-actions">
+            <span className="planner-dashboard-live">
+              <span /> Live calendar
+            </span>
+            <button
+              type="button"
+              className="btn-primary planner-create-btn"
+              onClick={() => handleOpenAddEventModal(selectedDateStr)}
+            >
+              <Plus size={16} strokeWidth={2.5} />
+              <span>Add Event</span>
+            </button>
+          </div>
         </div>
 
-        {/* Quick Month Metrics Summary */}
-        <div className="monthly-planner-header-metrics" style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-          <div
-            className="monthly-planner-header-metric monthly-planner-header-metric--events"
-            style={{
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '12px',
-              padding: '10px 18px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-            }}
-          >
-            <div
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '8px',
-                background: '#eff6ff',
-                color: '#2563eb',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <CalendarDays size={18} />
-            </div>
+        <div className="planner-summary-grid">
+          <article className="planner-summary-card summary-total">
+            <div className="summary-icon"><CalendarDays size={22} /></div>
             <div>
-              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>
-                Total Events
-              </div>
-              <div style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>
-                {events.length}
-              </div>
+              <span>Total events</span>
+              <strong>{events.length}</strong>
+              <small>{currentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} schedule</small>
             </div>
-          </div>
-
-          {holidaysEnabled && (
-            <div
-              className="monthly-planner-header-metric monthly-planner-header-metric--holidays"
-              style={{
-                background: '#ffffff',
-                border: '1px solid #fde68a',
-                borderRadius: '12px',
-                padding: '10px 18px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-              }}
-            >
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '8px',
-                  background: '#fffbeb',
-                  color: '#b45309',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '18px',
-                }}
-              >
-                {currentCalendarOption.flag}
-              </div>
-              <div>
-                <div style={{ fontSize: '11px', color: '#92400e', fontWeight: 700, textTransform: 'uppercase' }}>
-                  {currentCalendarOption.code} Holidays
-                </div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: '#78350f' }}>
-                  {holidays.length}
-                </div>
-              </div>
+          </article>
+          <article className="planner-summary-card summary-active">
+            <div className="summary-icon"><Sparkles size={22} /></div>
+            <div>
+              <span>Interviews & Pipeline</span>
+              <strong>{interviewCount}</strong>
+              <small>Technical evaluations</small>
             </div>
-          )}
-
-          <button
-            className="monthly-planner-refresh"
-            type="button"
-            onClick={() => {
-              fetchEvents();
-              fetchHolidays();
-            }}
-            disabled={loading}
-            title="Refresh events and holidays"
-            style={{
-              padding: '10px',
-              borderRadius: '10px',
-              border: '1px solid #cbd5e1',
-              background: '#ffffff',
-              color: '#475569',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-            }}
-          >
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-          </button>
+          </article>
+          <article className="planner-summary-card summary-holidays">
+            <div className="summary-icon"><Globe size={22} /></div>
+            <div>
+              <span>{currentCalendarOption.code} Holidays</span>
+              <strong>{holidaysEnabled ? holidays.length : 0}</strong>
+              <small>{holidaysEnabled ? `${currentCalendarOption.country} synced` : 'Sync disabled'}</small>
+            </div>
+          </article>
+          <article className="planner-summary-card summary-depts">
+            <div className="summary-icon"><Building2 size={22} /></div>
+            <div>
+              <span>Active departments</span>
+              <strong>{activeDepartments.length}</strong>
+              <small>{vacancies.length} job requisitions</small>
+            </div>
+          </article>
         </div>
-      </div>
+      </section>
 
       {/* Error state */}
       {errorMessage && (
@@ -737,7 +724,6 @@ export const MonthlyPlanner: React.FC = () => {
             borderRadius: '12px',
             fontSize: '13.5px',
             fontWeight: 600,
-            marginBottom: '20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -761,181 +747,6 @@ export const MonthlyPlanner: React.FC = () => {
         </div>
       )}
 
-      {/* 2. Top Action & Navigation Toolbar */}
-      <div
-        className="monthly-planner-toolbar"
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '20px',
-          flexWrap: 'wrap',
-          gap: '12px',
-        }}
-      >
-        {/* Left Action Buttons: Add Event + Google Calendar Holiday Controls */}
-        <div className="monthly-planner-toolbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={() => handleOpenAddEventModal(selectedDateStr)}
-            className="btn-primary"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '11px 22px',
-              borderRadius: '12px',
-              fontSize: '14px',
-              fontWeight: 700,
-              background: 'linear-gradient(135deg, #059669 0%, #00b074 100%)',
-              color: '#ffffff',
-              boxShadow: '0 4px 12px rgba(0, 176, 116, 0.25)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <Plus size={18} strokeWidth={2.5} />
-            <span>Add Event</span>
-          </button>
-
-          {/* Google Calendar Holiday Toggle & Settings */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <button
-              type="button"
-              onClick={handleToggleHolidays}
-              title={holidaysEnabled ? 'Click to hide national holidays' : 'Click to show national holidays'}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '9.5px 14px',
-                borderRadius: '11px',
-                border: holidaysEnabled ? '1px solid #fde68a' : '1px solid #cbd5e1',
-                background: holidaysEnabled ? '#fffbeb' : '#f8fafc',
-                color: holidaysEnabled ? '#92400e' : '#64748b',
-                fontSize: '13px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <span style={{ fontSize: '15px' }}>{currentCalendarOption.flag}</span>
-              <span>{currentCalendarOption.country} Holidays</span>
-              <span
-                style={{
-                  fontSize: '10.5px',
-                  padding: '2px 7px',
-                  borderRadius: '999px',
-                  background: holidaysEnabled ? (holidays.length > 0 ? '#fef3c7' : '#e0e7ff') : '#e2e8f0',
-                  color: holidaysEnabled ? (holidays.length > 0 ? '#b45309' : '#3730a3') : '#64748b',
-                  fontWeight: 800,
-                }}
-              >
-                {holidaysEnabled ? (holidays.length > 0 ? `${holidays.length} Synced` : 'ON') : 'OFF'}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleOpenSettingsModal}
-              title="Select National Holiday Country / Region"
-              style={{
-                padding: '9.5px 12px',
-                borderRadius: '11px',
-                border: '1px solid #cbd5e1',
-                background: '#ffffff',
-                color: '#475569',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '12.5px',
-                fontWeight: 650,
-                boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-              }}
-            >
-              <Globe size={15} />
-              <span>Holiday Region</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Right: Navigation Controls: Today + Prev / Next Month */}
-        <div className="monthly-planner-navigation" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button
-            type="button"
-            onClick={handleToday}
-            style={{
-              padding: '7px 14px',
-              borderRadius: '8px',
-              border: '1px solid #cbd5e1',
-              background: '#ffffff',
-              color: '#334155',
-              fontSize: '12.5px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-            }}
-          >
-            Today
-          </button>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <button
-              type="button"
-              onClick={handlePrevMonth}
-              aria-label="Previous Month"
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
-                background: '#ffffff',
-                color: '#334155',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={handleNextMonth}
-              aria-label="Next Month"
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
-                background: '#ffffff',
-                color: '#334155',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-
-          <h2
-            style={{
-              fontSize: '18px',
-              fontWeight: 800,
-              color: '#0f172a',
-              margin: '0 0 0 10px',
-              minWidth: '180px',
-            }}
-          >
-            {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </h2>
-        </div>
-      </div>
-
       {/* Holidays Error / Warning Banner */}
       {holidaysEnabled && holidaysError && (
         <div
@@ -944,7 +755,6 @@ export const MonthlyPlanner: React.FC = () => {
             border: '1px solid #fde68a',
             borderRadius: '14px',
             padding: '12px 18px',
-            marginBottom: '20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -982,89 +792,127 @@ export const MonthlyPlanner: React.FC = () => {
         </div>
       )}
 
-      {/* 3. Department Filter Bar (HR Department Filter - Only Departments with Active Job Vacancies) */}
-      <div
-        className={`monthly-planner-department-filter${selectedDepartment ? ' is-active' : ''}`}
-        style={{
-          background: selectedDepartment
-            ? 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)'
-            : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-          border: selectedDepartment ? '1.5px solid #a7f3d0' : '1.5px solid #e2e8f0',
-          borderRadius: '14px',
-          padding: '14px 20px',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '16px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div
-            style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '10px',
-              background: selectedDepartment ? '#059669' : '#64748b',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: selectedDepartment ? '0 2px 6px rgba(5, 150, 105, 0.25)' : 'none',
-            }}
-          >
-            <Building2 size={20} />
-          </div>
+      {/* =========================================================
+          2. FILTER & SEARCH TOOLBAR PANEL
+          (Directly matches Job Vacancies Filter Panel UI)
+          ========================================================= */}
+      <section className="planner-filter-panel" aria-label="Planner filters and controls">
+        <div className="planner-filter-heading">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>
-                Department Filter
+            <span className="filter-eyebrow">Schedule workspace</span>
+            <h2>Filter & Navigate Calendar</h2>
+          </div>
+          <div className="planner-filter-heading-meta">
+            <span className="filter-result-count">
+              {filteredEvents.length} of {events.length} events shown
+            </span>
+            {holidaysEnabled && (
+              <span className="filter-holiday-count">
+                {currentCalendarOption.flag} {holidays.length} holidays
               </span>
-              <span
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  padding: '2px 8px',
-                  borderRadius: '999px',
-                  background: activeDepartments.length > 0 ? '#dbeafe' : '#f1f5f9',
-                  color: activeDepartments.length > 0 ? '#1e40af' : '#64748b',
-                }}
-              >
-                {activeDepartments.length} Active {activeDepartments.length === 1 ? 'Dept' : 'Depts'}
-              </span>
-            </div>
-            <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0 0 0' }}>
-              {selectedDepartment
-                ? `Showing events & interviews across all active vacancies under ${selectedDepartment}`
-                : 'Showing events & interviews across all active departments and vacancies'}
-            </p>
+            )}
           </div>
         </div>
 
-        {/* Department Dropdown Selection */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div>
+        {/* Row 1: Category / Status Tabs + Integrated Month Navigation */}
+        <div className="planner-toolbar">
+          <div className="planner-tabs">
+            <button
+              type="button"
+              className={`tab-btn ${eventTypeFilter === 'All' ? 'active' : ''}`}
+              onClick={() => setEventTypeFilter('All')}
+            >
+              All Events ({events.length})
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${eventTypeFilter === 'Interviews' ? 'active' : ''}`}
+              onClick={() => setEventTypeFilter('Interviews')}
+            >
+              Interviews ({interviewCount})
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${eventTypeFilter === 'General' ? 'active' : ''}`}
+              onClick={() => setEventTypeFilter('General')}
+            >
+              General / Meetings ({generalCount})
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${eventTypeFilter === 'Holidays' ? 'active' : ''}`}
+              onClick={() => setEventTypeFilter('Holidays')}
+            >
+              {currentCalendarOption.flag} Holidays ({holidays.length})
+            </button>
+          </div>
+
+          {/* Month Navigation Controls */}
+          <div className="planner-nav-group">
+            <button
+              type="button"
+              onClick={handleToday}
+              className="planner-nav-today-btn"
+            >
+              Today
+            </button>
+            <div className="planner-nav-arrows">
+              <button
+                type="button"
+                onClick={handlePrevMonth}
+                aria-label="Previous Month"
+                className="planner-nav-arrow-btn"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={handleNextMonth}
+                aria-label="Next Month"
+                className="planner-nav-arrow-btn"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+            <div className="planner-month-display">
+              <CalendarIcon size={16} />
+              <span>{currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Row 2: Search Input, Department Select, Job Vacancy Select, Holiday Toggle & Reset */}
+        <div className="planner-controls-row">
+          {/* Search Box */}
+          <div className="planner-search">
+            <Search size={16} />
+            <input
+              type="text"
+              placeholder="Search by event title, candidate, notes, or time..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                className="search-clear-btn"
+                onClick={() => setSearchQuery('')}
+                title="Clear search"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Department Select */}
+          <div className="planner-select-group">
+            <label htmlFor="planner-dept-filter">Department</label>
             <select
-              className="monthly-planner-department-select"
+              id="planner-dept-filter"
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
-              style={{
-                padding: '9px 16px',
-                borderRadius: '10px',
-                border: selectedDepartment ? '1.5px solid #059669' : '1.5px solid #cbd5e1',
-                background: '#ffffff',
-                color: selectedDepartment ? '#065f46' : '#334155',
-                fontSize: '13.5px',
-                fontWeight: 700,
-                outline: 'none',
-                cursor: 'pointer',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                minWidth: '240px',
-              }}
             >
-              <option value="">All Departments ({activeDepartments.length > 0 ? `${activeDepartments.length} Active` : 'All Active'})</option>
+              <option value="">All Departments ({activeDepartments.length} Active)</option>
               {activeDepartments.map((dept) => (
                 <option key={dept} value={dept}>
                   {dept}
@@ -1072,8 +920,106 @@ export const MonthlyPlanner: React.FC = () => {
               ))}
             </select>
           </div>
+
+          {/* Linked Vacancy Select */}
+          <div className="planner-select-group">
+            <label htmlFor="planner-vacancy-filter">Job Vacancy</label>
+            <select
+              id="planner-vacancy-filter"
+              value={selectedVacancyId}
+              onChange={(e) => setSelectedVacancyId(e.target.value)}
+            >
+              <option value="All">All Vacancies ({vacancies.length})</option>
+              {vacancies.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.title} ({v.department || 'General'})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* National Holidays Sync Toggle & Region Selector */}
+          <div className="planner-holiday-actions">
+            <button
+              type="button"
+              onClick={handleToggleHolidays}
+              className={`planner-holiday-toggle-btn ${holidaysEnabled ? 'is-active' : ''}`}
+              title={holidaysEnabled ? 'Click to hide national holidays' : 'Click to show national holidays'}
+            >
+              <span>{currentCalendarOption.flag}</span>
+              <span>{currentCalendarOption.country}</span>
+              <span className="holiday-status-pill">
+                {holidaysEnabled ? `${holidays.length} Synced` : 'OFF'}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleOpenSettingsModal}
+              className="planner-holiday-region-btn"
+              title="Select National Holiday Country / Region"
+            >
+              <Globe size={14} />
+              <span>Region</span>
+            </button>
+          </div>
+
+          {/* Reset / Clear All Filters */}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              className="planner-clear-filters-btn"
+              onClick={handleResetFilters}
+              title="Reset all search queries and filters"
+            >
+              <RotateCcw size={13} />
+              <span>Reset Filters</span>
+            </button>
+          )}
         </div>
-      </div>
+
+        {/* Row 3: Active Filter Chips */}
+        {hasActiveFilters && (
+          <div className="planner-active-chips">
+            <span className="chips-label">Active filters:</span>
+            {searchQuery && (
+              <span className="planner-chip">
+                <span>Search: "{searchQuery}"</span>
+                <button type="button" onClick={() => setSearchQuery('')} title="Remove search filter">
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {selectedDepartment && (
+              <span className="planner-chip">
+                <span>Dept: {selectedDepartment}</span>
+                <button type="button" onClick={() => setSelectedDepartment('')} title="Remove department filter">
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {selectedVacancyId && selectedVacancyId !== 'All' && (
+              <span className="planner-chip">
+                <span>
+                  Vacancy:{' '}
+                  {vacancies.find((v) => v.id === selectedVacancyId)?.title || selectedVacancyId}
+                </span>
+                <button type="button" onClick={() => setSelectedVacancyId('All')} title="Remove vacancy filter">
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {eventTypeFilter !== 'All' && (
+              <span className="planner-chip">
+                <span>Category: {eventTypeFilter}</span>
+                <button type="button" onClick={() => setEventTypeFilter('All')} title="Reset category tab">
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+          </div>
+        )}
+      </section>
 
       {/* 4. Main Two-Column Layout (Calendar & Daily Schedule aligned at the exact same top level) */}
       <div
@@ -1500,7 +1446,7 @@ export const MonthlyPlanner: React.FC = () => {
                 <p style={{ fontSize: '12.5px', color: '#64748b', margin: '0 0 16px 0', maxWidth: '240px' }}>
                   {selectedDayHolidays.length > 0
                     ? `This date is an official national holiday (${selectedDayHolidays.map((h) => h.title).join(', ')}). No interviews are scheduled.`
-                    : `There are no interviews or meetings scheduled for ${selectedDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} under ${selectedDepartment}.`}
+                    : `There are no interviews or meetings scheduled for ${selectedDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}${selectedDepartment ? ` under ${selectedDepartment}` : ''}.`}
                 </p>
                 <button
                   type="button"

@@ -257,13 +257,31 @@ export const CandidateStudyDashboard: React.FC = () => {
 
   return (
     <div className="study-dashboard-page">
-      {/* 1. Single-Page Dropdown Job Selector at Top of Dashboard */}
+      {/* Study dashboard and job guide selector */}
       {guides.length > 0 && (
-        <StudyJobDropdown
-          guides={guides}
-          selectedGuide={selectedGuide}
-          onSelectGuide={handleSelectGuide}
-        />
+        <section className="study-guide-dashboard" aria-labelledby="study-dashboard-title">
+          <div className="study-guide-dashboard-heading">
+            <div>
+              <span className="study-guide-dashboard-eyebrow">Interview preparation workspace</span>
+              <h1 id="study-dashboard-title">Study Dashboard</h1>
+              <p>Choose a job interview to open its tailored concepts, practical focus areas, and coaching guidance.</p>
+            </div>
+            <span className="study-guide-dashboard-status"><span /> {guides.length} {guides.length === 1 ? 'guide available' : 'guides available'}</span>
+          </div>
+
+          <div className="study-guide-filter-surface">
+            <div className="study-guide-filter-copy">
+              <span>Filter by job</span>
+              <strong>{selectedGuide?.targetRole || selectedGuide?.jobTitle || 'Select an interview role'}</strong>
+              <small>{selectedGuide?.companyName || 'Choose one of your approved interview guides'}</small>
+            </div>
+            <StudyJobDropdown
+              guides={guides}
+              selectedGuide={selectedGuide}
+              onSelectGuide={handleSelectGuide}
+            />
+          </div>
+        </section>
       )}
 
       {/* Error Notice if any */}

@@ -1,10 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import {
   SparkleIcon,
   PrinterIcon,
   TrashIcon,
-  ArrowLeftIcon,
   BriefcaseIcon,
   ClockIcon,
   MapPinIcon,
@@ -65,10 +63,6 @@ export const StudyDashboardHeader: React.FC<StudyDashboardHeaderProps> = ({
     <header className="study-persistent-header">
       {/* Top Navigation Row: Actions */}
       <div className="study-top-nav-bar">
-        <Link to="/candidate/interview-prep" className="btn-back-to-hub">
-          <ArrowLeftIcon />
-          <span>Interview Prep Hub</span>
-        </Link>
         <div className="study-header-actions">
           {onDeleteGuide && (
             <button

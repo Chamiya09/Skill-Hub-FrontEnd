@@ -389,8 +389,7 @@ export const CandidateAssessments: React.FC = () => {
             return (
               <div
                 key={item.submissionId}
-                className="assessment-card"
-                style={item.isSelectedForInterview ? { border: '1.5px solid #10b981', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.15)' } : undefined}
+                className={`assessment-card${item.isSelectedForInterview ? ' assessment-card-selected' : ''}`}
               >
                 {/* Top Company & Status Row */}
                 <div className="card-top-row">
@@ -456,21 +455,24 @@ export const CandidateAssessments: React.FC = () => {
 
                 {/* Interview Selected Callout or Under Review Notice */}
                 {item.isSelectedForInterview && (
-                  <div style={{ background: '#ecfdf5', border: '1px solid #6ee7b7', borderRadius: '8px', padding: '9px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: '#d1fae5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div className="assessment-result-notice assessment-result-notice-selected">
+                    <div className="assessment-result-notice-icon">
                       <AwardIcon />
                     </div>
                     <div>
-                      <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#065f46' }}>Selected for Technical Interview!</div>
-                      <p style={{ fontSize: '11.5px', color: '#047857', margin: 0 }}>HR evaluated your code and selected you for the interview stage.</p>
+                      <strong>Selected for Technical Interview!</strong>
+                      <p>HR evaluated your code and selected you for the interview stage.</p>
                     </div>
                   </div>
                 )}
 
                 {isUnderReview && !item.isSelectedForInterview && (
-                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#475569', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <ClockIcon />
-                    <span>Code submitted • Results will be published within <strong>3–4 working days</strong></span>
+                  <div className="assessment-result-notice assessment-result-notice-review">
+                    <div className="assessment-result-notice-icon"><ClockIcon /></div>
+                    <div>
+                      <strong>Code submitted successfully</strong>
+                      <p>Results will be published within 3–4 working days.</p>
+                    </div>
                   </div>
                 )}
 

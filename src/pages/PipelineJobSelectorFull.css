@@ -222,6 +222,32 @@
   color: #047857;
 }
 
+.hiring-pipeline-page .pipeline-selector-header {
+  background: linear-gradient(120deg, #ffffff 0%, #fbfefd 60%, #edf9ff 100%);
+}
+
+.hiring-pipeline-page .pipeline-job-card {
+  min-height: 300px;
+}
+
+.hiring-pipeline-page .pipeline-applicant-count {
+  color: #047857;
+}
+
+.hiring-pipeline-page .pipeline-ai-badge {
+  font-weight: 750;
+}
+
+.hiring-pipeline-page .pipeline-open-btn {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+}
+
+.hiring-pipeline-page .pipeline-open-btn:hover {
+  border-color: #00b074;
+  background: #dcfce7;
+}
+
 @media (min-width: 1700px) {
   .pipeline-selector-container .pipeline-jobs-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));

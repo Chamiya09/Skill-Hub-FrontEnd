@@ -28,6 +28,7 @@ import {
   UserCheckIcon,
 } from '../components/common/Icons';
 import { SkeletonGrid } from '../components/common/SkeletonCard';
+import './PipelineJobSelectorFull.css';
 
 // Clipboard / Assessment Icon
 const ClipboardCheckIcon = () => (
@@ -331,7 +332,7 @@ export const HiringPipeline: React.FC = () => {
   };
 
   return (
-    <div className="pipeline-selector-container">
+    <div className="pipeline-selector-container hiring-pipeline-page">
       {/* =========================================================
           1. INITIAL VIEW: JOBS LIST (AISCREEN MIRROR)
           ========================================================= */}
@@ -347,7 +348,7 @@ export const HiringPipeline: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="pipeline-header-metrics">
           <div className="pipeline-header-stats-badge" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
             <span className="pipeline-stats-num" style={{ color: '#00b074' }}>{activeCount}</span>
             <span className="pipeline-stats-label">Active Requisitions</span>
@@ -360,7 +361,14 @@ export const HiringPipeline: React.FC = () => {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="filter-card-wrapper" style={{ marginBottom: '24px' }}>
+      <div className="filter-card-wrapper pipeline-filter-panel">
+        <div className="pipeline-filter-heading">
+          <div>
+            <span>Pipeline workspace</span>
+            <h2>Select a requisition</h2>
+          </div>
+          <strong>{filteredJobs.length} of {publishedJobs.length} shown</strong>
+        </div>
         <div className="filter-grid-bar" style={{ gridTemplateColumns: '2fr 1fr 1.2fr auto' }}>
           {/* Search Input */}
           <div className="filter-input-group">

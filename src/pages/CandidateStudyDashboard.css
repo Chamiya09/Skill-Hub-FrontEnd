@@ -1419,3 +1419,124 @@
     border: 1px solid #ccc !important;
   }
 }
+
+/* Full-width Study Dashboard workspace */
+.dashboard-viewport:has(> .study-dashboard-page) {
+  max-width: none;
+  padding: 28px clamp(20px, 2.2vw, 40px);
+}
+
+.study-dashboard-page {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 0 48px;
+}
+
+.study-dropdown-banner {
+  padding: 22px clamp(24px, 2vw, 34px);
+}
+
+.study-select-wrapper {
+  max-width: 760px;
+}
+
+.study-hero-banner {
+  min-height: 190px;
+  padding: 30px clamp(26px, 2.5vw, 42px);
+}
+
+.study-hero-content {
+  max-width: 1100px;
+}
+
+.study-hero-role-title {
+  font-size: clamp(27px, 2.2vw, 36px);
+}
+
+.study-hero-summary-text {
+  max-width: 1180px;
+}
+
+.study-sections-switcher-bar {
+  padding: 12px clamp(18px, 1.8vw, 28px);
+}
+
+.study-core-section-card {
+  padding: clamp(24px, 2vw, 34px);
+}
+
+.study-focus-header {
+  padding: 20px clamp(20px, 1.8vw, 30px);
+}
+
+.study-focus-body {
+  padding: 0 clamp(20px, 1.8vw, 30px) 24px;
+}
+
+.study-coach-tips-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+  gap: clamp(16px, 1.4vw, 22px);
+}
+
+.study-coach-tip-card {
+  min-height: 120px;
+  padding: 20px clamp(20px, 1.6vw, 26px);
+}
+
+.study-readiness-checklist-card {
+  padding: clamp(22px, 1.8vw, 30px);
+}
+
+.study-empty-state-card,
+.study-loading-card,
+.study-error-card {
+  width: 100%;
+  max-width: none;
+}
+
+@media (min-width: 1600px) {
+  .study-coach-tips-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1000px) {
+  .dashboard-viewport:has(> .study-dashboard-page) {
+    padding-inline: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-viewport:has(> .study-dashboard-page) {
+    padding: 16px;
+  }
+
+  .study-dashboard-page {
+    padding: 0 0 36px;
+  }
+
+  .study-dropdown-banner,
+  .study-hero-banner {
+    min-height: 0;
+    padding: 20px;
+  }
+
+  .study-sections-switcher-bar {
+    align-items: stretch;
+  }
+
+  .switcher-buttons-cluster {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .switcher-btn {
+    flex: 1 0 auto;
+  }
+
+  .study-coach-tip-card {
+    min-height: 0;
+  }
+}

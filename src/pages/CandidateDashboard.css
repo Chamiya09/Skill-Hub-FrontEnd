@@ -62,6 +62,161 @@
   color: #00b074;
 }
 
+/* Refined interview card alignment and system-theme finish */
+.scheduled-interview-card {
+  min-width: 0;
+  padding: clamp(20px, 1.6vw, 26px);
+  gap: 20px;
+  border-color: #dbe7e2;
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 84%, #fbfefd 100%);
+}
+
+.interview-card-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.card-header-badges > * {
+  min-width: 0;
+}
+
+.interview-mode-tag,
+.interview-status-tag {
+  max-width: 100%;
+}
+
+.interview-mode-tag span,
+.interview-status-tag span:last-child {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.card-job-section {
+  gap: 7px;
+  padding-inline: 1px;
+}
+
+.schedule-tile-box {
+  min-width: 0;
+  min-height: 52px;
+  border-color: #dfe9e5;
+  background: #f8fbfa;
+}
+
+.interview-location-block {
+  min-height: 96px;
+  justify-content: center;
+}
+
+.card-bottom-actions {
+  min-height: 58px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top-color: #e7efec;
+}
+
+.hired-celebration-hero {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(135deg, #008e61 0%, #047857 100%);
+}
+
+.hired-onboarding-box {
+  min-height: 98px;
+  justify-content: center;
+}
+
+.hired-welcome-badge {
+  width: 100%;
+  min-height: 42px;
+  justify-content: center;
+  padding: 10px 18px;
+  font-size: 13.5px;
+}
+
+.schedule-tile-box {
+  min-width: 0;
+  min-height: 52px;
+  border-color: #dfe9e5;
+  background: #f8fbfa;
+}
+
+.interview-location-block {
+  min-height: 96px;
+  justify-content: center;
+}
+
+.hired-celebration-hero {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(135deg, #008e61 0%, #047857 100%);
+}
+
+.hired-onboarding-box {
+  min-height: 98px;
+  justify-content: center;
+}
+
+@media (max-width: 560px) {
+  .card-header-badges,
+  .card-bottom-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .interview-mode-tag,
+  .interview-status-tag {
+    align-self: flex-start;
+  }
+
+  .schedule-tiles-row {
+    grid-template-columns: 1fr;
+  }
+
+  .location-block-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .btn-prep-hub-link,
+  .btn-join-meeting-cta,
+  .physical-venue-badge {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .card-header-badges,
+  .card-bottom-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .interview-mode-tag,
+  .interview-status-tag {
+    align-self: flex-start;
+  }
+
+  .schedule-tiles-row {
+    grid-template-columns: 1fr;
+  }
+
+  .location-block-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .btn-prep-hub-link,
+  .btn-join-meeting-cta,
+  .physical-venue-badge {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 /* Interview dashboard — aligned with the Technical Assessments workspace */
 .interview-dashboard-card {
   position: relative;
@@ -1193,5 +1348,88 @@
 
   .interview-summary-card small {
     white-space: normal;
+  }
+}
+
+/* Final interview card layout overrides */
+.scheduled-interview-card {
+  min-width: 0;
+  padding: clamp(20px, 1.6vw, 26px);
+  gap: 20px;
+  border-color: #dbe7e2;
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 84%, #fbfefd 100%);
+}
+
+.interview-card-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.card-bottom-actions {
+  min-height: 58px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top-color: #e7efec;
+}
+
+.hired-welcome-badge {
+  width: 100%;
+  min-height: 42px;
+  justify-content: center;
+  padding: 10px 18px;
+  font-size: 13.5px;
+}
+
+.schedule-tile-box {
+  min-width: 0;
+  min-height: 52px;
+  border-color: #dfe9e5;
+  background: #f8fbfa;
+}
+
+.interview-location-block {
+  min-height: 96px;
+  justify-content: center;
+}
+
+.hired-celebration-hero {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(135deg, #008e61 0%, #047857 100%);
+}
+
+.hired-onboarding-box {
+  min-height: 98px;
+  justify-content: center;
+}
+
+@media (max-width: 560px) {
+  .card-header-badges,
+  .card-bottom-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .interview-mode-tag,
+  .interview-status-tag {
+    align-self: flex-start;
+  }
+
+  .schedule-tiles-row {
+    grid-template-columns: 1fr;
+  }
+
+  .location-block-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .btn-prep-hub-link,
+  .btn-join-meeting-cta,
+  .physical-venue-badge {
+    width: 100%;
+    justify-content: center;
   }
 }

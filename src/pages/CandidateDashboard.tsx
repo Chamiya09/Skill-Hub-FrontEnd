@@ -334,7 +334,7 @@ export function CandidateDashboard() {
                   className={`scheduled-interview-card ${isHired ? 'is-hired' : ''} ${isOnline ? 'mode-online' : 'mode-physical'}`}
                 >
                   {/* Top Section */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div className="interview-card-content">
                     {/* Hired Celebratory Banner */}
                     {isHired && (
                       <div className="hired-celebration-hero">
@@ -491,15 +491,7 @@ export function CandidateDashboard() {
                   {/* Card Bottom CTAs */}
                   <div className="card-bottom-actions">
                     {isHired ? (
-                      <div
-                        className="hired-welcome-badge"
-                        style={{
-                          width: '100%',
-                          justifyContent: 'center',
-                          padding: '10px 18px',
-                          fontSize: '13.5px',
-                        }}
-                      >
+                      <div className="hired-welcome-badge">
                         <Sparkles className="w-4 h-4 text-emerald-600" />
                         <span>Welcome to {interview.companyName || 'BCD Company'}!</span>
                       </div>

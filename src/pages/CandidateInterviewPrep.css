@@ -2219,3 +2219,130 @@
   }
 }
 
+/* Refined preparation-guide card hierarchy and alignment */
+.eligible-job-card {
+  overflow: hidden;
+  min-width: 0;
+  gap: 16px;
+  border-color: #dbe7e2;
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 84%, #fbfefd 100%);
+}
+
+.eligible-job-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, #00b074, #91e2c5);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.eligible-job-card:hover::before {
+  opacity: 1;
+}
+
+.eligible-job-header,
+.eligible-job-profile,
+.eligible-job-details {
+  min-width: 0;
+}
+
+.eligible-job-title {
+  max-width: none;
+  overflow-wrap: anywhere;
+}
+
+.eligible-job-meta {
+  min-height: 40px;
+  gap: 8px 12px;
+  border-color: #e3ece8;
+  background: #f8fbfa;
+}
+
+.eligible-job-callout {
+  min-height: 74px;
+  align-items: center;
+  padding: 13px 14px;
+  border-color: #a7f3d0;
+  background: linear-gradient(135deg, #effcf7, #f5fdfa);
+}
+
+.eligible-job-callout-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  margin-top: 0;
+  border: 1px solid #a7f3d0;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+.eligible-job-footer {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid #e8f0ed;
+}
+
+.eligible-saved-actions {
+  align-items: stretch;
+  gap: 10px;
+}
+
+.eligible-saved-actions .btn-view-prep,
+.btn-card-regenerate {
+  min-height: 44px;
+}
+
+.btn-card-regenerate {
+  color: #047857;
+  border-color: #b9d9cd;
+  background: linear-gradient(180deg, #ffffff, #f7fcfa);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+.btn-card-regenerate:hover:not(:disabled) {
+  color: #047857;
+  border-color: #00b074;
+  background: #ecfdf5;
+  box-shadow: 0 5px 12px rgba(0, 176, 116, 0.12);
+}
+
+.btn-card-regenerate svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  transition: transform 0.25s ease;
+}
+
+.btn-card-regenerate:hover:not(:disabled) svg {
+  transform: rotate(-35deg);
+}
+
+.btn-card-regenerate:focus-visible {
+  outline: 3px solid rgba(0, 176, 116, 0.18);
+  outline-offset: 2px;
+}
+
+@media (max-width: 520px) {
+  .eligible-job-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .eligible-job-badge-wrap {
+    padding-left: 56px;
+  }
+
+  .eligible-saved-actions {
+    flex-direction: column;
+  }
+
+  .eligible-saved-actions .btn-view-prep,
+  .btn-card-regenerate {
+    width: 100%;
+  }
+}
+

@@ -33,6 +33,7 @@ const PlayIcon: React.FC = () => (
 );
 
 type FilterTab = 'all' | 'pending' | 'completed' | 'expired';
+type SortOption = 'priority' | 'newest' | 'deadline' | 'score';
 
 export const CandidateAssessments: React.FC = () => {
   const { currentUser } = useAuth();
@@ -47,6 +48,8 @@ export const CandidateAssessments: React.FC = () => {
   // Filter & Search states
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [companyFilter, setCompanyFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('priority');
 
   // Scorecard modal state
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
@@ -133,7 +136,11 @@ export const CandidateAssessments: React.FC = () => {
     return Boolean(item.isExpired) || (Boolean(item.expiresAt) && new Date(item.expiresAt!).getTime() < Date.now());
   };
 
-  // Filtered assessments
+  const companyOptions = Array.from(
+    new Set(assessments.map((item) => item.companyName).filter(Boolean)),
+  ).sort((a, b) => a.localeCompare(b));
+
+  // Filter and sort without mutating the API response order.
   const filteredAssessments = assessments.filter((item) => {
     const isCompleted = checkIsCompleted(item);
     const isBlocked = checkIsBlocked(item);
@@ -143,58 +150,97 @@ export const CandidateAssessments: React.FC = () => {
     if (activeTab === 'pending' && !isPending) return false;
     if (activeTab === 'completed' && !isCompleted) return false;
     if (activeTab === 'expired' && !isExpired) return false;
+    if (companyFilter !== 'all' && item.companyName !== companyFilter) return false;
 
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchJob = item.jobTitle.toLowerCase().includes(q);
-      const matchCompany = item.companyName.toLowerCase().includes(q);
-      const matchTrack = item.assessmentTitle.toLowerCase().includes(q);
+      const q = searchQuery.trim().toLowerCase();
+      const matchJob = (item.jobTitle || '').toLowerCase().includes(q);
+      const matchCompany = (item.companyName || '').toLowerCase().includes(q);
+      const matchTrack = (item.assessmentTitle || '').toLowerCase().includes(q);
       return matchJob || matchCompany || matchTrack;
     }
 
     return true;
+  }).sort((a, b) => {
+    if (sortBy === 'newest') {
+      return new Date(b.assignedAt || 0).getTime() - new Date(a.assignedAt || 0).getTime();
+    }
+    if (sortBy === 'deadline') {
+      return new Date(a.expiresAt || '9999-12-31').getTime() - new Date(b.expiresAt || '9999-12-31').getTime();
+    }
+    if (sortBy === 'score') return (b.examScore || 0) - (a.examScore || 0);
+
+    const priority = (item: CandidateAssessmentListItemDto) => {
+      if (!checkIsCompleted(item) && !checkIsExpired(item) && !checkIsBlocked(item)) return 0;
+      if (item.status === 'Under_Review' || item.status === 'Submitted') return 1;
+      if (checkIsCompleted(item)) return 2;
+      return 3;
+    };
+    return priority(a) - priority(b);
   });
 
   const pendingCount = assessments.filter((a) => !checkIsCompleted(a) && !checkIsExpired(a) && !checkIsBlocked(a)).length;
   const completedCount = assessments.filter((a) => checkIsCompleted(a)).length;
   const expiredCount = assessments.filter((a) => checkIsExpired(a)).length;
+  const gradedAssessments = assessments.filter((a) =>
+    a.status === 'Graded' || a.status === 'Passed' || a.status === 'Rejected',
+  );
+  const averageScore = gradedAssessments.length
+    ? Math.round(gradedAssessments.reduce((sum, item) => sum + (item.examScore || 0), 0) / gradedAssessments.length)
+    : 0;
+  const hasActiveFilters = activeTab !== 'all' || searchQuery.trim() !== '' || companyFilter !== 'all' || sortBy !== 'priority';
+
+  const clearFilters = () => {
+    setActiveTab('all');
+    setSearchQuery('');
+    setCompanyFilter('all');
+    setSortBy('priority');
+  };
 
   return (
     <div className="candidate-assessments-page">
-      {/* 1. Hero Header */}
-      <section className="assessments-hero">
-        <div>
-          <div className="assessments-eyebrow">
-            <CodeIcon />
-            <span>TECHNICAL EVALUATION ENGINE</span>
+      {/* 1. Simple Assessment Dashboard */}
+      <section className="assessment-dashboard-card" aria-labelledby="assessment-dashboard-title">
+        <div className="assessment-dashboard-header">
+          <div>
+            <span className="assessment-dashboard-eyebrow">Performance overview</span>
+            <h2 id="assessment-dashboard-title">Assessment Dashboard</h2>
+            <p>A quick overview of your assigned challenges and technical performance.</p>
           </div>
-          <h1>Technical Assessments</h1>
-          <p className="assessments-subtitle">
-            Take real-world coding challenges and skill assessments dispatched directly to your profile by hiring teams.
-          </p>
+          <span className="assessment-dashboard-live"><span /> Live summary</span>
         </div>
 
-        {/* Quick Stats Banner */}
-        <div className="hero-stats-banner">
-          <div className="hero-stat-item">
-            <span className="hero-stat-val">{assessments.length}</span>
-            <span className="hero-stat-lbl">Total Dispatched</span>
-          </div>
-          <div className="hero-stat-divider" />
-          <div className="hero-stat-item">
-            <span className="hero-stat-val active-val">{pendingCount}</span>
-            <span className="hero-stat-lbl">Action Required</span>
-          </div>
-          <div className="hero-stat-divider" />
-          <div className="hero-stat-item">
-            <span className="hero-stat-val done-val">{completedCount}</span>
-            <span className="hero-stat-lbl">Completed</span>
-          </div>
+        <div className="assessment-summary-grid">
+          <article className="assessment-summary-card summary-total">
+            <div className="summary-icon"><CodeIcon /></div>
+            <div><span>Total assessments</span><strong>{assessments.length}</strong><small>All assigned challenges</small></div>
+          </article>
+          <article className="assessment-summary-card summary-action">
+            <div className="summary-icon"><ClockIcon /></div>
+            <div><span>Action required</span><strong>{pendingCount}</strong><small>Ready to start</small></div>
+          </article>
+          <article className="assessment-summary-card summary-complete">
+            <div className="summary-icon"><CheckIcon /></div>
+            <div><span>Completed</span><strong>{completedCount}</strong><small>Submitted challenges</small></div>
+          </article>
+          <article className="assessment-summary-card summary-score">
+            <div className="summary-icon"><TrophyIcon /></div>
+            <div><span>Average score</span><strong>{averageScore}%</strong><small>{gradedAssessments.length ? `${gradedAssessments.length} graded result${gradedAssessments.length === 1 ? '' : 's'}` : 'No graded results yet'}</small></div>
+          </article>
         </div>
       </section>
 
       {/* 2. Controls & Search Toolbar */}
-      <div className="assessments-toolbar">
+      <section className="assessments-filter-panel" aria-label="Assessment filters">
+        <div className="assessments-filter-heading">
+          <div>
+            <span className="filter-eyebrow">Assessment workspace</span>
+            <h2>Find your assessments</h2>
+          </div>
+          <span className="filter-result-count">{filteredAssessments.length} of {assessments.length} shown</span>
+        </div>
+
+        <div className="assessments-toolbar">
         <div className="assessments-tabs">
           <button
             type="button"
@@ -246,7 +292,32 @@ export const CandidateAssessments: React.FC = () => {
             </button>
           )}
         </div>
-      </div>
+
+        <div className="assessments-select-group">
+          <label htmlFor="assessment-company-filter">Company</label>
+          <select id="assessment-company-filter" value={companyFilter} onChange={(e) => setCompanyFilter(e.target.value)}>
+            <option value="all">All companies</option>
+            {companyOptions.map((company) => <option key={company} value={company}>{company}</option>)}
+          </select>
+        </div>
+
+        <div className="assessments-select-group">
+          <label htmlFor="assessment-sort">Sort by</label>
+          <select id="assessment-sort" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortOption)}>
+            <option value="priority">Priority</option>
+            <option value="newest">Newest assigned</option>
+            <option value="deadline">Deadline first</option>
+            <option value="score">Highest score</option>
+          </select>
+        </div>
+
+        {hasActiveFilters && (
+          <button type="button" className="assessments-clear-filters" onClick={clearFilters}>
+            <XIcon /> Clear filters
+          </button>
+        )}
+        </div>
+      </section>
 
       {/* Error alert */}
       {error && (
@@ -276,6 +347,8 @@ export const CandidateAssessments: React.FC = () => {
               ? 'No Pending Assessments'
               : activeTab === 'completed'
               ? 'No Completed Assessments Yet'
+              : activeTab === 'expired'
+              ? 'No Expired Assessments'
               : 'No Technical Assessments Assigned Yet'}
           </h2>
           <p>
@@ -286,9 +359,9 @@ export const CandidateAssessments: React.FC = () => {
           <button
             type="button"
             className="assessments-primary-action"
-            onClick={() => navigate('/candidate/applications')}
+            onClick={hasActiveFilters ? clearFilters : () => navigate('/candidate/applications')}
           >
-            <span>View Job Applications</span>
+            <span>{hasActiveFilters ? 'Reset Assessment Filters' : 'View Job Applications'}</span>
             <ArrowRightIcon />
           </button>
         </div>

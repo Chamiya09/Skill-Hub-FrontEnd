@@ -670,6 +670,7 @@ export const CandidateProfile: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="candidate-contact-pill"
+                title={linkedinUrl}
               >
                 <LinkedInIcon />
                 <span>LinkedIn</span>
@@ -682,6 +683,7 @@ export const CandidateProfile: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="candidate-contact-pill"
+                title={githubUrl}
               >
                 <GitHubIcon />
                 <span>GitHub</span>
@@ -694,9 +696,10 @@ export const CandidateProfile: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="candidate-contact-pill"
+                title={website}
               >
                 <GlobeLinkIcon />
-                <span>{website}</span>
+                <span>Portfolio</span>
               </a>
             )}
           </div>

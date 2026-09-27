@@ -93,7 +93,8 @@ export const HiringPipeline: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('All');
-  const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Closed'>('All');
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Shortlisted' | 'Active' | 'Closed'>('All');
+  const [sortBy, setSortBy] = useState<'shortlisted' | 'applicants' | 'newest' | 'title'>('shortlisted');
   const [applicantCounts, setApplicantCounts] = useState<Record<string, { total: number; shortlisted: number }>>({});
 
   // 2. Selected Job Modal Popup State
@@ -246,8 +247,33 @@ export const HiringPipeline: React.FC = () => {
     return ['All', ...Array.from(set)];
   }, [publishedJobs]);
 
+  const totalShortlistedCount = useMemo(() => {
+    return Object.values(applicantCounts).reduce((acc, curr) => acc + (curr.shortlisted || 0), 0);
+  }, [applicantCounts]);
+
+  const activeCount = useMemo(() => {
+    return publishedJobs.filter((j) => (j.status || 'Active').toLowerCase() === 'active').length;
+  }, [publishedJobs]);
+
+  const totalApplicantsCount = useMemo(() => {
+    return Object.values(applicantCounts).reduce((acc, curr) => acc + (curr.total || 0), 0);
+  }, [applicantCounts]);
+
+  const requisitionsWithShortlistCount = useMemo(() => {
+    return publishedJobs.filter((j) => (applicantCounts[j.id]?.shortlisted || 0) > 0).length;
+  }, [publishedJobs, applicantCounts]);
+
+  const hasActiveFilters = searchQuery.trim() !== '' || selectedDepartment !== 'All' || statusFilter !== 'All';
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedDepartment('All');
+    setStatusFilter('All');
+    setSortBy('shortlisted');
+  };
+
   const filteredJobs = useMemo(() => {
-    return publishedJobs.filter((job) => {
+    const list = publishedJobs.filter((job) => {
       const query = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !query ||
@@ -260,22 +286,37 @@ export const HiringPipeline: React.FC = () => {
         job.department.toLowerCase() === selectedDepartment.toLowerCase();
 
       const jobStatus = (job.status || 'Active').toLowerCase();
+      const shortlistedNum = applicantCounts[job.id]?.shortlisted || 0;
+
       const matchesStatus =
         statusFilter === 'All' ||
+        (statusFilter === 'Shortlisted' && shortlistedNum > 0) ||
         (statusFilter === 'Active' && jobStatus === 'active') ||
         (statusFilter === 'Closed' && jobStatus === 'closed');
 
       return matchesSearch && matchesDept && matchesStatus;
     });
-  }, [publishedJobs, searchQuery, selectedDepartment, statusFilter]);
 
-  const totalShortlistedCount = useMemo(() => {
-    return Object.values(applicantCounts).reduce((acc, curr) => acc + (curr.shortlisted || 0), 0);
-  }, [applicantCounts]);
-
-  const activeCount = useMemo(() => {
-    return publishedJobs.filter((j) => (j.status || 'Active').toLowerCase() === 'active').length;
-  }, [publishedJobs]);
+    return [...list].sort((a, b) => {
+      if (sortBy === 'shortlisted') {
+        const diff = (applicantCounts[b.id]?.shortlisted || 0) - (applicantCounts[a.id]?.shortlisted || 0);
+        if (diff !== 0) return diff;
+        return (applicantCounts[b.id]?.total || 0) - (applicantCounts[a.id]?.total || 0);
+      }
+      if (sortBy === 'applicants') {
+        return (applicantCounts[b.id]?.total || 0) - (applicantCounts[a.id]?.total || 0);
+      }
+      if (sortBy === 'newest') {
+        const timeB = new Date(b.createdAt || 0).getTime();
+        const timeA = new Date(a.createdAt || 0).getTime();
+        return timeB - timeA;
+      }
+      if (sortBy === 'title') {
+        return a.title.localeCompare(b.title);
+      }
+      return 0;
+    });
+  }, [publishedJobs, searchQuery, selectedDepartment, statusFilter, sortBy, applicantCounts]);
 
   // Filtered Candidates inside Modal
   const filteredModalCandidates = useMemo(() => {
@@ -334,99 +375,176 @@ export const HiringPipeline: React.FC = () => {
   return (
     <div className="pipeline-selector-container hiring-pipeline-page">
       {/* =========================================================
-          1. INITIAL VIEW: JOBS LIST (AISCREEN MIRROR)
+          1. TOP COMPONENT: HIRING PIPELINE DASHBOARD CARD
+          (Matches Candidate Technical Assessments Dashboard Header & Metrics)
           ========================================================= */}
-      <div className="pipeline-selector-header">
-        <div className="pipeline-header-title-box">
-          <div className="badge-tag">
-            <SparkleIcon />
-            <span>SHORTLISTED TALENT PIPELINE</span>
+      <section className="pipeline-dashboard-card" aria-labelledby="pipeline-dashboard-title">
+        <div className="pipeline-dashboard-header">
+          <div>
+            <span className="pipeline-dashboard-eyebrow">AI Shortlisted Candidates & Talent Pipeline</span>
+            <h2 id="pipeline-dashboard-title">Hiring Pipeline Dashboard</h2>
+            <p>
+              Review qualified talent pools who passed AI screening, inspect digital CV profiles, track recruitment progression, and dispatch skill assessments.
+            </p>
           </div>
-          <h1 className="pipeline-page-title">Hiring Pipeline & Shortlisted Candidates</h1>
-          <p className="pipeline-page-subtitle">
-            Select a job requisition below to view the <strong>AI Shortlisted Candidates</strong>. Review qualifications and dispatch assessments.
-          </p>
+
+          <div className="pipeline-dashboard-header-actions">
+            <span className="pipeline-dashboard-live">
+              <span /> Pipeline Active
+            </span>
+            <button
+              type="button"
+              className="btn-primary pipeline-action-btn"
+              onClick={() => setStatusFilter(statusFilter === 'Shortlisted' ? 'All' : 'Shortlisted')}
+              title={statusFilter === 'Shortlisted' ? 'Show all requisitions' : 'Filter to roles with shortlisted candidates'}
+            >
+              <SparkleIcon />
+              <span>{statusFilter === 'Shortlisted' ? 'Show All Roles' : `Shortlisted Talent (${totalShortlistedCount})`}</span>
+            </button>
+          </div>
         </div>
 
-        <div className="pipeline-header-metrics">
-          <div className="pipeline-header-stats-badge" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-            <span className="pipeline-stats-num" style={{ color: '#00b074' }}>{activeCount}</span>
-            <span className="pipeline-stats-label">Active Requisitions</span>
-          </div>
-          <div className="pipeline-header-stats-badge" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-            <span className="pipeline-stats-num" style={{ color: '#0284c7' }}>{totalShortlistedCount}</span>
-            <span className="pipeline-stats-label">Shortlisted Talent</span>
-          </div>
+        <div className="pipeline-summary-grid">
+          <article className="pipeline-summary-card summary-total">
+            <div className="summary-icon"><BriefcaseIcon /></div>
+            <div>
+              <span>Total Requisitions</span>
+              <strong>{publishedJobs.length}</strong>
+              <small>Published hiring campaigns</small>
+            </div>
+          </article>
+          <article className="pipeline-summary-card summary-ready">
+            <div className="summary-icon"><SparkleIcon /></div>
+            <div>
+              <span>Shortlisted Talent</span>
+              <strong>{totalShortlistedCount}</strong>
+              <small>Passed AI benchmark</small>
+            </div>
+          </article>
+          <article className="pipeline-summary-card summary-active">
+            <div className="summary-icon"><ClockIcon /></div>
+            <div>
+              <span>Active Openings</span>
+              <strong>{activeCount}</strong>
+              <small>Open for applications</small>
+            </div>
+          </article>
+          <article className="pipeline-summary-card summary-applicants">
+            <div className="summary-icon"><UsersIcon /></div>
+            <div>
+              <span>Total Candidates</span>
+              <strong>{totalApplicantsCount}</strong>
+              <small>Applicants in pipeline</small>
+            </div>
+          </article>
         </div>
-      </div>
+      </section>
 
-      {/* Filter & Search Bar */}
-      <div className="filter-card-wrapper pipeline-filter-panel">
+      {/* =========================================================
+          2. FILTER & SEARCH CONTROLS PANEL
+          (Matches Candidate Technical Assessments Filter Toolbar)
+          ========================================================= */}
+      <section className="pipeline-filter-panel" aria-label="Requisition filters">
         <div className="pipeline-filter-heading">
           <div>
-            <span>Pipeline workspace</span>
-            <h2>Select a requisition</h2>
+            <span className="filter-eyebrow">Pipeline workspace</span>
+            <h2>Select a job requisition</h2>
           </div>
-          <strong>{filteredJobs.length} of {publishedJobs.length} shown</strong>
+          <span className="filter-result-count">
+            {filteredJobs.length} of {publishedJobs.length} shown
+          </span>
         </div>
-        <div className="filter-grid-bar" style={{ gridTemplateColumns: '2fr 1fr 1.2fr auto' }}>
-          {/* Search Input */}
-          <div className="filter-input-group">
-            <span style={{ color: '#94a3b8' }}><SearchIcon /></span>
+
+        <div className="pipeline-toolbar">
+          {/* Status Tabs */}
+          <div className="pipeline-tabs">
+            <button
+              type="button"
+              className={`tab-btn ${statusFilter === 'All' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('All')}
+            >
+              All Requisitions ({publishedJobs.length})
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${statusFilter === 'Shortlisted' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('Shortlisted')}
+            >
+              With Shortlist ({requisitionsWithShortlistCount})
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${statusFilter === 'Active' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('Active')}
+            >
+              Active Openings ({activeCount})
+            </button>
+          </div>
+
+          {/* Search Box */}
+          <div className="pipeline-search">
+            <SearchIcon />
             <input
               type="text"
               placeholder="Search requisitions by title, department, or location..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-          </div>
-
-          {/* Status Filter */}
-          <div className="filter-input-group">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'All' | 'Active' | 'Closed')}
-              aria-label="Filter jobs by status"
-            >
-              <option value="All">All Statuses ({publishedJobs.length})</option>
-              <option value="Active">Active ({activeCount})</option>
-              <option value="Closed">Closed</option>
-            </select>
+            {searchQuery && (
+              <button
+                type="button"
+                className="search-clear-btn"
+                onClick={() => setSearchQuery('')}
+                title="Clear search"
+              >
+                <XIcon />
+              </button>
+            )}
           </div>
 
           {/* Department Select */}
-          <div className="filter-input-group">
-            <span style={{ color: '#94a3b8' }}><BuildingIcon /></span>
+          <div className="pipeline-select-group">
+            <label htmlFor="pipeline-dept-filter">Department</label>
             <select
+              id="pipeline-dept-filter"
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
-              aria-label="Filter jobs by department"
             >
               {departments.map((dept) => (
                 <option key={dept} value={dept}>
-                  {dept === 'All' ? 'All Departments' : dept}
+                  {dept === 'All' ? 'All departments' : dept}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Reset Action */}
-          {(searchQuery || selectedDepartment !== 'All' || statusFilter !== 'All') && (
+          {/* Sort By Select */}
+          <div className="pipeline-select-group">
+            <label htmlFor="pipeline-sort-filter">Sort by</label>
+            <select
+              id="pipeline-sort-filter"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+            >
+              <option value="shortlisted">Most shortlisted</option>
+              <option value="applicants">Most applicants</option>
+              <option value="newest">Newest created</option>
+              <option value="title">Role title (A - Z)</option>
+            </select>
+          </div>
+
+          {/* Clear Filters */}
+          {hasActiveFilters && (
             <button
               type="button"
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedDepartment('All');
-                setStatusFilter('All');
-              }}
-              className="btn-secondary"
-              style={{ padding: '10px 16px' }}
+              className="pipeline-clear-filters"
+              onClick={clearFilters}
             >
-              Reset
+              <XIcon /> Clear filters
             </button>
           )}
         </div>
-      </div>
+      </section>
 
       {/* Error Alert */}
       {errorMessage && (
@@ -510,11 +628,7 @@ export const HiringPipeline: React.FC = () => {
           <button
             type="button"
             className="btn-secondary"
-            onClick={() => {
-              setSearchQuery('');
-              setSelectedDepartment('All');
-              setStatusFilter('All');
-            }}
+            onClick={clearFilters}
           >
             Clear Filters
           </button>

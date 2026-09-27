@@ -10,6 +10,7 @@ import {
   UsersIcon,
 } from '../common/Icons';
 import './CompanyOverview.css';
+import './CompanyOverviewFull.css';
 
 interface CompanyOverviewProps {
   companyName: string;
@@ -92,7 +93,7 @@ export const CompanyOverview: React.FC<CompanyOverviewProps> = ({
 
           <section className="overview-panel activity-panel">
             <div className="overview-panel-heading"><div><h2>Recent AI Activity</h2><p>Signals requiring attention</p></div></div>
-            {stats?.recentAiActivity ? <div className="ai-alert success"><i>✨</i><div><strong>AI screening completed</strong><p>{stats.recentAiActivity.jobTitle} produced a {stats.recentAiActivity.matchPercentage}% candidate match.</p><small>{new Date(stats.recentAiActivity.occurredAt).toLocaleString()}</small></div></div> : <div className="ai-alert success"><i>✨</i><div><strong>No AI activity yet</strong><p>Run a candidate screen to generate live matching insights.</p></div></div>}
+            {stats?.recentAiActivity ? <div className="ai-alert success"><i><SparkleIcon /></i><div><strong>AI screening completed</strong><p>{stats.recentAiActivity.jobTitle} produced a {stats.recentAiActivity.matchPercentage}% candidate match.</p><small>{new Date(stats.recentAiActivity.occurredAt).toLocaleString()}</small></div></div> : <div className="ai-alert success"><i><SparkleIcon /></i><div><strong>No AI activity yet</strong><p>Run a candidate screen to generate live matching insights.</p></div></div>}
             <div className="ai-alert warning"><i>!</i><div><strong>Evaluation queue</strong><p>{stats?.pendingAiEvaluationsCount ?? 0} pending applications require AI evaluation.</p><small>Review screening queue</small></div></div>
             <Link to="/dashboard/pipelines" className="activity-link">Open AI Screening <span>→</span></Link>
           </section>

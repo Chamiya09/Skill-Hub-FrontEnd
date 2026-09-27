@@ -1,0 +1,395 @@
+.dashboard-viewport:has(> .technical-assessments-templates) {
+  padding: 24px 28px 40px;
+}
+
+.technical-assessments-page.technical-assessments-templates {
+  width: 100%;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.dashboard-viewport:has(> .technical-assessments-performance-hub),
+.dashboard-viewport:has(> .technical-assessments-submissions),
+.dashboard-viewport:has(> .technical-assessments-leaderboard) {
+  padding: 24px 28px 40px;
+}
+
+.technical-assessments-performance-hub,
+.technical-assessments-submissions,
+.technical-assessments-leaderboard {
+  width: 100%;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.technical-assessments-templates .pipeline-selector-header {
+  position: relative;
+  isolation: isolate;
+  min-height: 166px;
+  margin-bottom: 22px !important;
+  padding: 28px 32px;
+  overflow: hidden;
+  border: 1px solid #d7e6df;
+  border-radius: 18px;
+  background: linear-gradient(112deg, #ffffff 0%, #ffffff 66%, #effcf7 100%);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.045);
+}
+
+.technical-assessments-performance-hub .pipeline-selector-header,
+.technical-assessments-submissions .pipeline-selector-header,
+.technical-assessments-leaderboard .pipeline-selector-header {
+  position: relative;
+  isolation: isolate;
+  min-height: 166px;
+  margin-bottom: 22px !important;
+  padding: 28px 32px;
+  overflow: hidden;
+  border: 1px solid #d9e4eb;
+  border-radius: 18px;
+  background: linear-gradient(112deg, #ffffff 0%, #ffffff 66%, #eef7ff 100%);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.045);
+}
+
+.technical-assessments-performance-hub .pipeline-selector-header::before,
+.technical-assessments-performance-hub .pipeline-selector-header::after,
+.technical-assessments-submissions .pipeline-selector-header::before,
+.technical-assessments-submissions .pipeline-selector-header::after,
+.technical-assessments-leaderboard .pipeline-selector-header::before,
+.technical-assessments-leaderboard .pipeline-selector-header::after {
+  position: absolute;
+  z-index: -1;
+  border: 22px solid rgba(31, 119, 187, 0.08);
+  border-radius: 50%;
+  content: "";
+}
+
+.technical-assessments-performance-hub .pipeline-selector-header::before,
+.technical-assessments-submissions .pipeline-selector-header::before,
+.technical-assessments-leaderboard .pipeline-selector-header::before {
+  width: 170px;
+  height: 170px;
+  top: -88px;
+  right: -22px;
+}
+
+.technical-assessments-performance-hub .pipeline-selector-header::after,
+.technical-assessments-submissions .pipeline-selector-header::after,
+.technical-assessments-leaderboard .pipeline-selector-header::after {
+  width: 94px;
+  height: 94px;
+  right: 112px;
+  bottom: -70px;
+  border-width: 16px;
+}
+
+.technical-assessments-performance-hub .pipeline-selector-header > div:last-child,
+.technical-assessments-submissions .pipeline-selector-header > div:last-child,
+.technical-assessments-leaderboard .pipeline-selector-header > div:last-child {
+  min-width: min(340px, 100%) !important;
+  padding: 14px;
+  border: 1px solid #d8e3ea;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 7px 20px rgba(15, 23, 42, 0.05);
+}
+
+.technical-assessments-performance-hub .pipeline-selector-header select,
+.technical-assessments-submissions .pipeline-selector-header select,
+.technical-assessments-leaderboard .pipeline-selector-header select {
+  width: 100%;
+  border-color: #cedde7 !important;
+}
+
+.technical-assessments-templates .pipeline-selector-header::before,
+.technical-assessments-templates .pipeline-selector-header::after {
+  position: absolute;
+  z-index: -1;
+  border: 22px solid rgba(0, 176, 116, 0.08);
+  border-radius: 50%;
+  content: "";
+}
+
+.technical-assessments-templates .pipeline-selector-header::before {
+  width: 170px;
+  height: 170px;
+  top: -88px;
+  right: -22px;
+}
+
+.technical-assessments-templates .pipeline-selector-header::after {
+  width: 94px;
+  height: 94px;
+  right: 112px;
+  bottom: -70px;
+  border-width: 16px;
+}
+
+.technical-assessments-templates .pipeline-selector-header > div:last-child {
+  min-width: min(340px, 100%) !important;
+  padding: 14px;
+  border: 1px solid #d7e6df;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 7px 20px rgba(15, 23, 42, 0.05);
+}
+
+.technical-assessments-templates .pipeline-selector-header select {
+  width: 100%;
+  border-color: #cfe1d9 !important;
+}
+
+.assessment-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.performance-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.performance-overview-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 88px;
+  padding: 17px 18px;
+  border: 1px solid #dce5eb;
+  border-radius: 15px;
+  background: #ffffff;
+  box-shadow: 0 5px 18px rgba(15, 23, 42, 0.04);
+}
+
+.performance-overview-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border-radius: 12px;
+  background: #eafaf3;
+  color: #008e60;
+}
+
+.performance-overview-card strong,
+.performance-overview-card span:last-child { display: block; }
+.performance-overview-card strong { color: #0f172a; font-size: 22px; line-height: 1.1; }
+.performance-overview-card span:last-child { margin-top: 4px; color: #64748b; font-size: 12.5px; font-weight: 600; }
+.performance-overview-card--amber .performance-overview-icon { background: #fff7e6; color: #c57a00; }
+.performance-overview-card--blue .performance-overview-icon { background: #eef6ff; color: #1976c9; }
+.performance-overview-card--violet .performance-overview-icon { background: #f4efff; color: #7852c7; }
+
+.technical-assessments-performance-hub .assessment-section-tabs,
+.technical-assessments-submissions .assessment-section-tabs,
+.technical-assessments-leaderboard .assessment-section-tabs {
+  margin-bottom: 18px !important;
+  padding: 0 18px;
+  border: 1px solid #dde6eb !important;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.035);
+}
+
+.performance-workspace {
+  padding: 22px;
+  border: 1px solid #dce5eb;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.045);
+}
+
+.performance-toolbar {
+  padding-bottom: 18px;
+  border-bottom: 1px solid #edf2f5;
+}
+
+.performance-search {
+  min-height: 42px;
+  border-color: #d6e2e9 !important;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.035);
+}
+
+.performance-search:focus-within {
+  border-color: #71cdb0 !important;
+  box-shadow: 0 0 0 3px rgba(0, 176, 116, 0.09);
+}
+
+.performance-filter-bar {
+  margin: 16px 0 20px !important;
+  padding: 13px;
+  border: 1px solid #e0e9e5;
+  border-radius: 13px;
+  background: #f8fbfa;
+}
+
+.performance-table-shell {
+  border-color: #dce5e1 !important;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.045) !important;
+}
+
+.performance-table-shell thead tr {
+  background: #f4f9f7 !important;
+}
+
+.performance-table-shell tbody tr {
+  transition: background-color 150ms ease;
+}
+
+.performance-table-shell tbody tr:hover {
+  background: #f7fcfa !important;
+}
+
+.assessment-overview-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 88px;
+  padding: 17px 18px;
+  border: 1px solid #dce7e2;
+  border-radius: 15px;
+  background: #ffffff;
+  box-shadow: 0 5px 18px rgba(15, 23, 42, 0.04);
+}
+
+.assessment-overview-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border-radius: 12px;
+  background: #eafaf3;
+  color: #008e60;
+}
+
+.assessment-overview-card strong,
+.assessment-overview-card span:last-child {
+  display: block;
+}
+
+.assessment-overview-card strong {
+  color: #0f172a;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.assessment-overview-card span:last-child {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.assessment-overview-card--blue .assessment-overview-icon { background: #eef6ff; color: #1976c9; }
+.assessment-overview-card--amber .assessment-overview-icon { background: #fff7e6; color: #c57a00; }
+.assessment-overview-card--violet .assessment-overview-icon { background: #f4efff; color: #7852c7; }
+
+.technical-assessments-templates .assessment-section-tabs {
+  margin-bottom: 18px !important;
+  padding: 0 18px;
+  border: 1px solid #dde8e3 !important;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.035);
+}
+
+.assessment-workspace {
+  padding: 22px;
+  border: 1px solid #dce7e2;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.045);
+}
+
+.assessment-action-row {
+  padding-bottom: 18px;
+  border-bottom: 1px solid #edf2ef;
+}
+
+.technical-assessments-templates .assessment-tracks-grid {
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)) !important;
+}
+
+.technical-assessments-templates .assessment-track-card {
+  position: relative;
+  overflow: hidden;
+  border-color: #dbe7e1 !important;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05) !important;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.technical-assessments-templates .assessment-track-card::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #00b074, #49d4a8);
+  content: "";
+}
+
+.technical-assessments-templates .assessment-track-card:hover {
+  transform: translateY(-2px);
+  border-color: #a9dfca !important;
+  box-shadow: 0 12px 28px rgba(0, 142, 96, 0.09) !important;
+}
+
+@media (max-width: 1080px) {
+  .assessment-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .performance-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .dashboard-viewport:has(> .technical-assessments-templates) { padding: 16px; }
+
+  .technical-assessments-templates .pipeline-selector-header {
+    min-height: 0;
+    padding: 22px 20px;
+  }
+
+  .technical-assessments-templates .pipeline-selector-header > div:last-child {
+    width: 100%;
+    min-width: 0 !important;
+  }
+
+  .assessment-overview-grid { grid-template-columns: 1fr; }
+  .dashboard-viewport:has(> .technical-assessments-performance-hub),
+  .dashboard-viewport:has(> .technical-assessments-submissions),
+  .dashboard-viewport:has(> .technical-assessments-leaderboard) { padding: 16px; }
+  .technical-assessments-performance-hub .pipeline-selector-header,
+  .technical-assessments-submissions .pipeline-selector-header,
+  .technical-assessments-leaderboard .pipeline-selector-header { min-height: 0; padding: 22px 20px; }
+  .technical-assessments-performance-hub .pipeline-selector-header > div:last-child,
+  .technical-assessments-submissions .pipeline-selector-header > div:last-child,
+  .technical-assessments-leaderboard .pipeline-selector-header > div:last-child { width: 100%; min-width: 0 !important; }
+  .performance-overview-grid { grid-template-columns: 1fr; }
+  .performance-workspace { padding: 17px; }
+  .performance-toolbar { align-items: stretch !important; flex-direction: column; }
+  .performance-search { width: 100%; min-width: 0 !important; }
+  .performance-filter-bar button { flex: 1 1 170px; }
+  .assessment-workspace { padding: 17px; }
+  .assessment-action-row > div:last-child { width: 100%; flex-wrap: wrap; }
+  .assessment-action-row button { flex: 1 1 190px; justify-content: center; }
+  .technical-assessments-templates .assessment-tracks-grid { grid-template-columns: 1fr !important; }
+  .assessment-track-card-footer { align-items: stretch !important; flex-direction: column; gap: 10px; }
+  .assessment-track-card-footer > div { justify-content: space-between; }
+}
+
+@media (max-width: 480px) {
+  .dashboard-viewport:has(> .technical-assessments-templates) { padding: 12px; }
+  .assessment-overview-card { min-height: 78px; }
+  .technical-assessments-templates .pipeline-page-title { font-size: 24px !important; }
+  .dashboard-viewport:has(> .technical-assessments-performance-hub),
+  .dashboard-viewport:has(> .technical-assessments-submissions),
+  .dashboard-viewport:has(> .technical-assessments-leaderboard) { padding: 12px; }
+  .performance-overview-card { min-height: 78px; }
+  .technical-assessments-performance-hub .pipeline-page-title,
+  .technical-assessments-submissions .pipeline-page-title,
+  .technical-assessments-leaderboard .pipeline-page-title { font-size: 24px !important; }
+}

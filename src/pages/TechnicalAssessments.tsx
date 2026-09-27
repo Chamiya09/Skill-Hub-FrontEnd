@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { ProblemStatementViewer } from "../components/assessment";
 import { AiInterviewSchedulerModal } from "../components/AiInterviewSchedulerModal";
+import "./TechnicalAssessmentsFull.css";
 
 const LANGUAGE_STARTER_TEMPLATES: Record<string, string> = {
   csharp: `using System;
@@ -1212,7 +1213,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
   return (
     <div
-      className="pipeline-selector-container"
+      className={`pipeline-selector-container technical-assessments-page technical-assessments-${activeSection}`}
       style={{ maxWidth: "1280px", margin: "0 auto", padding: "24px 20px" }}
     >
       {/* Toast */}
@@ -1359,9 +1360,76 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         )}
       </div>
 
+      {!isPerformanceHub && !isInterviewSelection && (
+        <section className="assessment-overview-grid" aria-label="Assessment overview">
+          <article className="assessment-overview-card assessment-overview-card--green">
+            <span className="assessment-overview-icon"><BriefcaseIcon /></span>
+            <div>
+              <strong>{assessments.length}</strong>
+              <span>Total assessment tracks</span>
+            </div>
+          </article>
+          <article className="assessment-overview-card assessment-overview-card--blue">
+            <span className="assessment-overview-icon"><CheckCircle2 size={19} /></span>
+            <div>
+              <strong>{assessments.filter((track) => track.status === "Published").length}</strong>
+              <span>Published tracks</span>
+            </div>
+          </article>
+          <article className="assessment-overview-card assessment-overview-card--amber">
+            <span className="assessment-overview-icon"><Pencil size={18} /></span>
+            <div>
+              <strong>{assessments.filter((track) => track.status === "Draft").length}</strong>
+              <span>Draft assessments</span>
+            </div>
+          </article>
+          <article className="assessment-overview-card assessment-overview-card--violet">
+            <span className="assessment-overview-icon"><Users size={19} /></span>
+            <div>
+              <strong>{assessments.reduce((total, track) => total + track.totalSubmissions, 0)}</strong>
+              <span>Candidates evaluated</span>
+            </div>
+          </article>
+        </section>
+      )}
+
+      {isPerformanceHub && (
+        <section className="performance-overview-grid" aria-label="Performance overview">
+          <article className="performance-overview-card performance-overview-card--green">
+            <span className="performance-overview-icon"><Users size={19} /></span>
+            <div>
+              <strong>{submissions.length}</strong>
+              <span>Total submissions</span>
+            </div>
+          </article>
+          <article className="performance-overview-card performance-overview-card--amber">
+            <span className="performance-overview-icon"><ClockIcon /></span>
+            <div>
+              <strong>{submissions.filter((item) => item.status === "Under_Review" || item.status === "Submitted").length}</strong>
+              <span>Awaiting review</span>
+            </div>
+          </article>
+          <article className="performance-overview-card performance-overview-card--blue">
+            <span className="performance-overview-icon"><CheckCircle2 size={19} /></span>
+            <div>
+              <strong>{submissions.filter((item) => item.status === "Graded" || item.status === "Passed").length}</strong>
+              <span>Graded submissions</span>
+            </div>
+          </article>
+          <article className="performance-overview-card performance-overview-card--violet">
+            <span className="performance-overview-icon"><TrophyIcon /></span>
+            <div>
+              <strong>{submissions.filter((item) => item.isSelectedForInterview).length}</strong>
+              <span>Interview selections</span>
+            </div>
+          </article>
+        </section>
+      )}
+
       {/* Active Section / Performance Hub Tabs */}
       {!isInterviewSelection && (
         <div
+          className="assessment-section-tabs"
           style={{
             display: "flex",
             gap: "12px",
@@ -1448,9 +1516,10 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           VIEW 1: ASSESSMENTS
           ========================================================= */}
       {!isPerformanceHub && !isInterviewSelection && (
-        <div>
+        <div className="assessment-workspace">
           {/* Action Row */}
           <div
+            className="assessment-action-row"
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -1625,6 +1694,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
             </div>
           ) : (
             <div
+              className="assessment-tracks-grid"
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))",
@@ -1634,6 +1704,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               {assessments.map((track) => (
                 <div
                   key={track.id}
+                  className="assessment-track-card"
                   style={{
                     background: "#ffffff",
                     border: "1px solid #e2e8f0",
@@ -1803,6 +1874,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
                     return (
                       <div
+                        className="assessment-track-card-footer"
                         style={{
                           display: "flex",
                           justifyContent: "space-between",
@@ -1900,9 +1972,10 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           VIEW 2: CANDIDATE SUBMISSIONS & MANUAL CODE REVIEW
           ========================================================= */}
       {isPerformanceHub && perfTab === "submissions" && (
-        <div>
+        <div className="performance-workspace performance-submissions-workspace">
           {/* Header & Filter Controls */}
           <div
+            className="performance-toolbar"
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -1939,6 +2012,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
             {/* Search Input */}
             <div
+              className="performance-search"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -1985,6 +2059,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
           {/* Filter Pills Bar */}
           <div
+            className="performance-filter-bar"
             style={{
               display: "flex",
               gap: "8px",
@@ -2172,6 +2247,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
               return (
                 <div
+                  className="performance-table-shell"
                   style={{
                     background: "#ffffff",
                     borderRadius: "16px",
@@ -2580,8 +2656,9 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           VIEW 3: TOP 5 LEADERBOARD & STUDENT 3 HANDOFF
           ========================================================= */}
       {isPerformanceHub && perfTab === "leaderboard" && (
-        <div>
+        <div className="performance-workspace performance-leaderboard-workspace">
           <div
+            className="performance-toolbar"
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -2643,6 +2720,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
             </div>
           ) : leaderboard.length === 0 ? (
             <div
+              className="performance-table-shell performance-leaderboard-table"
               style={{
                 background: "#f8fafc",
                 border: "2px dashed #cbd5e1",
@@ -2677,6 +2755,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
             </div>
           ) : (
             <div
+              className="performance-table-shell performance-leaderboard-table"
               style={{
                 background: "#ffffff",
                 borderRadius: "16px",

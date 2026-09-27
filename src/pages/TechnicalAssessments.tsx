@@ -218,6 +218,57 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     "all" | "pending" | "graded" | "interview"
   >("all");
   const [submissionSearch, setSubmissionSearch] = useState<string>("");
+  const [submissionSortBy, setSubmissionSortBy] = useState<'newest' | 'score' | 'name'>('newest');
+  const [leaderboardSearch, setLeaderboardSearch] = useState<string>('');
+
+  const pendingSubmissionsCount = useMemo(() => {
+    return submissions.filter((s) => s.status === 'Under_Review' || s.status === 'Submitted').length;
+  }, [submissions]);
+
+  const gradedSubmissionsCount = useMemo(() => {
+    return submissions.filter((s) => s.status === 'Graded' || s.status === 'Passed').length;
+  }, [submissions]);
+
+  const interviewSelectedCount = useMemo(() => {
+    return submissions.filter((s) => s.isSelectedForInterview).length;
+  }, [submissions]);
+
+  const hasActiveSubmissionFilters = submissionFilter !== 'all' || submissionSearch.trim() !== '';
+
+  const clearSubmissionFilters = () => {
+    setSubmissionFilter('all');
+    setSubmissionSearch('');
+    setSubmissionSortBy('newest');
+  };
+
+  const filteredSubmissions = useMemo(() => {
+    const list = submissions.filter((s) => {
+      if (submissionFilter === "pending" && s.status !== "Under_Review" && s.status !== "Submitted") return false;
+      if (submissionFilter === "graded" && s.status !== "Graded" && s.status !== "Passed") return false;
+      if (submissionFilter === "interview" && !s.isSelectedForInterview) return false;
+
+      if (submissionSearch.trim()) {
+        const q = submissionSearch.toLowerCase().trim();
+        const nameMatch = (s.candidateName || "").toLowerCase().includes(q);
+        const emailMatch = (s.candidateEmail || "").toLowerCase().includes(q);
+        return nameMatch || emailMatch;
+      }
+      return true;
+    });
+
+    return [...list].sort((a, b) => {
+      if (submissionSortBy === 'score') {
+        return (b.examScore || 0) - (a.examScore || 0);
+      }
+      if (submissionSortBy === 'name') {
+        return (a.candidateName || "").localeCompare(b.candidateName || "");
+      }
+      if (submissionSortBy === 'newest') {
+        return new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime();
+      }
+      return 0;
+    });
+  }, [submissions, submissionFilter, submissionSearch, submissionSortBy]);
 
   // 5. Code Review Modal state
   const [reviewingSubmission, setReviewingSubmission] =
@@ -234,6 +285,16 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   // 6. Leaderboard state
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntryDto[]>([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState<boolean>(false);
+
+  const filteredLeaderboard = useMemo(() => {
+    if (!leaderboardSearch.trim()) return leaderboard;
+    const q = leaderboardSearch.toLowerCase().trim();
+    return leaderboard.filter(
+      (entry) =>
+        (entry.candidateName || "").toLowerCase().includes(q) ||
+        (entry.candidateEmail || "").toLowerCase().includes(q)
+    );
+  }, [leaderboard, leaderboardSearch]);
 
   // 6b. Interview Selection state
   const [interviewSelections, setInterviewSelections] = useState<
@@ -1300,8 +1361,8 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         </div>
       )}
 
-      {/* When in Performance Hub or Interview Selection, display their respective headers */}
-      {(isPerformanceHub || isInterviewSelection) && (
+      {/* When in Interview Selection, display its specialized interview header */}
+      {isInterviewSelection && (
         <div
           className="pipeline-selector-header"
           style={{ marginBottom: "24px" }}
@@ -1588,102 +1649,244 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         </section>
       )}
 
+      {/* =========================================================
+          TOP COMPONENT: PERFORMANCE HUB DASHBOARD CARD
+          (Matches Candidate Technical Assessments Portal Design System)
+          ========================================================= */}
       {isPerformanceHub && (
-        <section className="performance-overview-grid" aria-label="Performance overview">
-          <article className="performance-overview-card performance-overview-card--green">
-            <span className="performance-overview-icon"><Users size={19} /></span>
+        <section className="assessment-dashboard-card" aria-labelledby="performance-dashboard-title">
+          <div className="assessment-dashboard-header">
             <div>
-              <strong>{submissions.length}</strong>
-              <span>Total submissions</span>
+              <span className="assessment-dashboard-eyebrow">Performance Hub &amp; Code Evaluation</span>
+              <h2 id="performance-dashboard-title">Performance Hub Dashboard</h2>
+              <p>
+                Review candidate code solutions, inspect anti-cheat proctor telemetry, evaluate technical submissions, and promote top performers to technical interviews.
+              </p>
             </div>
-          </article>
-          <article className="performance-overview-card performance-overview-card--amber">
-            <span className="performance-overview-icon"><ClockIcon /></span>
-            <div>
-              <strong>{submissions.filter((item) => item.status === "Under_Review" || item.status === "Submitted").length}</strong>
-              <span>Awaiting review</span>
+
+            <div className="assessment-dashboard-header-actions">
+              <span className="assessment-dashboard-live">
+                <span /> Review Engine Active
+              </span>
+              {perfTab === "leaderboard" ? (
+                <button
+                  type="button"
+                  onClick={handleFinalizeTop5}
+                  disabled={isFinalizing || leaderboard.length === 0}
+                  className="assessment-action-create-btn"
+                  title="Finalize Top 5 and hand off to Student 3 interview orchestration"
+                >
+                  <TrophyIcon />
+                  <span>{isFinalizing ? "Finalizing..." : "Finalize Top 5 Candidates →"}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setPerfTab("leaderboard")}
+                  className="assessment-action-ai-btn"
+                  title="View ranked candidate leaderboard"
+                >
+                  <TrophyIcon />
+                  <span>View Leaderboard ({leaderboard.length})</span>
+                </button>
+              )}
             </div>
-          </article>
-          <article className="performance-overview-card performance-overview-card--blue">
-            <span className="performance-overview-icon"><CheckCircle2 size={19} /></span>
-            <div>
-              <strong>{submissions.filter((item) => item.status === "Graded" || item.status === "Passed").length}</strong>
-              <span>Graded submissions</span>
-            </div>
-          </article>
-          <article className="performance-overview-card performance-overview-card--violet">
-            <span className="performance-overview-icon"><TrophyIcon /></span>
-            <div>
-              <strong>{submissions.filter((item) => item.isSelectedForInterview).length}</strong>
-              <span>Interview selections</span>
-            </div>
-          </article>
+          </div>
+
+          <div className="assessment-summary-grid">
+            <article className="assessment-summary-card summary-total">
+              <div className="summary-icon"><Users size={20} /></div>
+              <div>
+                <span>Total Submissions</span>
+                <strong>{submissions.length}</strong>
+                <small>Received candidate exams</small>
+              </div>
+            </article>
+            <article className="assessment-summary-card summary-action">
+              <div className="summary-icon"><ClockIcon /></div>
+              <div>
+                <span>Awaiting Review</span>
+                <strong>{pendingSubmissionsCount}</strong>
+                <small>Needs code evaluation</small>
+              </div>
+            </article>
+            <article className="assessment-summary-card summary-complete">
+              <div className="summary-icon"><CheckCircle2 size={20} /></div>
+              <div>
+                <span>Graded Submissions</span>
+                <strong>{gradedSubmissionsCount}</strong>
+                <small>Completed evaluations</small>
+              </div>
+            </article>
+            <article className="assessment-summary-card summary-score">
+              <div className="summary-icon"><TrophyIcon /></div>
+              <div>
+                <span>Interview Selected</span>
+                <strong>{interviewSelectedCount}</strong>
+                <small>Promoted for interview</small>
+              </div>
+            </article>
+          </div>
         </section>
       )}
 
-      {/* Active Section / Performance Hub Tabs */}
+      {/* =========================================================
+          FILTER & SEARCH CONTROLS PANEL: PERFORMANCE HUB
+          (Matches Candidate Technical Assessments Filter Toolbar)
+          ========================================================= */}
       {isPerformanceHub && (
-        <div
-          className="assessment-section-tabs"
-          style={{
-            display: "flex",
-            gap: "12px",
-            borderBottom: "2px solid #e2e8f0",
-            marginBottom: "24px",
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setPerfTab("submissions")}
-            style={{
-              padding: "12px 20px",
-              fontSize: "14.5px",
-              fontWeight: 700,
-              color: perfTab === "submissions" ? "#00b074" : "#64748b",
-              borderBottom:
-                perfTab === "submissions"
-                  ? "3px solid #00b074"
-                  : "3px solid transparent",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              marginBottom: "-2px",
-            }}
-          >
-            <SparkleIcon />
-            <span>
-              Candidate Submissions &amp; Review ({submissions.length})
+        <section className="assessments-filter-panel" aria-label="Performance filters">
+          <div className="assessments-filter-heading">
+            <div>
+              <span className="filter-eyebrow">Performance workspace</span>
+              <h2>Candidate results for {selectedJob?.title || 'Active Role'}</h2>
+            </div>
+            <span className="filter-result-count">
+              {perfTab === "submissions"
+                ? `${filteredSubmissions.length} of ${submissions.length} submissions shown`
+                : `${filteredLeaderboard.length} of ${leaderboard.length} candidates shown`}
             </span>
-          </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setPerfTab("leaderboard")}
-            style={{
-              padding: "12px 20px",
-              fontSize: "14.5px",
-              fontWeight: 700,
-              color: perfTab === "leaderboard" ? "#00b074" : "#64748b",
-              borderBottom:
-                perfTab === "leaderboard"
-                  ? "3px solid #00b074"
-                  : "3px solid transparent",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              marginBottom: "-2px",
-            }}
-          >
-            <TrophyIcon />
-            <span>Top 5 Leaderboard ({leaderboard.length})</span>
-          </button>
-        </div>
+          <div className="assessments-toolbar">
+            {/* View Switcher Tabs */}
+            <div className="assessments-tabs">
+              <button
+                type="button"
+                className={`tab-btn ${perfTab === 'submissions' ? 'active' : ''}`}
+                onClick={() => setPerfTab('submissions')}
+              >
+                Candidate Submissions ({submissions.length})
+              </button>
+              <button
+                type="button"
+                className={`tab-btn ${perfTab === 'leaderboard' ? 'active' : ''}`}
+                onClick={() => setPerfTab('leaderboard')}
+              >
+                Top 5 Leaderboard ({leaderboard.length})
+              </button>
+            </div>
+
+            {/* Submissions Status Tabs (when on Submissions tab) */}
+            {perfTab === "submissions" && (
+              <div className="assessments-tabs">
+                <button
+                  type="button"
+                  className={`tab-btn ${submissionFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => setSubmissionFilter('all')}
+                >
+                  All ({submissions.length})
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${submissionFilter === 'pending' ? 'active' : ''}`}
+                  onClick={() => setSubmissionFilter('pending')}
+                >
+                  Pending ({pendingSubmissionsCount})
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${submissionFilter === 'graded' ? 'active' : ''}`}
+                  onClick={() => setSubmissionFilter('graded')}
+                >
+                  Graded ({gradedSubmissionsCount})
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${submissionFilter === 'interview' ? 'active' : ''}`}
+                  onClick={() => setSubmissionFilter('interview')}
+                >
+                  Selected ({interviewSelectedCount})
+                </button>
+              </div>
+            )}
+
+            {/* Search Box */}
+            <div className="assessments-search">
+              <SearchIcon />
+              <input
+                type="text"
+                placeholder={perfTab === "submissions" ? "Search candidate name or email..." : "Search leaderboard..."}
+                value={perfTab === "submissions" ? submissionSearch : leaderboardSearch}
+                onChange={(e) => {
+                  if (perfTab === "submissions") {
+                    setSubmissionSearch(e.target.value);
+                  } else {
+                    setLeaderboardSearch(e.target.value);
+                  }
+                }}
+              />
+              {((perfTab === "submissions" && submissionSearch) || (perfTab === "leaderboard" && leaderboardSearch)) && (
+                <button
+                  type="button"
+                  className="search-clear-btn"
+                  onClick={() => {
+                    if (perfTab === "submissions") {
+                      setSubmissionSearch('');
+                    } else {
+                      setLeaderboardSearch('');
+                    }
+                  }}
+                  title="Clear search"
+                >
+                  <XIcon />
+                </button>
+              )}
+            </div>
+
+            {/* Active Requisition Select */}
+            <div className="assessments-select-group">
+              <label htmlFor="performance-job-select">Active Requisition</label>
+              <select
+                id="performance-job-select"
+                value={selectedJob?.id || ''}
+                onChange={(e) => {
+                  const j = jobs.find((item) => item.id === e.target.value);
+                  if (j) {
+                    setSelectedJob(j);
+                    sessionStorage.setItem(
+                      'skillhub_active_job_requisition_id',
+                      j.id
+                    );
+                  }
+                }}
+              >
+                {jobs.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    {j.title} ({j.department})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sort Dropdown (when on submissions tab) */}
+            {perfTab === "submissions" && (
+              <div className="assessments-select-group">
+                <label htmlFor="performance-sort-select">Sort by</label>
+                <select
+                  id="performance-sort-select"
+                  value={submissionSortBy}
+                  onChange={(e) => setSubmissionSortBy(e.target.value as any)}
+                >
+                  <option value="newest">Newest submission</option>
+                  <option value="score">Highest exam score</option>
+                  <option value="name">Candidate name (A - Z)</option>
+                </select>
+              </div>
+            )}
+
+            {/* Clear Filters Button */}
+            {perfTab === "submissions" && hasActiveSubmissionFilters && (
+              <button
+                type="button"
+                className="assessments-clear-filters"
+                onClick={clearSubmissionFilters}
+              >
+                <XIcon /> Clear filters
+              </button>
+            )}
+          </div>
+        </section>
       )}
 
       {/* =========================================================
@@ -1989,193 +2192,6 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           ========================================================= */}
       {isPerformanceHub && perfTab === "submissions" && (
         <div className="performance-workspace performance-submissions-workspace">
-          {/* Header & Filter Controls */}
-          <div
-            className="performance-toolbar"
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "20px",
-              flexWrap: "wrap",
-              gap: "16px",
-            }}
-          >
-            <div>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: 700,
-                  color: "#0f172a",
-                  margin: 0,
-                }}
-              >
-                Candidate Code Submissions (
-                {selectedJob?.title || "Selected Requisition"})
-              </h3>
-              <p
-                style={{
-                  fontSize: "12.5px",
-                  color: "#64748b",
-                  margin: "2px 0 0 0",
-                }}
-              >
-                Review candidate typed solutions, evaluate code correctness,
-                assign marks, and select candidates for technical interview
-                rounds.
-              </p>
-            </div>
-
-            {/* Search Input */}
-            <div
-              className="performance-search"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                background: "#ffffff",
-                border: "1px solid #cbd5e1",
-                borderRadius: "10px",
-                padding: "6px 12px",
-                minWidth: "260px",
-              }}
-            >
-              <span style={{ color: "#94a3b8", fontSize: "13px" }}>🔍</span>
-              <input
-                type="text"
-                placeholder="Search candidate name or email..."
-                value={submissionSearch}
-                onChange={(e) => setSubmissionSearch(e.target.value)}
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  outline: "none",
-                  fontSize: "13px",
-                  width: "100%",
-                  color: "#0f172a",
-                }}
-              />
-              {submissionSearch && (
-                <button
-                  type="button"
-                  onClick={() => setSubmissionSearch("")}
-                  style={{
-                    border: "none",
-                    background: "none",
-                    color: "#94a3b8",
-                    cursor: "pointer",
-                    padding: 0,
-                  }}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Filter Pills Bar */}
-          <div
-            className="performance-filter-bar"
-            style={{
-              display: "flex",
-              gap: "8px",
-              marginBottom: "20px",
-              flexWrap: "wrap",
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setSubmissionFilter("all")}
-              style={{
-                padding: "6px 14px",
-                borderRadius: "999px",
-                fontSize: "12.5px",
-                fontWeight: 700,
-                border: "1px solid",
-                borderColor: submissionFilter === "all" ? "#00b074" : "#e2e8f0",
-                background: submissionFilter === "all" ? "#ecfdf5" : "#ffffff",
-                color: submissionFilter === "all" ? "#047857" : "#64748b",
-                cursor: "pointer",
-              }}
-            >
-              All Submissions ({submissions.length})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSubmissionFilter("pending")}
-              style={{
-                padding: "6px 14px",
-                borderRadius: "999px",
-                fontSize: "12.5px",
-                fontWeight: 700,
-                border: "1px solid",
-                borderColor:
-                  submissionFilter === "pending" ? "#f59e0b" : "#e2e8f0",
-                background:
-                  submissionFilter === "pending" ? "#fffbeb" : "#ffffff",
-                color: submissionFilter === "pending" ? "#b45309" : "#64748b",
-                cursor: "pointer",
-              }}
-            >
-              Pending Review (
-              {
-                submissions.filter(
-                  (s) =>
-                    s.status === "Under_Review" || s.status === "Submitted",
-                ).length
-              }
-              )
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSubmissionFilter("graded")}
-              style={{
-                padding: "6px 14px",
-                borderRadius: "999px",
-                fontSize: "12.5px",
-                fontWeight: 700,
-                border: "1px solid",
-                borderColor:
-                  submissionFilter === "graded" ? "#10b981" : "#e2e8f0",
-                background:
-                  submissionFilter === "graded" ? "#ecfdf5" : "#ffffff",
-                color: submissionFilter === "graded" ? "#047857" : "#64748b",
-                cursor: "pointer",
-              }}
-            >
-              Graded (
-              {
-                submissions.filter(
-                  (s) => s.status === "Graded" || s.status === "Passed",
-                ).length
-              }
-              )
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSubmissionFilter("interview")}
-              style={{
-                padding: "6px 14px",
-                borderRadius: "999px",
-                fontSize: "12.5px",
-                fontWeight: 700,
-                border: "1px solid",
-                borderColor:
-                  submissionFilter === "interview" ? "#8b5cf6" : "#e2e8f0",
-                background:
-                  submissionFilter === "interview" ? "#f5f3ff" : "#ffffff",
-                color: submissionFilter === "interview" ? "#6d28d9" : "#64748b",
-                cursor: "pointer",
-              }}
-            >
-              Selected for Interview (
-              {submissions.filter((s) => s.isSelectedForInterview).length})
-            </button>
-          </div>
-
           {/* Submissions Table / Empty State */}
           {loadingSubmissions ? (
             <div
@@ -2190,37 +2206,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
             </div>
           ) : (
             (() => {
-              const filtered = submissions.filter((s) => {
-                if (
-                  submissionFilter === "pending" &&
-                  s.status !== "Under_Review" &&
-                  s.status !== "Submitted"
-                )
-                  return false;
-                if (
-                  submissionFilter === "graded" &&
-                  s.status !== "Graded" &&
-                  s.status !== "Passed"
-                )
-                  return false;
-                if (
-                  submissionFilter === "interview" &&
-                  !s.isSelectedForInterview
-                )
-                  return false;
-
-                if (submissionSearch.trim()) {
-                  const q = submissionSearch.toLowerCase();
-                  const nameMatch = (s.candidateName || "")
-                    .toLowerCase()
-                    .includes(q);
-                  const emailMatch = (s.candidateEmail || "")
-                    .toLowerCase()
-                    .includes(q);
-                  return nameMatch || emailMatch;
-                }
-                return true;
-              });
+              const filtered = filteredSubmissions;
 
               if (filtered.length === 0) {
                 return (
@@ -2250,13 +2236,22 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         fontSize: "13px",
                         color: "#64748b",
                         maxWidth: "480px",
-                        margin: "0 auto",
+                        margin: "0 auto 16px auto",
                       }}
                     >
                       {submissionSearch || submissionFilter !== "all"
                         ? "Try clearing your search or switching filters."
                         : "When shortlisted candidates take and submit their coding challenges, their typed code and solutions will appear here for review."}
                     </p>
+                    {hasActiveSubmissionFilters && (
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={clearSubmissionFilters}
+                      >
+                        Clear Filters
+                      </button>
+                    )}
                   </div>
                 );
               }
@@ -2823,7 +2818,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                     </tr>
                   </thead>
                   <tbody>
-                    {leaderboard.map((row) => (
+                    {filteredLeaderboard.map((row) => (
                       <tr
                         key={row.submissionId}
                         style={{

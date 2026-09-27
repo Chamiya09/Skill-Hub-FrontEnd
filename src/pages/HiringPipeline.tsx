@@ -20,7 +20,6 @@ import {
   MapPinIcon,
   ClockIcon,
   ArrowRightIcon,
-  BuildingIcon,
   PlusIcon,
   XIcon,
   MailIcon,

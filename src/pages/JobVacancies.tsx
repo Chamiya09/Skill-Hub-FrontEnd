@@ -8,7 +8,11 @@ import {
   BuildingIcon,
   MapPinIcon,
   CheckIcon,
+  SparkleIcon,
+  XIcon,
+  ClockIcon,
 } from '../components/common/Icons';
+import { Briefcase } from 'lucide-react';
 import { JobFormModal, type JobFormData } from '../components/jobs/JobFormModal';
 import { CandidatesListModal } from '../components/candidates/CandidatesListModal';
 import { jobsApi, type JobDto } from '../services/api';
@@ -42,7 +46,11 @@ export const JobVacancies = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [departmentFilter, setDepartmentFilter] = useState('All');
+  const [typeFilter, setTypeFilter] = useState('All');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'applicants' | 'title'>('newest');
   const [successToast, setSuccessToast] = useState<string | null>(null);
+
+  const employmentTypes = ['All', 'Full-time', 'Contract', 'Part-time', 'Remote'];
 
   // Multi-Step Modal State
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
@@ -103,27 +111,63 @@ export const JobVacancies = () => {
   // Departments list dynamically computed
   const departments = useMemo(() => {
     const set = new Set(vacancies.map((v) => v.department));
-    return ['All', ...Array.from(set).filter(Boolean)];
+    return ['All', ...Array.from(set).filter(Boolean).sort((a, b) => a.localeCompare(b))];
   }, [vacancies]);
 
-  // Filtered vacancies
+  // Status and metric counts
+  const activeCount = useMemo(() => vacancies.filter((v) => v.status === 'Active').length, [vacancies]);
+  const draftCount = useMemo(() => vacancies.filter((v) => v.status === 'Draft').length, [vacancies]);
+  const closedCount = useMemo(() => vacancies.filter((v) => v.status === 'Closed').length, [vacancies]);
+  const totalApplicants = useMemo(() => vacancies.reduce((sum, v) => sum + (v.applicantsCount || 0), 0), [vacancies]);
+
+  const hasActiveFilters =
+    searchQuery.trim() !== '' ||
+    statusFilter !== 'All' ||
+    departmentFilter !== 'All' ||
+    typeFilter !== 'All' ||
+    sortBy !== 'newest';
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('All');
+    setDepartmentFilter('All');
+    setTypeFilter('All');
+    setSortBy('newest');
+  };
+
+  // Filtered and sorted vacancies
   const filteredVacancies = useMemo(() => {
-    return vacancies.filter((job) => {
-      const q = searchQuery.toLowerCase().trim();
-      const matchesTags = (job.tags || []).some((t) => t.toLowerCase().includes(q));
-      const matchesSearch =
-        !q ||
-        job.title.toLowerCase().includes(q) ||
-        job.department.toLowerCase().includes(q) ||
-        job.location.toLowerCase().includes(q) ||
-        matchesTags;
+    return vacancies
+      .filter((job) => {
+        const q = searchQuery.toLowerCase().trim();
+        const matchesTags = (job.tags || []).some((t) => t.toLowerCase().includes(q));
+        const matchesSearch =
+          !q ||
+          job.title.toLowerCase().includes(q) ||
+          job.department.toLowerCase().includes(q) ||
+          job.location.toLowerCase().includes(q) ||
+          matchesTags;
 
-      const matchesStatus = statusFilter === 'All' || job.status === statusFilter;
-      const matchesDept = departmentFilter === 'All' || job.department === departmentFilter;
+        const matchesStatus = statusFilter === 'All' || job.status.toLowerCase() === statusFilter.toLowerCase();
+        const matchesDept = departmentFilter === 'All' || job.department === departmentFilter;
+        const matchesType = typeFilter === 'All' || (job.type && job.type.toLowerCase() === typeFilter.toLowerCase());
 
-      return matchesSearch && matchesStatus && matchesDept;
-    });
-  }, [vacancies, searchQuery, statusFilter, departmentFilter]);
+        return matchesSearch && matchesStatus && matchesDept && matchesType;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'oldest') {
+          return new Date(a.postedDate || 0).getTime() - new Date(b.postedDate || 0).getTime();
+        }
+        if (sortBy === 'applicants') {
+          return (b.applicantsCount || 0) - (a.applicantsCount || 0);
+        }
+        if (sortBy === 'title') {
+          return a.title.localeCompare(b.title);
+        }
+        // Default: newest
+        return new Date(b.postedDate || 0).getTime() - new Date(a.postedDate || 0).getTime();
+      });
+  }, [vacancies, searchQuery, statusFilter, departmentFilter, typeFilter, sortBy]);
 
   const showToast = (message: string) => {
     setSuccessToast(message);
@@ -217,110 +261,195 @@ export const JobVacancies = () => {
       )}
 
       {/* =========================================================
-          1. PAGE HEADER
+          1. TOP COMPONENT: VACANCIES DASHBOARD CARD
+          (Matches Candidate Technical Assessments Dashboard Header & Metrics)
           ========================================================= */}
-      <div className="vacancies-page-header">
-        <div className="vacancies-header-title-box">
-          <span className="vacancies-header-eyebrow">
-            <BuildingIcon /> Recruitment workspace
-          </span>
-          <div className="vacancies-title-row">
-            <h1 className="vacancies-page-title">Job Vacancies</h1>
-            <span className="vacancies-count-badge">
-              {vacancies.filter((v) => v.status === 'Active').length} Active Roles
-            </span>
+      <section className="vacancies-dashboard-card" aria-labelledby="vacancies-dashboard-title">
+        <div className="vacancies-dashboard-header">
+          <div>
+            <span className="vacancies-dashboard-eyebrow">Recruitment overview</span>
+            <h2 id="vacancies-dashboard-title">Job Vacancies Dashboard</h2>
+            <p>A comprehensive overview of your corporate requisitions, open roles, and talent pipeline.</p>
           </div>
-          <p className="vacancies-page-subtitle">
-            Manage your corporate requisitions, monitor candidate pipelines, and post new positions to your PostgreSQL database.
-          </p>
+          <div className="vacancies-dashboard-header-actions">
+            <span className="vacancies-dashboard-live">
+              <span /> Live recruitment
+            </span>
+            <button
+              type="button"
+              className="btn-primary vacancies-create-btn"
+              onClick={handleOpenCreate}
+            >
+              <PlusIcon />
+              <span>Create New Job</span>
+            </button>
+          </div>
         </div>
 
-        <button
-          type="button"
-          className="btn-primary vacancies-create-btn"
-          onClick={handleOpenCreate}
-        >
-          <PlusIcon />
-          <span>Create New Job</span>
-        </button>
-      </div>
+        <div className="vacancies-summary-grid">
+          <article className="vacancies-summary-card summary-total">
+            <div className="summary-icon"><Briefcase size={22} /></div>
+            <div>
+              <span>Total vacancies</span>
+              <strong>{vacancies.length}</strong>
+              <small>All corporate positions</small>
+            </div>
+          </article>
+          <article className="vacancies-summary-card summary-active">
+            <div className="summary-icon"><SparkleIcon /></div>
+            <div>
+              <span>Active positions</span>
+              <strong>{activeCount}</strong>
+              <small>Open for applications</small>
+            </div>
+          </article>
+          <article className="vacancies-summary-card summary-draft">
+            <div className="summary-icon"><ClockIcon /></div>
+            <div>
+              <span>Draft & Closed</span>
+              <strong>{draftCount + closedCount}</strong>
+              <small>{draftCount} draft • {closedCount} closed</small>
+            </div>
+          </article>
+          <article className="vacancies-summary-card summary-applicants">
+            <div className="summary-icon"><UsersIcon /></div>
+            <div>
+              <span>Total applicants</span>
+              <strong>{totalApplicants}</strong>
+              <small>Candidates in pipeline</small>
+            </div>
+          </article>
+        </div>
+      </section>
 
       {/* =========================================================
-          2. SEARCH & FILTER CONTROLS BAR
+          2. FILTER & SEARCH CONTROLS PANEL
+          (Matches Candidate Technical Assessments Filter Toolbar)
           ========================================================= */}
-      <div className="vacancies-filter-card">
+      <section className="vacancies-filter-panel" aria-label="Vacancy filters">
         <div className="vacancies-filter-heading">
           <div>
-            <span>Vacancy management</span>
+            <span className="filter-eyebrow">Vacancy workspace</span>
             <h2>Find and manage positions</h2>
           </div>
-          <strong>{filteredVacancies.length} of {vacancies.length} shown</strong>
+          <span className="filter-result-count">
+            {filteredVacancies.length} of {vacancies.length} shown
+          </span>
         </div>
-        <div className="vacancies-search-group">
-          <div className="vacancies-input-wrapper">
-            <div className="vacancies-input-icon">
-              <SearchIcon />
-            </div>
+
+        <div className="vacancies-toolbar">
+          {/* Status Tabs */}
+          <div className="vacancies-tabs">
+            <button
+              type="button"
+              className={`tab-btn ${statusFilter === 'All' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('All')}
+            >
+              All Vacancies ({vacancies.length})
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${statusFilter === 'Active' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('Active')}
+            >
+              Active ({activeCount})
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${statusFilter === 'Draft' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('Draft')}
+            >
+              Draft ({draftCount})
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${statusFilter === 'Closed' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('Closed')}
+            >
+              Closed ({closedCount})
+            </button>
+          </div>
+
+          {/* Search Box */}
+          <div className="vacancies-search">
+            <SearchIcon />
             <input
               type="text"
-              placeholder="Search by job title, department, or location..."
+              placeholder="Search by job title, department, or keyword..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="vacancies-search-input"
             />
-          </div>
-        </div>
-
-        <div className="vacancies-filter-dropdowns">
-          {/* Status Filter */}
-          <div className="vacancies-select-wrapper">
-            <label htmlFor="status-filter-select" className="vacancies-filter-label">Status</label>
-            <select
-              id="status-filter-select"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="vacancies-select-input"
-            >
-              <option value="All">All Statuses</option>
-              <option value="Active">Active</option>
-              <option value="Draft">Draft</option>
-              <option value="Closed">Closed</option>
-            </select>
+            {searchQuery && (
+              <button
+                type="button"
+                className="search-clear-btn"
+                onClick={() => setSearchQuery('')}
+                title="Clear search"
+              >
+                <XIcon />
+              </button>
+            )}
           </div>
 
-          {/* Department Filter */}
-          <div className="vacancies-select-wrapper">
-            <label htmlFor="dept-filter-select" className="vacancies-filter-label">Department</label>
+          {/* Department Select */}
+          <div className="vacancies-select-group">
+            <label htmlFor="vacancies-dept-filter">Department</label>
             <select
-              id="dept-filter-select"
+              id="vacancies-dept-filter"
               value={departmentFilter}
               onChange={(e) => setDepartmentFilter(e.target.value)}
-              className="vacancies-select-input"
             >
               {departments.map((dept) => (
                 <option key={dept} value={dept}>
-                  {dept === 'All' ? 'All Departments' : dept}
+                  {dept === 'All' ? 'All departments' : dept}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Reset Filters CTA */}
-          {(searchQuery || statusFilter !== 'All' || departmentFilter !== 'All') && (
+          {/* Job Type Select */}
+          <div className="vacancies-select-group">
+            <label htmlFor="vacancies-type-filter">Job Type</label>
+            <select
+              id="vacancies-type-filter"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+            >
+              {employmentTypes.map((t) => (
+                <option key={t} value={t}>
+                  {t === 'All' ? 'All types' : t}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sort By Select */}
+          <div className="vacancies-select-group">
+            <label htmlFor="vacancies-sort-filter">Sort by</label>
+            <select
+              id="vacancies-sort-filter"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+            >
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="applicants">Most applicants</option>
+              <option value="title">Title (A - Z)</option>
+            </select>
+          </div>
+
+          {/* Clear All Filters */}
+          {hasActiveFilters && (
             <button
               type="button"
-              className="vacancies-reset-btn"
-              onClick={() => {
-                setSearchQuery('');
-                setStatusFilter('All');
-                setDepartmentFilter('All');
-              }}
+              className="vacancies-clear-filters"
+              onClick={clearFilters}
             >
-              Reset
+              <XIcon /> Clear filters
             </button>
           )}
         </div>
-      </div>
+      </section>
 
       {/* Error Banner */}
       {errorMessage && (

@@ -1816,113 +1816,65 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               </button>
             </div>
           ) : (
-            <div
-              className="assessment-tracks-grid"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))",
-                gap: "20px",
-              }}
-            >
-              {filteredAssessments.map((track) => (
-                <div
-                  key={track.id}
-                  className="assessment-track-card"
-                  style={{
-                    background: "#ffffff",
-                    border: "1px solid #e2e8f0",
-                    borderRadius: "16px",
-                    padding: "20px",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        marginBottom: "10px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                          padding: "3px 8px",
-                          borderRadius: "6px",
-                          background:
-                            track.status === "Published"
-                              ? "#dcfce7"
-                              : track.status === "Draft"
-                                ? "#fef3c7"
-                                : "#f1f5f9",
-                          color:
-                            track.status === "Published"
-                              ? "#16a34a"
-                              : track.status === "Draft"
-                                ? "#d97706"
-                                : "#64748b",
-                        }}
-                      >
-                        {track.status}
-                      </span>
-                      <span style={{ fontSize: "11.5px", color: "#94a3b8" }}>
-                        {track.totalSubmissions} candidate(s) evaluated
-                      </span>
-                    </div>
+            <div className="assessment-tracks-grid">
+              {filteredAssessments.map((track) => {
+                const isPublished = track.status === "Published";
+                const isDraft = track.status === "Draft";
 
-                    <h4
-                      style={{
-                        fontSize: "16px",
-                        fontWeight: 700,
-                        color: "#0f172a",
-                        margin: "0 0 10px 0",
-                      }}
-                    >
-                      {track.title}
-                    </h4>
+                return (
+                  <div key={track.id} className="assessment-track-card">
+                    <div className="assessment-track-card-body">
+                      {/* Top Bar: Dept / Role & Status */}
+                      <div className="assessment-track-topbar">
+                        <span className="assessment-track-dept-badge">
+                          {selectedJob?.department || "Coding Track"}
+                        </span>
+                        <span
+                          className={`assessment-track-status-pill ${
+                            isPublished
+                              ? "published"
+                              : isDraft
+                              ? "draft"
+                              : "archived"
+                          }`}
+                        >
+                          <span className="assessment-status-dot"></span>
+                          {track.status}
+                        </span>
+                      </div>
 
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "14px",
-                        fontSize: "12px",
-                        color: "#64748b",
-                        marginBottom: "16px",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                        }}
-                      >
-                        <ClockIcon /> {track.timeLimitMinutes} mins
-                      </span>
-                      <span>•</span>
-                      <span>{track.finalQuestions.length} Coding Problems</span>
-                      <span>•</span>
-                      <span>Pass: {track.passingThreshold}%</span>
+                      {/* Title */}
+                      <h4 className="assessment-track-title" title={track.title}>
+                        {track.title}
+                      </h4>
+
+                      {/* Meta Pills */}
+                      <div className="assessment-track-meta">
+                        <span className="meta-item">
+                          <ClockIcon /> {track.timeLimitMinutes} mins
+                        </span>
+                        <span className="meta-sep">•</span>
+                        <span className="meta-item">
+                          {track.finalQuestions.length} Problem{track.finalQuestions.length === 1 ? '' : 's'}
+                        </span>
+                        <span className="meta-sep">•</span>
+                        <span className="meta-item">
+                          Pass: {track.passingThreshold}%
+                        </span>
+                      </div>
+
                       {track.expiresAt && (
-                        <>
-                          <span>•</span>
-                          <span
-                            style={{
-                              color:
-                                // eslint-disable-next-line react-hooks/purity
-                                new Date(track.expiresAt).getTime() < Date.now()
-                                  ? "#dc2626"
-                                  : "#b45309",
-                              fontWeight: 600,
-                            }}
-                          >
+                        <div
+                          className="assessment-track-deadline"
+                          style={{
+                            color:
+                              new Date(track.expiresAt).getTime() < Date.now()
+                                ? "#dc2626"
+                                : "#b45309",
+                          }}
+                        >
+                          <ClockIcon />
+                          <span>
                             Deadline:{" "}
                             {new Date(track.expiresAt).toLocaleDateString(
                               "en-US",
@@ -1932,160 +1884,101 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                 year: "numeric",
                                 hour: "2-digit",
                                 minute: "2-digit",
-                              },
+                              }
                             )}
                           </span>
-                        </>
+                        </div>
                       )}
+
+                      {/* Questions / Challenges Preview */}
+                      <div className="assessment-track-questions-box">
+                        <span className="questions-box-label">Coding Challenges:</span>
+                        <ul className="questions-box-list">
+                          {track.finalQuestions.slice(0, 3).map((q, idx) => (
+                            <li key={q.id || idx}>
+                              <strong>{q.title}</strong>
+                              <span className={`diff-pill diff-${(q.difficulty || "medium").toLowerCase()}`}>
+                                {q.difficulty}
+                              </span>
+                            </li>
+                          ))}
+                          {track.finalQuestions.length > 3 && (
+                            <li className="questions-more">
+                              +{track.finalQuestions.length - 3} more questions
+                            </li>
+                          )}
+                        </ul>
+                      </div>
                     </div>
 
-                    {/* Problem list preview */}
-                    <div
-                      style={{
-                        background: "#f8fafc",
-                        borderRadius: "10px",
-                        padding: "10px 12px",
-                        marginBottom: "16px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          color: "#475569",
-                          textTransform: "uppercase",
-                          display: "block",
-                          marginBottom: "6px",
-                        }}
-                      >
-                        Coding Challenges:
-                      </span>
-                      <ul
-                        style={{
-                          margin: 0,
-                          paddingLeft: "16px",
-                          fontSize: "12px",
-                          color: "#334155",
-                        }}
-                      >
-                        {track.finalQuestions.slice(0, 3).map((q, idx) => (
-                          <li key={q.id || idx} style={{ marginBottom: "4px" }}>
-                            <strong>{q.title}</strong> ({q.language} •{" "}
-                            {q.difficulty})
-                          </li>
-                        ))}
-                        {track.finalQuestions.length > 3 && (
-                          <li style={{ color: "#64748b" }}>
-                            +{track.finalQuestions.length - 3} more questions
-                          </li>
-                        )}
-                      </ul>
-                    </div>
-                  </div>
+                    {/* Footer Actions */}
+                    {(() => {
+                      const hasActiveExam =
+                        track.hasActiveCandidateExam ??
+                        submissions.some(
+                          (s) =>
+                            s.assessmentId === track.id && s.status === "Started"
+                        );
+                      const isEditable =
+                        track.canEdit !== undefined
+                          ? track.canEdit
+                          : !hasActiveExam;
 
-                  {(() => {
-                    const hasActiveExam =
-                      track.hasActiveCandidateExam ??
-                      submissions.some(
-                        (s) =>
-                          s.assessmentId === track.id && s.status === "Started",
-                      );
-                    const isEditable =
-                      track.canEdit !== undefined
-                        ? track.canEdit
-                        : !hasActiveExam;
+                      return (
+                        <div className="assessment-track-card-footer">
+                          <div className="footer-eval-count">
+                            <Users size={14} />
+                            <span>{track.totalSubmissions} evaluated</span>
+                          </div>
 
-                    return (
-                      <div
-                        className="assessment-track-card-footer"
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          borderTop: "1px solid #f1f5f9",
-                          paddingTop: "14px",
-                        }}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => setPreviewAssessment(track)}
-                          className="btn-secondary"
-                          style={{ padding: "6px 14px", fontSize: "12px" }}
-                        >
-                          View Question Bank
-                        </button>
-
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          {hasActiveExam ? (
-                            <span
-                              title="This assessment is currently dispatched to a candidate profile and exam is in-progress. Editing will be re-enabled once the candidate completes the assessment."
-                              style={{
-                                fontSize: "11px",
-                                color: "#b45309",
-                                background: "#fef3c7",
-                                border: "1px solid #fde68a",
-                                borderRadius: "6px",
-                                padding: "4px 8px",
-                                fontWeight: 600,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "5px",
-                                cursor: "help",
-                              }}
-                            >
-                              <Lock size={12} strokeWidth={2.2} />
-                              <span>Locked (In Progress)</span>
-                            </span>
-                          ) : isEditable ? (
+                          <div className="footer-actions">
                             <button
                               type="button"
-                              onClick={() => handleOpenEditModal(track)}
-                              className="btn-secondary"
-                              style={{
-                                padding: "6px 14px",
-                                fontSize: "12px",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "4px",
-                              }}
+                              onClick={() => setPreviewAssessment(track)}
+                              className="btn-secondary btn-compact"
+                              title="View question bank & test cases"
                             >
-                              <span>Edit</span>
+                              View Bank
                             </button>
-                          ) : null}
 
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteAssessment(track.id)}
-                            disabled={hasActiveExam}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: hasActiveExam ? "#cbd5e1" : "#ef4444",
-                              cursor: hasActiveExam ? "not-allowed" : "pointer",
-                              fontSize: "12px",
-                              fontWeight: 600,
-                              padding: "6px 8px",
-                            }}
-                            title={
-                              hasActiveExam
-                                ? "Cannot delete while candidate exam is in progress"
-                                : undefined
-                            }
-                          >
-                            Delete
-                          </button>
+                            {hasActiveExam ? (
+                              <span
+                                className="locked-pill"
+                                title="This assessment is currently dispatched to an active candidate exam."
+                              >
+                                <Lock size={12} strokeWidth={2.2} />
+                                <span>Locked</span>
+                              </span>
+                            ) : isEditable ? (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditModal(track)}
+                                className="btn-secondary btn-compact"
+                              >
+                                Edit
+                              </button>
+                            ) : null}
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteAssessment(track.id)}
+                              disabled={hasActiveExam}
+                              className="btn-danger-text"
+                              title={
+                                hasActiveExam
+                                  ? "Cannot delete while candidate exam is in progress"
+                                  : "Delete assessment track"
+                              }
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              ))}
+                      );
+                    })()}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

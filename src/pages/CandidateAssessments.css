@@ -512,7 +512,8 @@
 /* Assessments Grid */
 .assessments-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 390px));
+  justify-content: start;
   gap: 20px;
 }
 

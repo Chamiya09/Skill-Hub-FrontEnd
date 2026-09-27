@@ -7,14 +7,17 @@ import {
   type InterviewPrepGuideDto,
 } from '../services/api';
 import {
-  InterviewHubHeader,
   EligibleJobCard,
   EmptyStateMessage,
   OtherApplicationsSection,
   GeneratingGuideModal,
   ReviewStudyGuideModal,
 } from '../components/interview-prep';
+import { BookOpen, BriefcaseBusiness, CheckCircle2, Clock, Search, Sparkles, X } from 'lucide-react';
 import './CandidateInterviewPrep.css';
+
+type PrepGuideFilter = 'all' | 'ready' | 'not-ready';
+type PrepGuideSort = 'newest' | 'company' | 'role';
 
 export const CandidateInterviewPrep: React.FC = () => {
   const navigate = useNavigate();
@@ -25,6 +28,9 @@ export const CandidateInterviewPrep: React.FC = () => {
   const [generatingAppId, setGeneratingAppId] = useState<string | null>(null);
   const [activeGeneratingApp, setActiveGeneratingApp] = useState<CandidateApplicationItemDto | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [guideFilter, setGuideFilter] = useState<PrepGuideFilter>('all');
+  const [guideSearch, setGuideSearch] = useState('');
+  const [guideSort, setGuideSort] = useState<PrepGuideSort>('newest');
 
   // Human Review & Approval Modal state
   const [reviewingGuide, setReviewingGuide] = useState<InterviewPrepGuideDto | null>(null);
@@ -116,6 +122,36 @@ export const CandidateInterviewPrep: React.FC = () => {
         (g.applicationId && (g.applicationId === appId || g.applicationId === app.id)) ||
         (g.jobId && g.jobId === app.jobId)
     );
+  };
+
+  const readyGuidesCount = eligibleApplications.filter((app) => Boolean(getSavedGuideForApp(app))).length;
+  const awaitingGuidesCount = Math.max(eligibleApplications.length - readyGuidesCount, 0);
+
+  const filteredEligibleApplications = eligibleApplications
+    .filter((app) => {
+      const hasGuide = Boolean(getSavedGuideForApp(app));
+      if (guideFilter === 'ready' && !hasGuide) return false;
+      if (guideFilter === 'not-ready' && hasGuide) return false;
+
+      if (guideSearch.trim()) {
+        const query = guideSearch.trim().toLowerCase();
+        return [app.jobTitle, app.companyName, app.status]
+          .some((value) => (value || '').toLowerCase().includes(query));
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (guideSort === 'company') return (a.companyName || '').localeCompare(b.companyName || '');
+      if (guideSort === 'role') return (a.jobTitle || '').localeCompare(b.jobTitle || '');
+      return new Date(b.appliedDate || 0).getTime() - new Date(a.appliedDate || 0).getTime();
+    });
+
+  const hasGuideFilters = guideFilter !== 'all' || guideSearch.trim() !== '' || guideSort !== 'newest';
+
+  const clearGuideFilters = () => {
+    setGuideFilter('all');
+    setGuideSearch('');
+    setGuideSort('newest');
   };
 
   // View Existing Saved Guide in Study Dashboard without regenerating
@@ -238,8 +274,88 @@ export const CandidateInterviewPrep: React.FC = () => {
 
   return (
     <div className="candidate-interview-prep-page">
-      {/* 1. Hub Header Hero Section */}
-      <InterviewHubHeader eligibleCount={eligibleApplications.length} />
+      {/* 1. Interview Preparation Dashboard */}
+      <section className="prep-dashboard-card" aria-labelledby="prep-dashboard-title">
+        <div className="prep-dashboard-header">
+          <div>
+            <span className="prep-dashboard-eyebrow">AI career coach</span>
+            <h1 id="prep-dashboard-title">Interview Prep Hub</h1>
+            <p>Generate, review, and organize role-specific preparation guides for your upcoming interviews.</p>
+          </div>
+          <span className="prep-dashboard-live"><span /> Preparation active</span>
+        </div>
+
+        <div className="prep-summary-grid">
+          <article className="prep-summary-card summary-applications">
+            <div className="prep-summary-icon"><BriefcaseBusiness /></div>
+            <div><span>Total applications</span><strong>{applications.length}</strong><small>Tracked candidate roles</small></div>
+          </article>
+          <article className="prep-summary-card summary-eligible">
+            <div className="prep-summary-icon"><Sparkles /></div>
+            <div><span>Interview roles</span><strong>{eligibleApplications.length}</strong><small>Eligible for preparation</small></div>
+          </article>
+          <article className="prep-summary-card summary-ready">
+            <div className="prep-summary-icon"><CheckCircle2 /></div>
+            <div><span>Guides ready</span><strong>{readyGuidesCount}</strong><small>Available to study</small></div>
+          </article>
+          <article className="prep-summary-card summary-awaiting">
+            <div className="prep-summary-icon"><Clock /></div>
+            <div><span>Awaiting guide</span><strong>{awaitingGuidesCount}</strong><small>Ready for generation</small></div>
+          </article>
+        </div>
+      </section>
+
+      {/* 2. Standalone Preparation Filters */}
+      <section className="prep-filter-panel" aria-label="Interview preparation filters">
+        <div className="prep-filter-heading">
+          <div>
+            <span>Preparation workspace</span>
+            <h2>Find your interview guides</h2>
+          </div>
+          <strong>{filteredEligibleApplications.length} of {eligibleApplications.length} shown</strong>
+        </div>
+
+        <div className="prep-filter-toolbar">
+          <div className="prep-filter-tabs" role="group" aria-label="Filter guides by readiness">
+            <button type="button" className={guideFilter === 'all' ? 'active' : ''} onClick={() => setGuideFilter('all')}>
+              All roles ({eligibleApplications.length})
+            </button>
+            <button type="button" className={guideFilter === 'ready' ? 'active' : ''} onClick={() => setGuideFilter('ready')}>
+              Guide ready ({readyGuidesCount})
+            </button>
+            <button type="button" className={guideFilter === 'not-ready' ? 'active' : ''} onClick={() => setGuideFilter('not-ready')}>
+              Needs guide ({awaitingGuidesCount})
+            </button>
+          </div>
+
+          <div className="prep-filter-search">
+            <Search />
+            <input
+              type="search"
+              value={guideSearch}
+              onChange={(event) => setGuideSearch(event.target.value)}
+              placeholder="Search role or company..."
+              aria-label="Search interview preparation roles"
+            />
+            {guideSearch && (
+              <button type="button" onClick={() => setGuideSearch('')} aria-label="Clear guide search"><X /></button>
+            )}
+          </div>
+
+          <div className="prep-filter-select">
+            <label htmlFor="prep-guide-sort">Sort by</label>
+            <select id="prep-guide-sort" value={guideSort} onChange={(event) => setGuideSort(event.target.value as PrepGuideSort)}>
+              <option value="newest">Newest application</option>
+              <option value="company">Company A–Z</option>
+              <option value="role">Role A–Z</option>
+            </select>
+          </div>
+
+          {hasGuideFilters && (
+            <button type="button" className="prep-clear-filters" onClick={clearGuideFilters}><X /> Clear filters</button>
+          )}
+        </div>
+      </section>
 
       {/* Error Alert Banner */}
       {error && (
@@ -279,7 +395,7 @@ export const CandidateInterviewPrep: React.FC = () => {
               <div className="eligible-jobs-header">
                 <div>
                   <h2 className="eligible-jobs-title">
-                    Upcoming Interview Roles ({eligibleApplications.length})
+                    Upcoming Interview Roles ({filteredEligibleApplications.length})
                   </h2>
                   <p className="eligible-jobs-subtitle">
                     Select an interview role below to generate or review its AI Technical Career Coach study guide.
@@ -291,8 +407,9 @@ export const CandidateInterviewPrep: React.FC = () => {
                 </div>
               </div>
 
+              {filteredEligibleApplications.length > 0 ? (
               <div className="eligible-jobs-grid">
-                {eligibleApplications.map((app) => {
+                {filteredEligibleApplications.map((app) => {
                   const appId = app.id || app.applicationId;
                   const saved = getSavedGuideForApp(app);
                   return (
@@ -307,6 +424,14 @@ export const CandidateInterviewPrep: React.FC = () => {
                   );
                 })}
               </div>
+              ) : (
+                <div className="prep-filter-empty">
+                  <div><BookOpen /></div>
+                  <h3>No matching preparation guides</h3>
+                  <p>Try changing the search, guide status, or sorting options.</p>
+                  <button type="button" onClick={clearGuideFilters}>Reset preparation filters</button>
+                </div>
+              )}
             </section>
           ) : (
             /* 4. Empty State when NO Interview Applications */

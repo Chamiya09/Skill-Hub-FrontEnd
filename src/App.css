@@ -2786,6 +2786,16 @@
   box-sizing: border-box;
 }
 
+.dashboard-viewport:has(> .monthly-planner-page),
+.dashboard-viewport:has(.monthly-planner-page),
+.dashboard-viewport.dashboard-viewport--planner {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 24px clamp(16px, 2vw, 36px) 40px !important;
+  box-sizing: border-box !important;
+}
+
 .dashboard-welcome-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;

@@ -31,6 +31,7 @@ import {
   HOLIDAY_CALENDARS,
   DEFAULT_HOLIDAY_CALENDAR,
 } from '../services/googleCalendarService';
+import './MonthlyPlannerFull.css';
 
 // Days of week header
 const DAYS_OF_WEEK = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -184,24 +185,21 @@ export const MonthlyPlanner: React.FC = () => {
     );
   }, [vacancies, modalDepartment, selectedDepartment]);
 
-  // Load events from backend (filtered by selected department across all its active vacancies)
+  // Load events from backend (filtered by selected department or across all vacancies if none selected)
   const fetchEvents = useCallback(async () => {
-    if (!selectedDepartment) {
-      setEvents([]);
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setErrorMessage(null);
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
-      const data = await eventsApi.getEvents({
+      const params: { year: number; month: number; department?: string } = {
         year,
         month,
-        department: selectedDepartment,
-      });
+      };
+      if (selectedDepartment) {
+        params.department = selectedDepartment;
+      }
+      const data = await eventsApi.getEvents(params);
       setEvents(data || []);
     } catch (err) {
       console.error('Failed to load events:', err);
@@ -561,7 +559,7 @@ export const MonthlyPlanner: React.FC = () => {
   }, [selectedDateStr]);
 
   return (
-    <div style={{ maxWidth: '1440px', margin: '0 auto', paddingBottom: '60px' }}>
+    <div className="monthly-planner-page">
       {/* Toast Alert Notification */}
       {toast && (
         <div
@@ -589,7 +587,7 @@ export const MonthlyPlanner: React.FC = () => {
       )}
 
       {/* 1. Header Banner */}
-      <div className="pipeline-selector-header" style={{ marginBottom: '24px' }}>
+      <div className="pipeline-selector-header monthly-planner-header" style={{ marginBottom: '24px' }}>
         <div className="pipeline-header-title-box">
           <div
             className="badge-tag"
@@ -623,8 +621,9 @@ export const MonthlyPlanner: React.FC = () => {
         </div>
 
         {/* Quick Month Metrics Summary */}
-        <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+        <div className="monthly-planner-header-metrics" style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
           <div
+            className="monthly-planner-header-metric monthly-planner-header-metric--events"
             style={{
               background: '#ffffff',
               border: '1px solid #e2e8f0',
@@ -662,6 +661,7 @@ export const MonthlyPlanner: React.FC = () => {
 
           {holidaysEnabled && (
             <div
+              className="monthly-planner-header-metric monthly-planner-header-metric--holidays"
               style={{
                 background: '#ffffff',
                 border: '1px solid #fde68a',
@@ -700,6 +700,7 @@ export const MonthlyPlanner: React.FC = () => {
           )}
 
           <button
+            className="monthly-planner-refresh"
             type="button"
             onClick={() => {
               fetchEvents();
@@ -762,6 +763,7 @@ export const MonthlyPlanner: React.FC = () => {
 
       {/* 2. Top Action & Navigation Toolbar */}
       <div
+        className="monthly-planner-toolbar"
         style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -772,7 +774,7 @@ export const MonthlyPlanner: React.FC = () => {
         }}
       >
         {/* Left Action Buttons: Add Event + Google Calendar Holiday Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <div className="monthly-planner-toolbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={() => handleOpenAddEventModal(selectedDateStr)}
@@ -860,7 +862,7 @@ export const MonthlyPlanner: React.FC = () => {
         </div>
 
         {/* Right: Navigation Controls: Today + Prev / Next Month */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="monthly-planner-navigation" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             type="button"
             onClick={handleToday}
@@ -982,6 +984,7 @@ export const MonthlyPlanner: React.FC = () => {
 
       {/* 3. Department Filter Bar (HR Department Filter - Only Departments with Active Job Vacancies) */}
       <div
+        className={`monthly-planner-department-filter${selectedDepartment ? ' is-active' : ''}`}
         style={{
           background: selectedDepartment
             ? 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)'
@@ -1035,7 +1038,7 @@ export const MonthlyPlanner: React.FC = () => {
             <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0 0 0' }}>
               {selectedDepartment
                 ? `Showing events & interviews across all active vacancies under ${selectedDepartment}`
-                : 'Select an active department to display scheduled events and interviews'}
+                : 'Showing events & interviews across all active departments and vacancies'}
             </p>
           </div>
         </div>
@@ -1044,6 +1047,7 @@ export const MonthlyPlanner: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div>
             <select
+              className="monthly-planner-department-select"
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
               style={{
@@ -1060,7 +1064,7 @@ export const MonthlyPlanner: React.FC = () => {
                 minWidth: '240px',
               }}
             >
-              <option value="">-- Select a Department --</option>
+              <option value="">All Departments ({activeDepartments.length > 0 ? `${activeDepartments.length} Active` : 'All Active'})</option>
               {activeDepartments.map((dept) => (
                 <option key={dept} value={dept}>
                   {dept}
@@ -1073,143 +1077,42 @@ export const MonthlyPlanner: React.FC = () => {
 
       {/* 4. Main Two-Column Layout (Calendar & Daily Schedule aligned at the exact same top level) */}
       <div
+        className="monthly-planner-layout"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1.9fr) minmax(340px, 1.1fr)',
-          gap: '24px',
+          gridTemplateColumns: 'minmax(0, 2.4fr) minmax(360px, 1fr)',
+          gap: '22px',
           alignItems: 'start',
+          width: '100%',
+          boxSizing: 'border-box',
         }}
       >
         {/* LEFT COLUMN: Calendar Component (Spacious Google Calendar-like Monthly Grid) */}
         <div
+          className="monthly-planner-calendar-shell"
           style={{
             background: '#ffffff',
             border: '1px solid #e2e8f0',
             borderRadius: '16px',
             overflow: 'hidden',
             boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+            minWidth: 0,
+            width: '100%',
+            boxSizing: 'border-box',
           }}
         >
-          {!selectedDepartment ? (
-            <div>
-              {/* Day of Week Header Row with vertical separator lines */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-                  background: '#e2e8f0',
-                  gap: '1px',
-                  borderBottom: '1px solid #e2e8f0',
-                }}
-              >
-                {DAYS_OF_WEEK.map((day, idx) => (
-                  <div
-                    key={day}
-                    style={{
-                      background: '#f8fafc',
-                      padding: '12px 8px',
-                      textAlign: 'center',
-                      fontSize: '11.5px',
-                      fontWeight: 800,
-                      color: idx === 0 || idx === 6 ? '#94a3b8' : '#475569',
-                      letterSpacing: '0.5px',
-                      minWidth: 0,
-                      boxSizing: 'border-box',
-                    }}
-                  >
-                    {day}
-                  </div>
-                ))}
-              </div>
-
-              <div
-              style={{
-                padding: '60px 24px',
-                textAlign: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: '#ffffff',
-                minHeight: '440px',
-              }}
-            >
-              <div
-                style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: '16px',
-                  background: '#ecfdf5',
-                  border: '1px solid #a7f3d0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#059669',
-                  marginBottom: '16px',
-                }}
-              >
-                <Building2 size={32} />
-              </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
-                Select a Department to View Calendar
-              </h3>
-              <p
-                style={{
-                  fontSize: '13px',
-                  color: '#64748b',
-                  maxWidth: '460px',
-                  margin: '0 0 20px 0',
-                  lineHeight: 1.5,
-                }}
-              >
-                Choose an active department from the filter above to view its candidate interviews and calendar
-                events across all active job vacancies.
-              </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
-                {activeDepartments.map((dept) => (
-                  <button
-                    key={dept}
-                    type="button"
-                    onClick={() => setSelectedDepartment(dept)}
-                    style={{
-                      padding: '9px 18px',
-                      borderRadius: '10px',
-                      border: '1px solid #059669',
-                      background: '#ecfdf5',
-                      color: '#047857',
-                      fontSize: '13px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <Building2 size={14} />
-                    <span>View {dept}</span>
-                  </button>
-                ))}
-                {activeDepartments.length === 0 && (
-                  <span style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' }}>
-                    No departments currently have active job vacancies.
-                  </span>
-                )}
-              </div>
-            </div>
-            </div>
-          ) : (
-            /* Unified Monthly Calendar Grid: Day Headers (Row 1) & Date Cells (Rows 2+) in ONE single 7-column CSS Grid */
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-                background: '#e2e8f0',
-                gap: '1px', // Seamless 1px vertical and horizontal grid lines
-                width: '100%',
-                boxSizing: 'border-box',
-              }}
-            >
+          {/* Unified Monthly Calendar Grid: Day Headers (Row 1) & Date Cells (Rows 2+) in ONE single 7-column CSS Grid */}
+          <div
+            className="monthly-planner-calendar-grid"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+              background: '#e2e8f0',
+              gap: '1px', // Seamless 1px vertical and horizontal grid lines
+              width: '100%',
+              boxSizing: 'border-box',
+            }}
+          >
               {/* Row 1: Day of Week Headers with continuous vertical separators */}
               {DAYS_OF_WEEK.map((day, idx) => (
                 <div
@@ -1264,10 +1167,11 @@ export const MonthlyPlanner: React.FC = () => {
                 return (
                   <div
                     key={cell.dateStr}
+                    className="monthly-planner-calendar-cell"
                     onClick={() => setSelectedDateStr(cell.dateStr)}
                     title={cellTooltip}
                     style={{
-                      minHeight: '105px',
+                      minHeight: 'clamp(110px, 12vh, 140px)',
                       minWidth: 0,
                       width: '100%',
                       overflow: 'hidden',
@@ -1452,12 +1356,12 @@ export const MonthlyPlanner: React.FC = () => {
                   </div>
                 );
               })}
-            </div>
-          )}
+          </div>
         </div>
 
         {/* RIGHT COLUMN: Detail View for Selected Date */}
         <div
+          className="monthly-planner-daily-panel"
           style={{
             background: '#ffffff',
             border: '1px solid #e2e8f0',
@@ -1562,42 +1466,7 @@ export const MonthlyPlanner: React.FC = () => {
               </div>
             ))}
 
-            {!selectedDepartment ? (
-              <div
-                style={{
-                  textAlign: 'center',
-                  padding: '48px 20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#64748b',
-                }}
-              >
-                <div
-                  style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '12px',
-                    background: '#f8fafc',
-                    border: '1px dashed #cbd5e1',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#94a3b8',
-                    marginBottom: '12px',
-                  }}
-                >
-                  <Building2 size={24} />
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '4px' }}>
-                  No Department Selected
-                </div>
-                <p style={{ fontSize: '12.5px', color: '#64748b', margin: '0 0 16px 0', maxWidth: '240px', lineHeight: 1.4 }}>
-                  Choose a department from the filter above to view its interviews and events for this date.
-                </p>
-              </div>
-            ) : selectedDayEvents.length === 0 ? (
+            {selectedDayEvents.length === 0 ? (
               <div
                 style={{
                   textAlign: 'center',

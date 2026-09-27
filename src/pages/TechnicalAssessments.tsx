@@ -2994,9 +2994,10 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           VIEW 4: INTERVIEW SELECTION & REQUISITION FILTER
           ========================================================= */}
       {isInterviewSelection && (
-        <div>
+        <div className="interview-selection-workspace">
           {/* Section Header */}
           <div
+            className="interview-selection-toolbar"
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -3008,6 +3009,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           >
             <div>
               <div
+                className="interview-selection-title-row"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -3016,6 +3018,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 }}
               >
                 <div
+                  className="interview-selection-title-icon"
                   style={{
                     width: "32px",
                     height: "32px",
@@ -3113,6 +3116,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
             return (
               <div
+                className="interview-selection-metrics"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
@@ -3121,6 +3125,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 }}
               >
                 <div
+                  className="interview-selection-metric interview-selection-metric--violet"
                   style={{
                     background: "#ffffff",
                     border: "1px solid #e2e8f0",
@@ -3178,6 +3183,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 </div>
 
                 <div
+                  className="interview-selection-metric interview-selection-metric--green"
                   style={{
                     background: "#ffffff",
                     border: "1px solid #e2e8f0",
@@ -3235,6 +3241,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 </div>
 
                 <div
+                  className="interview-selection-metric interview-selection-metric--blue"
                   style={{
                     background: "#ffffff",
                     border: "1px solid #e2e8f0",
@@ -3292,6 +3299,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 </div>
 
                 <div
+                  className="interview-selection-metric interview-selection-metric--emerald"
                   style={{
                     background: "#ffffff",
                     border: "1px solid #e2e8f0",
@@ -3353,6 +3361,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
           {/* Filtering Controls Bar */}
           <div
+            className="interview-selection-filters"
             style={{
               background: "#ffffff",
               border: "1px solid #e2e8f0",
@@ -3391,6 +3400,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                   Filter by Job:
                 </span>
                 <select
+                  className="interview-filter-select"
                   value={interviewJobFilter}
                   onChange={(e) => setInterviewJobFilter(e.target.value)}
                   style={{
@@ -3422,10 +3432,34 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                   })}
                 </select>
               </div>
+
+              <select
+                className="interview-filter-select interview-filter-select--compact"
+                value={interviewScoreFilter}
+                onChange={(e) => setInterviewScoreFilter(e.target.value as "all" | "top" | "high" | "passed")}
+                aria-label="Filter candidates by technical score"
+              >
+                <option value="all">All scores</option>
+                <option value="top">Top scores (85%+)</option>
+                <option value="high">High scores (70%+)</option>
+                <option value="passed">Passed assessment</option>
+              </select>
+
+              <select
+                className="interview-filter-select interview-filter-select--compact"
+                value={interviewIntegrityFilter}
+                onChange={(e) => setInterviewIntegrityFilter(e.target.value as "all" | "clean" | "flagged")}
+                aria-label="Filter candidates by proctor integrity"
+              >
+                <option value="all">All integrity results</option>
+                <option value="clean">Clean sessions</option>
+                <option value="flagged">Flagged sessions</option>
+              </select>
             </div>
 
             {/* Right Controls: Search Input */}
             <div
+              className="interview-selection-search"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -3472,6 +3506,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
           {/* Action Bar: Schedule Selected Candidates and AI Schedule Buttons */}
           <div
+            className="interview-selection-actions"
             style={{
               display: "flex",
               justifyContent: "flex-start",
@@ -3744,6 +3779,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
               return (
                 <div
+                  className="interview-selection-table-shell"
                   style={{
                     background: "#ffffff",
                     borderRadius: "16px",

@@ -24,6 +24,147 @@
   padding: 0 !important;
 }
 
+.dashboard-viewport:has(> .technical-assessments-interview-selection) {
+  padding: 24px 28px 40px;
+}
+
+.technical-assessments-interview-selection {
+  width: 100%;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.technical-assessments-interview-selection .pipeline-selector-header {
+  position: relative;
+  isolation: isolate;
+  min-height: 166px;
+  margin-bottom: 22px !important;
+  padding: 28px 32px;
+  overflow: hidden;
+  border: 1px solid #e3dcf4;
+  border-radius: 18px;
+  background: linear-gradient(112deg, #ffffff 0%, #ffffff 66%, #f6f2ff 100%);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.045);
+}
+
+.technical-assessments-interview-selection .pipeline-selector-header::before,
+.technical-assessments-interview-selection .pipeline-selector-header::after {
+  position: absolute;
+  z-index: -1;
+  border: 22px solid rgba(124, 58, 237, 0.075);
+  border-radius: 50%;
+  content: "";
+}
+
+.technical-assessments-interview-selection .pipeline-selector-header::before {
+  width: 170px;
+  height: 170px;
+  top: -88px;
+  right: -22px;
+}
+
+.technical-assessments-interview-selection .pipeline-selector-header::after {
+  width: 94px;
+  height: 94px;
+  right: 112px;
+  bottom: -70px;
+  border-width: 16px;
+}
+
+.interview-selection-workspace {
+  padding: 22px;
+  border: 1px solid #e2e6ea;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.045);
+}
+
+.interview-selection-toolbar {
+  padding-bottom: 18px;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.interview-selection-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  margin-bottom: 20px !important;
+}
+
+.interview-selection-metric {
+  min-height: 106px;
+  border-color: #e2e5eb !important;
+  box-shadow: 0 5px 18px rgba(15, 23, 42, 0.04) !important;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.interview-selection-metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07) !important;
+}
+
+.interview-selection-metric--violet { border-top: 3px solid #8b5cf6 !important; }
+.interview-selection-metric--green { border-top: 3px solid #00b074 !important; }
+.interview-selection-metric--blue { border-top: 3px solid #3b82f6 !important; }
+.interview-selection-metric--emerald { border-top: 3px solid #22c55e !important; }
+
+.interview-selection-filters {
+  align-items: flex-end !important;
+  padding: 16px 18px !important;
+  border-color: #e1e5eb !important;
+  background: #fafbfc !important;
+  box-shadow: none !important;
+}
+
+.interview-selection-filters > div:first-child {
+  flex: 1 1 650px;
+}
+
+.interview-filter-select {
+  min-height: 39px;
+  padding: 8px 13px;
+  border: 1px solid #d3dbe3;
+  border-radius: 10px;
+  outline: none;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.interview-filter-select:focus {
+  border-color: #9a7cdd;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.09);
+}
+
+.interview-filter-select--compact { min-width: 170px; }
+
+.interview-selection-search {
+  min-height: 41px;
+  flex: 0 1 300px;
+  border-color: #d3dbe3 !important;
+}
+
+.interview-selection-search:focus-within {
+  border-color: #9a7cdd !important;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.09);
+}
+
+.interview-selection-actions {
+  padding: 2px 0 18px;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.interview-selection-table-shell {
+  border-color: #e0e4ea !important;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.045) !important;
+}
+
+.interview-selection-table-shell thead tr { background: #f7f6fb !important; }
+.interview-selection-table-shell tbody tr { transition: background-color 150ms ease; }
+.interview-selection-table-shell tbody tr:hover { background: #faf8ff !important; }
+
 .technical-assessments-templates .pipeline-selector-header {
   position: relative;
   isolation: isolate;
@@ -343,6 +484,7 @@
 @media (max-width: 1080px) {
   .assessment-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .performance-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .interview-selection-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
 }
 
 @media (max-width: 760px) {
@@ -373,6 +515,16 @@
   .performance-toolbar { align-items: stretch !important; flex-direction: column; }
   .performance-search { width: 100%; min-width: 0 !important; }
   .performance-filter-bar button { flex: 1 1 170px; }
+  .dashboard-viewport:has(> .technical-assessments-interview-selection) { padding: 16px; }
+  .technical-assessments-interview-selection .pipeline-selector-header { min-height: 0; padding: 22px 20px; }
+  .interview-selection-workspace { padding: 17px; }
+  .interview-selection-toolbar { align-items: flex-start !important; }
+  .interview-selection-filters { align-items: stretch !important; flex-direction: column; }
+  .interview-selection-filters > div:first-child { flex: 0 1 auto; align-items: stretch !important; flex-direction: column; }
+  .interview-selection-filters > div:first-child > div { align-items: stretch !important; flex-direction: column; }
+  .interview-filter-select,
+  .interview-selection-search { width: 100%; min-width: 0 !important; flex-basis: auto; }
+  .interview-selection-actions button { flex: 1 1 220px; justify-content: center; }
   .assessment-workspace { padding: 17px; }
   .assessment-action-row > div:last-child { width: 100%; flex-wrap: wrap; }
   .assessment-action-row button { flex: 1 1 190px; justify-content: center; }
@@ -392,4 +544,7 @@
   .technical-assessments-performance-hub .pipeline-page-title,
   .technical-assessments-submissions .pipeline-page-title,
   .technical-assessments-leaderboard .pipeline-page-title { font-size: 24px !important; }
+  .dashboard-viewport:has(> .technical-assessments-interview-selection) { padding: 12px; }
+  .interview-selection-metrics { grid-template-columns: 1fr !important; }
+  .technical-assessments-interview-selection .pipeline-page-title { font-size: 24px !important; }
 }

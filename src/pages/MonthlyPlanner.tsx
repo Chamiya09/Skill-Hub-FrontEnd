@@ -33,6 +33,7 @@ import {
   HOLIDAY_CALENDARS,
   DEFAULT_HOLIDAY_CALENDAR,
 } from '../services/googleCalendarService';
+import { AiInterviewSchedulerModal } from '../components/AiInterviewSchedulerModal';
 import './MonthlyPlannerFull.css';
 
 // Days of week header
@@ -145,6 +146,7 @@ export const MonthlyPlanner: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedVacancyId, setSelectedVacancyId] = useState<string>('All');
   const [eventTypeFilter, setEventTypeFilter] = useState<'All' | 'Interviews' | 'General' | 'Holidays'>('All');
+  const [isAiInterviewSchedulerModalOpen, setIsAiInterviewSchedulerModalOpen] = useState<boolean>(false);
 
   // Company vacancies for event assignment
   const [vacancies, setVacancies] = useState<JobDto[]>([]);
@@ -673,6 +675,15 @@ export const MonthlyPlanner: React.FC = () => {
             >
               <Plus size={16} strokeWidth={2.5} />
               <span>Add Event</span>
+            </button>
+            <button
+              type="button"
+              className="planner-btn-ai"
+              onClick={() => setIsAiInterviewSchedulerModalOpen(true)}
+              title="AI Meeting Orchestration & Automatic Slot Generator"
+            >
+              <Sparkles size={16} />
+              <span>AI Auto-Scheduler</span>
             </button>
           </div>
         </div>
@@ -2359,6 +2370,18 @@ export const MonthlyPlanner: React.FC = () => {
         </div>
       )}
 
+      {/* AI Interview Slot Generator Modal */}
+      <AiInterviewSchedulerModal
+        isOpen={isAiInterviewSchedulerModalOpen}
+        onClose={() => {
+          setIsAiInterviewSchedulerModalOpen(false);
+          fetchEvents();
+        }}
+        onSuccess={(msg) => {
+          showToast(msg, 'success');
+          fetchEvents();
+        }}
+      />
     </div>
   );
 };

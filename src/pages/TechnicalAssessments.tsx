@@ -3567,17 +3567,17 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 padding: "9px 20px",
                 borderRadius: "10px",
                 fontSize: "13px",
-                fontWeight: 700,
-                background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+                fontWeight: 750,
+                background: "linear-gradient(135deg, #059669 0%, #0d9488 50%, #0284c7 100%)",
                 color: "#ffffff",
-                boxShadow: "0 4px 12px rgba(99, 102, 241, 0.25)",
+                boxShadow: "0 4px 14px rgba(13, 148, 136, 0.25)",
                 cursor: "pointer",
                 border: "none",
                 transition: "all 0.15s ease",
               }}
             >
               <Sparkles size={16} />
-              <span>AI Schedule</span>
+              <span>AI Auto-Scheduler</span>
             </button>
           </div>
 

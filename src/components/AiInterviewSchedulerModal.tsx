@@ -502,7 +502,9 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
               </button>
             </div>
           </form>
-                {/* VIEW B: Proposal Review & Confirmation (Human-In-The-Loop) */}
+        )}
+
+        {/* VIEW B: Proposal Review & Confirmation (Human-In-The-Loop) */}
         {scheduleProposal && (
           <div className="ai-proposal-view">
             {/* Metric Summary Cards */}

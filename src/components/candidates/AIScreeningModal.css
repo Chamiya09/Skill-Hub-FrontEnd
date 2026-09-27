@@ -1,0 +1,890 @@
+/* ==========================================================================
+   AI SCREENING MODAL - SYSTEM UI THEME
+   Corporate Emerald (#059669 / #00b074) & Slate (#0f172a) Palette,
+   Glassmorphism, Standardized System Pills, Cards, Badges, and Micro-interactions
+   ========================================================================== */
+
+/* 1. Backdrop */
+.ai-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: aiModalBackdropFadeIn 0.2s ease-out;
+}
+
+@keyframes aiModalBackdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 2. Modal Dialog Card */
+.ai-modal-card {
+  background: #ffffff;
+  border: 1px solid #dce7e3;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 88vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(15, 23, 42, 0.05);
+  animation: aiModalSlideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes aiModalSlideUp {
+  0% {
+    opacity: 0;
+    transform: scale(0.97) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 3. Modal Header */
+.ai-modal-header {
+  padding: 22px 26px 18px 26px;
+  border-bottom: 1px solid #edf2f0;
+  background: #ffffff;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.ai-modal-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Top Badge Row */
+.ai-modal-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ai-modal-tag-req {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 3.5px 9px;
+  border-radius: 7px;
+  letter-spacing: 0.03em;
+}
+
+.ai-modal-tag-dept {
+  font-size: 11.5px;
+  font-weight: 750;
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 3.5px 11px;
+  border-radius: 9999px;
+}
+
+.ai-modal-tag-status {
+  font-size: 11.5px;
+  font-weight: 750;
+  padding: 3.5px 11px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-modal-tag-status.active {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.ai-modal-tag-status.closed {
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.ai-modal-tag-dot {
+  width: 6.5px;
+  height: 6.5px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.ai-modal-tag-dot.active {
+  background: #00b074;
+  box-shadow: 0 0 0 2.5px rgba(0, 176, 116, 0.22);
+  animation: aiPulseDot 2s infinite ease-in-out;
+}
+
+@keyframes aiPulseDot {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 2.5px rgba(0, 176, 116, 0.22);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 4.5px rgba(0, 176, 116, 0.12);
+  }
+}
+
+.ai-modal-tag-dot.closed {
+  background: #64748b;
+}
+
+/* Job Title */
+.ai-modal-title {
+  font-size: 22px;
+  font-weight: 850;
+  color: #0f172a;
+  letter-spacing: -0.025em;
+  margin: 0;
+  line-height: 1.25;
+}
+
+/* Header Meta Row */
+.ai-modal-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12.5px;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+
+.ai-modal-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+}
+
+.ai-modal-meta-item.highlight {
+  color: #009e67;
+  font-weight: 750;
+}
+
+.ai-modal-meta-item.highlight svg {
+  color: #00b074;
+}
+
+.ai-modal-meta-divider {
+  color: #cbd5e1;
+}
+
+/* Header Action Buttons */
+.ai-modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ai-modal-status-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7.5px 14px;
+  border-radius: 10px;
+  border: 1px solid #dce7e3;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.ai-modal-status-toggle-btn:hover {
+  background: #f8fafc;
+  border-color: #00b074;
+  color: #047857;
+  transform: translateY(-1px);
+}
+
+.ai-modal-status-toggle-btn:active {
+  transform: translateY(0);
+}
+
+.ai-modal-close-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.ai-modal-close-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  border-color: #fca5a5;
+  transform: translateY(-1px);
+}
+
+.ai-modal-close-btn:active {
+  transform: translateY(0);
+}
+
+/* 4. Modal Scrollable Body */
+.ai-modal-body {
+  padding: 20px 26px;
+  overflow-y: auto;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ai-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ai-modal-body::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 9999px;
+}
+
+/* Banner: Applications Are Still Open (System UI Emerald-Slate Theme) */
+.ai-modal-banner-open {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 55%, #f4fcf9 100%);
+  border: 1px solid #a7f3d0;
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.04);
+}
+
+.ai-modal-banner-open-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #047857;
+  border: 1px solid #6ee7b7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.15);
+}
+
+.ai-modal-banner-open-title {
+  font-size: 13.5px;
+  font-weight: 750;
+  color: #064e3b;
+  margin-bottom: 2px;
+}
+
+.ai-modal-banner-open-desc {
+  font-size: 12px;
+  color: #047857;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* Banner: Requisition Closed & Ready for AI Screening */
+.ai-modal-banner-ready {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border: 1px solid #6ee7b7;
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.08);
+}
+
+.ai-modal-banner-ready-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #064e3b;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 2px;
+}
+
+.ai-modal-banner-ready-desc {
+  font-size: 12px;
+  color: #047857;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* 5. Search Bar & AI Action */
+.ai-modal-search-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 13px;
+  padding: 7px 12px;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.ai-modal-search-row:focus-within {
+  border-color: #00b074;
+  box-shadow: 0 0 0 3px rgba(0, 176, 116, 0.12);
+}
+
+.ai-modal-search-icon {
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.ai-modal-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  color: #0f172a;
+  width: 100%;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.ai-modal-search-input::placeholder {
+  color: #94a3b8;
+}
+
+/* Standardized AI Analysis Button (Emerald-Cyan Gradient System Theme) */
+.ai-modal-sparkle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #059669 0%, #0d9488 50%, #0284c7 100%);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 750;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.22);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-family: inherit;
+}
+
+.ai-modal-sparkle-btn:hover {
+  background: linear-gradient(135deg, #047857 0%, #0f766e 50%, #0369a1 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.32);
+}
+
+.ai-modal-sparkle-btn:active {
+  transform: translateY(0);
+}
+
+.ai-modal-sparkle-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* 6. Section Card & Candidate Rows */
+.ai-modal-section-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.025);
+}
+
+.ai-modal-section-card.shortlist-highlight {
+  border-color: #a7f3d0;
+  background: #ffffff;
+}
+
+.ai-modal-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ai-modal-section-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ai-modal-section-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Candidate Card Row (Clean Single-Border Modern Card) */
+.ai-modal-candidate-card {
+  background: linear-gradient(180deg, #ffffff 0%, #fafcfb 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02);
+}
+
+.ai-modal-candidate-card:hover {
+  border-color: #00b074;
+  background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 176, 116, 0.08);
+}
+
+.ai-modal-candidate-card.is-selected {
+  border-color: #00b074;
+  background: #f0fdf4;
+}
+
+/* Candidate Identity Left */
+.ai-modal-candidate-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ai-modal-checkbox {
+  width: 17px;
+  height: 17px;
+  border-radius: 4px;
+  border: 1.5px solid #cbd5e1;
+  accent-color: #00b074;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.ai-modal-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13.5px;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  border: 2px solid #ffffff;
+}
+
+.ai-modal-details {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ai-modal-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ai-modal-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.ai-modal-location {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ai-modal-location svg {
+  color: #94a3b8;
+  width: 13px;
+  height: 13px;
+}
+
+.ai-modal-headline {
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  margin: 2px 0 0 0;
+  line-height: 1.35;
+}
+
+.ai-modal-skills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.ai-modal-skill-pill {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 2.5px 9px;
+  border-radius: 7px;
+  line-height: 1.25;
+  transition: all 0.15s ease;
+}
+
+.ai-modal-candidate-card:hover .ai-modal-skill-pill {
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+/* Candidate Actions Right */
+.ai-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Status: AI Score Pending Badge (Refined Neutral System Theme) */
+.ai-modal-score-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.ai-modal-score-pending svg {
+  color: #64748b;
+}
+
+/* Match Score Ring */
+.ai-modal-score-ring {
+  --match-score: 0%;
+  position: relative;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: conic-gradient(#00b074 var(--match-score), #e2e8f0 0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #047857;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.ai-modal-score-ring:hover {
+  transform: scale(1.06);
+}
+
+.ai-modal-score-ring::before {
+  content: '';
+  position: absolute;
+  inset: 4.5px;
+  border-radius: inherit;
+  background: #ffffff;
+}
+
+.ai-modal-score-ring span {
+  position: relative;
+  font-size: 12.5px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.ai-modal-score-ring small {
+  position: relative;
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+/* View CV Action Link */
+.ai-modal-view-cv-btn {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  font-weight: 750;
+  color: #00b074;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.ai-modal-view-cv-btn:hover {
+  color: #008759;
+  background: #f0fdf4;
+  transform: translateX(2px);
+}
+
+/* Candidate State Badges (Shortlisted, Rejected, Under Review) */
+.ai-modal-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.ai-modal-status-badge.under-review {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+}
+
+.ai-modal-status-badge.shortlisted {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+
+.ai-modal-status-badge.rejected {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+}
+
+/* Rank Badge in Name Row */
+.ai-modal-rank-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2.5px 8px;
+  border: 1px solid #a7f3d0;
+  border-radius: 9999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1;
+}
+
+/* 7. Modal Sticky Footer */
+.ai-modal-footer {
+  padding: 16px 26px;
+  border-top: 1px solid #edf2f0;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Close Window (Secondary Button) */
+.ai-modal-footer-btn-secondary {
+  background: #ffffff;
+  border: 1px solid #dce7e3;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 20px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.ai-modal-footer-btn-secondary:hover {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.ai-modal-footer-btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* Reject Button */
+.ai-modal-footer-btn-reject {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 750;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.06);
+}
+
+.ai-modal-footer-btn-reject:hover:not(:disabled) {
+  background-color: #fee2e2;
+  border-color: #f87171;
+  color: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.ai-modal-footer-btn-reject:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.ai-modal-footer-btn-reject:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Primary CTA Button (Send to the Shortlist) */
+.ai-modal-footer-btn-primary {
+  background: linear-gradient(135deg, #059669 0%, #00b074 100%);
+  color: #ffffff;
+  border: none;
+  font-size: 13px;
+  font-weight: 750;
+  padding: 9.5px 22px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: inherit;
+  box-shadow: 0 4px 14px rgba(0, 176, 116, 0.25);
+}
+
+.ai-modal-footer-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  box-shadow: 0 6px 18px rgba(0, 176, 116, 0.35);
+  transform: translateY(-1px);
+}
+
+.ai-modal-footer-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.ai-modal-footer-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Responsive Styles */
+@media (max-width: 640px) {
+  .ai-modal-card {
+    max-height: 94vh;
+    border-radius: 16px;
+  }
+
+  .ai-modal-header {
+    padding: 16px 18px;
+  }
+
+  .ai-modal-body {
+    padding: 16px 18px;
+  }
+
+  .ai-modal-candidate-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ai-modal-actions {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .ai-modal-footer {
+    padding: 14px 18px;
+    flex-direction: column-reverse;
+  }
+
+  .ai-modal-footer-btn-secondary,
+  .ai-modal-footer-btn-reject,
+  .ai-modal-footer-btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+}

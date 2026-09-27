@@ -826,3 +826,106 @@
   }
 }
 
+/* Full-width technical-assessments workspace */
+.dashboard-viewport:has(> .candidate-assessments-page) {
+  max-width: none;
+  padding: 28px clamp(20px, 2.2vw, 40px);
+}
+
+.candidate-assessments-page {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 0 48px;
+}
+
+.assessments-hero {
+  min-height: 156px;
+  padding: 30px clamp(26px, 2.5vw, 42px);
+}
+
+.assessments-hero h1 {
+  font-size: clamp(27px, 2.2vw, 36px);
+}
+
+.assessments-subtitle {
+  max-width: 760px;
+}
+
+.hero-stats-banner {
+  padding: 18px clamp(22px, 2vw, 34px);
+  gap: clamp(18px, 2vw, 30px);
+}
+
+.assessments-toolbar {
+  padding-inline: 2px;
+}
+
+.assessments-search {
+  width: min(100%, 390px);
+}
+
+.assessments-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 370px), 1fr));
+  gap: clamp(18px, 1.5vw, 24px);
+}
+
+.assessment-card {
+  min-height: 280px;
+  padding: clamp(20px, 1.6vw, 26px);
+}
+
+.assessments-empty {
+  max-width: none;
+  margin: 0;
+}
+
+@media (min-width: 1600px) {
+  .assessments-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1000px) {
+  .dashboard-viewport:has(> .candidate-assessments-page) {
+    padding-inline: 20px;
+  }
+
+  .assessments-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-viewport:has(> .candidate-assessments-page) {
+    padding: 16px;
+  }
+
+  .candidate-assessments-page {
+    padding: 0 0 36px;
+    gap: 18px;
+  }
+
+  .assessments-hero {
+    min-height: 0;
+    padding: 22px;
+  }
+
+  .assessments-search {
+    width: 100%;
+  }
+
+  .assessments-tabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .tab-btn {
+    flex: 1 0 auto;
+  }
+
+  .assessment-card {
+    min-height: 0;
+  }
+}
+

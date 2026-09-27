@@ -38,17 +38,6 @@ const ClipboardCheckIcon = () => (
   </svg>
 );
 
-// Calendar / Interview Icon
-const CalendarIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-    <line x1="16" y1="2" x2="16" y2="6" />
-    <line x1="8" y1="2" x2="8" y2="6" />
-    <line x1="3" y1="10" x2="21" y2="10" />
-    <circle cx="12" cy="15" r="1.5" fill="currentColor" />
-  </svg>
-);
-
 export interface ShortlistedCandidate {
   id: string; // application id
   candidateId: string; // user id
@@ -116,17 +105,13 @@ export const HiringPipeline: React.FC = () => {
   // 3. Candidate Full Digital CV View State
   const [viewingCvCandidateId, setViewingCvCandidateId] = useState<string | null>(null);
 
-  // 4. Action Modals State (Connect Assessment & Schedule Interview)
+  // 4. Action Modals State (Connect Assessment)
   const [assessmentCandidate, setAssessmentCandidate] = useState<ShortlistedCandidate | null>(null);
-  const [interviewCandidate, setInterviewCandidate] = useState<ShortlistedCandidate | null>(null);
   const [selectedAssessmentType, setSelectedAssessmentType] = useState<string>('');
   const [availableTracks, setAvailableTracks] = useState<AssessmentTrackSummaryDto[]>([]);
   const [loadingTracks, setLoadingTracks] = useState<boolean>(false);
   const [sendingAssessment, setSendingAssessment] = useState<boolean>(false);
   const [dispatchedModalData, setDispatchedModalData] = useState<DispatchAssessmentResponseDto | null>(null);
-  const [interviewDate, setInterviewDate] = useState<string>('');
-  const [interviewTime, setInterviewTime] = useState<string>('10:00 AM');
-  const [interviewFormat, setInterviewFormat] = useState<string>('Google Meet / Video Call');
 
   // Load available published assessment tracks for the selected job when modal opens
   useEffect(() => {
@@ -345,18 +330,6 @@ export const HiringPipeline: React.FC = () => {
     }
   };
 
-  // Handler: Confirm Schedule Interview
-  const handleScheduleInterview = () => {
-    if (!interviewCandidate) return;
-    setShortlistedCandidates((prev) =>
-      prev.map((c) =>
-        c.id === interviewCandidate.id ? { ...c, interviewStatus: 'Scheduled' } : c
-      )
-    );
-    showToast(`✓ Interview scheduled with ${interviewCandidate.name} for ${interviewDate || 'upcoming date'} (${interviewTime})!`);
-    setInterviewCandidate(null);
-  };
-
   return (
     <div className="pipeline-selector-container">
       {/* =========================================================
@@ -370,7 +343,7 @@ export const HiringPipeline: React.FC = () => {
           </div>
           <h1 className="pipeline-page-title">Hiring Pipeline & Shortlisted Candidates</h1>
           <p className="pipeline-page-subtitle">
-            Select a job requisition below to view the <strong>AI Shortlisted Candidates</strong>. Review qualifications, dispatch assessments, and schedule interviews.
+            Select a job requisition below to view the <strong>AI Shortlisted Candidates</strong>. Review qualifications and dispatch assessments.
           </p>
         </div>
 
@@ -711,7 +684,7 @@ export const HiringPipeline: React.FC = () => {
                   </span>
                 </div>
                 <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
-                  {selectedJob.department} · {selectedJob.location} · Review verified profiles, send skill assessments, and schedule interviews.
+                  {selectedJob.department} · {selectedJob.location} · Review verified profiles and send skill assessments.
                 </p>
               </div>
 
@@ -915,16 +888,6 @@ export const HiringPipeline: React.FC = () => {
                         >
                           <ClipboardCheckIcon />
                           <span>Connect Assessment</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setInterviewCandidate(candidate)}
-                          className="pipeline-action-btn pipeline-action-primary"
-                          title="Schedule calendar interview with candidate"
-                        >
-                          <CalendarIcon />
-                          <span>Schedule Interview</span>
                         </button>
                       </div>
 
@@ -1180,135 +1143,7 @@ export const HiringPipeline: React.FC = () => {
         </div>
       )}
 
-      {/* =========================================================
-          ACTION DIALOG 2: SCHEDULE INTERVIEW MODAL
-          ========================================================= */}
-      {interviewCandidate && (
-        <div
-          className="popup-backdrop"
-          style={{ zIndex: 1100 }}
-          onClick={() => setInterviewCandidate(null)}
-        >
-          <div
-            className="popup-card"
-            style={{ maxWidth: '520px', width: '100%', padding: '24px', borderRadius: '16px' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#e6f9f2', color: '#008759', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CalendarIcon />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                    Schedule Interview
-                  </h3>
-                  <p style={{ fontSize: '12.5px', color: '#64748b', margin: 0 }}>
-                    With {interviewCandidate.name}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setInterviewCandidate(null)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
-              >
-                <XIcon />
-              </button>
-            </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Interview Date:
-                </label>
-                <input
-                  type="date"
-                  value={interviewDate}
-                  onChange={(e) => setInterviewDate(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '13px',
-                    color: '#0f172a',
-                    outline: 'none',
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Preferred Time:
-                </label>
-                <select
-                  value={interviewTime}
-                  onChange={(e) => setInterviewTime(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '13px',
-                    color: '#0f172a',
-                    outline: 'none',
-                  }}
-                >
-                  <option value="09:00 AM">09:00 AM (EST)</option>
-                  <option value="10:00 AM">10:00 AM (EST)</option>
-                  <option value="11:30 AM">11:30 AM (EST)</option>
-                  <option value="02:00 PM">02:00 PM (EST)</option>
-                  <option value="04:00 PM">04:00 PM (EST)</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Interview Format:
-                </label>
-                <select
-                  value={interviewFormat}
-                  onChange={(e) => setInterviewFormat(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '13px',
-                    color: '#0f172a',
-                    outline: 'none',
-                  }}
-                >
-                  <option value="Google Meet / Video Call">Google Meet / Video Conference</option>
-                  <option value="Live Technical Pair Programming">Live Technical Pair Programming</option>
-                  <option value="On-Site Executive Round">On-Site Office Interview</option>
-                </select>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button
-                type="button"
-                onClick={() => setInterviewCandidate(null)}
-                className="btn-secondary"
-                style={{ padding: '8px 16px', fontSize: '13px' }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleScheduleInterview}
-                className="btn-primary"
-                style={{ padding: '8px 18px', fontSize: '13px' }}
-              >
-                <CalendarIcon />
-                <span>Confirm & Send Invite</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* =========================================================
           FULL DIGITAL CV DRAWER (CandidateProfileReadOnly)

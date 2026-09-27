@@ -12,7 +12,7 @@ interface EligibleJobCardProps {
   application: CandidateApplicationItemDto;
   isGenerating: boolean;
   savedGuideId?: string | null;
-  onGenerateGuide: (application: CandidateApplicationItemDto) => void;
+  onGenerateGuide: (application: CandidateApplicationItemDto, forceRegenerate?: boolean) => void;
   onViewGuide?: (guideId: string) => void;
 }
 
@@ -115,15 +115,26 @@ export const EligibleJobCard: React.FC<EligibleJobCardProps> = ({
       {/* Card Actions: Primary Button */}
       <div className="eligible-job-footer">
         {savedGuideId ? (
-          <button
-            type="button"
-            className="btn-generate-prep btn-view-prep"
-            onClick={() => (onViewGuide ? onViewGuide(savedGuideId) : onGenerateGuide(application))}
-          >
-            <SparkleIcon />
-            <span>View Saved Prep Guide</span>
-            <ArrowRightIcon />
-          </button>
+          <div className="eligible-saved-actions">
+            <button
+              type="button"
+              className="btn-generate-prep btn-view-prep"
+              onClick={() => (onViewGuide ? onViewGuide(savedGuideId) : onGenerateGuide(application))}
+            >
+              <SparkleIcon />
+              <span>View Saved Prep Guide</span>
+              <ArrowRightIcon />
+            </button>
+            <button
+              type="button"
+              className="btn-card-regenerate"
+              onClick={() => onGenerateGuide(application, true)}
+              disabled={isGenerating}
+              title="Regenerate guidelines with AI Career Coach"
+            >
+              <span>🔄 Regenerate</span>
+            </button>
+          </div>
         ) : (
           <button
             type="button"

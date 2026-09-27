@@ -1627,6 +1627,12 @@ export interface SubmissionDetailDto {
   proctorSummary: ProctorSummaryDto;
   isSelectedForInterview?: boolean;
   reviewerFeedback?: string;
+  scheduledEventId?: string;
+  scheduledDate?: string;
+  scheduledTime?: string;
+  scheduledMeetingMode?: string;
+  scheduledLocation?: string;
+  isHired?: boolean;
 }
 
 export interface LeaderboardEntryDto {
@@ -1724,6 +1730,11 @@ export const assessmentsApi = {
     request<SubmissionDetailDto>(`/Assessments/submissions/${submissionId}/review`, {
       method: 'POST',
       body: JSON.stringify(payload),
+    }),
+
+  hireCandidate: (submissionId: string) =>
+    request<SubmissionDetailDto>(`/Assessments/submissions/${submissionId}/hire`, {
+      method: 'POST',
     }),
 
   getTracksByJob: (jobVacancyId: string) =>
@@ -2023,6 +2034,7 @@ export interface InterviewPrepGuideDto {
   practicalImplementationFocus: StudyFocusAreaDto[];
   proTips: string[];
   preparationChecklist: string[];
+  approvalStatus?: string;
   technicalQuestions?: InterviewQuestionDto[];
   behavioralQuestions?: BehavioralQuestionDto[];
   createdAt: string;
@@ -2044,12 +2056,30 @@ export interface GenerateInterviewPrepResponseDto {
 export const interviewPrepApi = {
   /**
    * POST /api/interviewprep/generate
-   * Generates a tailored AI Interview Preparation Guide, saves to DB, and returns guideId.
+   * Generates a tailored AI Interview Preparation Guide, saves to DB as Pending, and returns guide.
    */
   generate: (payload: GenerateInterviewPrepRequestDto) =>
     request<GenerateInterviewPrepResponseDto>('/interviewprep/generate', {
       method: 'POST',
       body: JSON.stringify(payload),
+    }, 120_000 /* 2-min timeout matching backend */),
+
+  /**
+   * POST /api/interviewprep/{id}/approve
+   * Human approval: Approves the guide and saves it to the candidate's Study Dashboard.
+   */
+  approve: (guideId: string) =>
+    request<InterviewPrepGuideDto>(`/interviewprep/${guideId}/approve`, {
+      method: 'POST',
+    }),
+
+  /**
+   * POST /api/interviewprep/{id}/regenerate
+   * Regenerates a new version of the AI guidelines for human review.
+   */
+  regenerate: (guideId: string) =>
+    request<GenerateInterviewPrepResponseDto>(`/interviewprep/${guideId}/regenerate`, {
+      method: 'POST',
     }, 120_000 /* 2-min timeout matching backend */),
 
   /**
@@ -2096,4 +2126,296 @@ export const interviewPrepApi = {
       method: 'DELETE',
     }),
 };
+
+// ============================================================================
+// 15. MONTHLY PLANNER (INTERVIEW SCHEDULING CALENDAR) API
+// ============================================================================
+
+export interface EventResponseDto {
+  id: string;
+  title: string;
+  description?: string | null;
+  eventDate: string; // "YYYY-MM-DD"
+  eventTime: string; // e.g. "14:30" or "02:30 PM"
+  createdBy: string;
+  creatorName?: string | null;
+  jobVacancyId?: string | null;
+  jobVacancyTitle?: string | null;
+  department?: string | null;
+  candidateId?: string | null;
+  meetingMode?: string | null;
+  location?: string | null;
+  createdAt: string;
+}
+
+export interface CreateEventPayload {
+  title: string;
+  description?: string;
+  eventDate: string; // "YYYY-MM-DD"
+  eventTime: string; // "HH:mm"
+  jobVacancyId?: string;
+  department?: string;
+}
+
+export interface NationalHolidayDto {
+  id: string;
+  title: string;
+  description: string;
+  date: string; // "YYYY-MM-DD"
+  country: string;
+  countryCode: string;
+  source?: string;
+}
+
+export interface HolidayConfigDto {
+  hasApiKey: boolean;
+  maskedApiKey?: string | null;
+  source: string;
+  isGoogleConnected: boolean;
+  lastError?: string | null;
+}
+
+export interface UpdateHolidayConfigDto {
+  apiKey?: string;
+}
+
+export const eventsApi = {
+  /**
+   * GET /api/Events
+   * Retrieves events for the HR manager's company, optionally filtered by department, month/year or date range.
+   */
+  getEvents: (params?: { year?: number; month?: number; startDate?: string; endDate?: string; department?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.year) q.append('year', params.year.toString());
+    if (params?.month) q.append('month', params.month.toString());
+    if (params?.startDate) q.append('startDate', params.startDate);
+    if (params?.endDate) q.append('endDate', params.endDate);
+    if (params?.department) q.append('department', params.department);
+    const queryString = q.toString() ? `?${q.toString()}` : '';
+    return request<EventResponseDto[]>(`/Events${queryString}`);
+  },
+
+  /**
+   * GET /api/Events/departments
+   * Retrieves departments that currently have at least one active job vacancy.
+   */
+  getActiveDepartments: () => request<string[]>('/Events/departments'),
+
+  /**
+   * GET /api/Events/holidays
+   * Retrieves national and public holidays for the specified country and month/year from ASP.NET Core backend.
+   */
+  getHolidays: (params?: { year?: number; month?: number; country?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.year) q.append('year', params.year.toString());
+    if (params?.month) q.append('month', params.month.toString());
+    if (params?.country) q.append('country', params.country);
+    const queryString = q.toString() ? `?${q.toString()}` : '';
+    return request<NationalHolidayDto[]>(`/Events/holidays${queryString}`);
+  },
+
+  /**
+   * GET /api/Events/holidays/config
+   * Retrieves Google Calendar API configuration & status.
+   */
+  getHolidayConfig: () => request<HolidayConfigDto>('/Events/holidays/config'),
+
+  /**
+   * POST /api/Events/holidays/config
+   * Updates and validates the Google Calendar API key on backend.
+   */
+  updateHolidayConfig: (payload: UpdateHolidayConfigDto) =>
+    request<HolidayConfigDto>('/Events/holidays/config', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  /**
+   * GET /api/Events/{id}
+   * Retrieves a single event by ID.
+   */
+  getById: (id: string) => request<EventResponseDto>(`/Events/${id}`),
+
+  /**
+   * POST /api/Events
+   * Creates a new event on the Monthly Planner.
+   */
+  create: (payload: CreateEventPayload) =>
+    request<EventResponseDto>('/Events', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  /**
+   * PUT /api/Events/{id}
+   * Updates an existing event on the Monthly Planner.
+   */
+  update: (id: string, payload: CreateEventPayload) =>
+    request<EventResponseDto>(`/Events/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
+  delete: (id: string) =>
+    request<void>(`/Events/${id}`, {
+      method: 'DELETE',
+    }),
+
+  deleteEvent: (id: string) =>
+    request<void>(`/Events/${id}`, {
+      method: 'DELETE',
+    }),
+
+  /**
+   * POST /api/Events/generate-interview-schedule
+   * Generates clash-free draft interview schedule proposal using AI Agent.
+   */
+  generateInterviewSchedule: (payload: GenerateScheduleRequestDto) =>
+    request<ScheduleProposalResponseDto>('/Events/generate-interview-schedule', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  /**
+   * POST /api/Events/confirm-interview-schedule
+   * Persists approved interview slots to database (Human-in-the-loop).
+   */
+  confirmInterviewSchedule: (payload: ConfirmInterviewScheduleDto) =>
+    request<ConfirmInterviewScheduleResultDto>('/Events/confirm-interview-schedule', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  /**
+   * GET /api/Events/my-interviews
+   * Retrieves scheduled interviews for the authenticated candidate.
+   */
+  getMyInterviews: () =>
+    request<CandidateInterviewDto[]>('/Events/my-interviews'),
+
+  /**
+   * POST /api/Events/schedule-candidate-interview
+   * Manually schedules or reschedules a candidate interview from Interview Selection.
+   */
+  scheduleCandidateInterview: (payload: {
+    candidateId: string;
+    jobVacancyId: string;
+    eventDate: string;
+    startTime: string;
+    endTime: string;
+    meetingMode: 'Online' | 'Physical';
+    location: string;
+    notes?: string;
+    existingEventId?: string;
+  }) =>
+    request<EventResponseDto>('/Events/schedule-candidate-interview', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  /**
+   * PUT /api/Events/{id}/meeting-link
+   * Updates the meeting link for an event.
+   */
+  updateMeetingLink: (id: string, meetingLink: string, meetingMode?: string) =>
+    request<EventResponseDto>(`/Events/${id}/meeting-link`, {
+      method: 'PUT',
+      body: JSON.stringify({ meetingLink, meetingMode }),
+    }),
+};
+
+export interface GenerateScheduleRequestDto {
+  jobVacancyId: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  interviewDurationMinutes?: number;
+  parallelTracks?: number;
+  workingHoursStart?: string;
+  workingHoursEnd?: string;
+  bufferMinutes?: number;
+}
+
+export interface ProposedSlotDto {
+  slotId: string;
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  trackNumber: number;
+  trackName: string;
+  isExtendedSearch: boolean;
+}
+
+export interface UnscheduledCandidateDto {
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  reason: string;
+}
+
+export interface ScheduleSummaryDto {
+  totalCandidates: number;
+  scheduledCount: number;
+  unscheduledCount: number;
+  originalDateRange: string;
+  effectiveDateRange: string;
+  forwardDaysExtended: number;
+  tracksUtilized: number;
+  assumptionsMade: string[];
+  aiValidationNotes: string[];
+}
+
+export interface ScheduleProposalResponseDto {
+  jobVacancyId: string;
+  jobTitle: string;
+  proposedSlots: ProposedSlotDto[];
+  unscheduledCandidates: UnscheduledCandidateDto[];
+  summary: ScheduleSummaryDto;
+  isDraft: boolean;
+}
+
+export interface ConfirmedSlotItemDto {
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  trackNumber: number;
+  trackName: string;
+  meetingMode?: string; // "Online" | "Physical"
+  location?: string; // Meeting link or venue
+}
+
+export interface ConfirmInterviewScheduleDto {
+  jobVacancyId: string;
+  jobTitle: string;
+  slots: ConfirmedSlotItemDto[];
+}
+
+export interface ConfirmInterviewScheduleResultDto {
+  scheduledCount: number;
+  message: string;
+  createdEventIds: string[];
+}
+
+export interface CandidateInterviewDto {
+  id: string;
+  title: string;
+  jobVacancyId?: string;
+  jobTitle?: string;
+  companyName?: string;
+  department?: string;
+  eventDate: string; // YYYY-MM-DD
+  eventTime: string; // e.g. "10:00 - 10:30"
+  meetingMode: string; // "Online" or "Physical"
+  location?: string;
+  description?: string;
+  status: string; // "Upcoming" | "Completed" | "Hired"
+  isHired?: boolean;
+  hiredMessage?: string;
+  createdAt: string;
+}
 

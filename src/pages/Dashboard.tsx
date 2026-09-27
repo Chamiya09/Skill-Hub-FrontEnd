@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Star } from 'lucide-react'
+import { Star, Calendar } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import {
   dashboardApi,
@@ -29,6 +29,7 @@ import {
 import { PipelineJobSelector } from './PipelineJobSelector'
 import { HiringPipeline } from './HiringPipeline'
 import { TechnicalAssessments } from './TechnicalAssessments'
+import { MonthlyPlanner } from './MonthlyPlanner'
 import { JobVacancies } from './JobVacancies'
 import { CompanySettings } from './CompanySettings'
 import { SecuritySettings } from './SecuritySettings'
@@ -46,6 +47,7 @@ export type DashboardTab =
   | 'assessment-submissions'
   | 'assessment-leaderboard'
   | 'interview-selection'
+  | 'monthly-planner'
   | 'settings'
   | 'security';
 
@@ -375,6 +377,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             <span className="nav-badge-count" style={{ background: '#f5f3ff', color: '#7c3aed' }}>Selected</span>
           </button>
 
+          <button
+            type="button"
+            className={`dashboard-nav-item ${activeTab === 'monthly-planner' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('monthly-planner')
+              setSidebarOpen(false)
+            }}
+          >
+            <Calendar size={18} />
+            <span>Monthly Planner</span>
+            <span className="nav-badge-count" style={{ background: '#ecfdf5', color: '#059669' }}>Planner</span>
+          </button>
+
           <div className="nav-group-label" style={{ marginTop: '16px' }}>SYSTEM</div>
 
           <button
@@ -467,6 +482,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
                 {activeTab === 'assessment-templates' && 'Assessments'}
                 {(activeTab === 'performance-hub' || activeTab === 'assessment-submissions' || activeTab === 'assessment-leaderboard') && 'Performance Hub'}
                 {activeTab === 'interview-selection' && 'Interview Selection'}
+                {activeTab === 'monthly-planner' && 'Monthly Planner'}
                 {activeTab === 'assessments' && 'Assessments'}
                 {activeTab === 'settings' && 'Settings'}
                 {activeTab === 'security' && 'Security'}
@@ -502,6 +518,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             <TechnicalAssessments activeSection="performance-hub" initialPerformanceTab="leaderboard" />
           ) : activeTab === 'interview-selection' ? (
             <TechnicalAssessments activeSection="interview-selection" />
+          ) : activeTab === 'monthly-planner' ? (
+            <MonthlyPlanner />
           ) : activeTab === 'assessments' ? (
             <TechnicalAssessments activeSection="templates" />
           ) : activeTab === 'settings' ? (

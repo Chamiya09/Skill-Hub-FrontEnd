@@ -94,8 +94,8 @@ export const ShortlistedPipelineModal: React.FC<ShortlistedPipelineModalProps> =
         const rawStatus = (app.status || 'Applied').trim();
         let status = 'Applied';
         const lower = rawStatus.toLowerCase();
-        if (lower.includes('interview')) status = 'Interview';
-        else if (lower.includes('offer') || lower.includes('hired')) status = 'Offered';
+        if (lower.includes('hire') || lower.includes('offer') || lower.includes('hired')) status = 'Offered';
+        else if (lower.includes('interview')) status = 'Interview';
         else if (lower.includes('shortlist') || lower.includes('screen')) status = 'Shortlisted';
         else status = 'Applied';
 

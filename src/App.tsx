@@ -14,6 +14,7 @@ import { Register } from "./pages/Register";
 import { CandidateLogin } from "./pages/CandidateLogin";
 import { CandidateRegister } from "./pages/CandidateRegister";
 import { CandidateProfile } from "./pages/CandidateProfile";
+import { CandidateDashboard } from "./pages/CandidateDashboard";
 import { CandidateApplications } from "./pages/CandidateApplications";
 import { CandidateSavedJobs } from "./pages/CandidateSavedJobs";
 import { CandidateSecurity } from "./pages/CandidateSecurity";
@@ -127,8 +128,9 @@ function AppContent() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Navigate to="/jobs" replace />} />
-              <Route path="dashboard" element={<Navigate to="/jobs" replace />} />
+              <Route index element={<CandidateDashboard />} />
+              <Route path="dashboard" element={<CandidateDashboard />} />
+              <Route path="interviews" element={<CandidateDashboard />} />
               <Route path="profile" element={<CandidateProfile />} />
               <Route path="recommended" element={<Navigate to="/jobs" replace />} />
               <Route path="applications" element={<CandidateApplications />} />

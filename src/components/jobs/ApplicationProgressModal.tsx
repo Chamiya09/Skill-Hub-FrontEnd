@@ -16,11 +16,11 @@ const WrongTickIcon = () => (
   </svg>
 );
 
-const STAGES = ['Applied', 'Under Review', 'Shortlisted', 'Assessment', 'Interview', 'Offer'] as const;
+const STAGES = ['Applied', 'Under Review', 'Shortlisted', 'Assessment', 'Interview', 'Hire'] as const;
 
 const getApplicationStage = (status?: string | null): number => {
   const value = (status || 'Applied').toLowerCase();
-  if (value.includes('offer') || value.includes('accepted') || value.includes('hired')) return 5;
+  if (value.includes('hire') || value.includes('offer') || value.includes('accepted')) return 5;
   if (value.includes('interview')) return 4;
   if (value.includes('assess') || value.includes('test') || value.includes('exam')) return 3;
   if (value.includes('shortlist')) return 2;
@@ -41,7 +41,7 @@ const getCopilotMessage = (stage: number, isRejected?: boolean, isSuspended?: bo
     'You made the shortlist. A technical assessment may be dispatched by the hiring committee.',
     'Your technical assessment has been sent by HR. Head to Technical Assessments to take your coding challenge.',
     'Your interview stage is active. Rehearse concise STAR responses and questions for the hiring team.',
-    'You reached the offer stage. Review the role scope, total package, and growth expectations carefully.',
+    'Congratulations! You have been officially hired for this role! Welcome aboard and prepare for your onboarding journey.',
   ][stage];
 };
 
@@ -136,7 +136,7 @@ export const ApplicationProgressModal: React.FC<ApplicationProgressModalProps> =
               } else {
                 if (index <= currentStage) stepClass += ' is-complete';
                 if (index === currentStage) stepClass += ' is-current';
-                dotContent = index < currentStage ? '✓' : index + 1;
+                dotContent = index < currentStage || (currentStage === STAGES.length - 1 && index === STAGES.length - 1) ? '✓' : index + 1;
               }
 
               return (

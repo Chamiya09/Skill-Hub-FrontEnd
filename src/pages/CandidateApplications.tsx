@@ -14,11 +14,11 @@ import {
 } from '../components/common/Icons';
 import './CandidateApplications.css';
 
-const STAGE_LABELS = ['Applied', 'Under Review', 'Shortlisted', 'Assessment', 'Interview', 'Offer'];
+const STAGE_LABELS = ['Applied', 'Under Review', 'Shortlisted', 'Assessment', 'Interview', 'Hire'];
 
 const getApplicationStage = (status?: string | null): number => {
   const value = (status || 'Applied').toLowerCase();
-  if (value.includes('offer') || value.includes('accepted') || value.includes('hired')) return 5;
+  if (value.includes('hire') || value.includes('offer') || value.includes('accepted')) return 5;
   if (value.includes('interview')) return 4;
   if (value.includes('assess') || value.includes('test') || value.includes('exam')) return 3;
   if (value.includes('shortlist')) return 2;

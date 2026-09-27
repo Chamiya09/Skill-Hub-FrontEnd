@@ -71,9 +71,12 @@ export const CandidateStudyDashboard: React.FC = () => {
           console.warn('interviewPrepApi.getAll() failed:', err);
         }
 
-        // Strictly exclude any mock / seed test data without real applications
+        // Strictly exclude any unapproved drafts or mock test data without real applications
         list = (list || []).filter((g) => {
           if (!g || !g.id) return false;
+          if (g.approvalStatus && g.approvalStatus.toLowerCase() !== 'approved') {
+            return false;
+          }
           if (
             g.id === 'bd215d1a-bd91-459e-9604-45d44fef40da' ||
             g.id.startsWith('mock-') ||
@@ -95,6 +98,7 @@ export const CandidateStudyDashboard: React.FC = () => {
               const specific = await interviewPrepApi.getById(id);
               if (
                 specific &&
+                (!specific.approvalStatus || specific.approvalStatus.toLowerCase() === 'approved') &&
                 (specific.applicationId || (specific.jobId && specific.companyName !== 'Enterprise Partner'))
               ) {
                 list = [specific, ...list.filter((g) => g.id !== specific.id)];

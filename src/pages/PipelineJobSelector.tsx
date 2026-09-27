@@ -15,6 +15,7 @@ import {
   InfoIcon,
 } from '../components/common/Icons';
 import { SkeletonGrid } from '../components/common/SkeletonCard';
+import './PipelineJobSelectorFull.css';
 
 interface PipelineJobSelectorProps {
   onSelectJob?: (jobId: string) => void;
@@ -137,7 +138,7 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="pipeline-header-metrics">
           <div className="pipeline-header-stats-badge" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
             <span className="pipeline-stats-num" style={{ color: '#00b074' }}>{activeCount}</span>
             <span className="pipeline-stats-label">Open Roles</span>
@@ -150,7 +151,14 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="filter-card-wrapper" style={{ marginBottom: '24px' }}>
+      <div className="filter-card-wrapper pipeline-filter-panel">
+        <div className="pipeline-filter-heading">
+          <div>
+            <span>Screening workspace</span>
+            <h2>Select a job requisition</h2>
+          </div>
+          <strong>{filteredJobs.length} of {publishedJobs.length} shown</strong>
+        </div>
         <div className="filter-grid-bar" style={{ gridTemplateColumns: '2fr 1fr 1.2fr auto' }}>
           {/* Keyword Search */}
           <div className="filter-input-group">

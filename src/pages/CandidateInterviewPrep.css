@@ -1939,3 +1939,122 @@
   }
 }
 
+/* Full-width Interview Prep Hub workspace */
+.dashboard-viewport:has(> .candidate-interview-prep-page) {
+  max-width: none;
+  padding: 28px clamp(20px, 2.2vw, 40px);
+}
+
+.candidate-interview-prep-page {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 0 48px;
+}
+
+.prep-hub-hero {
+  min-height: 156px;
+  padding: 30px clamp(26px, 2.5vw, 42px);
+}
+
+.prep-hub-hero-content {
+  max-width: 900px;
+}
+
+.prep-hub-title {
+  font-size: clamp(27px, 2.2vw, 36px);
+}
+
+.prep-hub-subtitle {
+  max-width: 800px;
+}
+
+.prep-hub-stat-pill {
+  min-height: 46px;
+  padding-inline: 22px;
+}
+
+.eligible-jobs-header,
+.other-applications-header {
+  padding-inline: 2px;
+}
+
+.eligible-jobs-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 370px), 1fr));
+  gap: clamp(18px, 1.5vw, 24px);
+}
+
+.eligible-job-card {
+  min-height: 270px;
+  padding: clamp(22px, 1.7vw, 28px);
+}
+
+.eligible-job-title {
+  max-width: 320px;
+}
+
+.other-applications-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+  gap: clamp(14px, 1.2vw, 20px);
+}
+
+.other-application-card {
+  min-height: 78px;
+  padding: 16px clamp(18px, 1.5vw, 24px);
+}
+
+.other-application-role {
+  max-width: 300px;
+}
+
+.prep-loading-state-card,
+.prep-empty-state {
+  width: 100%;
+  max-width: none;
+}
+
+@media (min-width: 1600px) {
+  .eligible-jobs-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .other-applications-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1000px) {
+  .dashboard-viewport:has(> .candidate-interview-prep-page) {
+    padding-inline: 20px;
+  }
+
+  .eligible-jobs-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-viewport:has(> .candidate-interview-prep-page) {
+    padding: 16px;
+  }
+
+  .candidate-interview-prep-page {
+    padding: 0 0 36px;
+  }
+
+  .prep-hub-hero {
+    min-height: 0;
+    padding: 22px;
+  }
+
+  .eligible-job-card,
+  .other-application-card {
+    min-height: 0;
+  }
+
+  .eligible-job-title,
+  .other-application-role {
+    max-width: 100%;
+  }
+}
+

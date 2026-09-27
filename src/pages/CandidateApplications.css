@@ -50,3 +50,93 @@
 .application-step.is-rejected .application-step-line {
   background: #e2e8f0;
 }
+
+/* Full-width application workspace */
+.dashboard-viewport:has(> .candidate-applications-page) {
+  max-width: none;
+  padding: 28px clamp(20px, 2.2vw, 40px);
+}
+
+.candidate-applications-page {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 0 48px;
+}
+
+.applications-hero {
+  min-height: 156px;
+  padding: 30px clamp(26px, 2.5vw, 42px);
+}
+
+.applications-hero h1 {
+  font-size: clamp(27px, 2.2vw, 36px);
+}
+
+.applications-table-summary {
+  padding-inline: clamp(20px, 2vw, 32px);
+}
+
+.applications-table {
+  table-layout: auto;
+}
+
+.applications-table th,
+.applications-table td {
+  padding-inline: clamp(16px, 1.6vw, 28px);
+}
+
+.applications-table th:first-child,
+.applications-table td:first-child {
+  width: 36%;
+}
+
+.applications-table th:nth-child(2),
+.applications-table td:nth-child(2) {
+  width: 20%;
+}
+
+.applications-table th:nth-child(3),
+.applications-table td:nth-child(3) {
+  width: 15%;
+}
+
+.applications-table th:nth-child(4),
+.applications-table td:nth-child(4) {
+  width: 13%;
+}
+
+.applications-table th:last-child,
+.applications-table td:last-child {
+  width: 16%;
+  text-align: right;
+}
+
+.table-position strong {
+  max-width: 440px;
+}
+
+.track-progress-button {
+  min-height: 34px;
+  padding-inline: 13px;
+}
+
+@media (max-width: 1000px) {
+  .dashboard-viewport:has(> .candidate-applications-page) {
+    padding-inline: 20px;
+  }
+}
+
+@media (max-width: 700px) {
+  .dashboard-viewport:has(> .candidate-applications-page) {
+    padding: 16px;
+  }
+
+  .candidate-applications-page {
+    padding: 0 0 36px;
+  }
+
+  .applications-hero {
+    min-height: 0;
+  }
+}

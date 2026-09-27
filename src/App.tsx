@@ -58,6 +58,7 @@ function AppContent() {
     location.pathname.startsWith("/performance-hub") ||
     location.pathname.startsWith("/submissions") ||
     location.pathname.startsWith("/leaderboard") ||
+    location.pathname.startsWith("/interview-selection") ||
     location.pathname.startsWith("/exam") ||
     location.pathname.startsWith("/vacancies") ||
     location.pathname.startsWith("/users") ||
@@ -332,6 +333,22 @@ function AppContent() {
               element={
                 <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard defaultTab="assessment-leaderboard" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/interview-selection"
+              element={
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
+                  <Dashboard defaultTab="interview-selection" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/interview-selection"
+              element={
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
+                  <Dashboard defaultTab="interview-selection" />
                 </ProtectedRoute>
               }
             />

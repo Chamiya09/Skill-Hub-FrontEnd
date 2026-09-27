@@ -31,6 +31,7 @@ import { HiringPipeline } from './HiringPipeline'
 import { TechnicalAssessments } from './TechnicalAssessments'
 import { MonthlyPlanner } from './MonthlyPlanner'
 import { JobVacancies } from './JobVacancies'
+import { InterviewSelection } from './InterviewSelection'
 import { CompanySettings } from './CompanySettings'
 import { SecuritySettings } from './SecuritySettings'
 import { MetricCardSkeleton, TableRowSkeleton } from '../components/common/SkeletonCard'
@@ -517,7 +518,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
           ) : activeTab === 'assessment-leaderboard' ? (
             <TechnicalAssessments activeSection="performance-hub" initialPerformanceTab="leaderboard" />
           ) : activeTab === 'interview-selection' ? (
-            <TechnicalAssessments activeSection="interview-selection" />
+            <InterviewSelection />
           ) : activeTab === 'monthly-planner' ? (
             <MonthlyPlanner />
           ) : activeTab === 'assessments' ? (

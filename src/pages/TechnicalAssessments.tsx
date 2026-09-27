@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { ProblemStatementViewer } from "../components/assessment";
 import { AiInterviewSchedulerModal } from "../components/AiInterviewSchedulerModal";
+import { InterviewSelection } from "./InterviewSelection";
 import "./TechnicalAssessmentsFull.css";
 
 const LANGUAGE_STARTER_TEMPLATES: Record<string, string> = {
@@ -1332,6 +1333,10 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
       setIsFinalizing(false);
     }
   };
+
+  if (isInterviewSelection) {
+    return <InterviewSelection />;
+  }
 
   return (
     <div

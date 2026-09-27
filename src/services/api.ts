@@ -2034,6 +2034,7 @@ export interface InterviewPrepGuideDto {
   practicalImplementationFocus: StudyFocusAreaDto[];
   proTips: string[];
   preparationChecklist: string[];
+  approvalStatus?: string;
   technicalQuestions?: InterviewQuestionDto[];
   behavioralQuestions?: BehavioralQuestionDto[];
   createdAt: string;
@@ -2055,12 +2056,30 @@ export interface GenerateInterviewPrepResponseDto {
 export const interviewPrepApi = {
   /**
    * POST /api/interviewprep/generate
-   * Generates a tailored AI Interview Preparation Guide, saves to DB, and returns guideId.
+   * Generates a tailored AI Interview Preparation Guide, saves to DB as Pending, and returns guide.
    */
   generate: (payload: GenerateInterviewPrepRequestDto) =>
     request<GenerateInterviewPrepResponseDto>('/interviewprep/generate', {
       method: 'POST',
       body: JSON.stringify(payload),
+    }, 120_000 /* 2-min timeout matching backend */),
+
+  /**
+   * POST /api/interviewprep/{id}/approve
+   * Human approval: Approves the guide and saves it to the candidate's Study Dashboard.
+   */
+  approve: (guideId: string) =>
+    request<InterviewPrepGuideDto>(`/interviewprep/${guideId}/approve`, {
+      method: 'POST',
+    }),
+
+  /**
+   * POST /api/interviewprep/{id}/regenerate
+   * Regenerates a new version of the AI guidelines for human review.
+   */
+  regenerate: (guideId: string) =>
+    request<GenerateInterviewPrepResponseDto>(`/interviewprep/${guideId}/regenerate`, {
+      method: 'POST',
     }, 120_000 /* 2-min timeout matching backend */),
 
   /**

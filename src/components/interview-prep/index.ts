@@ -8,4 +8,5 @@ export { StudyTabsNavigation, type StudyTabKey } from './StudyTabsNavigation';
 export { StudyFocusAreaCard } from './StudyFocusAreaCard';
 export { StudyDisclaimerFooter } from './StudyDisclaimerFooter';
 export { StudyJobDropdown } from './StudyJobDropdown';
+export { ReviewStudyGuideModal } from './ReviewStudyGuideModal';
 

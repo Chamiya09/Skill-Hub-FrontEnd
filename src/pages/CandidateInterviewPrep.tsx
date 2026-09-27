@@ -12,6 +12,7 @@ import {
   EmptyStateMessage,
   OtherApplicationsSection,
   GeneratingGuideModal,
+  ReviewStudyGuideModal,
 } from '../components/interview-prep';
 import './CandidateInterviewPrep.css';
 
@@ -24,6 +25,12 @@ export const CandidateInterviewPrep: React.FC = () => {
   const [generatingAppId, setGeneratingAppId] = useState<string | null>(null);
   const [activeGeneratingApp, setActiveGeneratingApp] = useState<CandidateApplicationItemDto | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Human Review & Approval Modal state
+  const [reviewingGuide, setReviewingGuide] = useState<InterviewPrepGuideDto | null>(null);
+  const [reviewingApp, setReviewingApp] = useState<CandidateApplicationItemDto | null>(null);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   // Load candidate applications and any previously generated guides on mount
   useEffect(() => {
@@ -117,8 +124,8 @@ export const CandidateInterviewPrep: React.FC = () => {
     navigate(`/candidate/interview-prep/guide/${guideId}`);
   };
 
-  // Primary Action: Generate AI Prep Guide and Navigate to Page 2 (The Study Dashboard)
-  const handleGenerateGuide = async (app: CandidateApplicationItemDto) => {
+  // Primary Action: Generate AI Prep Guide and Open Review & Approval Modal
+  const handleGenerateGuide = async (app: CandidateApplicationItemDto, forceRegenerate = false) => {
     const appId = app.id || app.applicationId || '';
     try {
       setError(null);
@@ -131,24 +138,102 @@ export const CandidateInterviewPrep: React.FC = () => {
         jobTitle: app.jobTitle,
         targetRole: app.jobTitle,
         jobDescription: `Position: ${app.jobTitle} at ${app.companyName || 'Enterprise'}. Core responsibilities include full lifecycle system architecture, high-performance web development, database optimization, and team collaboration.`,
+        forceRegenerate,
       });
 
       const guideId = response.guideId || response.id || response.guide?.id;
-      if (!guideId) {
+      let guideObj = response.guide;
+      if (!guideObj && guideId) {
+        try {
+          guideObj = await interviewPrepApi.getById(guideId);
+        } catch (fetchErr) {
+          console.warn('Failed to fetch full guide object, using partial response', fetchErr);
+        }
+      }
+
+      if (!guideObj && !guideId) {
         throw new Error('Guide generation completed but no guide ID was returned.');
       }
 
-      // Store last generated guide ID for sidebar direct access
-      localStorage.setItem('skillhub_last_guide_id', guideId);
+      setGeneratingAppId(null);
+      setActiveGeneratingApp(null);
 
-      // Navigate seamlessly to Page 2: The Study Dashboard
-      navigate(`/candidate/interview-prep/guide/${guideId}`);
+      // Open Human Review & Approval Modal instead of navigating directly to Study Dashboard
+      if (guideObj) {
+        setReviewingGuide(guideObj);
+        setReviewingApp(app);
+      } else if (guideId) {
+        // Fallback navigation if guide object structure missing
+        localStorage.setItem('skillhub_last_guide_id', guideId);
+        navigate(`/candidate/interview-prep/guide/${guideId}`);
+      }
     } catch (err: any) {
       console.error('Error generating prep guide:', err);
       setError(err?.message || 'Failed to generate interview preparation guide. Please try again.');
       setGeneratingAppId(null);
       setActiveGeneratingApp(null);
     }
+  };
+
+  // Human Approval: Candidate approves the AI guidelines -> saves to Study Dashboard
+  const handleApproveReviewGuide = async () => {
+    if (!reviewingGuide || !reviewingGuide.id) return;
+    try {
+      setIsApproving(true);
+      setError(null);
+      const approved = await interviewPrepApi.approve(reviewingGuide.id);
+
+      // Update savedGuides in state so the card immediately reflects Guide Ready
+      setSavedGuides((prev) => {
+        const filtered = prev.filter(
+          (g) => g.id !== approved.id && (!approved.applicationId || g.applicationId !== approved.applicationId)
+        );
+        return [approved, ...filtered];
+      });
+
+      localStorage.setItem('skillhub_last_guide_id', approved.id);
+
+      const guideId = approved.id;
+      setReviewingGuide(null);
+      setReviewingApp(null);
+
+      // Navigate to Study Dashboard to begin studying
+      navigate(`/candidate/interview-prep/guide/${guideId}`);
+    } catch (err: any) {
+      console.error('Error approving guide:', err);
+      setError(err?.message || 'Failed to approve and save study guidelines.');
+    } finally {
+      setIsApproving(false);
+    }
+  };
+
+  // Human Approval: Candidate requests regeneration of AI guidelines
+  const handleRegenerateReviewGuide = async () => {
+    if (!reviewingGuide || !reviewingGuide.id) return;
+    try {
+      setIsRegenerating(true);
+      setError(null);
+
+      const response = await interviewPrepApi.regenerate(reviewingGuide.id);
+      const newGuide = response.guide || (response.guideId ? await interviewPrepApi.getById(response.guideId) : null);
+
+      if (newGuide) {
+        setReviewingGuide(newGuide);
+      } else {
+        throw new Error('Regeneration completed but could not load new guidelines.');
+      }
+    } catch (err: any) {
+      console.error('Error regenerating guide:', err);
+      setError(err?.message || 'Failed to regenerate study guidelines. Please try again.');
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  // Discard Draft and close review modal
+  const handleDiscardReviewGuide = () => {
+    setReviewingGuide(null);
+    setReviewingApp(null);
   };
 
   return (
@@ -233,6 +318,19 @@ export const CandidateInterviewPrep: React.FC = () => {
             <OtherApplicationsSection applications={otherApplications} />
           )}
         </>
+      )}
+
+      {/* 6. Human Review & Approval Modal */}
+      {reviewingGuide && (
+        <ReviewStudyGuideModal
+          guide={reviewingGuide}
+          application={reviewingApp}
+          isApproving={isApproving}
+          isRegenerating={isRegenerating}
+          onApprove={handleApproveReviewGuide}
+          onRegenerate={handleRegenerateReviewGuide}
+          onDiscard={handleDiscardReviewGuide}
+        />
       )}
     </div>
   );

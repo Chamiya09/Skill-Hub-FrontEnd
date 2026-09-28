@@ -1318,3 +1318,590 @@
   color: #cbd5e1;
   cursor: not-allowed;
 }
+
+/* ==========================================================================
+   ASSESSMENT TRACK BUILDER MODAL - SYSTEM UI THEME
+   ========================================================================== */
+
+/* Modal Dialog Card */
+.track-builder-modal-card {
+  max-width: 920px;
+  width: 100%;
+  max-height: 92vh;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid #dce7e3;
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: trackBuilderSlideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes trackBuilderSlideUp {
+  0% {
+    opacity: 0;
+    transform: scale(0.97) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Modal Header */
+.track-builder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 22px 28px 18px 28px;
+  border-bottom: 1px solid #edf2f0;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.track-builder-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.track-builder-tag-primary {
+  font-size: 11px;
+  font-weight: 750;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.track-builder-tag-secondary {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  letter-spacing: 0.02em;
+}
+
+.track-builder-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.015em;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.track-builder-subtitle {
+  font-size: 12.5px;
+  color: #64748b;
+  margin: 4px 0 0 0;
+  line-height: 1.45;
+}
+
+.track-builder-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.track-builder-close-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  transform: rotate(90deg);
+}
+
+/* Modal Body */
+.track-builder-body {
+  padding: 22px 28px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  flex: 1;
+}
+
+/* Card 1: General Parameters Card */
+.track-builder-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+  transition: border-color 0.18s ease;
+}
+
+.track-builder-card:focus-within {
+  border-color: #a7f3d0;
+}
+
+.track-builder-label {
+  font-size: 12px;
+  font-weight: 750;
+  color: #334155;
+  display: block;
+  margin-bottom: 6px;
+  letter-spacing: 0.01em;
+}
+
+.track-builder-label .required-star {
+  color: #ef4444;
+}
+
+.track-builder-input {
+  width: 100%;
+  padding: 9.5px 14px;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  background: #ffffff;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.track-builder-input:focus {
+  border-color: #00b074;
+  box-shadow: 0 0 0 3px rgba(0, 176, 116, 0.12);
+}
+
+.track-builder-input-with-suffix {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.track-builder-input-with-suffix .track-builder-input {
+  padding-right: 56px;
+}
+
+.track-builder-suffix-tag {
+  position: absolute;
+  right: 10px;
+  font-size: 11.5px;
+  color: #475569;
+  font-weight: 750;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 2.5px 8px;
+  border-radius: 6px;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Card 2: Configured Problems List */
+.track-builder-problems-card {
+  background: #f8fafc;
+  padding: 16px 20px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.track-builder-problems-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.track-builder-problems-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.track-builder-count-pill {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 2px 8.5px;
+  border-radius: 9999px;
+}
+
+.track-builder-problems-subtitle {
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.track-builder-problem-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
+}
+
+.track-builder-problem-row:hover {
+  border-color: #a7f3d0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 176, 116, 0.08);
+}
+
+.track-builder-problem-index {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #059669 0%, #00b074 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 176, 116, 0.2);
+}
+
+.track-builder-problem-title {
+  font-size: 13.5px;
+  font-weight: 750;
+  color: #0f172a;
+  margin: 0;
+}
+
+.track-builder-problem-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+.track-builder-lang-tag {
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.track-builder-diff-tag {
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  font-weight: 700;
+}
+
+.track-builder-diff-tag.easy {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.track-builder-diff-tag.medium {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.track-builder-diff-tag.hard {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.track-builder-problem-edit-btn {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+  border-radius: 9999px;
+  padding: 4.5px 12px;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 750;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.track-builder-problem-edit-btn:hover {
+  background: #00b074;
+  color: #ffffff;
+  border-color: #00b074;
+}
+
+.track-builder-problem-remove-btn {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 9999px;
+  padding: 4.5px 12px;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 750;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.track-builder-problem-remove-btn:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #f87171;
+}
+
+/* Card 3: Add/Edit Coding Problem Form */
+.track-builder-authoring-card {
+  border: 1.5px solid #dce7e3;
+  border-radius: 16px;
+  padding: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #fafcfb 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.track-builder-authoring-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.track-builder-authoring-icon-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: #ecfdf5;
+  color: #00b074;
+  border: 1px solid #a7f3d0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.track-builder-authoring-title {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #0f172a;
+  display: block;
+  letter-spacing: -0.01em;
+}
+
+.track-builder-authoring-subtitle {
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.track-builder-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #0f172a;
+  background: #ffffff;
+  font-family: inherit;
+  line-height: 1.5;
+  outline: none;
+  transition: all 0.2s ease;
+  resize: vertical;
+}
+
+.track-builder-textarea:focus {
+  border-color: #00b074;
+  box-shadow: 0 0 0 3px rgba(0, 176, 116, 0.12);
+}
+
+.track-builder-select {
+  width: 100%;
+  padding: 9.5px 12px;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0f172a;
+  background: #ffffff;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.track-builder-select:focus {
+  border-color: #00b074;
+  box-shadow: 0 0 0 3px rgba(0, 176, 116, 0.12);
+}
+
+.track-builder-reset-btn {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #047857;
+  font-size: 11px;
+  font-weight: 750;
+  padding: 2.5px 9px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: inherit;
+}
+
+.track-builder-reset-btn:hover {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #009663;
+}
+
+.track-builder-code-editor {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background-color: #0f172a;
+  color: #4ade80;
+  font-size: 12px;
+  font-family: 'Fira Code', Consolas, Monaco, 'Courier New', monospace;
+  line-height: 1.55;
+  tab-size: 4;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.track-builder-code-editor:focus {
+  border-color: #00b074;
+  box-shadow: 0 0 0 3px rgba(0, 176, 116, 0.2);
+}
+
+.track-builder-add-btn {
+  background: linear-gradient(135deg, #059669 0%, #00b074 100%);
+  color: #ffffff;
+  border: none;
+  padding: 8.5px 20px;
+  font-size: 12.5px;
+  font-weight: 750;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(0, 176, 116, 0.25);
+}
+
+.track-builder-add-btn:hover {
+  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 176, 116, 0.35);
+}
+
+.track-builder-add-btn:active {
+  transform: translateY(0);
+}
+
+/* Modal Bottom Actions */
+.track-builder-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 28px;
+  border-top: 1px solid #edf2f0;
+  background: #ffffff;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.track-builder-footer-info {
+  font-size: 12.5px;
+  color: #64748b;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.track-builder-footer-info strong {
+  color: #0f172a;
+}
+
+.track-builder-btn-secondary {
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  color: #334155;
+  padding: 8.5px 20px;
+  font-size: 13px;
+  font-weight: 750;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.track-builder-btn-secondary:hover:not(:disabled) {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.track-builder-btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.track-builder-btn-primary {
+  background: linear-gradient(135deg, #059669 0%, #00b074 100%);
+  color: #ffffff;
+  border: none;
+  padding: 9px 24px;
+  font-size: 13px;
+  font-weight: 750;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  box-shadow: 0 3px 12px rgba(0, 176, 116, 0.28);
+}
+
+.track-builder-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 18px rgba(0, 176, 116, 0.38);
+}
+
+.track-builder-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}

@@ -4489,86 +4489,33 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         <div
           className="popup-backdrop"
           style={{ zIndex: 1200 }}
-          onClick={() => setIsManualModalOpen(false)}
+          onClick={() => {
+            setIsManualModalOpen(false);
+            setEditingAssessment(null);
+          }}
         >
+          {/* Modal Container */}
           <div
-            className="popup-card"
-            style={{
-              maxWidth: "760px",
-              width: "100%",
-              padding: "26px",
-              borderRadius: "18px",
-              maxHeight: "92vh",
-              overflowY: "auto",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-            }}
+            className="popup-card track-builder-modal-card"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                marginBottom: "18px",
-                borderBottom: "1px solid #f1f5f9",
-                paddingBottom: "14px",
-              }}
-            >
+            <div className="track-builder-header">
               <div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginBottom: "4px",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      padding: "2px 8px",
-                      borderRadius: "4px",
-                      background: "#eff6ff",
-                      color: "#1d4ed8",
-                      textTransform: "uppercase",
-                    }}
-                  >
+                <div className="track-builder-badge-row">
+                  <span className="track-builder-tag-primary">
                     Assessment Track Builder
                   </span>
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      padding: "2px 8px",
-                      borderRadius: "4px",
-                      background: "#f1f5f9",
-                      color: "#475569",
-                    }}
-                  >
+                  <span className="track-builder-tag-secondary">
                     Manual Question Authoring
                   </span>
                 </div>
-                <h3
-                  style={{
-                    fontSize: "19px",
-                    fontWeight: 800,
-                    color: "#0f172a",
-                    margin: 0,
-                  }}
-                >
+                <h3 className="track-builder-title">
                   {editingAssessment
                     ? "Edit Coding Assessment"
                     : "Create Technical Assessment"}
                 </h3>
-                <p
-                  style={{
-                    fontSize: "12.5px",
-                    color: "#64748b",
-                    margin: "4px 0 0 0",
-                  }}
-                >
+                <p className="track-builder-subtitle">
                   {editingAssessment
                     ? "Update assessment parameters, problem statements, and coding challenges for this track."
                     : "Configure custom coding problems, runtime environments, and passing benchmarks for candidates."}
@@ -4580,66 +4527,26 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                   setIsManualModalOpen(false);
                   setEditingAssessment(null);
                 }}
-                style={{
-                  background: "#f8fafc",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "8px",
-                  padding: "6px",
-                  color: "#64748b",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+                className="track-builder-close-btn"
+                aria-label="Close"
               >
                 <XIcon />
               </button>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "16px",
-                marginBottom: "20px",
-              }}
-            >
+            <div className="track-builder-body">
               {/* General Parameters Card */}
-              <div
-                style={{
-                  background: "#ffffff",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "12px",
-                  padding: "16px",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-                }}
-              >
+              <div className="track-builder-card">
                 <div style={{ marginBottom: "14px" }}>
-                  <label
-                    style={{
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      color: "#334155",
-                      display: "block",
-                      marginBottom: "5px",
-                    }}
-                  >
-                    Assessment Title <span style={{ color: "#ef4444" }}>*</span>
-                    :
+                  <label className="track-builder-label">
+                    Assessment Title <span className="required-star">*</span>:
                   </label>
                   <input
                     type="text"
                     value={manualTitle}
                     onChange={(e) => setManualTitle(e.target.value)}
                     placeholder="e.g. Lead Full-Stack Engineer (AI & Enterprise Systems) Skill Assessment"
-                    style={{
-                      width: "100%",
-                      padding: "9px 12px",
-                      borderRadius: "8px",
-                      border: "1px solid #cbd5e1",
-                      fontSize: "13px",
-                      color: "#0f172a",
-                    }}
+                    className="track-builder-input"
                   />
                 </div>
 
@@ -4651,18 +4558,10 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                   }}
                 >
                   <div>
-                    <label
-                      style={{
-                        fontSize: "12px",
-                        fontWeight: 700,
-                        color: "#334155",
-                        display: "block",
-                        marginBottom: "5px",
-                      }}
-                    >
+                    <label className="track-builder-label">
                       Time Limit:
                     </label>
-                    <div style={{ position: "relative" }}>
+                    <div className="track-builder-input-with-suffix">
                       <input
                         type="number"
                         value={manualTimeLimit}
@@ -4671,44 +4570,18 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         }
                         min={15}
                         max={240}
-                        style={{
-                          width: "100%",
-                          padding: "9px 12px",
-                          borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
-                          fontSize: "13px",
-                          color: "#0f172a",
-                        }}
+                        className="track-builder-input"
                       />
-                      <span
-                        style={{
-                          position: "absolute",
-                          right: "12px",
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          fontSize: "11.5px",
-                          color: "#94a3b8",
-                          fontWeight: 600,
-                          pointerEvents: "none",
-                        }}
-                      >
+                      <span className="track-builder-suffix-tag">
                         Mins
                       </span>
                     </div>
                   </div>
                   <div>
-                    <label
-                      style={{
-                        fontSize: "12px",
-                        fontWeight: 700,
-                        color: "#334155",
-                        display: "block",
-                        marginBottom: "5px",
-                      }}
-                    >
+                    <label className="track-builder-label">
                       Benchmark (%):
                     </label>
-                    <div style={{ position: "relative" }}>
+                    <div className="track-builder-input-with-suffix">
                       <input
                         type="number"
                         value={manualPassingThreshold}
@@ -4717,41 +4590,15 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         }
                         min={0}
                         max={100}
-                        style={{
-                          width: "100%",
-                          padding: "9px 12px",
-                          borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
-                          fontSize: "13px",
-                          color: "#0f172a",
-                        }}
+                        className="track-builder-input"
                       />
-                      <span
-                        style={{
-                          position: "absolute",
-                          right: "12px",
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          fontSize: "12px",
-                          color: "#94a3b8",
-                          fontWeight: 700,
-                          pointerEvents: "none",
-                        }}
-                      >
+                      <span className="track-builder-suffix-tag">
                         %
                       </span>
                     </div>
                   </div>
                   <div>
-                    <label
-                      style={{
-                        fontSize: "12px",
-                        fontWeight: 700,
-                        color: "#334155",
-                        display: "block",
-                        marginBottom: "5px",
-                      }}
-                    >
+                    <label className="track-builder-label">
                       Expiration Date (Deadline):
                     </label>
                     <input
@@ -4759,14 +4606,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       value={manualExpiresAt}
                       onChange={(e) => setManualExpiresAt(e.target.value)}
                       min={new Date().toISOString().slice(0, 16)}
-                      style={{
-                        width: "100%",
-                        padding: "9px 12px",
-                        borderRadius: "8px",
-                        border: "1px solid #cbd5e1",
-                        fontSize: "13px",
-                        color: "#0f172a",
-                      }}
+                      className="track-builder-input"
                     />
                   </div>
                 </div>
@@ -4774,32 +4614,13 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
               {/* Added Questions List */}
               {manualQuestions.length > 0 && (
-                <div
-                  style={{
-                    background: "#f8fafc",
-                    padding: "14px 16px",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "12.5px",
-                        fontWeight: 800,
-                        color: "#0f172a",
-                      }}
-                    >
-                      Configured Problems ({manualQuestions.length}):
+                <div className="track-builder-problems-card">
+                  <div className="track-builder-problems-header">
+                    <span className="track-builder-problems-title">
+                      <span>Configured Problems</span>
+                      <span className="track-builder-count-pill">{manualQuestions.length}</span>
                     </span>
-                    <span style={{ fontSize: "11px", color: "#64748b" }}>
+                    <span className="track-builder-problems-subtitle">
                       Candidate will solve these questions in sequence
                     </span>
                   </div>
@@ -4813,90 +4634,35 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                     {manualQuestions.map((q, idx) => (
                       <div
                         key={q.id}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          background: "#ffffff",
-                          padding: "10px 14px",
-                          borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
-                          fontSize: "12.5px",
-                        }}
+                        className="track-builder-problem-row"
                       >
                         <div
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: "10px",
+                            gap: "12px",
                           }}
                         >
-                          <span
-                            style={{
-                              width: "24px",
-                              height: "24px",
-                              borderRadius: "6px",
-                              background: "#0f172a",
-                              color: "#ffffff",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "11px",
-                              fontWeight: 700,
-                            }}
-                          >
+                          <span className="track-builder-problem-index">
                             {idx + 1}
                           </span>
                           <div>
-                            <strong style={{ color: "#0f172a" }}>
+                            <h5 className="track-builder-problem-title">
                               {q.title}
-                            </strong>
-                            <div
-                              style={{
-                                display: "flex",
-                                gap: "6px",
-                                marginTop: "2px",
-                              }}
-                            >
-                              <span
-                                style={{
-                                  fontSize: "10.5px",
-                                  padding: "1px 6px",
-                                  borderRadius: "4px",
-                                  background: "#eff6ff",
-                                  color: "#1d4ed8",
-                                  fontWeight: 700,
-                                  textTransform: "uppercase",
-                                }}
-                              >
+                            </h5>
+                            <div className="track-builder-problem-tags">
+                              <span className="track-builder-lang-tag">
                                 {q.language}
                               </span>
                               <span
-                                style={{
-                                  fontSize: "10.5px",
-                                  padding: "1px 6px",
-                                  borderRadius: "4px",
-                                  fontWeight: 600,
-                                  background:
-                                    q.difficulty === "Easy"
-                                      ? "#ecfdf5"
-                                      : q.difficulty === "Hard"
-                                        ? "#fef2f2"
-                                        : "#fffbeb",
-                                  color:
-                                    q.difficulty === "Easy"
-                                      ? "#047857"
-                                      : q.difficulty === "Hard"
-                                        ? "#b91c1c"
-                                        : "#b45309",
-                                }}
+                                className={`track-builder-diff-tag ${q.difficulty.toLowerCase()}`}
                               >
                                 {q.difficulty}
                               </span>
                             </div>
                           </div>
                         </div>
-                        <div style={{ display: "flex", gap: "6px" }}>
+                        <div style={{ display: "flex", gap: "8px" }}>
                           <button
                             type="button"
                             onClick={() => {
@@ -4914,16 +4680,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                 `Loaded "${q.title}" into editor below.`,
                               );
                             }}
-                            style={{
-                              background: "#eff6ff",
-                              border: "1px solid #bfdbfe",
-                              color: "#1d4ed8",
-                              borderRadius: "6px",
-                              padding: "4px 10px",
-                              cursor: "pointer",
-                              fontSize: "11.5px",
-                              fontWeight: 700,
-                            }}
+                            className="track-builder-problem-edit-btn"
                           >
                             Edit
                           </button>
@@ -4936,16 +4693,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                 ),
                               )
                             }
-                            style={{
-                              background: "#fee2e2",
-                              border: "1px solid #fecaca",
-                              color: "#ef4444",
-                              borderRadius: "6px",
-                              padding: "4px 10px",
-                              cursor: "pointer",
-                              fontSize: "11.5px",
-                              fontWeight: 700,
-                            }}
+                            className="track-builder-problem-remove-btn"
                           >
                             Remove
                           </button>
@@ -4957,49 +4705,16 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               )}
 
               {/* Add New Coding Question Sub-Form */}
-              <div
-                style={{
-                  border: "1.5px solid #cbd5e1",
-                  borderRadius: "12px",
-                  padding: "18px",
-                  background: "#fcfcfd",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginBottom: "12px",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "26px",
-                      height: "26px",
-                      borderRadius: "6px",
-                      background: "#eff6ff",
-                      color: "#2563eb",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
+              <div className="track-builder-authoring-card">
+                <div className="track-builder-authoring-header">
+                  <div className="track-builder-authoring-icon-badge">
                     <PlusIcon />
                   </div>
                   <div>
-                    <span
-                      style={{
-                        fontSize: "13.5px",
-                        fontWeight: 800,
-                        color: "#0f172a",
-                        display: "block",
-                      }}
-                    >
+                    <span className="track-builder-authoring-title">
                       Add Coding Problem
                     </span>
-                    <span style={{ fontSize: "11.5px", color: "#64748b" }}>
+                    <span className="track-builder-authoring-subtitle">
                       Write the problem statement and starter template for
                       candidates
                     </span>
@@ -5010,102 +4725,53 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: "12px",
+                    gap: "14px",
                   }}
                 >
                   <div>
-                    <label
-                      style={{
-                        fontSize: "11.5px",
-                        fontWeight: 700,
-                        color: "#334155",
-                        display: "block",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      Problem Title <span style={{ color: "#ef4444" }}>*</span>:
+                    <label className="track-builder-label">
+                      Problem Title <span className="required-star">*</span>:
                     </label>
                     <input
                       type="text"
                       value={curQTitle}
                       onChange={(e) => setCurQTitle(e.target.value)}
                       placeholder="e.g. Reverse Linked List, LRU Cache, Distributed Lock"
-                      style={{
-                        width: "100%",
-                        padding: "8px 12px",
-                        borderRadius: "8px",
-                        border: "1px solid #cbd5e1",
-                        fontSize: "12.5px",
-                        color: "#0f172a",
-                      }}
+                      className="track-builder-input"
                     />
                   </div>
 
                   <div>
-                    <label
-                      style={{
-                        fontSize: "11.5px",
-                        fontWeight: 700,
-                        color: "#334155",
-                        display: "block",
-                        marginBottom: "4px",
-                      }}
-                    >
+                    <label className="track-builder-label">
                       Problem Description &amp; Requirements{" "}
-                      <span style={{ color: "#ef4444" }}>*</span>:
+                      <span className="required-star">*</span>:
                     </label>
                     <textarea
                       rows={4}
                       value={curQStatement}
                       onChange={(e) => setCurQStatement(e.target.value)}
                       placeholder="Describe the task, expected inputs/outputs, performance constraints, and edge cases..."
-                      style={{
-                        width: "100%",
-                        padding: "8px 12px",
-                        borderRadius: "8px",
-                        border: "1px solid #cbd5e1",
-                        fontSize: "12.5px",
-                        color: "#0f172a",
-                        fontFamily: "inherit",
-                        lineHeight: 1.5,
-                      }}
+                      className="track-builder-textarea"
                     />
                   </div>
 
-                  {/* Language and Difficulty (Points field removed!) */}
+                  {/* Language and Difficulty */}
                   <div
                     style={{
                       display: "grid",
                       gridTemplateColumns: "1fr 1fr",
-                      gap: "12px",
+                      gap: "14px",
                     }}
                   >
                     <div>
-                      <label
-                        style={{
-                          fontSize: "11.5px",
-                          fontWeight: 700,
-                          color: "#334155",
-                          display: "block",
-                          marginBottom: "4px",
-                        }}
-                      >
+                      <label className="track-builder-label">
                         Programming Language{" "}
-                        <span style={{ color: "#ef4444" }}>*</span>:
+                        <span className="required-star">*</span>:
                       </label>
                       <select
                         value={curQLanguage}
                         onChange={(e) => handleLanguageChange(e.target.value)}
-                        style={{
-                          width: "100%",
-                          padding: "8px 10px",
-                          borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
-                          fontSize: "12.5px",
-                          fontWeight: 600,
-                          color: "#0f172a",
-                          background: "#ffffff",
-                        }}
+                        className="track-builder-select"
                       >
                         <option value="csharp">C# (.NET)</option>
                         <option value="python">Python 3</option>
@@ -5119,35 +4785,18 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                     </div>
 
                     <div>
-                      <label
-                        style={{
-                          fontSize: "11.5px",
-                          fontWeight: 700,
-                          color: "#334155",
-                          display: "block",
-                          marginBottom: "4px",
-                        }}
-                      >
+                      <label className="track-builder-label">
                         Difficulty Level{" "}
-                        <span style={{ color: "#ef4444" }}>*</span>:
+                        <span className="required-star">*</span>:
                       </label>
                       <select
                         value={curQDifficulty}
                         onChange={(e) => setCurQDifficulty(e.target.value)}
-                        style={{
-                          width: "100%",
-                          padding: "8px 10px",
-                          borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
-                          fontSize: "12.5px",
-                          fontWeight: 600,
-                          color: "#0f172a",
-                          background: "#ffffff",
-                        }}
+                        className="track-builder-select"
                       >
-                        <option value="Easy">🟢 Easy</option>
-                        <option value="Medium">🟡 Medium</option>
-                        <option value="Hard">🔴 Hard</option>
+                        <option value="Easy">Easy</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Hard">Hard</option>
                       </select>
                     </div>
                   </div>
@@ -5159,16 +4808,10 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        marginBottom: "4px",
+                        marginBottom: "6px",
                       }}
                     >
-                      <label
-                        style={{
-                          fontSize: "11.5px",
-                          fontWeight: 700,
-                          color: "#334155",
-                        }}
-                      >
+                      <label className="track-builder-label" style={{ margin: 0 }}>
                         Starter Code Stub (Auto-populated for{" "}
                         {curQLanguage.toUpperCase()}):
                       </label>
@@ -5183,17 +4826,9 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                             `✓ Reset code template for ${curQLanguage.toUpperCase()}`,
                           );
                         }}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: "#2563eb",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          textDecoration: "underline",
-                        }}
+                        className="track-builder-reset-btn"
                       >
-                        ↺ Reset Template
+                        Reset Template
                       </button>
                     </div>
                     <textarea
@@ -5201,24 +4836,9 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       value={curQStarter}
                       onChange={(e) => setCurQStarter(e.target.value)}
                       spellCheck={false}
-                      style={{
-                        width: "100%",
-                        padding: "10px 14px",
-                        borderRadius: "8px",
-                        border: "1px solid #334155",
-                        backgroundColor: "#0f172a",
-                        color: "#4ade80",
-                        fontSize: "12px",
-                        fontFamily:
-                          '"Fira Code", Consolas, Monaco, "Courier New", monospace',
-                        lineHeight: 1.5,
-                        tabSize: 4,
-                        outline: "none",
-                      }}
+                      className="track-builder-code-editor"
                     />
                   </div>
-
-                  {/* Sample Input & Expected Output sections REMOVED as requested */}
 
                   <div
                     style={{
@@ -5230,15 +4850,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                     <button
                       type="button"
                       onClick={handleAddQuestionToManual}
-                      className="btn-primary"
-                      style={{
-                        padding: "8px 18px",
-                        fontSize: "12.5px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        borderRadius: "8px",
-                      }}
+                      className="track-builder-add-btn"
                     >
                       <PlusIcon />
                       <span>Add Problem to Assessment</span>
@@ -5249,27 +4861,18 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
             </div>
 
             {/* Modal Actions */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                borderTop: "1px solid #e2e8f0",
-                paddingTop: "16px",
-              }}
-            >
-              <span style={{ fontSize: "12px", color: "#64748b" }}>
+            <div className="track-builder-footer">
+              <span className="track-builder-footer-info">
                 Problems Configured: <strong>{manualQuestions.length}</strong>
               </span>
-              <div style={{ display: "flex", gap: "10px" }}>
+              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                 <button
                   type="button"
                   onClick={() => {
                     setIsManualModalOpen(false);
                     setEditingAssessment(null);
                   }}
-                  className="btn-secondary"
-                  style={{ padding: "8px 16px", fontSize: "13px" }}
+                  className="track-builder-btn-secondary"
                 >
                   Cancel
                 </button>
@@ -5280,8 +4883,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       type="button"
                       onClick={() => handleSaveManualAssessment(false)}
                       disabled={isSavingManual}
-                      className="btn-secondary"
-                      style={{ padding: "8px 16px", fontSize: "13px" }}
+                      className="track-builder-btn-secondary"
                     >
                       {isSavingManual ? "Saving..." : "Save Draft"}
                     </button>
@@ -5290,15 +4892,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         type="button"
                         onClick={() => handleSaveManualAssessment(true)}
                         disabled={isSavingManual}
-                        className="btn-primary"
-                        style={{
-                          padding: "8px 20px",
-                          fontSize: "13px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                          background: "#00b074",
-                        }}
+                        className="track-builder-btn-primary"
                       >
                         <CheckIcon />
                         <span>
@@ -5312,14 +4906,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         type="button"
                         onClick={() => handleSaveManualAssessment(false)}
                         disabled={isSavingManual}
-                        className="btn-primary"
-                        style={{
-                          padding: "8px 20px",
-                          fontSize: "13px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
+                        className="track-builder-btn-primary"
                       >
                         <CheckIcon />
                         <span>
@@ -5334,8 +4921,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       type="button"
                       onClick={() => handleSaveManualAssessment(false)}
                       disabled={isSavingManual}
-                      className="btn-secondary"
-                      style={{ padding: "8px 16px", fontSize: "13px" }}
+                      className="track-builder-btn-secondary"
                     >
                       {isSavingManual ? "Saving..." : "Save as Draft"}
                     </button>
@@ -5343,14 +4929,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       type="button"
                       onClick={() => handleSaveManualAssessment(true)}
                       disabled={isSavingManual}
-                      className="btn-primary"
-                      style={{
-                        padding: "8px 20px",
-                        fontSize: "13px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                      }}
+                      className="track-builder-btn-primary"
                     >
                       <CheckIcon />
                       <span>

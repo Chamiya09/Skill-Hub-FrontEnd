@@ -39,12 +39,12 @@ export interface ModalCandidate {
 }
 
 const AVATAR_GRADIENTS = [
-  'linear-gradient(135deg, #059669 0%, #00b074 100%)', // Emerald
-  'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)', // Teal
-  'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)', // Sky
-  'linear-gradient(135deg, #334155 0%, #475569 100%)', // Slate
-  'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)', // Blue
-  'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)', // Amber
+  'linear-gradient(135deg, #059669 0%, #00b074 100%)', // Corporate Emerald
+  'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)', // Teal Forest
+  'linear-gradient(135deg, #047857 0%, #10b981 100%)', // Forest Mint
+  'linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)', // Ocean Cyan
+  'linear-gradient(135deg, #1e293b 0%, #334155 100%)', // Deep Slate
+  'linear-gradient(135deg, #065f46 0%, #059669 100%)', // Deep Jade
 ];
 
 const getGradientForName = (name: string): string => {
@@ -395,16 +395,19 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
 
           {isShortlisted ? (
             <span className="ai-modal-status-badge shortlisted">
+              <span className="ai-modal-status-dot shortlisted" />
               <CheckIcon />
               <span>Shortlisted</span>
             </span>
           ) : isRejected ? (
             <span className="ai-modal-status-badge rejected">
+              <span className="ai-modal-status-dot rejected" />
               <XIcon />
               <span>Rejected</span>
             </span>
           ) : (
             <span className="ai-modal-status-badge under-review">
+              <span className="ai-modal-status-dot under-review" />
               <span>Under Review</span>
             </span>
           )}
@@ -649,15 +652,22 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
               {otherList.length > 0 && (
                 <div className="ai-modal-section-card popup-section-card">
                   <div className="ai-modal-section-header popup-section-header flex justify-between items-center">
-                    <h3 className="ai-modal-section-title popup-section-title">
-                      Other Applicants ({otherList.length})
-                    </h3>
-                    <div className="flex items-center gap-3">
-                      <label className="text-xs font-semibold text-slate-600 flex items-center gap-2">
-                        Quick Select Top:
+                    <div className="ai-modal-section-title-wrap">
+                      <div className="ai-modal-section-icon-badge">
+                        <UsersIcon />
+                      </div>
+                      <h3 className="ai-modal-section-title popup-section-title">
+                        <span>Other Applicants</span>
+                        <span className="ai-modal-counter-badge">{otherList.length}</span>
+                      </h3>
+                    </div>
+                    <div className="ai-auto-select-group">
+                      <label className="ai-auto-select-label">
+                        <span>Quick Select Top:</span>
                         <input
                           type="number"
                           min="1"
+                          max={otherList.length}
                           className="ai-auto-select-input"
                           value={topCount}
                           onChange={(e) => setTopCount(Math.max(1, parseInt(e.target.value) || 1))}
@@ -667,8 +677,10 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                         type="button"
                         onClick={handleAutoSelect}
                         className="ai-auto-select-btn"
+                        title="Automatically select top ranked applicants"
                       >
-                        Auto-Select
+                        <SparkleIcon />
+                        <span>Auto-Select</span>
                       </button>
                     </div>
                   </div>
@@ -683,11 +695,18 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
             /* BEFORE AI ANALYSIS: PURE APPLICANTS LIST (SCREENSHOT VIEW) */
             <div className="ai-modal-section-card popup-section-card">
               <div className="ai-modal-section-header popup-section-header">
-                <h3 className="ai-modal-section-title popup-section-title">
-                  Received Applications ({candidates.length})
-                </h3>
-                <span className="ai-modal-section-subtitle popup-section-subtitle">
-                  Click any applicant to view full Digital CV Profile
+                <div className="ai-modal-section-title-wrap">
+                  <div className="ai-modal-section-icon-badge">
+                    <UsersIcon />
+                  </div>
+                  <h3 className="ai-modal-section-title popup-section-title">
+                    <span>Received Applications</span>
+                    <span className="ai-modal-counter-badge">{candidates.length}</span>
+                  </h3>
+                </div>
+                <span className="ai-modal-section-subtitle-pill popup-section-subtitle">
+                  <SparkleIcon />
+                  <span>Click any applicant to view full Digital CV Profile</span>
                 </span>
               </div>
 

@@ -59,12 +59,12 @@ export interface ShortlistedCandidate {
 }
 
 const AVATAR_GRADIENTS = [
-  'linear-gradient(135deg, #00b074 0%, #008759 100%)',
-  'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-  'linear-gradient(135deg, #0f766e 0%, #115e59 100%)',
-  'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-  'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
-  'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+  'linear-gradient(135deg, #059669 0%, #00b074 100%)', // Corporate Emerald
+  'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)', // Teal Forest
+  'linear-gradient(135deg, #047857 0%, #10b981 100%)', // Forest Mint
+  'linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)', // Ocean Cyan
+  'linear-gradient(135deg, #1e293b 0%, #334155 100%)', // Slate Indigo
+  'linear-gradient(135deg, #065f46 0%, #059669 100%)', // Deep Emerald
 ];
 
 const getGradientForName = (name: string): string => {
@@ -744,76 +744,40 @@ export const HiringPipeline: React.FC = () => {
         >
           {/* Wide Modal Container (max-w-5xl, Premium Corporate Light Theme) */}
           <div
-            className="popup-card"
-            style={{
-              maxWidth: '1024px',
-              width: '100%',
-              maxHeight: '90vh',
-              display: 'flex',
-              flexDirection: 'column',
-              borderRadius: '16px',
-              overflow: 'hidden',
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)',
-            }}
+            className="popup-card shortlist-modal-dialog"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div
-              style={{
-                padding: '20px 24px',
-                borderBottom: '1px solid #e2e8f0',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '16px',
-                background: '#ffffff',
-              }}
-            >
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <div
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '8px',
-                      background: '#00b074',
-                      color: '#ffffff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <SparkleIcon />
-                  </div>
-                  <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                    Shortlisted Candidates: {selectedJob.title}
-                  </h2>
-                  <span
-                    style={{
-                      background: '#e6f9f2',
-                      color: '#008759',
-                      border: '1px solid #bbf7d0',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      padding: '2px 8px',
-                      borderRadius: '9999px',
-                    }}
-                  >
-                    {filteredModalCandidates.length} Candidates
-                  </span>
+            <div className="shortlist-modal-header">
+              <div className="shortlist-modal-header-left">
+                <div className="shortlist-modal-icon-badge">
+                  <SparkleIcon />
                 </div>
-                <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
-                  {selectedJob.department} · {selectedJob.location} · Review verified profiles and send skill assessments.
-                </p>
+                <div>
+                  <div className="shortlist-modal-title-row">
+                    <h2 className="shortlist-modal-title">
+                      <span>Shortlisted Candidates:</span>
+                      <span className="shortlist-job-pill">{selectedJob.title}</span>
+                    </h2>
+                    <span className="shortlist-count-badge">
+                      {filteredModalCandidates.length} Candidates
+                    </span>
+                  </div>
+                  <p className="shortlist-modal-subtitle">
+                    <span>{selectedJob.department}</span>
+                    <span>·</span>
+                    <span>{selectedJob.location}</span>
+                    <span>·</span>
+                    <span>Review verified profiles and send skill assessments.</span>
+                  </p>
+                </div>
               </div>
 
               {/* Close Button */}
               <button
                 type="button"
                 onClick={() => setIsShortlistModalOpen(false)}
-                className="popup-close-btn"
+                className="shortlist-modal-close-btn"
                 aria-label="Close Modal"
               >
                 <XIcon />
@@ -821,56 +785,28 @@ export const HiringPipeline: React.FC = () => {
             </div>
 
             {/* Filter & Search Bar */}
-            <div
-              style={{
-                padding: '12px 24px',
-                borderBottom: '1px solid #f1f5f9',
-                background: '#f8fafc',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  padding: '6px 12px',
-                  flex: 1,
-                  maxWidth: '420px',
-                }}
-              >
-                <span style={{ color: '#94a3b8' }}><SearchIcon /></span>
+            <div className="shortlist-filter-row">
+              <div className="shortlist-search-box">
+                <span className="shortlist-search-icon"><SearchIcon /></span>
                 <input
                   type="text"
+                  className="shortlist-search-input"
                   placeholder="Filter by name, skill, location, or email..."
                   value={modalSearchQuery}
                   onChange={(e) => setModalSearchQuery(e.target.value)}
-                  style={{
-                    border: 'none',
-                    outline: 'none',
-                    fontSize: '13px',
-                    width: '100%',
-                    background: 'transparent',
-                    color: '#0f172a',
-                  }}
                 />
               </div>
 
-              <div style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>
-                Showing <strong style={{ color: '#0f172a' }}>{filteredModalCandidates.length}</strong> Shortlisted
+              <div className="shortlist-showing-badge">
+                <span className="shortlist-pulse-dot" />
+                <span>Showing <strong>{filteredModalCandidates.length}</strong> Shortlisted</span>
               </div>
             </div>
 
             {/* Vertical Shortlist Container (Clean Vertical List, NO KANBAN) */}
             <div
               style={{
-                padding: '20px 24px',
+                padding: '20px 28px',
                 overflowY: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
@@ -955,7 +891,7 @@ export const HiringPipeline: React.FC = () => {
                   return (
                     <div
                       key={candidate.id}
-                      className="pipeline-candidate-card bg-white border border-gray-200 shadow-sm"
+                      className="pipeline-candidate-card"
                     >
                       <div className="pipeline-candidate-identity">
                         {candidate.avatarUrl ? (
@@ -978,9 +914,8 @@ export const HiringPipeline: React.FC = () => {
                             </span>
                           </div>
                           <p className="pipeline-candidate-role">
-                            <strong>{candidate.jobTitle}</strong>
-                            <span>·</span>
-                            {candidate.headline}
+                            <span className="pipeline-job-badge">{candidate.jobTitle}</span>
+                            <span>{candidate.headline}</span>
                           </p>
                           <span className="pipeline-stage-detail">
                             <ClockIcon /> {stageDetail}
@@ -994,7 +929,8 @@ export const HiringPipeline: React.FC = () => {
                               onClick={() => setViewingCvCandidateId(candidate.candidateId)}
                               title="View Verified Candidate Digital CV"
                             >
-                              View CV <ArrowRightIcon />
+                              <span>View CV</span>
+                              <ArrowRightIcon />
                             </button>
                           </div>
                         </div>
@@ -1020,17 +956,8 @@ export const HiringPipeline: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div
-              style={{
-                padding: '14px 24px',
-                borderTop: '1px solid #e2e8f0',
-                background: '#f8fafc',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div style={{ fontSize: '12.5px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div className="shortlist-modal-footer">
+              <div className="shortlist-footer-sync">
                 <SparkleIcon />
                 <span>Actions automatically sync with Candidate ATS and notification service.</span>
               </div>
@@ -1038,18 +965,7 @@ export const HiringPipeline: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsShortlistModalOpen(false)}
-                style={{
-                  background: '#ffffff',
-                  border: '1px solid #cbd5e1',
-                  color: '#475569',
-                  padding: '7px 18px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+                className="shortlist-modal-footer-close"
               >
                 Close
               </button>
@@ -1069,35 +985,36 @@ export const HiringPipeline: React.FC = () => {
         >
           <div
             className="popup-card"
-            style={{ maxWidth: '520px', width: '100%', padding: '24px', borderRadius: '16px' }}
+            style={{ maxWidth: '520px', width: '100%', padding: '24px 28px', borderRadius: '20px', border: '1px solid #dce7e3', boxShadow: '0 25px 60px -15px rgba(15, 23, 42, 0.22)' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '11px', background: '#ecfdf5', color: '#00b074', border: '1px solid #a7f3d0', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0, 176, 116, 0.12)' }}>
                   <ClipboardCheckIcon />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                  <h3 style={{ fontSize: '16.5px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.01em' }}>
                     Connect Skill Assessment
                   </h3>
-                  <p style={{ fontSize: '12.5px', color: '#64748b', margin: 0 }}>
-                    For {assessmentCandidate.name} ({assessmentCandidate.jobTitle})
+                  <p style={{ fontSize: '12.5px', color: '#64748b', margin: 0, fontWeight: 500 }}>
+                    For <strong style={{ color: '#0f172a' }}>{assessmentCandidate.name}</strong> ({assessmentCandidate.jobTitle})
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setAssessmentCandidate(null)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                className="shortlist-modal-close-btn"
+                aria-label="Close"
               >
                 <XIcon />
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '22px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
                   Select Assessment Track:
                 </label>
                 {loadingTracks ? (
@@ -1110,12 +1027,15 @@ export const HiringPipeline: React.FC = () => {
                     onChange={(e) => setSelectedAssessmentType(e.target.value)}
                     style={{
                       width: '100%',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
+                      padding: '9.5px 14px',
+                      borderRadius: '10px',
+                      border: '1.5px solid #cbd5e1',
                       fontSize: '13px',
+                      fontWeight: 600,
                       color: '#0f172a',
                       outline: 'none',
+                      background: '#ffffff',
+                      boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
                     }}
                   >
                     {availableTracks.length > 0 ? (
@@ -1133,12 +1053,12 @@ export const HiringPipeline: React.FC = () => {
                 )}
               </div>
 
-              <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <p style={{ fontSize: '12px', color: '#475569', margin: 0, lineHeight: 1.4 }}>
+              <div style={{ padding: '14px 16px', background: '#f0fdf4', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
+                <p style={{ fontSize: '12.5px', color: '#166534', margin: 0, lineHeight: 1.5 }}>
                   This technical assessment will be delivered directly to <strong>{assessmentCandidate.name}</strong>'s candidate profile under their <strong>Technical Assessments</strong> dashboard.
                 </p>
                 {availableTracks.length === 0 && (
-                  <p style={{ fontSize: '11.5px', color: '#dc2626', margin: '6px 0 0 0', fontWeight: 500 }}>
+                  <p style={{ fontSize: '12px', color: '#dc2626', margin: '8px 0 0 0', fontWeight: 600 }}>
                     ⚠️ No published assessment tracks found for this requisition. Please configure and publish a manual assessment track first under the Coding Assessments tab.
                   </p>
                 )}
@@ -1151,7 +1071,7 @@ export const HiringPipeline: React.FC = () => {
                 onClick={() => setAssessmentCandidate(null)}
                 className="btn-secondary"
                 disabled={sendingAssessment}
-                style={{ padding: '8px 16px', fontSize: '13px' }}
+                style={{ padding: '8.5px 20px', fontSize: '13px', borderRadius: '9999px', fontWeight: 700 }}
               >
                 Cancel
               </button>
@@ -1161,8 +1081,12 @@ export const HiringPipeline: React.FC = () => {
                 className="btn-primary"
                 disabled={sendingAssessment || availableTracks.length === 0}
                 style={{
-                  padding: '8px 18px',
+                  padding: '9px 22px',
                   fontSize: '13px',
+                  borderRadius: '9999px',
+                  fontWeight: 750,
+                  background: 'linear-gradient(135deg, #059669 0%, #00b074 100%)',
+                  boxShadow: '0 3px 10px rgba(0, 176, 116, 0.25)',
                   opacity: availableTracks.length === 0 ? 0.5 : 1,
                   cursor: availableTracks.length === 0 ? 'not-allowed' : 'pointer'
                 }}

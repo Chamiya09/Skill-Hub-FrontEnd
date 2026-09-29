@@ -20,6 +20,9 @@ import {
   Search,
   RotateCcw,
   CalendarClock,
+  Video,
+  ExternalLink,
+  MapPin,
 } from 'lucide-react';
 import {
   eventsApi,
@@ -106,6 +109,73 @@ const calculateDurationText = (start: string, end: string): string | null => {
   if (hrs > 0 && mins > 0) return `${hrs} hr ${mins} min`;
   if (hrs > 0) return `${hrs} hr${hrs > 1 ? 's' : ''}`;
   return `${mins} mins`;
+};
+
+interface ParsedInterviewDetails {
+  isInterview: boolean;
+  candidateName?: string;
+  candidateEmail?: string;
+  role?: string;
+  mode?: string;
+  location?: string;
+  isMeetingLink?: boolean;
+  notes?: string;
+}
+
+const parseEventDescription = (desc?: string | null): ParsedInterviewDetails => {
+  if (!desc) return { isInterview: false };
+  const lines = desc.split('\n').map((l) => l.trim()).filter(Boolean);
+
+  let candidateName: string | undefined;
+  let candidateEmail: string | undefined;
+  let role: string | undefined;
+  let mode: string | undefined;
+  let location: string | undefined;
+  const otherNotes: string[] = [];
+
+  for (const line of lines) {
+    const colonIdx = line.indexOf(':');
+    if (colonIdx === -1) {
+      otherNotes.push(line);
+      continue;
+    }
+    const key = line.substring(0, colonIdx).trim().toLowerCase();
+    const val = line.substring(colonIdx + 1).trim();
+
+    if (key === 'candidate') {
+      const match = val.match(/^(.*?)\s*\((.*?)\)$/);
+      if (match) {
+        candidateName = match[1].trim();
+        candidateEmail = match[2].trim();
+      } else {
+        candidateName = val;
+      }
+    } else if (key === 'role') {
+      role = val;
+    } else if (key === 'mode') {
+      mode = val;
+    } else if (key === 'location') {
+      location = val;
+    } else if (key === 'notes' || key === 'note') {
+      if (val) otherNotes.push(val);
+    } else {
+      otherNotes.push(line);
+    }
+  }
+
+  const isInterview = Boolean(candidateName || role || mode || location);
+  const isMeetingLink = Boolean(location && (location.startsWith('http://') || location.startsWith('https://')));
+
+  return {
+    isInterview,
+    candidateName,
+    candidateEmail,
+    role,
+    mode,
+    location,
+    isMeetingLink,
+    notes: otherNotes.join(' ').trim() || undefined,
+  };
 };
 
 export const MonthlyPlanner: React.FC = () => {
@@ -911,20 +981,6 @@ export const MonthlyPlanner: React.FC = () => {
               <CalendarIcon size={16} />
               <span>{currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
             </div>
-
-            {/* Daily Schedule Side Popup Drawer Trigger */}
-            <button
-              type="button"
-              className="planner-header-drawer-btn"
-              onClick={() => setIsDailyDrawerOpen(true)}
-              title="Open Daily Schedule Side Popup"
-            >
-              <CalendarClock size={15} />
-              <span>Daily Schedule</span>
-              {selectedDayEvents.length > 0 && (
-                <span className="planner-header-drawer-badge">{selectedDayEvents.length}</span>
-              )}
-            </button>
           </div>
         </div>
 
@@ -1416,10 +1472,9 @@ export const MonthlyPlanner: React.FC = () => {
                   </button>
                   <button
                     type="button"
-                    className="daily-schedule-drawer-step-btn"
+                    className="daily-schedule-drawer-today-btn"
                     onClick={() => setSelectedDateStr(formatDateOnlyString(new Date()))}
                     title="Jump to Today"
-                    style={{ fontSize: '11px', fontWeight: 700, padding: '0 6px', width: 'auto' }}
                   >
                     Today
                   </button>
@@ -1558,205 +1613,147 @@ export const MonthlyPlanner: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                selectedDayEvents.map((ev) => (
-                  <div
-                    key={ev.id}
-                    style={{
-                      background: '#ffffff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '12px',
-                      padding: '16px',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        justifyContent: 'space-between',
-                        gap: '12px',
-                        marginBottom: '8px',
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <h4
-                          style={{
-                            fontSize: '15px',
-                            fontWeight: 700,
-                            color: '#0f172a',
-                            margin: '0 0 6px 0',
-                            lineHeight: 1.3,
-                          }}
-                        >
-                          {ev.title}
-                        </h4>
-                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                          <div
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '5px',
-                              padding: '3px 8px',
-                              borderRadius: '6px',
-                              background: '#ecfdf5',
-                              color: '#059669',
-                              fontSize: '12px',
-                              fontWeight: 700,
-                            }}
-                          >
-                            <Clock size={13} />
-                            <span>{formatTimeDisplay(ev.eventTime)}</span>
+                selectedDayEvents.map((ev) => {
+                  const parsed = parseEventDescription(ev.description);
+
+                  return (
+                    <div key={ev.id} className="daily-event-card">
+                      <div className="daily-event-card-header">
+                        <div className="daily-event-card-title-group">
+                          {parsed.isInterview && (
+                            <div className="daily-event-type-badge">
+                              <Sparkles size={11} />
+                              <span>Interview</span>
+                            </div>
+                          )}
+                          <h4 className="daily-event-card-title">{ev.title}</h4>
+
+                          <div className="daily-event-badges-row">
+                            <div className="daily-event-time-badge">
+                              <Clock size={13} />
+                              <span>{formatTimeDisplay(ev.eventTime)}</span>
+                            </div>
+
+                            {ev.jobVacancyTitle && (
+                              <div className="daily-event-vacancy-badge" title={`Vacancy: ${ev.jobVacancyTitle}`}>
+                                <Briefcase size={12} />
+                                <span>{ev.jobVacancyTitle}</span>
+                              </div>
+                            )}
+
+                            {ev.department && (
+                              <div className="daily-event-dept-badge" title={`Department: ${ev.department}`}>
+                                <Building2 size={12} />
+                                <span>{ev.department}</span>
+                              </div>
+                            )}
                           </div>
+                        </div>
 
-                          {ev.jobVacancyTitle && (
-                            <div
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                padding: '3px 8px',
-                                borderRadius: '6px',
-                                background: '#eff6ff',
-                                color: '#1d4ed8',
-                                fontSize: '11px',
-                                fontWeight: 700,
-                                border: '1px solid #bfdbfe',
-                              }}
-                              title={`Vacancy: ${ev.jobVacancyTitle}`}
-                            >
-                              <Briefcase size={12} />
-                              <span>{ev.jobVacancyTitle}</span>
-                            </div>
-                          )}
+                        {/* Action buttons: Edit & Delete */}
+                        <div className="daily-event-actions">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditEventModal(ev)}
+                            title="Edit this event"
+                            className="daily-event-edit-btn"
+                          >
+                            <Pencil size={13} />
+                            <span>Edit</span>
+                          </button>
 
-                          {ev.department && (
-                            <div
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                padding: '3px 8px',
-                                borderRadius: '6px',
-                                background: '#f8fafc',
-                                color: '#475569',
-                                fontSize: '11px',
-                                fontWeight: 700,
-                                border: '1px solid #e2e8f0',
-                              }}
-                            >
-                              <Building2 size={12} />
-                              <span>{ev.department}</span>
-                            </div>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteEvent(ev.id, ev.title)}
+                            title="Delete event from database"
+                            className="daily-event-delete-btn"
+                          >
+                            <Trash2 size={13} />
+                            <span>Delete</span>
+                          </button>
                         </div>
                       </div>
 
-                      {/* Action buttons: Edit & Delete */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEditEventModal(ev)}
-                          title="Edit this event"
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '8px',
-                            border: '1px solid #cbd5e1',
-                            background: '#f8fafc',
-                            color: '#334155',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontSize: '12px',
-                            fontWeight: 650,
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          <Pencil size={13} />
-                          <span>Edit</span>
-                        </button>
+                      {/* Structured Details or Description */}
+                      {parsed.isInterview ? (
+                        <div className="daily-event-interview-details">
+                          <div className="daily-event-candidate-row">
+                            <div className="daily-event-candidate-profile">
+                              <div className="daily-event-avatar">
+                                <User size={15} />
+                              </div>
+                              <div className="daily-event-candidate-meta">
+                                <span className="daily-event-candidate-name">{parsed.candidateName || 'Candidate'}</span>
+                                {parsed.candidateEmail && (
+                                  <span className="daily-event-candidate-email">{parsed.candidateEmail}</span>
+                                )}
+                              </div>
+                            </div>
 
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteEvent(ev.id, ev.title)}
-                          title="Delete event from database"
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '8px',
-                            border: '1px solid #fee2e2',
-                            background: '#fff5f5',
-                            color: '#dc2626',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          <Trash2 size={13} />
-                          <span>Delete</span>
-                        </button>
-                      </div>
+                            {parsed.mode && (
+                              <span className={`daily-event-mode-badge ${parsed.mode.toLowerCase() === 'online' ? 'online' : 'in-person'}`}>
+                                {parsed.mode.toLowerCase() === 'online' ? <Video size={12} /> : <MapPin size={12} />}
+                                <span>{parsed.mode}</span>
+                              </span>
+                            )}
+                          </div>
+
+                          {parsed.location && (
+                            <div className="daily-event-location-row">
+                              {parsed.isMeetingLink ? (
+                                <a
+                                  href={parsed.location}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="daily-event-meet-btn"
+                                  title="Open Google Meet link"
+                                >
+                                  <Video size={13} />
+                                  <span>Join Google Meet</span>
+                                  <ExternalLink size={12} />
+                                </a>
+                              ) : (
+                                <div className="daily-event-venue">
+                                  <MapPin size={13} />
+                                  <span>{parsed.location}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {parsed.notes && (
+                            <div className="daily-event-notes-callout">
+                              <span className="daily-event-notes-label">Notes:</span> {parsed.notes}
+                            </div>
+                          )}
+                        </div>
+                      ) : ev.description ? (
+                        <div className="daily-event-raw-description">
+                          {ev.description}
+                        </div>
+                      ) : null}
+
+                      {/* Creator metadata */}
+                      {ev.creatorName && (
+                        <div className="daily-event-creator-row">
+                          <User size={12} />
+                          <span>Created by {ev.creatorName}</span>
+                        </div>
+                      )}
                     </div>
-
-                    {/* Description */}
-                    {ev.description ? (
-                      <div
-                        style={{
-                          fontSize: '13px',
-                          color: '#475569',
-                          lineHeight: 1.5,
-                          background: '#f8fafc',
-                          padding: '10px 12px',
-                          borderRadius: '8px',
-                          marginTop: '8px',
-                          whiteSpace: 'pre-wrap',
-                        }}
-                      >
-                        {ev.description}
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          fontSize: '12px',
-                          color: '#94a3b8',
-                          fontStyle: 'italic',
-                          marginTop: '6px',
-                        }}
-                      >
-                        No description provided.
-                      </div>
-                    )}
-
-                    {/* Footer metadata: creator */}
-                    {ev.creatorName && (
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          marginTop: '10px',
-                          fontSize: '11px',
-                          color: '#64748b',
-                        }}
-                      >
-                        <User size={12} />
-                        <span>Created by {ev.creatorName}</span>
-                      </div>
-                    )}
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
             {/* Footer with quick add button */}
             <div className="daily-schedule-drawer-footer">
-              <span style={{ fontSize: '12px', color: '#64748b' }}>
-                {selectedDayEvents.length} scheduled item{selectedDayEvents.length === 1 ? '' : 's'}
-              </span>
+              <div className="daily-schedule-drawer-footer-count">
+                <CalendarDays size={15} color="#059669" />
+                <span>
+                  {selectedDayEvents.length} scheduled item{selectedDayEvents.length === 1 ? '' : 's'}
+                </span>
+              </div>
               <button
                 type="button"
                 className="daily-schedule-drawer-add-btn"
@@ -1770,25 +1767,7 @@ export const MonthlyPlanner: React.FC = () => {
         </>
       )}
 
-      {/* Floating Action Button (bottom-right) when drawer is closed */}
-      {!isDailyDrawerOpen && (
-        <button
-          type="button"
-          className="planner-floating-drawer-btn"
-          onClick={() => setIsDailyDrawerOpen(true)}
-          title="Open Daily Schedule Panel"
-        >
-          <div className="planner-floating-icon">
-            <CalendarClock size={17} />
-          </div>
-          <div className="planner-floating-text">
-            <span className="planner-floating-title">Daily Schedule</span>
-            <span className="planner-floating-sub">
-              {selectedDayEvents.length > 0 ? `${selectedDayEvents.length} event${selectedDayEvents.length > 1 ? 's' : ''}` : 'View Day'}
-            </span>
-          </div>
-        </button>
-      )}
+
 
       {/* =========================================================
           ADD EVENT MODAL

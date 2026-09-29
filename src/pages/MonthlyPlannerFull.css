@@ -836,26 +836,26 @@
 
 .daily-schedule-drawer-badge {
   font-size: 11px;
-  font-weight: 750;
+  font-weight: 800;
   color: #047857;
   background: #ecfdf5;
   border: 1px solid #a7f3d0;
-  padding: 3.5px 11px;
+  padding: 4px 12px;
   border-radius: 9999px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .daily-schedule-drawer-count {
   font-size: 11.5px;
   font-weight: 750;
-  padding: 3px 10px;
+  padding: 3.5px 11px;
   border-radius: 9999px;
   background: #f1f5f9;
-  color: #475569;
+  color: #334155;
   border: 1px solid #e2e8f0;
 }
 
@@ -866,25 +866,27 @@
 }
 
 .daily-schedule-drawer-add-btn {
-  padding: 6.5px 13px;
-  border-radius: 8px;
+  padding: 7px 15px;
+  border-radius: 9px;
   border: 1px solid #00b074;
-  background: #ecfdf5;
-  color: #059669;
+  background: linear-gradient(135deg, #00b074 0%, #059669 100%);
+  color: #ffffff;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 750;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  transition: all 0.15s ease;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(0, 176, 116, 0.28);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   font-family: inherit;
 }
 
 .daily-schedule-drawer-add-btn:hover {
-  background: #00b074;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
   color: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 176, 116, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 176, 116, 0.38);
 }
 
 .daily-schedule-drawer-close-btn {
@@ -916,7 +918,7 @@
 }
 
 .daily-schedule-drawer-date-title {
-  font-size: 18.5px;
+  font-size: 19px;
   font-weight: 850;
   color: #0f172a;
   margin: 0;
@@ -931,9 +933,9 @@
 }
 
 .daily-schedule-drawer-step-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
   background: #ffffff;
   color: #475569;
@@ -950,8 +952,27 @@
   border-color: #cbd5e1;
 }
 
+.daily-schedule-drawer-today-btn {
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid #a7f3d0;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 11.5px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.daily-schedule-drawer-today-btn:hover {
+  background: #00b074;
+  color: #ffffff;
+  border-color: #00b074;
+}
+
 .daily-schedule-drawer-body {
-  padding: 20px 24px;
+  padding: 20px 22px;
   overflow-y: auto;
   background: #f8fafc;
   display: flex;
@@ -970,7 +991,7 @@
 }
 
 .daily-schedule-drawer-footer {
-  padding: 14px 24px;
+  padding: 14px 22px;
   background: #ffffff;
   border-top: 1px solid #edf2f0;
   display: flex;
@@ -978,6 +999,323 @@
   justify-content: space-between;
   gap: 12px;
   flex-shrink: 0;
+}
+
+.daily-schedule-drawer-footer-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #475569;
+}
+
+/* Event Card Corporate Styles */
+.daily-event-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #00b074;
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.daily-event-card:hover {
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 24px rgba(0, 176, 116, 0.09);
+}
+
+.daily-event-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.daily-event-card-title-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.daily-event-card-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.daily-event-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+  border: 1px solid #a7f3d0;
+}
+
+.daily-event-badges-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.daily-event-time-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3.5px 9px;
+  border-radius: 7px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+  font-size: 11.5px;
+  font-weight: 750;
+}
+
+.daily-event-vacancy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4.5px;
+  padding: 3.5px 9px;
+  border-radius: 7px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 11.5px;
+  font-weight: 750;
+  border: 1px solid #bfdbfe;
+}
+
+.daily-event-dept-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4.5px;
+  padding: 3.5px 9px;
+  border-radius: 7px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 11.5px;
+  font-weight: 700;
+  border: 1px solid #e2e8f0;
+}
+
+.daily-event-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.daily-event-edit-btn {
+  padding: 5.5px 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.daily-event-edit-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.daily-event-delete-btn {
+  padding: 5.5px 10px;
+  border-radius: 8px;
+  border: 1px solid #fee2e2;
+  background: #fff5f5;
+  color: #dc2626;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.daily-event-delete-btn:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+/* Structured Interview Box */
+.daily-event-interview-details {
+  background: #f8fafc;
+  border: 1px solid #edf2f7;
+  border-radius: 11px;
+  padding: 13px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.daily-event-candidate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.daily-event-candidate-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.daily-event-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #059669;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex-shrink: 0;
+  border: 1.5px solid #a7f3d0;
+}
+
+.daily-event-candidate-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.daily-event-candidate-name {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.daily-event-candidate-email {
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.daily-event-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3.5px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.daily-event-mode-badge.online {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.daily-event-mode-badge.in-person {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.daily-event-location-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.daily-event-meet-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6.5px 14px;
+  border-radius: 8px;
+  background: #00b074;
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 750;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(0, 176, 116, 0.25);
+}
+
+.daily-event-meet-btn:hover {
+  background: #059669;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 176, 116, 0.35);
+}
+
+.daily-event-venue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #334155;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 5px 11px;
+  border-radius: 7px;
+}
+
+.daily-event-notes-callout {
+  font-size: 12px;
+  color: #475569;
+  background: #ffffff;
+  border-left: 3px solid #00b074;
+  padding: 7px 11px;
+  border-radius: 0 6px 6px 0;
+  line-height: 1.45;
+}
+
+.daily-event-notes-label {
+  font-weight: 750;
+  color: #0f172a;
+}
+
+.daily-event-raw-description {
+  font-size: 12.5px;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #edf2f7;
+  padding: 10px 13px;
+  border-radius: 8px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.daily-event-creator-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  padding-top: 2px;
 }
 
 /* Floating Quick-Action Button on Bottom-Right */

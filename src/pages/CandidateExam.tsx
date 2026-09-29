@@ -1393,7 +1393,7 @@ export const CandidateExam: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setActiveOutputTab('console')}
-                  className="exam-output-tab-btn"
+                  className={`exam-output-tab-btn ${activeOutputTab === 'console' ? 'active' : ''}`}
                 >
                   <TerminalIcon />
                   <span>Execution Output</span>

@@ -361,6 +361,10 @@ export const InterviewSelection: React.FC = () => {
 
   // Open Schedule Modal
   const handleOpenScheduleModal = async (sub: SubmissionDetailDto) => {
+    if (sub.status === 'Hired' || sub.isHired) {
+      showToast('This candidate is already hired. Interview scheduling is no longer required.');
+      return;
+    }
     setSchedulingCandidate(sub);
     setScheduleError(null);
 
@@ -537,7 +541,9 @@ export const InterviewSelection: React.FC = () => {
       }
     > = {};
 
-    interviewSelections.forEach((s, idx) => {
+    interviewSelections
+      .filter((s) => !(s.status === 'Hired' || s.isHired))
+      .forEach((s, idx) => {
       const baseHour = 9 + Math.floor((idx * 30) / 60);
       const baseMin = (idx * 30) % 60;
       const endHour = 9 + Math.floor(((idx * 30) + 30) / 60);
@@ -1312,27 +1318,29 @@ export const InterviewSelection: React.FC = () => {
                       {/* Actions Column */}
                       <td>
                         <div className="interview-actions-cell">
-                          {/* Schedule / Reschedule button */}
-                          {sub.scheduledEventId ? (
-                            <button
-                              type="button"
-                              className="btn-schedule-action reschedule"
-                              onClick={() => handleOpenScheduleModal(sub)}
-                              title="Reschedule interview date, time, or location"
-                            >
-                              <CalendarClock size={13} />
-                              <span>Reschedule</span>
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              className="btn-schedule-action primary"
-                              onClick={() => handleOpenScheduleModal(sub)}
-                              title="Assign interview date, slot, and meeting details"
-                            >
-                              <CalendarPlus size={13} />
-                              <span>Schedule</span>
-                            </button>
+                          {/* Schedule / Reschedule button (hidden if already hired) */}
+                          {!isHired && (
+                            sub.scheduledEventId ? (
+                              <button
+                                type="button"
+                                className="btn-schedule-action reschedule"
+                                onClick={() => handleOpenScheduleModal(sub)}
+                                title="Reschedule interview date, time, or location"
+                              >
+                                <CalendarClock size={13} />
+                                <span>Reschedule</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn-schedule-action primary"
+                                onClick={() => handleOpenScheduleModal(sub)}
+                                title="Assign interview date, slot, and meeting details"
+                              >
+                                <CalendarPlus size={13} />
+                                <span>Schedule</span>
+                              </button>
+                            )
                           )}
 
                           {/* Hire Button */}
@@ -1826,8 +1834,9 @@ export const InterviewSelection: React.FC = () => {
                       {interviewSelections
                         .filter(
                           (s) =>
-                            batchDeptFilter === 'all' ||
-                            s.department?.toLowerCase() === batchDeptFilter.toLowerCase()
+                            !(s.status === 'Hired' || s.isHired) &&
+                            (batchDeptFilter === 'all' ||
+                              s.department?.toLowerCase() === batchDeptFilter.toLowerCase())
                         )
                         .map((s) => {
                           const cfg = batchCandidatesMap[s.id] || {

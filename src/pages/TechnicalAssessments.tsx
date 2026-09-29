@@ -4244,7 +4244,9 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                   textAlign: "center",
                                 }}
                               >
-                                {s.scheduledEventId ? (
+                                {s.status === "Hired" || s.isHired ? (
+                                  <span style={{ color: "#94a3b8", fontSize: "12px" }}>—</span>
+                                ) : s.scheduledEventId ? (
                                   <div
                                     style={{
                                       display: "inline-flex",

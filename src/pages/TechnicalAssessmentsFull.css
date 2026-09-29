@@ -1905,3 +1905,1090 @@
   cursor: not-allowed;
   transform: none !important;
 }
+
+/* ==========================================================================
+   CANDIDATE CODE REVIEW MODAL - SYSTEM UI THEME & COLOUR PALETTE
+   Skill-Hub Corporate Emerald (#00b074 / #059669) & Deep Slate (#0f172a)
+   ========================================================================== */
+
+.candidate-review-modal-card {
+  max-width: 980px !important;
+  width: 96% !important;
+  max-height: 90vh !important;
+  border-radius: 20px !important;
+  border: 1px solid #dce7e3 !important;
+  background: #ffffff !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(15, 23, 42, 0.05) !important;
+  animation: modalScaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Header */
+.candidate-review-header {
+  padding: 20px 28px 18px 28px;
+  background: #ffffff;
+  border-bottom: 1px solid #edf2f0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.candidate-review-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.candidate-review-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0, 176, 116, 0.2);
+}
+
+.candidate-review-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.candidate-review-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.candidate-review-tag-category {
+  font-size: 11px;
+  font-weight: 750;
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 3px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.03em;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-transform: uppercase;
+}
+
+.candidate-review-tag-status {
+  font-size: 11px;
+  font-weight: 750;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.candidate-review-tag-status.graded {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.candidate-review-tag-status.pending {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.candidate-review-tag-dot {
+  width: 6.5px;
+  height: 6.5px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.candidate-review-tag-dot.active {
+  background: #00b074;
+  box-shadow: 0 0 0 2px rgba(0, 176, 116, 0.25);
+}
+
+.candidate-review-tag-dot.pending {
+  background: #f59e0b;
+}
+
+.candidate-review-name {
+  font-size: 21px;
+  font-weight: 850;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.candidate-review-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 12.5px;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+
+.candidate-review-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.candidate-review-meta-item strong {
+  color: #334155;
+  font-weight: 700;
+}
+
+.candidate-review-meta-item.highlight {
+  color: #009e67;
+  font-weight: 700;
+}
+
+.candidate-review-meta-divider {
+  color: #cbd5e1;
+}
+
+.candidate-review-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.candidate-review-close-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  border-color: #fca5a5;
+  transform: translateY(-1px);
+}
+
+/* Modal Body */
+.candidate-review-body {
+  padding: 22px 28px;
+  overflow-y: auto;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+
+.candidate-review-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.candidate-review-body::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 9999px;
+}
+
+/* Proctor Alert Banners */
+.candidate-review-proctor-warning {
+  background: linear-gradient(135deg, #fff1f2 0%, #fff7ed 100%);
+  border: 1px solid #fecdd3;
+  border-left: 4.5px solid #ef4444;
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.06);
+}
+
+.candidate-review-proctor-clean {
+  background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+  border: 1px solid #a7f3d0;
+  border-left: 4.5px solid #00b074;
+  border-radius: 14px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  box-shadow: 0 2px 8px rgba(0, 176, 116, 0.05);
+}
+
+.candidate-review-proctor-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.candidate-review-proctor-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.candidate-review-proctor-icon-box.warning {
+  background: #fee2e2;
+  color: #ef4444;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.15);
+}
+
+.candidate-review-proctor-icon-box.clean {
+  background: #d1fae5;
+  color: #047857;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.15);
+}
+
+.candidate-review-proctor-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.candidate-review-proctor-title.warning {
+  color: #991b1b;
+}
+
+.candidate-review-proctor-title.clean {
+  color: #065f46;
+}
+
+.candidate-review-proctor-desc {
+  font-size: 12.5px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.candidate-review-proctor-desc.warning {
+  color: #7f1d1d;
+}
+
+.candidate-review-proctor-desc.clean {
+  color: #047857;
+}
+
+.candidate-review-proctor-badge {
+  font-size: 11.5px;
+  font-weight: 750;
+  padding: 4px 11px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.candidate-review-proctor-badge.warning {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.candidate-review-proctor-badge.clean {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+/* Solutions Section Header */
+.candidate-review-solutions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.candidate-review-solutions-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.candidate-review-count-pill {
+  font-size: 11px;
+  font-weight: 750;
+  color: #009e67;
+  background: #e6f9f2;
+  border: 1px solid #b7eedc;
+  padding: 2.5px 8px;
+  border-radius: 9999px;
+}
+
+.candidate-review-solutions-hint {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Question Card */
+.candidate-review-qcard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+  transition: all 0.2s ease;
+}
+
+.candidate-review-qcard:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.candidate-review-qtop {
+  background: #f8fafc;
+  padding: 13px 18px;
+  border-bottom: 1px solid #edf2f7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.candidate-review-qtop-left {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.candidate-review-qnum {
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+}
+
+.candidate-review-qtitle {
+  font-size: 14px;
+  font-weight: 750;
+  color: #0f172a;
+}
+
+.candidate-review-qlang {
+  font-size: 11px;
+  padding: 2.5px 8.5px;
+  border-radius: 6px;
+  background: #e6f9f2;
+  color: #00875a;
+  border: 1px solid #b7eedc;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+.candidate-review-qdiff {
+  font-size: 11px;
+  padding: 2.5px 8.5px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.candidate-review-qdiff.Easy {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.candidate-review-qdiff.Medium {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.candidate-review-qdiff.Hard {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+}
+
+.candidate-review-qweight {
+  font-size: 12px;
+  color: #475569;
+  font-weight: 600;
+  background: #ffffff;
+  padding: 3.5px 10px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.candidate-review-qweight strong {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+/* Problem Specification */
+.candidate-review-spec-box {
+  padding: 16px 20px;
+  background: #fafbfc;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.candidate-review-spec-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.candidate-review-spec-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Code Editor Canvas */
+.candidate-review-ide {
+  background: #0f172a;
+  display: flex;
+  flex-direction: column;
+}
+
+.candidate-review-ide-bar {
+  background: #090d16;
+  padding: 8px 14px;
+  border-bottom: 1px solid #1e293b;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.candidate-review-ide-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.candidate-review-ide-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.candidate-review-ide-dot.red { background: #ff5f56; }
+.candidate-review-ide-dot.yellow { background: #ffbd2e; }
+.candidate-review-ide-dot.green { background: #27c93f; }
+
+.candidate-review-ide-title {
+  color: #94a3b8;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.candidate-review-ide-copy-btn {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.candidate-review-ide-copy-btn:hover {
+  background: #334155;
+  color: #ffffff;
+  border-color: #00b074;
+}
+
+.candidate-review-ide-copy-btn.copied {
+  background: #064e3b;
+  border-color: #059669;
+  color: #34d399;
+}
+
+.candidate-review-ide-code {
+  color: #f1f5f9;
+  background: #06090e;
+  padding: 14px 18px;
+  margin: 0;
+  font-size: 12.5px;
+  font-family: 'Consolas', 'JetBrains Mono', 'Fira Code', monospace;
+  line-height: 1.6;
+  max-height: 280px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.candidate-review-ide-code::-webkit-scrollbar {
+  width: 6px;
+}
+
+.candidate-review-ide-code::-webkit-scrollbar-thumb {
+  background-color: #334155;
+  border-radius: 9999px;
+}
+
+/* Question Evaluation Controls */
+.candidate-review-qeval-bar {
+  padding: 13px 18px;
+  background: #fafbfc;
+  border-top: 1px solid #edf2f7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.candidate-review-verdict-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.candidate-review-verdict-label {
+  font-size: 12px;
+  font-weight: 750;
+  color: #334155;
+}
+
+.candidate-review-verdict-options {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.candidate-review-verdict-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6.5px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  color: #475569;
+  font-family: inherit;
+}
+
+.candidate-review-verdict-btn:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.candidate-review-verdict-btn.active-correct {
+  background: #ecfdf5;
+  border-color: #00b074;
+  color: #047857;
+  font-weight: 750;
+  box-shadow: 0 2px 6px rgba(0, 176, 116, 0.14);
+}
+
+.candidate-review-verdict-btn.active-incorrect {
+  background: #fff1f2;
+  border-color: #ef4444;
+  color: #b91c1c;
+  font-weight: 750;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.14);
+}
+
+.candidate-review-marks-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.candidate-review-marks-label {
+  font-size: 12px;
+  font-weight: 750;
+  color: #334155;
+}
+
+.candidate-review-marks-input {
+  width: 72px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 13.5px;
+  font-weight: 800;
+  text-align: center;
+  color: #0f172a;
+  background: #ffffff;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.candidate-review-marks-input:focus {
+  border-color: #00b074;
+  box-shadow: 0 0 0 3px rgba(0, 176, 116, 0.12);
+}
+
+.candidate-review-marks-max {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.candidate-review-quick-scores {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+.candidate-review-quick-btn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3.5px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.candidate-review-quick-btn:hover {
+  background: #00b074;
+  color: #ffffff;
+  border-color: #00b074;
+}
+
+/* Overall Scoring & Decision Card */
+.candidate-review-overall-card {
+  background: #ffffff;
+  border: 1px solid #dce7e3;
+  border-top: 3.5px solid #00b074;
+  border-radius: 16px;
+  padding: 20px 22px;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04);
+}
+
+.candidate-review-overall-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.candidate-review-overall-title {
+  font-size: 15px;
+  font-weight: 850;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.candidate-review-overall-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.candidate-review-score-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.candidate-review-score-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.candidate-review-score-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.candidate-review-score-input {
+  width: 96px;
+  padding: 8px 28px 8px 12px;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 18px;
+  font-weight: 850;
+  text-align: center;
+  color: #0f172a;
+  outline: none;
+  background: #ffffff;
+  transition: all 0.15s ease;
+}
+
+.candidate-review-score-input:focus {
+  border-color: #00b074;
+  box-shadow: 0 0 0 3px rgba(0, 176, 116, 0.15);
+}
+
+.candidate-review-score-percent {
+  position: absolute;
+  right: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.candidate-review-autosum-btn {
+  background: #e6f9f2;
+  border: 1px solid #a7f3d0;
+  color: #009e67;
+  font-size: 11.5px;
+  font-weight: 750;
+  padding: 9px 13px;
+  border-radius: 9px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.candidate-review-autosum-btn:hover {
+  background: #00b074;
+  color: #ffffff;
+  border-color: #00b074;
+  box-shadow: 0 2px 8px rgba(0, 176, 116, 0.2);
+}
+
+.candidate-review-threshold-pill {
+  font-size: 11.5px;
+  padding: 4px 10px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 650;
+  width: fit-content;
+}
+
+.candidate-review-threshold-pill.pass {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.candidate-review-threshold-pill.fail {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.candidate-review-feedback-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.candidate-review-feedback-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0f172a;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 78px;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.candidate-review-feedback-textarea:focus {
+  border-color: #00b074;
+  box-shadow: 0 0 0 3px rgba(0, 176, 116, 0.12);
+}
+
+/* Interview Selection Toggle Card */
+.candidate-review-interview-card {
+  border-radius: 14px;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.candidate-review-interview-card.selected {
+  background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+  border: 1.5px solid #10b981;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.12);
+}
+
+.candidate-review-interview-card.unselected {
+  background: #fafbfc;
+  border: 1.5px solid #e2e8f0;
+}
+
+.candidate-review-interview-card.unselected:hover {
+  border-color: #00b074;
+  background: #ffffff;
+}
+
+.candidate-review-interview-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.candidate-review-interview-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.18s ease;
+}
+
+.candidate-review-interview-card.selected .candidate-review-interview-icon {
+  background: #10b981;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.28);
+}
+
+.candidate-review-interview-card.unselected .candidate-review-interview-icon {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.candidate-review-interview-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.candidate-review-interview-title {
+  font-size: 14px;
+  font-weight: 750;
+  margin: 0;
+}
+
+.candidate-review-interview-card.selected .candidate-review-interview-title {
+  color: #064e3b;
+}
+
+.candidate-review-interview-card.unselected .candidate-review-interview-title {
+  color: #0f172a;
+}
+
+.candidate-review-interview-badge {
+  font-size: 10.5px;
+  background: #059669;
+  color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.candidate-review-interview-desc {
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.candidate-review-interview-card.selected .candidate-review-interview-desc {
+  color: #047857;
+}
+
+.candidate-review-interview-card.unselected .candidate-review-interview-desc {
+  color: #64748b;
+}
+
+/* Custom Switch in Interview Card */
+.candidate-review-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.candidate-review-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.candidate-review-switch-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #cbd5e1;
+  transition: 0.2s;
+  border-radius: 24px;
+}
+
+.candidate-review-switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.2s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.candidate-review-switch input:checked + .candidate-review-switch-slider {
+  background-color: #00b074;
+}
+
+.candidate-review-switch input:checked + .candidate-review-switch-slider:before {
+  transform: translateX(20px);
+}
+
+/* Modal Footer */
+.candidate-review-footer {
+  padding: 16px 28px;
+  background: #ffffff;
+  border-top: 1px solid #edf2f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.candidate-review-footer-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: #475569;
+}
+
+.candidate-review-footer-badge {
+  font-size: 12px;
+  font-weight: 750;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+}
+
+.candidate-review-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.candidate-review-btn-cancel {
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9.5px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.candidate-review-btn-cancel:hover:not(:disabled) {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.candidate-review-btn-save {
+  background: linear-gradient(135deg, #059669 0%, #00b074 100%);
+  color: #ffffff;
+  border: none;
+  font-size: 13px;
+  font-weight: 750;
+  padding: 10px 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 3px 12px rgba(0, 176, 116, 0.28);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+}
+
+.candidate-review-btn-save:hover:not(:disabled) {
+  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 18px rgba(0, 176, 116, 0.38);
+}
+
+.candidate-review-btn-save:disabled,
+.candidate-review-btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+@media (max-width: 768px) {
+  .candidate-review-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .candidate-review-overall-grid {
+    grid-template-columns: 1fr;
+  }
+  .candidate-review-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .candidate-review-footer-actions {
+    justify-content: flex-end;
+  }
+}

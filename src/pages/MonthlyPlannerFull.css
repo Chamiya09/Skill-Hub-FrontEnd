@@ -736,23 +736,16 @@
    ========================================================================== */
 
 .monthly-planner-layout {
-  display: grid !important;
-  grid-template-columns: minmax(0, 2.4fr) minmax(360px, 1fr) !important;
-  gap: 22px !important;
-  align-items: start !important;
+  display: block !important;
   width: 100% !important;
   box-sizing: border-box !important;
 }
 
-.monthly-planner-calendar-shell,
-.monthly-planner-daily-panel {
+.monthly-planner-calendar-shell {
   border-color: #dce6e1 !important;
   box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04) !important;
   border-radius: 16px !important;
   box-sizing: border-box !important;
-}
-
-.monthly-planner-calendar-shell {
   min-width: 0 !important;
   width: 100% !important;
   overflow: hidden;
@@ -778,13 +771,304 @@
   scrollbar-width: thin;
 }
 
-.monthly-planner-daily-panel {
-  position: sticky;
-  top: 20px;
-  max-height: calc(100vh - 120px);
+/* ==========================================================================
+   DAILY SCHEDULE SIDE POPUP / DRAWER
+   ========================================================================== */
+
+.daily-schedule-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 1200;
+  animation: drawerFadeIn 0.2s ease-out;
+}
+
+@keyframes drawerFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.daily-schedule-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 480px;
+  max-width: 92vw;
+  background: #ffffff;
+  z-index: 1201;
+  box-shadow: -15px 0 45px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: drawerSlideIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes drawerSlideIn {
+  0% {
+    transform: translateX(100%);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.daily-schedule-drawer-header {
+  padding: 20px 24px 18px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #edf2f0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.daily-schedule-drawer-toprow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.daily-schedule-drawer-badge {
+  font-size: 11px;
+  font-weight: 750;
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 3.5px 11px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.daily-schedule-drawer-count {
+  font-size: 11.5px;
+  font-weight: 750;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.daily-schedule-drawer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.daily-schedule-drawer-add-btn {
+  padding: 6.5px 13px;
+  border-radius: 8px;
+  border: 1px solid #00b074;
+  background: #ecfdf5;
+  color: #059669;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.daily-schedule-drawer-add-btn:hover {
+  background: #00b074;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 176, 116, 0.2);
+}
+
+.daily-schedule-drawer-close-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.daily-schedule-drawer-close-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  border-color: #fca5a5;
+  transform: translateY(-1px);
+}
+
+.daily-schedule-drawer-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.daily-schedule-drawer-date-title {
+  font-size: 18.5px;
+  font-weight: 850;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.daily-schedule-drawer-date-stepper {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.daily-schedule-drawer-step-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.daily-schedule-drawer-step-btn:hover {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.daily-schedule-drawer-body {
+  padding: 20px 24px;
   overflow-y: auto;
-  scrollbar-color: #c7ddd4 transparent;
-  scrollbar-width: thin;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
+
+.daily-schedule-drawer-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.daily-schedule-drawer-body::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.daily-schedule-drawer-footer {
+  padding: 14px 24px;
+  background: #ffffff;
+  border-top: 1px solid #edf2f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Floating Quick-Action Button on Bottom-Right */
+.planner-floating-drawer-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 28px;
+  z-index: 1050;
+  background: #ffffff;
+  border: 1.5px solid #a7f3d0;
+  border-radius: 9999px;
+  padding: 7px 18px 7px 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 28px -4px rgba(5, 150, 105, 0.22), 0 0 0 1px rgba(15, 23, 42, 0.05);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+}
+
+.planner-floating-drawer-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 35px -4px rgba(5, 150, 105, 0.3);
+  border-color: #00b074;
+}
+
+.planner-floating-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #059669 0%, #00b074 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 3px 8px rgba(0, 176, 116, 0.3);
+}
+
+.planner-floating-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.planner-floating-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.planner-floating-sub {
+  font-size: 11px;
+  color: #047857;
+  font-weight: 600;
+}
+
+/* Header Trigger Button */
+.planner-header-drawer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7.5px 14px;
+  border-radius: 9px;
+  border: 1px solid #dce7e3;
+  background: #ffffff;
+  color: #065f46;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.planner-header-drawer-btn:hover {
+  background: #ecfdf5;
+  border-color: #00b074;
+  color: #047857;
+  transform: translateY(-1px);
+}
+
+.planner-header-drawer-badge {
+  font-size: 10.5px;
+  background: #00b074;
+  color: #ffffff;
+  padding: 1.5px 6.5px;
+  border-radius: 9999px;
+  font-weight: 800;
 }
 
 /* ==========================================================================

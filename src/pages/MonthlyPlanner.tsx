@@ -19,6 +19,7 @@ import {
   Briefcase,
   Search,
   RotateCcw,
+  CalendarClock,
 } from 'lucide-react';
 import {
   eventsApi,
@@ -114,9 +115,19 @@ export const MonthlyPlanner: React.FC = () => {
   // Selected date for detail view (defaults to today's date formatted as "YYYY-MM-DD")
   const [selectedDateStr, setSelectedDateStr] = useState<string>(() => formatDateOnlyString(new Date()));
 
+  // Daily Schedule Side Popup Drawer state
+  const [isDailyDrawerOpen, setIsDailyDrawerOpen] = useState<boolean>(false);
+
+  // Day step helper for drawer header
+  const handleStepDay = (delta: number) => {
+    const current = new Date(selectedDateStr + 'T00:00:00');
+    current.setDate(current.getDate() + delta);
+    setSelectedDateStr(formatDateOnlyString(current));
+  };
+
   // Events state
   const [events, setEvents] = useState<EventResponseDto[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Toast notification state
@@ -147,6 +158,17 @@ export const MonthlyPlanner: React.FC = () => {
   const [selectedVacancyId, setSelectedVacancyId] = useState<string>('All');
   const [eventTypeFilter, setEventTypeFilter] = useState<'All' | 'Interviews' | 'General' | 'Holidays'>('All');
   const [isAiInterviewSchedulerModalOpen, setIsAiInterviewSchedulerModalOpen] = useState<boolean>(false);
+
+  // Close daily drawer on Escape key when modals are not active
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isDailyDrawerOpen && !isModalOpen && !isAiInterviewSchedulerModalOpen) {
+        setIsDailyDrawerOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDailyDrawerOpen, isModalOpen, isAiInterviewSchedulerModalOpen]);
 
   // Company vacancies for event assignment
   const [vacancies, setVacancies] = useState<JobDto[]>([]);
@@ -889,6 +911,20 @@ export const MonthlyPlanner: React.FC = () => {
               <CalendarIcon size={16} />
               <span>{currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
             </div>
+
+            {/* Daily Schedule Side Popup Drawer Trigger */}
+            <button
+              type="button"
+              className="planner-header-drawer-btn"
+              onClick={() => setIsDailyDrawerOpen(true)}
+              title="Open Daily Schedule Side Popup"
+            >
+              <CalendarClock size={15} />
+              <span>Daily Schedule</span>
+              {selectedDayEvents.length > 0 && (
+                <span className="planner-header-drawer-badge">{selectedDayEvents.length}</span>
+              )}
+            </button>
           </div>
         </div>
 
@@ -1032,19 +1068,9 @@ export const MonthlyPlanner: React.FC = () => {
         )}
       </section>
 
-      {/* 4. Main Two-Column Layout (Calendar & Daily Schedule aligned at the exact same top level) */}
-      <div
-        className="monthly-planner-layout"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 2.4fr) minmax(360px, 1fr)',
-          gap: '22px',
-          alignItems: 'start',
-          width: '100%',
-          boxSizing: 'border-box',
-        }}
-      >
-        {/* LEFT COLUMN: Calendar Component (Spacious Google Calendar-like Monthly Grid) */}
+      {/* 4. Main Calendar Layout (Spacious Full-Width Google Calendar-like Monthly Grid) */}
+      <div className="monthly-planner-layout">
+        {/* Calendar Component */}
         <div
           className="monthly-planner-calendar-shell"
           style={{
@@ -1125,7 +1151,10 @@ export const MonthlyPlanner: React.FC = () => {
                   <div
                     key={cell.dateStr}
                     className="monthly-planner-calendar-cell"
-                    onClick={() => setSelectedDateStr(cell.dateStr)}
+                    onClick={() => {
+                      setSelectedDateStr(cell.dateStr);
+                      setIsDailyDrawerOpen(true);
+                    }}
                     title={cellTooltip}
                     style={{
                       minHeight: 'clamp(110px, 12vh, 140px)',
@@ -1315,397 +1344,451 @@ export const MonthlyPlanner: React.FC = () => {
               })}
           </div>
         </div>
+      </div>
 
-        {/* RIGHT COLUMN: Detail View for Selected Date */}
-        <div
-          className="monthly-planner-daily-panel"
-          style={{
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '16px',
-            padding: '22px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            minHeight: '480px',
-          }}
-        >
-          {/* Header of Detail View */}
-          <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CalendarIcon size={18} color="#00b074" />
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
-                  Daily Schedule
-                </span>
+      {/* =========================================================
+          DAILY SCHEDULER SIDE POPUP DRAWER
+          ========================================================= */}
+      {isDailyDrawerOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="daily-schedule-drawer-backdrop"
+            onClick={() => setIsDailyDrawerOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Drawer Panel */}
+          <aside
+            className="daily-schedule-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Daily Schedule"
+          >
+            {/* Header */}
+            <div className="daily-schedule-drawer-header">
+              <div className="daily-schedule-drawer-toprow">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="daily-schedule-drawer-badge">
+                    <CalendarClock size={13} />
+                    <span>Daily Scheduler</span>
+                  </span>
+                  <span className="daily-schedule-drawer-count">
+                    {selectedDayEvents.length} {selectedDayEvents.length === 1 ? 'Event' : 'Events'}
+                  </span>
+                </div>
+
+                <div className="daily-schedule-drawer-actions">
+                  <button
+                    type="button"
+                    className="daily-schedule-drawer-add-btn"
+                    onClick={() => handleOpenAddEventModal(selectedDateStr)}
+                    title="Add event on this date"
+                  >
+                    <Plus size={14} />
+                    <span>Add Event</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="daily-schedule-drawer-close-btn"
+                    onClick={() => setIsDailyDrawerOpen(false)}
+                    aria-label="Close daily scheduler drawer"
+                    title="Close (Esc)"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
               </div>
-              <span
-                style={{
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  padding: '3px 10px',
-                  borderRadius: '999px',
-                  background: selectedDayEvents.length > 0 ? '#ecfdf5' : '#f1f5f9',
-                  color: selectedDayEvents.length > 0 ? '#059669' : '#64748b',
-                }}
-              >
-                {selectedDayEvents.length} {selectedDayEvents.length === 1 ? 'Event' : 'Events'}
-              </span>
+
+              {/* Title & Date Stepper */}
+              <div className="daily-schedule-drawer-title-row">
+                <h3 className="daily-schedule-drawer-date-title">
+                  {formatDisplayDate(selectedDateObj)}
+                </h3>
+                <div className="daily-schedule-drawer-date-stepper">
+                  <button
+                    type="button"
+                    className="daily-schedule-drawer-step-btn"
+                    onClick={() => handleStepDay(-1)}
+                    title="Previous Day"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className="daily-schedule-drawer-step-btn"
+                    onClick={() => setSelectedDateStr(formatDateOnlyString(new Date()))}
+                    title="Jump to Today"
+                    style={{ fontSize: '11px', fontWeight: 700, padding: '0 6px', width: 'auto' }}
+                  >
+                    Today
+                  </button>
+                  <button
+                    type="button"
+                    className="daily-schedule-drawer-step-btn"
+                    onClick={() => handleStepDay(1)}
+                    title="Next Day"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-              {formatDisplayDate(selectedDateObj)}
-            </h3>
-          </div>
-
-          {/* Events List for Selected Day */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
-            {/* National Holiday Card if selected date is a holiday */}
-            {selectedDayHolidays.map((holiday) => (
-              <div
-                key={holiday.id}
-                style={{
-                  background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
-                  border: '1px solid #fde68a',
-                  borderRadius: '12px',
-                  padding: '14px 16px',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '12px',
-                  boxShadow: '0 2px 4px rgba(245, 158, 11, 0.08)',
-                }}
-              >
-                <div style={{ fontSize: '24px', lineHeight: 1, marginTop: '2px' }}>
-                  {currentCalendarOption.flag}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                    <span
-                      style={{
-                        fontSize: '10.5px',
-                        fontWeight: 800,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                        color: '#b45309',
-                        background: '#fef3c7',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        border: '1px solid #fde68a',
-                      }}
-                    >
-                      Official Holiday • {currentCalendarOption.country}
-                    </span>
-                    {holiday.source && (
+            {/* Scrollable Body */}
+            <div className="daily-schedule-drawer-body">
+              {/* National Holiday Card if selected date is a holiday */}
+              {selectedDayHolidays.map((holiday) => (
+                <div
+                  key={holiday.id}
+                  style={{
+                    background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                    border: '1px solid #fde68a',
+                    borderRadius: '12px',
+                    padding: '14px 16px',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    boxShadow: '0 2px 4px rgba(245, 158, 11, 0.08)',
+                  }}
+                >
+                  <div style={{ fontSize: '24px', lineHeight: 1, marginTop: '2px' }}>
+                    {currentCalendarOption.flag}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
                       <span
                         style={{
-                          fontSize: '10px',
-                          fontWeight: 700,
-                          color: holiday.source === 'GoogleCalendar' ? '#15803d' : '#1d4ed8',
-                          background: holiday.source === 'GoogleCalendar' ? '#dcfce7' : '#dbeafe',
+                          fontSize: '10.5px',
+                          fontWeight: 800,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          color: '#b45309',
+                          background: '#fef3c7',
                           padding: '2px 6px',
                           borderRadius: '4px',
+                          border: '1px solid #fde68a',
                         }}
                       >
-                        {holiday.source === 'GoogleCalendar' ? 'Google Calendar API' : 'Sri Lanka Gazette'}
+                        Official Holiday • {currentCalendarOption.country}
                       </span>
+                      {holiday.source && (
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            color: holiday.source === 'GoogleCalendar' ? '#15803d' : '#1d4ed8',
+                            background: holiday.source === 'GoogleCalendar' ? '#dcfce7' : '#dbeafe',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                          }}
+                        >
+                          {holiday.source === 'GoogleCalendar' ? 'Google Calendar API' : 'Sri Lanka Gazette'}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '15px', fontWeight: 800, color: '#78350f' }}>
+                      {holiday.title}
+                    </div>
+                    {holiday.description && (
+                      <div style={{ fontSize: '12px', color: '#92400e', marginTop: '3px', lineHeight: 1.4 }}>
+                        {holiday.description}
+                      </div>
                     )}
                   </div>
-                  <div style={{ fontSize: '15px', fontWeight: 800, color: '#78350f' }}>
-                    {holiday.title}
-                  </div>
-                  {holiday.description && (
-                    <div style={{ fontSize: '12px', color: '#92400e', marginTop: '3px', lineHeight: 1.4 }}>
-                      {holiday.description}
-                    </div>
-                  )}
                 </div>
-              </div>
-            ))}
+              ))}
 
-            {selectedDayEvents.length === 0 ? (
-              <div
-                style={{
-                  textAlign: 'center',
-                  padding: '48px 20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#64748b',
-                }}
-              >
+              {selectedDayEvents.length === 0 ? (
                 <div
                   style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '12px',
-                    background: '#f8fafc',
-                    border: '1px dashed #cbd5e1',
+                    textAlign: 'center',
+                    padding: '48px 20px',
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#94a3b8',
-                    marginBottom: '12px',
-                  }}
-                >
-                  <CalendarDays size={22} />
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '4px' }}>
-                  {selectedDayHolidays.length > 0 ? 'No internal company events' : 'No events on this day'}
-                </div>
-                <p style={{ fontSize: '12.5px', color: '#64748b', margin: '0 0 16px 0', maxWidth: '240px' }}>
-                  {selectedDayHolidays.length > 0
-                    ? `This date is an official national holiday (${selectedDayHolidays.map((h) => h.title).join(', ')}). No interviews are scheduled.`
-                    : `There are no interviews or meetings scheduled for ${selectedDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}${selectedDepartment ? ` under ${selectedDepartment}` : ''}.`}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => handleOpenAddEventModal(selectedDateStr)}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    border: '1px solid #a7f3d0',
-                    background: '#ecfdf5',
-                    color: '#059669',
-                    fontSize: '12.5px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  <Plus size={14} />
-                  <span>Schedule Event on this Date</span>
-                </button>
-              </div>
-            ) : (
-              selectedDayEvents.map((ev) => (
-                <div
-                  key={ev.id}
-                  style={{
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-                    transition: 'all 0.15s ease',
+                    color: '#64748b',
                   }}
                 >
                   <div
                     style={{
+                      width: '52px',
+                      height: '52px',
+                      borderRadius: '14px',
+                      background: '#ecfdf5',
+                      border: '1px dashed #a7f3d0',
                       display: 'flex',
-                      alignItems: 'flex-start',
-                      justifyContent: 'space-between',
-                      gap: '12px',
-                      marginBottom: '8px',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#059669',
+                      marginBottom: '14px',
                     }}
                   >
-                    <div style={{ flex: 1 }}>
-                      <h4
-                        style={{
-                          fontSize: '15px',
-                          fontWeight: 700,
-                          color: '#0f172a',
-                          margin: '0 0 6px 0',
-                          lineHeight: 1.3,
-                        }}
-                      >
-                        {ev.title}
-                      </h4>
-                      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                        <div
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            background: '#ecfdf5',
-                            color: '#059669',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                          }}
-                        >
-                          <Clock size={13} />
-                          <span>{formatTimeDisplay(ev.eventTime)}</span>
-                        </div>
-
-                        {ev.jobVacancyTitle && (
-                          <div
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              padding: '3px 8px',
-                              borderRadius: '6px',
-                              background: '#eff6ff',
-                              color: '#1d4ed8',
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              border: '1px solid #bfdbfe',
-                            }}
-                            title={`Vacancy: ${ev.jobVacancyTitle}`}
-                          >
-                            <Briefcase size={12} />
-                            <span>{ev.jobVacancyTitle}</span>
-                          </div>
-                        )}
-
-                        {ev.department && (
-                          <div
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              padding: '3px 8px',
-                              borderRadius: '6px',
-                              background: '#f8fafc',
-                              color: '#475569',
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              border: '1px solid #e2e8f0',
-                            }}
-                          >
-                            <Building2 size={12} />
-                            <span>{ev.department}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Action buttons: Edit & Delete */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {/* Edit button */}
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEditEventModal(ev)}
-                        title="Edit this event"
-                        style={{
-                          padding: '6px 10px',
-                          borderRadius: '8px',
-                          border: '1px solid #cbd5e1',
-                          background: '#f8fafc',
-                          color: '#334155',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontSize: '12px',
-                          fontWeight: 650,
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <Pencil size={13} />
-                        <span>Edit</span>
-                      </button>
-
-                      {/* Delete button (removes event from DB and clears highlight if last event) */}
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteEvent(ev.id, ev.title)}
-                        title="Delete event from database"
-                        style={{
-                          padding: '6px 10px',
-                          borderRadius: '8px',
-                          border: '1px solid #fee2e2',
-                          background: '#fff5f5',
-                          color: '#dc2626',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <Trash2 size={13} />
-                        <span>Delete</span>
-                      </button>
-                    </div>
+                    <CalendarClock size={26} />
                   </div>
-
-                  {/* Description */}
-                  {ev.description ? (
-                    <div
-                      style={{
-                        fontSize: '13px',
-                        color: '#475569',
-                        lineHeight: 1.5,
-                        background: '#f8fafc',
-                        padding: '10px 12px',
-                        borderRadius: '8px',
-                        marginTop: '8px',
-                        whiteSpace: 'pre-wrap',
-                      }}
-                    >
-                      {ev.description}
-                    </div>
-                  ) : (
-                    <div
-                      style={{
-                        fontSize: '12px',
-                        color: '#94a3b8',
-                        fontStyle: 'italic',
-                        marginTop: '6px',
-                      }}
-                    >
-                      No description provided.
-                    </div>
-                  )}
-
-                  {/* Footer metadata: creator */}
-                  {ev.creatorName && (
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: '#1e293b', marginBottom: '6px' }}>
+                    {selectedDayHolidays.length > 0 ? 'No internal company events' : 'No events on this day'}
+                  </div>
+                  <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 18px 0', maxWidth: '280px', lineHeight: 1.5 }}>
+                    {selectedDayHolidays.length > 0
+                      ? `This date is an official national holiday (${selectedDayHolidays.map((h) => h.title).join(', ')}). No interviews are scheduled.`
+                      : `There are no interviews or meetings scheduled for ${selectedDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}${selectedDepartment ? ` under ${selectedDepartment}` : ''}.`}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenAddEventModal(selectedDateStr)}
+                    style={{
+                      padding: '9px 18px',
+                      borderRadius: '8px',
+                      border: '1px solid #00b074',
+                      background: '#00b074',
+                      color: '#ffffff',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '7px',
+                      boxShadow: '0 2px 8px rgba(0, 176, 116, 0.25)',
+                    }}
+                  >
+                    <Plus size={15} />
+                    <span>Schedule Event on this Date</span>
+                  </button>
+                </div>
+              ) : (
+                selectedDayEvents.map((ev) => (
+                  <div
+                    key={ev.id}
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
                     <div
                       style={{
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        marginTop: '10px',
-                        fontSize: '11px',
-                        color: '#64748b',
+                        alignItems: 'flex-start',
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        marginBottom: '8px',
                       }}
                     >
-                      <User size={12} />
-                      <span>Created by {ev.creatorName}</span>
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
+                      <div style={{ flex: 1 }}>
+                        <h4
+                          style={{
+                            fontSize: '15px',
+                            fontWeight: 700,
+                            color: '#0f172a',
+                            margin: '0 0 6px 0',
+                            lineHeight: 1.3,
+                          }}
+                        >
+                          {ev.title}
+                        </h4>
+                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                          <div
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              background: '#ecfdf5',
+                              color: '#059669',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                            }}
+                          >
+                            <Clock size={13} />
+                            <span>{formatTimeDisplay(ev.eventTime)}</span>
+                          </div>
 
-          {/* Quick button to add another event on this selected date */}
-          {selectedDayEvents.length > 0 && (
-            <button
-              type="button"
-              onClick={() => handleOpenAddEventModal(selectedDateStr)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '10px',
-                border: '1px dashed #cbd5e1',
-                background: '#f8fafc',
-                color: '#334155',
-                fontSize: '13px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                marginTop: 'auto',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <Plus size={15} />
-              <span>Add Another Event on this Date</span>
-            </button>
-          )}
-        </div>
-      </div>
+                          {ev.jobVacancyTitle && (
+                            <div
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                                background: '#eff6ff',
+                                color: '#1d4ed8',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                border: '1px solid #bfdbfe',
+                              }}
+                              title={`Vacancy: ${ev.jobVacancyTitle}`}
+                            >
+                              <Briefcase size={12} />
+                              <span>{ev.jobVacancyTitle}</span>
+                            </div>
+                          )}
+
+                          {ev.department && (
+                            <div
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                                background: '#f8fafc',
+                                color: '#475569',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                border: '1px solid #e2e8f0',
+                              }}
+                            >
+                              <Building2 size={12} />
+                              <span>{ev.department}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Action buttons: Edit & Delete */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditEventModal(ev)}
+                          title="Edit this event"
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            background: '#f8fafc',
+                            color: '#334155',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '12px',
+                            fontWeight: 650,
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <Pencil size={13} />
+                          <span>Edit</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteEvent(ev.id, ev.title)}
+                          title="Delete event from database"
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: '8px',
+                            border: '1px solid #fee2e2',
+                            background: '#fff5f5',
+                            color: '#dc2626',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <Trash2 size={13} />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    {ev.description ? (
+                      <div
+                        style={{
+                          fontSize: '13px',
+                          color: '#475569',
+                          lineHeight: 1.5,
+                          background: '#f8fafc',
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          marginTop: '8px',
+                          whiteSpace: 'pre-wrap',
+                        }}
+                      >
+                        {ev.description}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          fontSize: '12px',
+                          color: '#94a3b8',
+                          fontStyle: 'italic',
+                          marginTop: '6px',
+                        }}
+                      >
+                        No description provided.
+                      </div>
+                    )}
+
+                    {/* Footer metadata: creator */}
+                    {ev.creatorName && (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          marginTop: '10px',
+                          fontSize: '11px',
+                          color: '#64748b',
+                        }}
+                      >
+                        <User size={12} />
+                        <span>Created by {ev.creatorName}</span>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Footer with quick add button */}
+            <div className="daily-schedule-drawer-footer">
+              <span style={{ fontSize: '12px', color: '#64748b' }}>
+                {selectedDayEvents.length} scheduled item{selectedDayEvents.length === 1 ? '' : 's'}
+              </span>
+              <button
+                type="button"
+                className="daily-schedule-drawer-add-btn"
+                onClick={() => handleOpenAddEventModal(selectedDateStr)}
+              >
+                <Plus size={14} />
+                <span>Add Event on this Date</span>
+              </button>
+            </div>
+          </aside>
+        </>
+      )}
+
+      {/* Floating Action Button (bottom-right) when drawer is closed */}
+      {!isDailyDrawerOpen && (
+        <button
+          type="button"
+          className="planner-floating-drawer-btn"
+          onClick={() => setIsDailyDrawerOpen(true)}
+          title="Open Daily Schedule Panel"
+        >
+          <div className="planner-floating-icon">
+            <CalendarClock size={17} />
+          </div>
+          <div className="planner-floating-text">
+            <span className="planner-floating-title">Daily Schedule</span>
+            <span className="planner-floating-sub">
+              {selectedDayEvents.length > 0 ? `${selectedDayEvents.length} event${selectedDayEvents.length > 1 ? 's' : ''}` : 'View Day'}
+            </span>
+          </div>
+        </button>
+      )}
 
       {/* =========================================================
           ADD EVENT MODAL

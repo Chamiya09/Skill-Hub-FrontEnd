@@ -9,7 +9,6 @@ import {
 } from '../components/common/Icons';
 import {
   Briefcase,
-  Calendar,
   CalendarPlus,
   CalendarClock,
   Video,
@@ -18,11 +17,9 @@ import {
   AlertCircle,
   RotateCw,
   Sparkles,
-  Star,
   CheckCircle2,
   Trash2,
   Building,
-  Filter,
   MapPin,
   Clock,
   Award,

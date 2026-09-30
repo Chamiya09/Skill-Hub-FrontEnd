@@ -768,15 +768,6 @@ export const MonthlyPlanner: React.FC = () => {
               <Plus size={16} strokeWidth={2.5} />
               <span>Add Event</span>
             </button>
-            <button
-              type="button"
-              className="planner-btn-ai"
-              onClick={() => setIsAiInterviewSchedulerModalOpen(true)}
-              title="AI Meeting Orchestration & Automatic Slot Generator"
-            >
-              <Sparkles size={16} />
-              <span>AI Auto-Scheduler</span>
-            </button>
           </div>
         </div>
 

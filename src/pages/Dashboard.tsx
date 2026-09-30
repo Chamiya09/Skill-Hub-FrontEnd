@@ -1,6 +1,19 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Star, Calendar } from 'lucide-react'
+import {
+  LayoutDashboard,
+  Briefcase,
+  Sparkles,
+  Filter,
+  ClipboardCheck,
+  Trophy,
+  UserCheck,
+  CalendarDays,
+  Settings,
+  ShieldCheck,
+  LogOut,
+  Building2,
+} from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import {
   dashboardApi,
@@ -10,21 +23,14 @@ import {
 } from '../services/api'
 import {
   SparkleIcon,
-  LayoutDashboardIcon,
   BriefcaseIcon,
-
   TrendUpIcon,
-  SettingsIcon,
   MenuIcon,
   XIcon,
-  LogOutIcon,
   BuildingIcon,
   ClockIcon,
   PlusIcon,
   UsersIcon,
-  FunnelIcon,
-  ShieldCheckIcon,
-  TrophyIcon,
 } from '../components/common/Icons'
 import { PipelineJobSelector } from './PipelineJobSelector'
 import { HiringPipeline } from './HiringPipeline'
@@ -243,11 +249,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
         <div className="dashboard-sidebar-header">
           <Link to="/" className="dashboard-brand-link">
             <div className="logo-icon-wrap">
-              <SparkleIcon />
+              <Sparkles size={18} strokeWidth={2.5} />
             </div>
             <div className="dashboard-brand-text">
-              <span className="dashboard-brand-title">Skill Hub</span>
-              <span className="dashboard-brand-badge">ENTERPRISE ATS</span>
+              <div className="dashboard-brand-row">
+                <span className="dashboard-brand-title">Skill Hub</span>
+                <span className="dashboard-brand-badge">ATS PRO</span>
+              </div>
+              <span className="dashboard-brand-subtitle">Enterprise Recruitment</span>
             </div>
           </Link>
           <button
@@ -260,9 +269,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
           </button>
         </div>
 
-        {/* Company Identity Profile Card in Sidebar */}
+        {/* Company Identity & Workspace Switcher Card */}
         <div className="dashboard-company-pill">
-          <div className="company-avatar-box" style={{ overflow: 'hidden', padding: 0 }}>
+          <div className="company-avatar-box">
             {currentUser?.logoUrl ? (
               <img
                 src={currentUser.logoUrl}
@@ -272,188 +281,204 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
                   (e.currentTarget as HTMLElement).style.display = 'none';
                 }}
               />
-            ) : null}
-            {!currentUser?.logoUrl && <BuildingIcon />}
+            ) : (
+              <Building2 size={17} strokeWidth={2.2} />
+            )}
+            <span className="company-status-dot" title="Active Workspace" />
           </div>
           <div className="company-pill-details">
             <span className="company-pill-name" title={companyDisplayName}>
               {companyDisplayName}
             </span>
-            <span className="company-pill-role">
-              <span className="company-pill-role-dot"></span>
-              <span>{currentUser?.role === 'Company' ? 'Enterprise Account' : currentUser?.role || 'Company Account'}</span>
-            </span>
+            <div className="company-pill-meta">
+              <span className="company-pill-tag">
+                {currentUser?.role === 'Company' ? 'Enterprise' : currentUser?.role || 'Company'}
+              </span>
+              <span className="company-pill-divider">•</span>
+              <span className="company-pill-status">Active Workspace</span>
+            </div>
           </div>
         </div>
 
         {/* Sidebar Navigation */}
         <nav className="dashboard-nav-list">
-          <div className="nav-group-label">RECRUITMENT PLATFORM</div>
+          {/* Group 1: RECRUITMENT */}
+          <div className="nav-group-header">
+            <span className="nav-group-label">RECRUITMENT</span>
+          </div>
 
           <button
             type="button"
             className={`dashboard-nav-item ${activeTab === 'overview' ? 'active' : ''}`}
             onClick={() => {
-              setActiveTab('overview')
-              setSidebarOpen(false)
+              setActiveTab('overview');
+              setSidebarOpen(false);
             }}
           >
-            <LayoutDashboardIcon />
-            <span>Overview</span>
+            <span className="nav-icon-wrap"><LayoutDashboard size={17} /></span>
+            <span className="nav-item-label">Overview</span>
           </button>
 
           <button
             type="button"
             className={`dashboard-nav-item ${activeTab === 'vacancies' ? 'active' : ''}`}
             onClick={() => {
-              setActiveTab('vacancies')
-              setSidebarOpen(false)
+              setActiveTab('vacancies');
+              setSidebarOpen(false);
             }}
           >
-            <BriefcaseIcon />
-            <span>Job Vacancies</span>
-            <span className="nav-badge-count">{jobs.length}</span>
+            <span className="nav-icon-wrap"><Briefcase size={17} /></span>
+            <span className="nav-item-label">Job Vacancies</span>
+            {jobs.length > 0 && (
+              <span className="nav-badge-pill nav-badge-neutral">{jobs.length}</span>
+            )}
           </button>
 
           <button
             type="button"
             className={`dashboard-nav-item ${activeTab === 'pipelines' ? 'active' : ''}`}
             onClick={() => {
-              setActiveTab('pipelines')
-              setSidebarOpen(false)
+              setActiveTab('pipelines');
+              setSidebarOpen(false);
             }}
           >
-            <SparkleIcon />
-            <span>AI Screening</span>
+            <span className="nav-icon-wrap"><Sparkles size={17} /></span>
+            <span className="nav-item-label">AI Screening</span>
+            <span className="nav-badge-pill nav-badge-ai">AI</span>
           </button>
 
           <button
             type="button"
             className={`dashboard-nav-item ${activeTab === 'hiring-pipeline' ? 'active' : ''}`}
             onClick={() => {
-              setActiveTab('hiring-pipeline')
-              setSidebarOpen(false)
+              setActiveTab('hiring-pipeline');
+              setSidebarOpen(false);
             }}
           >
-            <FunnelIcon />
-            <span>Hiring Pipeline</span>
-            <span className="nav-badge-count" style={{ background: '#e6f9f2', color: '#009e67' }}>Ready</span>
+            <span className="nav-icon-wrap"><Filter size={17} /></span>
+            <span className="nav-item-label">Hiring Pipeline</span>
           </button>
 
           <button
             type="button"
             className={`dashboard-nav-item ${activeTab === 'assessment-templates' ? 'active' : ''}`}
             onClick={() => {
-              setActiveTab('assessment-templates')
-              setSidebarOpen(false)
+              setActiveTab('assessment-templates');
+              setSidebarOpen(false);
             }}
           >
-            <BriefcaseIcon />
-            <span>Assessments</span>
+            <span className="nav-icon-wrap"><ClipboardCheck size={17} /></span>
+            <span className="nav-item-label">Assessments</span>
           </button>
+
+          {/* Group 2: INTERVIEWS & PERFORMANCE */}
+          <div className="nav-group-header" style={{ marginTop: '14px' }}>
+            <span className="nav-group-label">INTERVIEWS & PERFORMANCE</span>
+          </div>
 
           <button
             type="button"
             className={`dashboard-nav-item ${activeTab === 'performance-hub' || activeTab === 'assessment-submissions' || activeTab === 'assessment-leaderboard' ? 'active' : ''}`}
             onClick={() => {
-              setActiveTab('performance-hub')
-              setSidebarOpen(false)
+              setActiveTab('performance-hub');
+              setSidebarOpen(false);
             }}
           >
-            <TrophyIcon />
-            <span>Performance Hub</span>
-            <span className="nav-badge-count" style={{ background: '#e0e7ff', color: '#4338ca' }}>Top 5</span>
+            <span className="nav-icon-wrap"><Trophy size={17} /></span>
+            <span className="nav-item-label">Performance Hub</span>
+            <span className="nav-badge-pill nav-badge-indigo">Top 5</span>
           </button>
 
           <button
             type="button"
             className={`dashboard-nav-item ${activeTab === 'interview-selection' ? 'active' : ''}`}
             onClick={() => {
-              setActiveTab('interview-selection')
-              setSidebarOpen(false)
+              setActiveTab('interview-selection');
+              setSidebarOpen(false);
             }}
           >
-            <Star size={18} />
-            <span>Interview Selection</span>
-            <span className="nav-badge-count" style={{ background: '#f5f3ff', color: '#7c3aed' }}>Selected</span>
+            <span className="nav-icon-wrap"><UserCheck size={17} /></span>
+            <span className="nav-item-label">Interview Selection</span>
           </button>
 
           <button
             type="button"
             className={`dashboard-nav-item ${activeTab === 'monthly-planner' ? 'active' : ''}`}
             onClick={() => {
-              setActiveTab('monthly-planner')
-              setSidebarOpen(false)
+              setActiveTab('monthly-planner');
+              setSidebarOpen(false);
             }}
           >
-            <Calendar size={18} />
-            <span>Monthly Planner</span>
-            <span className="nav-badge-count" style={{ background: '#ecfdf5', color: '#059669' }}>Planner</span>
+            <span className="nav-icon-wrap"><CalendarDays size={17} /></span>
+            <span className="nav-item-label">Monthly Planner</span>
           </button>
 
-          <div className="nav-group-label" style={{ marginTop: '16px' }}>SYSTEM</div>
+          {/* Group 3: PREFERENCES & SYSTEM */}
+          <div className="nav-group-header" style={{ marginTop: '14px' }}>
+            <span className="nav-group-label">SYSTEM</span>
+          </div>
 
           <button
             type="button"
             className={`dashboard-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
             onClick={() => {
-              setActiveTab('settings')
-              setSidebarOpen(false)
+              setActiveTab('settings');
+              setSidebarOpen(false);
             }}
           >
-            <SettingsIcon />
-            <span>Company Settings</span>
+            <span className="nav-icon-wrap"><Settings size={17} /></span>
+            <span className="nav-item-label">Company Settings</span>
           </button>
 
           <button
             type="button"
             className={`dashboard-nav-item ${activeTab === 'security' ? 'active' : ''}`}
             onClick={() => {
-              setActiveTab('security')
-              setSidebarOpen(false)
+              setActiveTab('security');
+              setSidebarOpen(false);
             }}
           >
-            <ShieldCheckIcon />
-            <span>Security</span>
+            <span className="nav-icon-wrap"><ShieldCheck size={17} /></span>
+            <span className="nav-item-label">Security</span>
           </button>
         </nav>
 
         {/* Sidebar Footer User Info & Signout */}
         <div className="dashboard-sidebar-footer">
           <div className="sidebar-user-card">
-            <div className="user-avatar-initials" style={{ overflow: 'hidden', padding: 0 }}>
+            <div className="user-avatar-initials">
               {currentUser?.logoUrl ? (
                 <img
                   src={currentUser.logoUrl}
                   alt={companyDisplayName}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  className="sidebar-avatar-img"
                   onError={(e) => {
                     (e.currentTarget as HTMLElement).style.display = 'none';
                   }}
                 />
-              ) : null}
-              {!currentUser?.logoUrl &&
+              ) : (
                 companyDisplayName
                   .split(' ')
                   .map((n) => n[0])
                   .slice(0, 2)
                   .join('')
-                  .toUpperCase()}
+                  .toUpperCase() || 'BC'
+              )}
             </div>
             <div className="sidebar-user-info">
-              <span className="sidebar-user-name">{companyDisplayName}</span>
-              <span className="sidebar-user-email">{companyEmail}</span>
+              <span className="sidebar-user-name" title={companyDisplayName}>{companyDisplayName}</span>
+              <span className="sidebar-user-email" title={companyEmail}>{companyEmail}</span>
             </div>
+            <button
+              type="button"
+              className="sidebar-user-logout-icon"
+              onClick={handleLogout}
+              title="Sign Out"
+              aria-label="Sign Out"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
-          <button
-            type="button"
-            className="sidebar-logout-btn"
-            onClick={handleLogout}
-            title="Sign Out"
-          >
-            <LogOutIcon />
-            <span>Sign Out</span>
-          </button>
         </div>
       </aside>
 
@@ -502,7 +527,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
         </header>
 
         {/* Dashboard Scrollable Viewport */}
-        <main className={`dashboard-viewport ${activeTab === 'monthly-planner' ? 'dashboard-viewport--planner' : ''}`}>
+        <main className={`dashboard-viewport ${activeTab === 'monthly-planner' ? 'dashboard-viewport--planner' : ''} ${activeTab === 'settings' ? 'dashboard-viewport--settings' : ''}`}>
           {activeTab === 'vacancies' ? (
             <JobVacancies />
           ) : activeTab === 'pipelines' ? (

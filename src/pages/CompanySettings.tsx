@@ -24,6 +24,8 @@ import {
   CheckCircle2,
   UserCheck,
   Briefcase,
+  Columns2,
+  Maximize2,
 } from 'lucide-react';
 import {
   LinkedInIcon,
@@ -85,6 +87,21 @@ export const CompanySettings: React.FC = () => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [layoutMode, setLayoutMode] = useState<'split' | 'colspan'>(() => {
+    try {
+      return (localStorage.getItem('skillhub_settings_layout_mode') as 'split' | 'colspan') || 'split';
+    } catch {
+      return 'split';
+    }
+  });
+
+  const handleLayoutModeChange = (mode: 'split' | 'colspan') => {
+    setLayoutMode(mode);
+    try {
+      localStorage.setItem('skillhub_settings_layout_mode', mode);
+    } catch {}
+  };
+
   const hasLoadedRef = useRef(false);
 
   // Smooth background profile fetch once on component mount from PostgreSQL database
@@ -278,6 +295,29 @@ export const CompanySettings: React.FC = () => {
             <span className="settings-dashboard-live">
               <span /> Live Profile
             </span>
+
+            {/* Creative View Mode Toggle: Split vs Full Colspan */}
+            <div className="settings-layout-toggle-pill" role="group" aria-label="Layout view mode">
+              <button
+                type="button"
+                className={`settings-layout-toggle-btn ${layoutMode === 'split' ? 'active' : ''}`}
+                onClick={() => handleLayoutModeChange('split')}
+                title="Split View (Form + Live Candidate Preview)"
+              >
+                <Columns2 size={13} strokeWidth={2.4} />
+                <span>Split View</span>
+              </button>
+              <button
+                type="button"
+                className={`settings-layout-toggle-btn ${layoutMode === 'colspan' ? 'active' : ''}`}
+                onClick={() => handleLayoutModeChange('colspan')}
+                title="Full Colspan (Expand form across 100% full width)"
+              >
+                <Maximize2 size={13} strokeWidth={2.4} />
+                <span>Full Colspan</span>
+              </button>
+            </div>
+
             {formData.companyName && (
               <Link
                 to={`/company/${encodeURIComponent(formData.companyName)}`}
@@ -351,7 +391,7 @@ export const CompanySettings: React.FC = () => {
       {/* =========================================================
           2. MAIN WORKSPACE 2-COLUMN LAYOUT
           ========================================================= */}
-      <form onSubmit={handleSave} className="settings-workspace-layout">
+      <form onSubmit={handleSave} className={`settings-workspace-layout ${layoutMode === 'colspan' ? 'settings-workspace-layout--colspan' : ''}`}>
         {/* Left Column: Form Panels */}
         <div className="settings-form-column">
           {/* Panel 1: Brand & Organization */}
@@ -725,9 +765,22 @@ export const CompanySettings: React.FC = () => {
 
           {/* Bottom Save Action Bar */}
           <div className="settings-bottom-actions">
-            <Link to="/dashboard" className="settings-btn-preview" style={{ padding: '10px 20px' }}>
-              Back to Overview
-            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Link to="/dashboard" className="settings-btn-preview" style={{ padding: '10px 20px' }}>
+                Back to Overview
+              </Link>
+              {layoutMode === 'colspan' && (
+                <button
+                  type="button"
+                  className="settings-restore-preview-btn"
+                  onClick={() => handleLayoutModeChange('split')}
+                  title="Restore Split View to show Candidate Preview"
+                >
+                  <Columns2 size={14} />
+                  <span>Show Candidate Preview</span>
+                </button>
+              )}
+            </div>
 
             <button
               type="submit"

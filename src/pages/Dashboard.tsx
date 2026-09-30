@@ -13,6 +13,10 @@ import {
   ShieldCheck,
   LogOut,
   Building2,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -66,6 +70,39 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
   const navigate = useNavigate()
   const { currentUser, logout, isAuthenticated, isLoading: authLoading } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('skillhub_sidebar_collapsed') === 'true'
+    } catch {
+      return false
+    }
+  })
+
+  const toggleSidebarCollapsed = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev
+      try {
+        localStorage.setItem('skillhub_sidebar_collapsed', String(next))
+      } catch {}
+      return next
+    })
+  }, [])
+
+  // Keyboard shortcut Ctrl+B / Cmd+B to toggle sidebar collapse
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase()
+      if (tag === 'input' || tag === 'textarea' || (e.target as HTMLElement)?.isContentEditable) {
+        return
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault()
+        toggleSidebarCollapsed()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [toggleSidebarCollapsed])
   const [activeTab, setActiveTab] = useState<DashboardTab>(
     defaultTab === 'assessments' ? 'assessment-templates' : defaultTab
   )
@@ -231,7 +268,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
   }
 
   return (
-    <div className="dashboard-container">
+    <div className={`dashboard-container ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
       {/* Mobile Drawer Overlay */}
       {sidebarOpen && (
         <div
@@ -244,21 +281,51 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
       {/* =========================================================
           1. DASHBOARD SIDEBAR (LIGHT THEME B2B SAAS)
           ========================================================= */}
-      <aside className={`dashboard-sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
+      <aside className={`dashboard-sidebar ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+        {/* Creative Edge Dock Toggle Handle */}
+        <button
+          type="button"
+          className="sidebar-edge-toggle"
+          onClick={toggleSidebarCollapsed}
+          title={sidebarCollapsed ? "Expand Sidebar (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
+          aria-label={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+        >
+          {sidebarCollapsed ? (
+            <ChevronRight size={13} strokeWidth={2.6} />
+          ) : (
+            <ChevronLeft size={13} strokeWidth={2.6} />
+          )}
+        </button>
+
         {/* Sidebar Brand Header */}
         <div className="dashboard-sidebar-header">
-          <Link to="/" className="dashboard-brand-link">
+          <Link to="/" className="dashboard-brand-link" title="Skill Hub Home">
             <div className="logo-icon-wrap">
               <Sparkles size={18} strokeWidth={2.5} />
             </div>
-            <div className="dashboard-brand-text">
-              <div className="dashboard-brand-row">
-                <span className="dashboard-brand-title">Skill Hub</span>
-                <span className="dashboard-brand-badge">ATS PRO</span>
+            {!sidebarCollapsed && (
+              <div className="dashboard-brand-text">
+                <div className="dashboard-brand-row">
+                  <span className="dashboard-brand-title">Skill Hub</span>
+                  <span className="dashboard-brand-badge">ATS PRO</span>
+                </div>
+                <span className="dashboard-brand-subtitle">Enterprise Recruitment</span>
               </div>
-              <span className="dashboard-brand-subtitle">Enterprise Recruitment</span>
-            </div>
+            )}
           </Link>
+
+          {!sidebarCollapsed && (
+            <button
+              type="button"
+              className="sidebar-collapse-header-btn"
+              onClick={toggleSidebarCollapsed}
+              title="Collapse Sidebar (Ctrl+B)"
+              aria-label="Collapse Sidebar"
+            >
+              <PanelLeftClose size={16} strokeWidth={2.2} />
+            </button>
+          )}
+
           <button
             type="button"
             className="sidebar-close-btn"
@@ -270,7 +337,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
         </div>
 
         {/* Company Identity & Workspace Switcher Card */}
-        <div className="dashboard-company-pill">
+        <div
+          className="dashboard-company-pill"
+          title={sidebarCollapsed ? `${companyDisplayName} • Active Workspace` : undefined}
+        >
           <div className="company-avatar-box">
             {currentUser?.logoUrl ? (
               <img
@@ -286,18 +356,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             )}
             <span className="company-status-dot" title="Active Workspace" />
           </div>
-          <div className="company-pill-details">
-            <span className="company-pill-name" title={companyDisplayName}>
-              {companyDisplayName}
-            </span>
-            <div className="company-pill-meta">
-              <span className="company-pill-tag">
-                {currentUser?.role === 'Company' ? 'Enterprise' : currentUser?.role || 'Company'}
+          {!sidebarCollapsed && (
+            <div className="company-pill-details">
+              <span className="company-pill-name" title={companyDisplayName}>
+                {companyDisplayName}
               </span>
-              <span className="company-pill-divider">•</span>
-              <span className="company-pill-status">Active Workspace</span>
+              <div className="company-pill-meta">
+                <span className="company-pill-tag">
+                  {currentUser?.role === 'Company' ? 'Enterprise' : currentUser?.role || 'Company'}
+                </span>
+                <span className="company-pill-divider">•</span>
+                <span className="company-pill-status">Active Workspace</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Sidebar Navigation */}
@@ -316,7 +388,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             }}
           >
             <span className="nav-icon-wrap"><LayoutDashboard size={17} /></span>
-            <span className="nav-item-label">Overview</span>
+            {!sidebarCollapsed && <span className="nav-item-label">Overview</span>}
+            {sidebarCollapsed && <span className="nav-collapsed-tooltip">Overview</span>}
           </button>
 
           <button
@@ -327,10 +400,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
               setSidebarOpen(false);
             }}
           >
-            <span className="nav-icon-wrap"><Briefcase size={17} /></span>
-            <span className="nav-item-label">Job Vacancies</span>
-            {jobs.length > 0 && (
-              <span className="nav-badge-pill nav-badge-neutral">{jobs.length}</span>
+            <span className="nav-icon-wrap">
+              <Briefcase size={17} />
+              {sidebarCollapsed && jobs.length > 0 && <span className="nav-collapsed-badge-dot" />}
+            </span>
+            {!sidebarCollapsed && (
+              <>
+                <span className="nav-item-label">Job Vacancies</span>
+                {jobs.length > 0 && (
+                  <span className="nav-badge-pill nav-badge-neutral">{jobs.length}</span>
+                )}
+              </>
+            )}
+            {sidebarCollapsed && (
+              <span className="nav-collapsed-tooltip">
+                Job Vacancies {jobs.length > 0 ? `(${jobs.length})` : ''}
+              </span>
             )}
           </button>
 
@@ -342,9 +427,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
               setSidebarOpen(false);
             }}
           >
-            <span className="nav-icon-wrap"><Sparkles size={17} /></span>
-            <span className="nav-item-label">AI Screening</span>
-            <span className="nav-badge-pill nav-badge-ai">AI</span>
+            <span className="nav-icon-wrap">
+              <Sparkles size={17} />
+              {sidebarCollapsed && <span className="nav-collapsed-badge-dot nav-badge-dot--ai" />}
+            </span>
+            {!sidebarCollapsed && (
+              <>
+                <span className="nav-item-label">AI Screening</span>
+                <span className="nav-badge-pill nav-badge-ai">AI</span>
+              </>
+            )}
+            {sidebarCollapsed && <span className="nav-collapsed-tooltip">AI Screening (AI)</span>}
           </button>
 
           <button
@@ -356,7 +449,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             }}
           >
             <span className="nav-icon-wrap"><Filter size={17} /></span>
-            <span className="nav-item-label">Hiring Pipeline</span>
+            {!sidebarCollapsed && <span className="nav-item-label">Hiring Pipeline</span>}
+            {sidebarCollapsed && <span className="nav-collapsed-tooltip">Hiring Pipeline</span>}
           </button>
 
           <button
@@ -368,7 +462,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             }}
           >
             <span className="nav-icon-wrap"><ClipboardCheck size={17} /></span>
-            <span className="nav-item-label">Assessments</span>
+            {!sidebarCollapsed && <span className="nav-item-label">Assessments</span>}
+            {sidebarCollapsed && <span className="nav-collapsed-tooltip">Assessments</span>}
           </button>
 
           {/* Group 2: INTERVIEWS & PERFORMANCE */}
@@ -384,9 +479,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
               setSidebarOpen(false);
             }}
           >
-            <span className="nav-icon-wrap"><Trophy size={17} /></span>
-            <span className="nav-item-label">Performance Hub</span>
-            <span className="nav-badge-pill nav-badge-indigo">Top 5</span>
+            <span className="nav-icon-wrap">
+              <Trophy size={17} />
+              {sidebarCollapsed && <span className="nav-collapsed-badge-dot nav-badge-dot--indigo" />}
+            </span>
+            {!sidebarCollapsed && (
+              <>
+                <span className="nav-item-label">Performance Hub</span>
+                <span className="nav-badge-pill nav-badge-indigo">Top 5</span>
+              </>
+            )}
+            {sidebarCollapsed && <span className="nav-collapsed-tooltip">Performance Hub (Top 5)</span>}
           </button>
 
           <button
@@ -398,7 +501,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             }}
           >
             <span className="nav-icon-wrap"><UserCheck size={17} /></span>
-            <span className="nav-item-label">Interview Selection</span>
+            {!sidebarCollapsed && <span className="nav-item-label">Interview Selection</span>}
+            {sidebarCollapsed && <span className="nav-collapsed-tooltip">Interview Selection</span>}
           </button>
 
           <button
@@ -410,7 +514,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             }}
           >
             <span className="nav-icon-wrap"><CalendarDays size={17} /></span>
-            <span className="nav-item-label">Monthly Planner</span>
+            {!sidebarCollapsed && <span className="nav-item-label">Monthly Planner</span>}
+            {sidebarCollapsed && <span className="nav-collapsed-tooltip">Monthly Planner</span>}
           </button>
 
           {/* Group 3: PREFERENCES & SYSTEM */}
@@ -427,7 +532,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             }}
           >
             <span className="nav-icon-wrap"><Settings size={17} /></span>
-            <span className="nav-item-label">Company Settings</span>
+            {!sidebarCollapsed && <span className="nav-item-label">Company Settings</span>}
+            {sidebarCollapsed && <span className="nav-collapsed-tooltip">Company Settings</span>}
           </button>
 
           <button
@@ -439,13 +545,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             }}
           >
             <span className="nav-icon-wrap"><ShieldCheck size={17} /></span>
-            <span className="nav-item-label">Security</span>
+            {!sidebarCollapsed && <span className="nav-item-label">Security</span>}
+            {sidebarCollapsed && <span className="nav-collapsed-tooltip">Security</span>}
           </button>
         </nav>
 
         {/* Sidebar Footer User Info & Signout */}
         <div className="dashboard-sidebar-footer">
-          <div className="sidebar-user-card">
+          <div
+            className="sidebar-user-card"
+            title={sidebarCollapsed ? `${companyDisplayName} • Click to Sign Out` : undefined}
+            onClick={sidebarCollapsed ? handleLogout : undefined}
+            style={sidebarCollapsed ? { cursor: 'pointer' } : undefined}
+          >
             <div className="user-avatar-initials">
               {currentUser?.logoUrl ? (
                 <img
@@ -465,19 +577,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
                   .toUpperCase() || 'BC'
               )}
             </div>
-            <div className="sidebar-user-info">
-              <span className="sidebar-user-name" title={companyDisplayName}>{companyDisplayName}</span>
-              <span className="sidebar-user-email" title={companyEmail}>{companyEmail}</span>
-            </div>
-            <button
-              type="button"
-              className="sidebar-user-logout-icon"
-              onClick={handleLogout}
-              title="Sign Out"
-              aria-label="Sign Out"
-            >
-              <LogOut size={16} />
-            </button>
+            {!sidebarCollapsed ? (
+              <>
+                <div className="sidebar-user-info">
+                  <span className="sidebar-user-name" title={companyDisplayName}>{companyDisplayName}</span>
+                  <span className="sidebar-user-email" title={companyEmail}>{companyEmail}</span>
+                </div>
+                <button
+                  type="button"
+                  className="sidebar-user-logout-icon"
+                  onClick={handleLogout}
+                  title="Sign Out"
+                  aria-label="Sign Out"
+                >
+                  <LogOut size={16} />
+                </button>
+              </>
+            ) : (
+              <span className="nav-collapsed-tooltip">Sign Out ({companyDisplayName})</span>
+            )}
           </div>
         </div>
       </aside>
@@ -497,6 +615,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             >
               <MenuIcon />
             </button>
+
+            {/* Desktop Quick Toggle Sidebar Button */}
+            <button
+              type="button"
+              className="topbar-desktop-sidebar-toggle"
+              onClick={toggleSidebarCollapsed}
+              title={sidebarCollapsed ? "Expand Sidebar (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
+              aria-label="Toggle Sidebar"
+            >
+              {sidebarCollapsed ? (
+                <PanelLeftOpen size={18} strokeWidth={2} />
+              ) : (
+                <PanelLeftClose size={18} strokeWidth={2} />
+              )}
+            </button>
+
             <div className="topbar-breadcrumb">
               <span className="breadcrumb-root">Dashboard</span>
               <span className="breadcrumb-sep">/</span>

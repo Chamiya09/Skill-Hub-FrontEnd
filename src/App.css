@@ -2431,7 +2431,7 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: width 0.24s cubic-bezier(0.16, 1, 0.3, 1), min-width 0.24s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 1px 0 4px rgba(15, 23, 42, 0.02);
 }
 
@@ -2892,6 +2892,223 @@
 
 .sidebar-logout-btn:hover {
   background: #fee2e2;
+}
+
+/* =========================================================
+   CREATIVE COLLAPSIBLE / EXPANDABLE SIDEBAR STYLES
+   Smooth Rails, Floating Edge Toggle, Floating Tooltips & Badges
+   ========================================================= */
+
+/* Floating Edge Dock Toggle Handle */
+.sidebar-edge-toggle {
+  position: absolute;
+  right: -13px;
+  top: 22px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  cursor: pointer;
+  z-index: 120;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-edge-toggle:hover {
+  background: #00b074;
+  color: #ffffff;
+  border-color: #00b074;
+  transform: scale(1.12);
+  box-shadow: 0 4px 14px rgba(0, 176, 116, 0.4);
+}
+
+/* Header Collapse Icon Button */
+.sidebar-collapse-header-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-collapse-header-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #e2e8f0;
+}
+
+/* Topbar Desktop Toggle */
+.topbar-desktop-sidebar-toggle {
+  display: none;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  flex-shrink: 0;
+}
+
+@media (min-width: 1025px) {
+  .topbar-desktop-sidebar-toggle {
+    display: flex;
+  }
+}
+
+.topbar-desktop-sidebar-toggle:hover {
+  background: #f8fafc;
+  color: #00b074;
+  border-color: #00b074;
+  transform: translateY(-1px);
+}
+
+/* =========================================================
+   COLLAPSED STATE STYLES (.sidebar-collapsed)
+   ========================================================= */
+
+@media (min-width: 1025px) {
+  .dashboard-sidebar.sidebar-collapsed {
+    width: 76px !important;
+    min-width: 76px !important;
+  }
+
+  .dashboard-sidebar.sidebar-collapsed .dashboard-sidebar-header {
+    padding: 16px 8px 14px 8px;
+    justify-content: center;
+  }
+
+  .dashboard-sidebar.sidebar-collapsed .dashboard-brand-link {
+    justify-content: center;
+    gap: 0;
+  }
+
+  .dashboard-sidebar.sidebar-collapsed .dashboard-company-pill {
+    width: 44px;
+    height: 44px;
+    margin: 10px auto 8px auto;
+    padding: 0;
+    justify-content: center;
+    border-radius: 12px;
+  }
+
+  .dashboard-sidebar.sidebar-collapsed .dashboard-company-pill .company-avatar-box {
+    margin: 0;
+  }
+
+  .dashboard-sidebar.sidebar-collapsed .nav-group-header {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 12px 14px;
+    padding: 0;
+    text-indent: -9999px;
+    overflow: hidden;
+  }
+
+  .dashboard-sidebar.sidebar-collapsed .dashboard-nav-item {
+    width: 44px;
+    padding: 10px 0;
+    justify-content: center;
+    margin: 4px auto;
+    border-radius: 10px;
+    box-shadow: none !important;
+    position: relative;
+  }
+
+  .dashboard-sidebar.sidebar-collapsed .dashboard-nav-item.active {
+    background: #e6f9f2;
+    color: #00b074;
+  }
+
+  .dashboard-sidebar.sidebar-collapsed .dashboard-sidebar-footer {
+    padding: 12px 6px;
+  }
+
+  .dashboard-sidebar.sidebar-collapsed .sidebar-user-card {
+    padding: 4px 0;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    position: relative;
+  }
+}
+
+/* Collapsed Floating Tooltips */
+.nav-collapsed-tooltip {
+  position: absolute;
+  left: calc(100% + 14px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.22);
+  pointer-events: none;
+  z-index: 300;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  letter-spacing: 0.01em;
+}
+
+.nav-collapsed-tooltip::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 5px 5px 5px 0;
+  border-style: solid;
+  border-color: transparent #0f172a transparent transparent;
+}
+
+.dashboard-sidebar.sidebar-collapsed .dashboard-nav-item:hover .nav-collapsed-tooltip,
+.dashboard-sidebar.sidebar-collapsed .sidebar-user-card:hover .nav-collapsed-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(2px);
+}
+
+/* Collapsed Mini Badge Notification Dots */
+.nav-collapsed-badge-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00b074;
+  box-shadow: 0 0 0 2px #ffffff;
+}
+
+.nav-collapsed-badge-dot.nav-badge-dot--ai {
+  background: #00b074;
+}
+
+.nav-collapsed-badge-dot.nav-badge-dot--indigo {
+  background: #6366f1;
 }
 
 /* 2. Main Dashboard Area */

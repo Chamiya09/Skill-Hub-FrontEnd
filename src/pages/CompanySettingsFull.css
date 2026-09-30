@@ -193,6 +193,43 @@
   cursor: not-allowed;
 }
 
+/* Creative View Mode Toggle (Split vs Full Colspan) */
+.settings-layout-toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  gap: 2px;
+}
+
+.settings-layout-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  white-space: nowrap;
+}
+
+.settings-layout-toggle-btn:hover {
+  color: #0f172a;
+}
+
+.settings-layout-toggle-btn.active {
+  background: #ffffff;
+  color: #059669;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
 /* Summary Grid */
 .settings-summary-grid {
   display: grid;
@@ -288,6 +325,42 @@
   grid-template-columns: minmax(0, 1fr) 340px;
   gap: 24px;
   align-items: start;
+  transition: grid-template-columns 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Full Colspan Mode: Expand form column across full 100% width */
+.settings-workspace-layout.settings-workspace-layout--colspan {
+  grid-template-columns: 1fr !important;
+}
+
+.settings-workspace-layout.settings-workspace-layout--colspan .settings-preview-column {
+  display: none !important;
+}
+
+.settings-workspace-layout.settings-workspace-layout--colspan .settings-fields-grid {
+  gap: 20px 24px;
+}
+
+.settings-restore-preview-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 16px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 10px;
+  color: #047857;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.settings-restore-preview-btn:hover {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #6ee7b7;
+  transform: translateY(-1px);
 }
 
 .settings-form-column {

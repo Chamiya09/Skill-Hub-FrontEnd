@@ -942,38 +942,7 @@ export const MonthlyPlanner: React.FC = () => {
             </button>
           </div>
 
-          {/* Month Navigation Controls */}
-          <div className="planner-nav-group">
-            <button
-              type="button"
-              onClick={handleToday}
-              className="planner-nav-today-btn"
-            >
-              Today
-            </button>
-            <div className="planner-nav-arrows">
-              <button
-                type="button"
-                onClick={handlePrevMonth}
-                aria-label="Previous Month"
-                className="planner-nav-arrow-btn"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={handleNextMonth}
-                aria-label="Next Month"
-                className="planner-nav-arrow-btn"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-            <div className="planner-month-display">
-              <CalendarIcon size={16} />
-              <span>{currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
-            </div>
-          </div>
+
         </div>
 
         {/* Row 2: Search Input, Department Select, Job Vacancy Select, Holiday Toggle & Reset */}
@@ -1158,35 +1127,6 @@ export const MonthlyPlanner: React.FC = () => {
                 <span>Today</span>
               </button>
             </div>
-
-            {/* Category Legend in Topbar */}
-            <div className="creative-legend-cluster">
-              <span className="creative-legend-chip chip-interviews">
-                <span className="creative-legend-chip-dot" />
-                <span>Interviews ({interviewCount})</span>
-              </span>
-              <span className="creative-legend-chip chip-general">
-                <span className="creative-legend-chip-dot" />
-                <span>General ({generalCount})</span>
-              </span>
-              {holidaysEnabled && (
-                <span className="creative-legend-chip chip-holidays">
-                  <span className="creative-legend-chip-dot" />
-                  <span>{currentCalendarOption.flag} Holidays ({holidays.length})</span>
-                </span>
-              )}
-            </div>
-
-            {/* Quick Add Action */}
-            <button
-              type="button"
-              className="creative-topbar-quick-add"
-              onClick={() => handleOpenAddEventModal(selectedDateStr)}
-              title="Schedule a new interview or event"
-            >
-              <Plus size={14} strokeWidth={2.6} />
-              <span>Schedule Event</span>
-            </button>
           </div>
 
           {/* Unified Creative Calendar Grid: Day Headers & Date Cells in ONE 7-column CSS Grid */}
@@ -1330,31 +1270,6 @@ export const MonthlyPlanner: React.FC = () => {
                 </div>
               );
             })}
-          </div>
-
-          {/* Creative Calendar Footer Strip */}
-          <div className="creative-calendar-footer">
-            <div className="creative-footer-stats">
-              <div className="creative-footer-stat-item">
-                <span>Month Total:</span>
-                <strong>{events.length} Events</strong>
-              </div>
-              <span>•</span>
-              <div className="creative-footer-stat-item">
-                <span>Interviews:</span>
-                <strong style={{ color: '#047857' }}>{interviewCount}</strong>
-              </div>
-              <span>•</span>
-              <div className="creative-footer-stat-item">
-                <span>Holiday Calendar:</span>
-                <strong>{currentCalendarOption.country} {holidaysEnabled ? `(${holidays.length} Synced)` : '(Disabled)'}</strong>
-              </div>
-            </div>
-
-            <div className="creative-footer-tip">
-              <Sparkles size={13} color="#00b074" />
-              <span>Click any date to open the daily timeline • Hover over a date for quick (+) add</span>
-            </div>
           </div>
         </div>
       </div>

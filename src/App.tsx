@@ -29,6 +29,8 @@ import { CandidateExam } from "./pages/CandidateExam";
 import { CandidateAssessments } from "./pages/CandidateAssessments";
 import { CandidateInterviewPrep } from "./pages/CandidateInterviewPrep";
 import { CandidateStudyDashboard } from "./pages/CandidateStudyDashboard";
+import { AdminLogin } from "./pages/admin/AdminLogin";
+import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { useParams } from "react-router-dom";
 import "./App.css";
 
@@ -67,6 +69,7 @@ function AppContent() {
     location.pathname.startsWith("/company/settings") ||
     location.pathname === "/company-security" ||
     location.pathname.startsWith("/company/security") ||
+    location.pathname.startsWith("/skillhub-secure-admin") ||
     location.pathname === "/security";
 
   return (
@@ -498,6 +501,17 @@ function AppContent() {
               element={
                 <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard defaultTab="security" />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Secret Hidden Super Admin Gateway (Strictly Unlinked in Public/Candidate/HR UI) */}
+            <Route path="/skillhub-secure-admin" element={<AdminLogin />} />
+            <Route
+              path="/skillhub-secure-admin/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['Admin']} redirectPath="/skillhub-secure-admin">
+                  <AdminDashboard />
                 </ProtectedRoute>
               }
             />

@@ -1,14 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { CandidateSidebar } from './CandidateSidebar';
 import { ClockIcon, MenuIcon } from '../common/Icons';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 export const CandidateLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, isAuthenticated, isLoading } = useAuth();
+
+  // Collapsible sidebar state synced with localStorage
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('skillhub_candidate_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSidebarCollapsed = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('skillhub_candidate_sidebar_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  // Keyboard shortcut Ctrl+B / Cmd+B to toggle sidebar collapse
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || (e.target as HTMLElement)?.isContentEditable) {
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        toggleSidebarCollapsed();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleSidebarCollapsed]);
 
   // Role Protection: Redirect Employers away from Candidate Portal
   useEffect(() => {
@@ -57,7 +93,7 @@ export const CandidateLayout: React.FC = () => {
   };
 
   return (
-    <div className="dashboard-container">
+    <div className={`dashboard-container ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
       {/* Mobile Drawer Backdrop */}
       {sidebarOpen && (
         <div
@@ -71,6 +107,8 @@ export const CandidateLayout: React.FC = () => {
       <CandidateSidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={toggleSidebarCollapsed}
       />
 
       {/* Main Content Area */}
@@ -86,6 +124,22 @@ export const CandidateLayout: React.FC = () => {
             >
               <MenuIcon />
             </button>
+
+            {/* Desktop Quick Toggle Sidebar Button */}
+            <button
+              type="button"
+              className="topbar-desktop-sidebar-toggle"
+              onClick={toggleSidebarCollapsed}
+              title={sidebarCollapsed ? "Expand Sidebar (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
+              aria-label="Toggle Sidebar"
+            >
+              {sidebarCollapsed ? (
+                <PanelLeftOpen size={18} strokeWidth={2} />
+              ) : (
+                <PanelLeftClose size={18} strokeWidth={2} />
+              )}
+            </button>
+
             <div className="topbar-breadcrumb">
               <span className="breadcrumb-root">Candidate Portal</span>
               <span className="breadcrumb-sep">/</span>
@@ -104,7 +158,7 @@ export const CandidateLayout: React.FC = () => {
         </header>
 
         {/* Dashboard Scrollable Viewport */}
-        <main className="dashboard-viewport">
+        <main className={`dashboard-viewport ${location.pathname.startsWith('/candidate') ? 'dashboard-viewport--candidate' : ''}`}>
           <Outlet />
         </main>
       </div>

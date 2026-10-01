@@ -2,10 +2,21 @@
    CANDIDATE DASHBOARD STYLESHEET
    ========================================================= */
 
+/* Full-width responsive workspace override for Candidate Portal */
+.dashboard-viewport:has(.candidate-dashboard-container),
+.dashboard-viewport.dashboard-viewport--candidate {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 24px clamp(16px, 2vw, 36px) 40px !important;
+  box-sizing: border-box !important;
+}
+
 .candidate-dashboard-container {
-  max-width: 1140px;
-  margin: 0 auto;
-  padding: 0 8px 32px 8px;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 0 32px 0 !important;
   display: flex;
   flex-direction: column;
   gap: 24px;

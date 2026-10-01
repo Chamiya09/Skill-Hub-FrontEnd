@@ -3,7 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { CandidateSidebar } from './CandidateSidebar';
 import { ClockIcon, MenuIcon } from '../common/Icons';
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+
 
 export const CandidateLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -125,20 +125,6 @@ export const CandidateLayout: React.FC = () => {
               <MenuIcon />
             </button>
 
-            {/* Desktop Quick Toggle Sidebar Button */}
-            <button
-              type="button"
-              className="topbar-desktop-sidebar-toggle"
-              onClick={toggleSidebarCollapsed}
-              title={sidebarCollapsed ? "Expand Sidebar (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
-              aria-label="Toggle Sidebar"
-            >
-              {sidebarCollapsed ? (
-                <PanelLeftOpen size={18} strokeWidth={2} />
-              ) : (
-                <PanelLeftClose size={18} strokeWidth={2} />
-              )}
-            </button>
 
             <div className="topbar-breadcrumb">
               <span className="breadcrumb-root">Candidate Portal</span>

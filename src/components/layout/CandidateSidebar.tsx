@@ -12,7 +12,6 @@ import {
   BookOpen,
   ShieldCheck,
   LogOut,
-  PanelLeftClose,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -94,17 +93,6 @@ export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({
           )}
         </Link>
 
-        {!isCollapsed && onToggleCollapse && (
-          <button
-            type="button"
-            className="sidebar-collapse-header-btn"
-            onClick={onToggleCollapse}
-            title="Collapse Sidebar (Ctrl+B)"
-            aria-label="Collapse Sidebar"
-          >
-            <PanelLeftClose size={16} strokeWidth={2.2} />
-          </button>
-        )}
 
         <button
           type="button"

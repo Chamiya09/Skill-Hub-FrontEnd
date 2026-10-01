@@ -13,8 +13,6 @@ import {
   ShieldCheck,
   LogOut,
   Building2,
-  PanelLeftClose,
-  PanelLeftOpen,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
@@ -314,17 +312,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
             )}
           </Link>
 
-          {!sidebarCollapsed && (
-            <button
-              type="button"
-              className="sidebar-collapse-header-btn"
-              onClick={toggleSidebarCollapsed}
-              title="Collapse Sidebar (Ctrl+B)"
-              aria-label="Collapse Sidebar"
-            >
-              <PanelLeftClose size={16} strokeWidth={2.2} />
-            </button>
-          )}
 
           <button
             type="button"
@@ -616,20 +603,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
               <MenuIcon />
             </button>
 
-            {/* Desktop Quick Toggle Sidebar Button */}
-            <button
-              type="button"
-              className="topbar-desktop-sidebar-toggle"
-              onClick={toggleSidebarCollapsed}
-              title={sidebarCollapsed ? "Expand Sidebar (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
-              aria-label="Toggle Sidebar"
-            >
-              {sidebarCollapsed ? (
-                <PanelLeftOpen size={18} strokeWidth={2} />
-              ) : (
-                <PanelLeftClose size={18} strokeWidth={2} />
-              )}
-            </button>
 
             <div className="topbar-breadcrumb">
               <span className="breadcrumb-root">Dashboard</span>

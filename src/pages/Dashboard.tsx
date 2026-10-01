@@ -634,7 +634,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
         </header>
 
         {/* Dashboard Scrollable Viewport */}
-        <main className={`dashboard-viewport ${activeTab === 'monthly-planner' ? 'dashboard-viewport--planner' : ''} ${activeTab === 'settings' ? 'dashboard-viewport--settings' : ''}`}>
+        <main className={`dashboard-viewport ${activeTab === 'monthly-planner' ? 'dashboard-viewport--planner' : ''} ${activeTab === 'settings' ? 'dashboard-viewport--settings' : ''} ${activeTab === 'security' ? 'dashboard-viewport--security' : ''}`}>
           {activeTab === 'vacancies' ? (
             <JobVacancies />
           ) : activeTab === 'pipelines' ? (

@@ -39,6 +39,7 @@ import {
 } from '../services/googleCalendarService';
 import { AiInterviewSchedulerModal } from '../components/AiInterviewSchedulerModal';
 import './MonthlyPlannerFull.css';
+import './CreativeCalendar.css';
 
 // Days of week header
 const DAYS_OF_WEEK = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -1115,280 +1116,245 @@ export const MonthlyPlanner: React.FC = () => {
         )}
       </section>
 
-      {/* 4. Main Calendar Layout (Spacious Full-Width Google Calendar-like Monthly Grid) */}
+      {/* 4. Creative Main Calendar Layout (Spacious Full-Width Creative Monthly Grid) */}
       <div className="monthly-planner-layout">
-        {/* Calendar Component */}
-        <div
-          className="monthly-planner-calendar-shell"
-          style={{
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '16px',
-            overflow: 'hidden',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
-            minWidth: 0,
-            width: '100%',
-            boxSizing: 'border-box',
-          }}
-        >
-          {/* Unified Monthly Calendar Grid: Day Headers (Row 1) & Date Cells (Rows 2+) in ONE single 7-column CSS Grid */}
-          <div
-            className="monthly-planner-calendar-grid"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-              background: '#e2e8f0',
-              gap: '1px', // Seamless 1px vertical and horizontal grid lines
-              width: '100%',
-              boxSizing: 'border-box',
-            }}
-          >
-              {/* Row 1: Day of Week Headers with continuous vertical separators */}
-              {DAYS_OF_WEEK.map((day, idx) => (
+        <div className="creative-calendar-shell">
+          {/* Creative Calendar Header Bar with Nav & Legend */}
+          <div className="creative-calendar-topbar">
+            <div className="creative-cal-nav-cluster">
+              <div className="creative-month-badge">
+                <CalendarIcon size={16} />
+                <span>{currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+              </div>
+
+              <div className="creative-cal-arrows">
+                <button
+                  type="button"
+                  onClick={handlePrevMonth}
+                  className="creative-arrow-btn"
+                  title="Previous Month"
+                  aria-label="Previous Month"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextMonth}
+                  className="creative-arrow-btn"
+                  title="Next Month"
+                  aria-label="Next Month"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleToday}
+                className="creative-today-jump-btn"
+                title="Jump to Today"
+              >
+                <span className="creative-today-dot" />
+                <span>Today</span>
+              </button>
+            </div>
+
+            {/* Category Legend in Topbar */}
+            <div className="creative-legend-cluster">
+              <span className="creative-legend-chip chip-interviews">
+                <span className="creative-legend-chip-dot" />
+                <span>Interviews ({interviewCount})</span>
+              </span>
+              <span className="creative-legend-chip chip-general">
+                <span className="creative-legend-chip-dot" />
+                <span>General ({generalCount})</span>
+              </span>
+              {holidaysEnabled && (
+                <span className="creative-legend-chip chip-holidays">
+                  <span className="creative-legend-chip-dot" />
+                  <span>{currentCalendarOption.flag} Holidays ({holidays.length})</span>
+                </span>
+              )}
+            </div>
+
+            {/* Quick Add Action */}
+            <button
+              type="button"
+              className="creative-topbar-quick-add"
+              onClick={() => handleOpenAddEventModal(selectedDateStr)}
+              title="Schedule a new interview or event"
+            >
+              <Plus size={14} strokeWidth={2.6} />
+              <span>Schedule Event</span>
+            </button>
+          </div>
+
+          {/* Unified Creative Calendar Grid: Day Headers & Date Cells in ONE 7-column CSS Grid */}
+          <div className="creative-calendar-grid">
+            {/* Row 1: Day of Week Headers */}
+            {DAYS_OF_WEEK.map((day, idx) => {
+              const todayDate = new Date();
+              const isTodayCol =
+                todayDate.getDay() === idx &&
+                currentDate.getMonth() === todayDate.getMonth() &&
+                currentDate.getFullYear() === todayDate.getFullYear();
+              const isWeekend = idx === 0 || idx === 6;
+
+              return (
                 <div
                   key={day}
-                  style={{
-                    background: '#f8fafc',
-                    padding: '12px 8px',
-                    textAlign: 'center',
-                    fontSize: '11.5px',
-                    fontWeight: 800,
-                    color: idx === 0 || idx === 6 ? '#94a3b8' : '#475569',
-                    letterSpacing: '0.5px',
-                    minWidth: 0,
-                    boxSizing: 'border-box',
-                    borderBottom: '1px solid #e2e8f0',
-                  }}
+                  className={`creative-weekday-cell ${isWeekend ? 'is-weekend' : ''} ${isTodayCol ? 'is-today-col' : ''}`}
                 >
-                  {day}
+                  <span>{day}</span>
+                  {isTodayCol && <span className="creative-weekday-today-pill">TODAY</span>}
                 </div>
-              ))}
+              );
+            })}
 
-              {/* Rows 2+: Calendar Date Cells sharing the exact same column tracks */}
-              {calendarCells.map((cell) => {
-                const dayEvents = eventsByDate.get(cell.dateStr) || [];
-                const dayHolidays = holidaysEnabled ? holidaysByDate.get(cell.dateStr) || [] : [];
-                const hasEvents = dayEvents.length > 0;
-                const hasHolidays = dayHolidays.length > 0;
-                const isSelected = cell.dateStr === selectedDateStr;
+            {/* Rows 2+: Date Cells */}
+            {calendarCells.map((cell) => {
+              const dayEvents = eventsByDate.get(cell.dateStr) || [];
+              const dayHolidays = holidaysEnabled ? holidaysByDate.get(cell.dateStr) || [] : [];
+              const hasEvents = dayEvents.length > 0;
+              const hasHolidays = dayHolidays.length > 0;
+              const isSelected = cell.dateStr === selectedDateStr;
 
-                // Tooltip on hovering any date shows holidays and all event titles & times scheduled on that day
-                const cellDate = new Date(cell.dateStr + 'T00:00:00');
-                const cellFormattedDate = cellDate.toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
+              const cellDate = new Date(cell.dateStr + 'T00:00:00');
+              const dayOfWeek = cellDate.getDay();
+              const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+              const cellFormattedDate = cellDate.toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              });
+
+              const tooltipLines = [cellFormattedDate];
+              if (hasHolidays) {
+                dayHolidays.forEach((h) => {
+                  tooltipLines.push(`🌴 ${h.countryName} Holiday: ${h.title}${h.description ? ` (${h.description})` : ''}`);
                 });
+              }
+              if (hasEvents) {
+                dayEvents.forEach((ev) => {
+                  tooltipLines.push(`• ${formatTimeDisplay(ev.eventTime)} - ${ev.title}`);
+                });
+              }
+              const cellTooltip = tooltipLines.join('\n');
 
-                const tooltipLines: string[] = [cellFormattedDate];
-                if (hasHolidays) {
-                  dayHolidays.forEach((h) => {
-                    tooltipLines.push(`🌴 ${h.countryName} Holiday: ${h.title}${h.description ? ` (${h.description})` : ''}`);
-                  });
-                }
-                if (hasEvents) {
-                  dayEvents.forEach((ev) => {
-                    tooltipLines.push(`• ${formatTimeDisplay(ev.eventTime)} - ${ev.title}`);
-                  });
-                }
-                const cellTooltip = tooltipLines.join('\n');
-
-                return (
-                  <div
-                    key={cell.dateStr}
-                    className="monthly-planner-calendar-cell"
-                    onClick={() => {
-                      setSelectedDateStr(cell.dateStr);
-                      setIsDailyDrawerOpen(true);
-                    }}
-                    title={cellTooltip}
-                    style={{
-                      minHeight: 'clamp(110px, 12vh, 140px)',
-                      minWidth: 0,
-                      width: '100%',
-                      overflow: 'hidden',
-                      background: isSelected
-                        ? '#f0fdf4'
-                        : hasHolidays
-                          ? '#fffdf5'
-                          : hasEvents
-                            ? '#fcfdfd'
-                            : cell.isCurrentMonth
-                              ? '#ffffff'
-                              : '#f8fafc',
-                      padding: '8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      position: 'relative',
-                      transition: 'all 0.15s ease',
-                      border: isSelected ? '2px solid #00b074' : '2px solid transparent',
-                      boxSizing: 'border-box',
-                    }}
-                  >
-                    {/* Top Row: Day Number + Event & Holiday Count / Indicator */}
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '4px',
-                        minWidth: 0,
-                        width: '100%',
-                      }}
-                    >
+              return (
+                <div
+                  key={cell.dateStr}
+                  className={`creative-cal-cell ${cell.isToday ? 'is-today' : ''} ${isSelected ? 'is-selected' : ''} ${isWeekend ? 'is-weekend' : ''} ${!cell.isCurrentMonth ? 'is-outside-month' : ''}`}
+                  onClick={() => {
+                    setSelectedDateStr(cell.dateStr);
+                    setIsDailyDrawerOpen(true);
+                  }}
+                  title={cellTooltip}
+                >
+                  {/* Top Row: Date Number + Micro Activity Dots + Hover Quick-Add (+) */}
+                  <div className="creative-cell-header">
+                    <div className="creative-cell-number-wrap">
                       <span
-                        style={{
-                          fontSize: '13px',
-                          fontWeight: cell.isToday || isSelected ? 800 : cell.isCurrentMonth ? 600 : 400,
-                          color: cell.isToday
-                            ? '#ffffff'
-                            : isSelected
-                              ? '#047857'
-                              : cell.isCurrentMonth
-                                ? '#0f172a'
-                                : '#94a3b8',
-                          width: cell.isToday ? '24px' : 'auto',
-                          height: cell.isToday ? '24px' : 'auto',
-                          borderRadius: cell.isToday ? '50%' : '0',
-                          background: cell.isToday ? '#00b074' : 'transparent',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                        }}
+                        className={`creative-cell-day-num ${cell.isToday ? 'is-today-pill' : ''} ${isSelected && !cell.isToday ? 'is-selected-num' : ''}`}
                       >
                         {cell.dayNumber}
                       </span>
 
-                      {/* Visual Marker / Count Badge for Dates Containing Events & Holidays */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '3px', minWidth: 0, overflow: 'hidden' }}>
-                        {hasHolidays && (
-                          <span
-                            title={dayHolidays.map((h) => h.title).join(', ')}
-                            style={{
-                              fontSize: '10px',
-                              padding: '1px 5px',
-                              borderRadius: '999px',
-                              background: '#fef3c7',
-                              color: '#92400e',
-                              border: '1px solid #fde68a',
-                              fontWeight: 800,
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '2px',
-                              whiteSpace: 'nowrap',
-                              flexShrink: 1,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                            }}
-                          >
-                            <span>🌴</span>
-                            <span>{dayHolidays.length > 1 ? `${dayHolidays.length}` : 'Holiday'}</span>
-                          </span>
-                        )}
-
-                        {hasEvents && (
-                          <span
-                            style={{
-                              fontSize: '10.5px',
-                              fontWeight: 800,
-                              padding: '1px 6px',
-                              borderRadius: '999px',
-                              background: '#ecfdf5',
-                              color: '#059669',
-                              border: '1px solid #a7f3d0',
-                              whiteSpace: 'nowrap',
-                              flexShrink: 1,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                            }}
-                          >
-                            {dayEvents.length} {dayEvents.length === 1 ? 'event' : 'events'}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Preview Pills (Holidays + Events) */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '2px', overflow: 'hidden', minWidth: 0, width: '100%' }}>
-                      {/* Holiday Pills */}
-                      {dayHolidays.map((h) => (
-                        <div
-                          key={h.id}
-                          title={`🌴 ${h.countryName} Holiday: ${h.title}`}
-                          style={{
-                            padding: '2.5px 6px',
-                            borderRadius: '5px',
-                            background: '#fef3c7',
-                            color: '#78350f',
-                            border: '1px solid #fde68a',
-                            fontSize: '10.5px',
-                            fontWeight: 700,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '3px',
-                            minWidth: 0,
-                            maxWidth: '100%',
-                            boxSizing: 'border-box',
-                          }}
-                        >
-                          <span style={{ fontSize: '10px', flexShrink: 0 }}>🌴</span>
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flex: 1 }}>{h.title}</span>
+                      {/* Micro Activity Dots */}
+                      {(hasEvents || hasHolidays) && (
+                        <div className="creative-cell-dots">
+                          {hasHolidays && <span className="creative-micro-dot dot-holiday" title="Holiday" />}
+                          {dayEvents.some(isInterviewEvent) && <span className="creative-micro-dot dot-interview" title="Interview" />}
+                          {dayEvents.some((e) => !isInterviewEvent(e)) && <span className="creative-micro-dot dot-meeting" title="Meeting" />}
                         </div>
-                      ))}
-
-                      {/* Event Preview Pills (Handles multiple events gracefully) */}
-                      {dayEvents.slice(0, 2).map((ev) => (
-                        <div
-                          key={ev.id}
-                          title={`${formatTimeDisplay(ev.eventTime)} - ${ev.title}`}
-                          style={{
-                            padding: '3px 6px',
-                            borderRadius: '6px',
-                            background: isSelected ? '#dcfce7' : '#f1f5f9',
-                            color: isSelected ? '#065f46' : '#1e293b',
-                            fontSize: '11px',
-                            fontWeight: 650,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            borderLeft: '3px solid #00b074',
-                            minWidth: 0,
-                            maxWidth: '100%',
-                            boxSizing: 'border-box',
-                          }}
-                        >
-                          <span style={{ color: '#059669', fontSize: '10px', fontWeight: 800, flexShrink: 0 }}>
-                            {formatTimeDisplay(ev.eventTime)}
-                          </span>
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flex: 1 }}>{ev.title}</span>
-                        </div>
-                      ))}
-
-                      {dayEvents.length > 2 && (
-                        <span
-                          style={{
-                            fontSize: '10.5px',
-                            fontWeight: 700,
-                            color: '#059669',
-                            paddingLeft: '4px',
-                          }}
-                        >
-                          +{dayEvents.length - 2} more
-                        </span>
                       )}
                     </div>
+
+                    <div className="creative-cell-actions">
+                      <button
+                        type="button"
+                        className="creative-cell-quick-add"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenAddEventModal(cell.dateStr);
+                        }}
+                        title={`Add event on ${cellFormattedDate}`}
+                        aria-label={`Add event on ${cellFormattedDate}`}
+                      >
+                        <Plus size={11} strokeWidth={2.8} />
+                      </button>
+                    </div>
                   </div>
-                );
-              })}
+
+                  {/* Events & Holidays Stack */}
+                  <div className="creative-events-stack">
+                    {/* Holiday Ticket Pills */}
+                    {dayHolidays.map((h) => (
+                      <div
+                        key={h.id}
+                        className="creative-ticket-pill ticket-holiday"
+                        title={`🌴 ${h.countryName} Holiday: ${h.title}`}
+                      >
+                        <span className="ticket-icon">🌴</span>
+                        <span className="ticket-text">{h.title}</span>
+                      </div>
+                    ))}
+
+                    {/* Event Ticket Pills */}
+                    {dayEvents.slice(0, 2).map((ev) => {
+                      const isInterview = isInterviewEvent(ev);
+                      return (
+                        <div
+                          key={ev.id}
+                          className={`creative-ticket-pill ${isInterview ? 'ticket-interview' : 'ticket-general'}`}
+                          title={`${formatTimeDisplay(ev.eventTime)} - ${ev.title}`}
+                        >
+                          <span className="ticket-icon">
+                            {isInterview ? <Video size={10} strokeWidth={2.4} /> : <Clock size={10} strokeWidth={2.4} />}
+                          </span>
+                          <span className="ticket-time">{formatTimeDisplay(ev.eventTime)}</span>
+                          <span className="ticket-text">{ev.title}</span>
+                        </div>
+                      );
+                    })}
+
+                    {/* +N More Pill */}
+                    {dayEvents.length > 2 && (
+                      <span className="creative-more-pill">
+                        +{dayEvents.length - 2} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Creative Calendar Footer Strip */}
+          <div className="creative-calendar-footer">
+            <div className="creative-footer-stats">
+              <div className="creative-footer-stat-item">
+                <span>Month Total:</span>
+                <strong>{events.length} Events</strong>
+              </div>
+              <span>•</span>
+              <div className="creative-footer-stat-item">
+                <span>Interviews:</span>
+                <strong style={{ color: '#047857' }}>{interviewCount}</strong>
+              </div>
+              <span>•</span>
+              <div className="creative-footer-stat-item">
+                <span>Holiday Calendar:</span>
+                <strong>{currentCalendarOption.country} {holidaysEnabled ? `(${holidays.length} Synced)` : '(Disabled)'}</strong>
+              </div>
+            </div>
+
+            <div className="creative-footer-tip">
+              <Sparkles size={13} color="#00b074" />
+              <span>Click any date to open the daily timeline • Hover over a date for quick (+) add</span>
+            </div>
           </div>
         </div>
       </div>

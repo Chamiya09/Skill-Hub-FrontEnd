@@ -105,29 +105,44 @@ export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({
       </div>
 
       {/* 2. Candidate Identity Profile Card */}
-      <div
-        className="dashboard-company-pill"
-        title={isCollapsed ? `${candidateDisplayName} • ${headline}` : undefined}
+      <Link
+        to="/candidate/profile"
+        onClick={onClose}
+        className="candidate-identity-card"
+        title={isCollapsed ? `${candidateDisplayName} • ${headline}` : `${candidateDisplayName} (${headline}) - View Profile`}
+        aria-label="View Candidate Profile"
       >
-        <div className="company-avatar-box">
-          {candidateInitials}
-          <span className="company-status-dot" title="Active Candidate" />
+        <div className="candidate-card-avatar-wrap">
+          <div className="candidate-card-avatar">
+            {currentUser?.avatarUrl ? (
+              <img
+                src={currentUser.avatarUrl}
+                alt={candidateDisplayName}
+                className="candidate-card-avatar-img"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = 'none';
+                }}
+              />
+            ) : (
+              <span className="candidate-card-initials">{candidateInitials}</span>
+            )}
+          </div>
+          <span className="candidate-card-online-dot" title="Active Candidate" />
         </div>
         {!isCollapsed && (
-          <div className="company-pill-details">
-            <span className="company-pill-name" title={candidateDisplayName}>
-              {candidateDisplayName}
-            </span>
-            <div className="company-pill-meta">
-              <span className="company-pill-tag">Candidate</span>
-              <span className="company-pill-divider">•</span>
-              <span className="company-pill-status" title={headline}>
-                {headline.length > 20 ? `${headline.slice(0, 18)}...` : headline}
+          <div className="candidate-card-details">
+            <div className="candidate-card-top-row">
+              <span className="candidate-card-name" title={candidateDisplayName}>
+                {candidateDisplayName}
               </span>
+              <span className="candidate-card-badge">Candidate</span>
+            </div>
+            <div className="candidate-card-bottom-row" title={headline}>
+              <span className="candidate-card-headline">{headline}</span>
             </div>
           </div>
         )}
-      </div>
+      </Link>
 
       {/* 3. Sidebar Navigation Links */}
       <nav className="dashboard-nav-list">

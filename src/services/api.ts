@@ -2442,6 +2442,55 @@ export interface AdminDashboardStatsDto {
   recentLogs: AdminSystemLogDto[];
 }
 
+export interface AdminCandidateDto {
+  id: string;
+  name: string;
+  avatar: string;
+  role: string;
+  email: string;
+  topSkills: string[];
+  aiMatchAverage: number;
+  status: 'Active' | 'Suspended';
+  location: string;
+}
+
+export interface AdminCompanyDto {
+  id: string;
+  name: string;
+  logo: string;
+  industry: string;
+  contactEmail: string;
+  website: string;
+  activeJobPosts: number;
+  totalHires: number;
+  status: 'Active' | 'Pending';
+  tier: 'Enterprise' | 'Startup' | 'ScaleUp';
+  location: string;
+  joinedDate: string;
+}
+
+export interface AdminInquiryDto {
+  id: string;
+  sender: string;
+  senderType: 'Candidate' | 'Company' | 'Guest';
+  organization?: string;
+  email: string;
+  subject: string;
+  message: string;
+  date: string;
+  status: 'New' | 'Resolved';
+  priority: 'High' | 'Normal';
+}
+
+export interface CreateInquiryPayload {
+  sender: string;
+  senderType?: string;
+  organization?: string;
+  email: string;
+  subject?: string;
+  message: string;
+}
+
 export const adminApi = {
   async getDashboardStats(): Promise<AdminDashboardStatsDto> {
     try {
@@ -2523,4 +2572,42 @@ export const adminApi = {
       throw new Error('Invalid Super Admin credentials.');
     }
   },
+
+  async getCandidates(): Promise<AdminCandidateDto[]> {
+    return await request<AdminCandidateDto[]>('/admin/candidates');
+  },
+
+  async toggleCandidateStatus(id: string): Promise<{ id: string; status: string }> {
+    return await request<{ id: string; status: string }>(`/admin/candidates/${id}/toggle-status`, {
+      method: 'POST',
+    });
+  },
+
+  async getCompanies(): Promise<AdminCompanyDto[]> {
+    return await request<AdminCompanyDto[]>('/admin/companies');
+  },
+
+  async toggleCompanyStatus(id: string): Promise<{ id: string; status: string }> {
+    return await request<{ id: string; status: string }>(`/admin/companies/${id}/toggle-status`, {
+      method: 'POST',
+    });
+  },
+
+  async getInquiries(): Promise<AdminInquiryDto[]> {
+    return await request<AdminInquiryDto[]>('/admin/inquiries');
+  },
+
+  async toggleInquiryStatus(id: string): Promise<{ id: string; status: string }> {
+    return await request<{ id: string; status: string }>(`/admin/inquiries/${id}/toggle-status`, {
+      method: 'POST',
+    });
+  },
+
+  async submitInquiry(payload: CreateInquiryPayload): Promise<{ message: string; id: string }> {
+    return await request<{ message: string; id: string }>('/admin/inquiries', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
 };
+

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search,
   Users,
@@ -8,88 +8,63 @@ import {
   Ban,
   UserCheck,
   CheckCircle2,
-  Clock,
   ShieldAlert,
-  ArrowUpRight,
-  TrendingUp,
-  Briefcase,
+  RefreshCw,
 } from 'lucide-react';
 import '../../pages/TechnicalAssessmentsFull.css';
 import '../../pages/admin/AdminDashboard.css';
-
-interface Candidate {
-  id: string;
-  name: string;
-  avatar: string;
-  role: string;
-  email: string;
-  topSkills: string[];
-  aiMatchAverage: number;
-  status: 'Active' | 'Suspended';
-  location: string;
-}
-
-const INITIAL_CANDIDATES: Candidate[] = [
-  {
-    id: 'cand-001',
-    name: 'Alex Rivera',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
-    role: 'Senior Full-Stack Engineer',
-    email: 'alex.rivera@example.com',
-    topSkills: ['React', 'TypeScript', 'Node.js', 'PostgreSQL'],
-    aiMatchAverage: 96,
-    status: 'Active',
-    location: 'San Francisco, CA',
-  },
-  {
-    id: 'cand-002',
-    name: 'Dr. Samantha Chen',
-    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=120&auto=format&fit=crop&q=80',
-    role: 'Lead AI / ML Researcher',
-    email: 'samantha.chen@mllabs.ai',
-    topSkills: ['PyTorch', 'LLMs', 'FastAPI', 'Vector DBs'],
-    aiMatchAverage: 98,
-    status: 'Active',
-    location: 'Boston, MA',
-  },
-  {
-    id: 'cand-003',
-    name: 'Marcus Vance',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
-    role: 'Staff DevOps & Cloud Architect',
-    email: 'marcus.vance@cloudarch.dev',
-    topSkills: ['Kubernetes', 'Terraform', 'AWS', 'Docker'],
-    aiMatchAverage: 91,
-    status: 'Active',
-    location: 'Seattle, WA',
-  },
-  {
-    id: 'cand-004',
-    name: 'Elena Rostova',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80',
-    role: 'Senior UI/UX & Frontend Engineer',
-    email: 'elena.rostova@designsystems.io',
-    topSkills: ['Tailwind CSS', 'Figma', 'Next.js', 'Accessibility'],
-    aiMatchAverage: 89,
-    status: 'Suspended',
-    location: 'Austin, TX',
-  },
-];
+import { adminApi, type AdminCandidateDto } from '../../services/api';
 
 export const CandidatesView: React.FC = () => {
-  const [candidates, setCandidates] = useState<Candidate[]>(INITIAL_CANDIDATES);
+  const [candidates, setCandidates] = useState<AdminCandidateDto[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<'All' | 'Active' | 'Suspended'>('All');
-  const [activeCandidateModal, setActiveCandidateModal] = useState<Candidate | null>(null);
+  const [activeCandidateModal, setActiveCandidateModal] = useState<AdminCandidateDto | null>(null);
 
-  const toggleCandidateStatus = (id: string) => {
-    setCandidates((prev) =>
-      prev.map((c) =>
-        c.id === id
-          ? { ...c, status: c.status === 'Active' ? 'Suspended' : 'Active' }
-          : c
-      )
-    );
+  const loadCandidates = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await adminApi.getCandidates();
+      setCandidates(data);
+    } catch (err: any) {
+      console.error('Failed to fetch real candidates:', err);
+      setError(err.message || 'Failed to load candidates from server');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCandidates();
+  }, [loadCandidates]);
+
+  const toggleCandidateStatus = async (id: string) => {
+    try {
+      const res = await adminApi.toggleCandidateStatus(id);
+      setCandidates((prev) =>
+        prev.map((c) =>
+          c.id === id ? { ...c, status: res.status as 'Active' | 'Suspended' } : c
+        )
+      );
+      if (activeCandidateModal && activeCandidateModal.id === id) {
+        setActiveCandidateModal((prev) =>
+          prev ? { ...prev, status: res.status as 'Active' | 'Suspended' } : null
+        );
+      }
+    } catch (err) {
+      console.error('Failed to toggle status on server:', err);
+      // Fallback optimistic toggle
+      setCandidates((prev) =>
+        prev.map((c) =>
+          c.id === id
+            ? { ...c, status: c.status === 'Active' ? 'Suspended' : 'Active' }
+            : c
+        )
+      );
+    }
   };
 
   const filteredCandidates = candidates.filter((c) => {
@@ -103,7 +78,8 @@ export const CandidatesView: React.FC = () => {
 
   const totalCandidatesCount = candidates.length;
   const activeCount = candidates.filter((c) => c.status === 'Active').length;
-  const highMatchCount = candidates.filter((c) => c.aiMatchAverage >= 90).length;
+  const highMatchCount = candidates.filter((c) => c.aiMatchAverage >= 85).length;
+  const suspendedCount = candidates.filter((c) => c.status === 'Suspended').length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -134,6 +110,16 @@ export const CandidatesView: React.FC = () => {
               <Sparkles size={14} />
               <span>{selectedStatus === 'Active' ? 'Show All Candidates' : `Verified Talent (${activeCount})`}</span>
             </button>
+            <button
+              type="button"
+              className="pipeline-action-btn"
+              onClick={() => loadCandidates()}
+              disabled={isLoading}
+              title="Refresh candidate data from live database"
+            >
+              <RefreshCw size={13} style={{ animation: isLoading ? 'spin 1s linear infinite' : 'none' }} />
+              <span>{isLoading ? 'Fetching...' : 'Sync DB'}</span>
+            </button>
           </div>
         </div>
 
@@ -142,7 +128,7 @@ export const CandidatesView: React.FC = () => {
             <div className="summary-icon"><Users size={20} /></div>
             <div>
               <span>Total Candidates</span>
-              <strong>1,428</strong>
+              <strong>{isLoading ? '...' : totalCandidatesCount}</strong>
               <small>Registered talent profiles</small>
             </div>
           </article>
@@ -150,7 +136,7 @@ export const CandidatesView: React.FC = () => {
             <div className="summary-icon"><Sparkles size={20} /></div>
             <div>
               <span>AI Verified Talent</span>
-              <strong>1,180</strong>
+              <strong>{isLoading ? '...' : highMatchCount}</strong>
               <small>Passed AI benchmark (&gt;85%)</small>
             </div>
           </article>
@@ -158,7 +144,7 @@ export const CandidatesView: React.FC = () => {
             <div className="summary-icon"><CheckCircle2 size={20} /></div>
             <div>
               <span>Available for Hire</span>
-              <strong>842</strong>
+              <strong>{isLoading ? '...' : activeCount}</strong>
               <small>Open for employer placement</small>
             </div>
           </article>
@@ -166,7 +152,7 @@ export const CandidatesView: React.FC = () => {
             <div className="summary-icon"><ShieldAlert size={20} /></div>
             <div>
               <span>Suspended / Audit</span>
-              <strong>24</strong>
+              <strong>{isLoading ? '...' : suspendedCount}</strong>
               <small>Flagged compliance accounts</small>
             </div>
           </article>
@@ -284,7 +270,39 @@ export const CandidatesView: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredCandidates.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '56px 20px', textAlign: 'center', color: '#64748b' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontWeight: 650, fontSize: 14 }}>
+                      <span className="pipeline-dashboard-live" style={{ padding: 0 }}><span /></span>
+                      Retrieving verified candidate records from database...
+                    </div>
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '48px 20px', textAlign: 'center', color: '#ef4444' }}>
+                    <div style={{ fontWeight: 700, marginBottom: 4 }}>Failed to load live data</div>
+                    <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 12 }}>{error}</div>
+                    <button
+                      type="button"
+                      onClick={() => loadCandidates()}
+                      style={{
+                        padding: '6px 16px',
+                        borderRadius: 8,
+                        background: '#00b074',
+                        color: '#ffffff',
+                        border: 'none',
+                        fontWeight: 700,
+                        fontSize: 12,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Retry Connection
+                    </button>
+                  </td>
+                </tr>
+              ) : filteredCandidates.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: '52px 20px', textAlign: 'center', color: '#94a3b8' }}>
                     No candidates found matching "{searchQuery}"
@@ -318,7 +336,9 @@ export const CandidatesView: React.FC = () => {
                           <div style={{ fontWeight: 750, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
                             <span>{candidate.name}</span>
                             {candidate.status === 'Active' && (
-                              <ShieldCheck size={14} color="#00b074" title="Verified Candidate" />
+                              <span title="Verified Candidate" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                                <ShieldCheck size={14} color="#00b074" />
+                              </span>
                             )}
                           </div>
                           <div style={{ fontSize: 12, color: '#64748b', marginTop: 1 }}>{candidate.role}</div>

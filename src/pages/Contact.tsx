@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { adminApi } from '../services/api'
 import {
   SparkleIcon,
   MailIcon,
@@ -19,6 +20,8 @@ export const Contact = () => {
   const isReadOnly = isCandidate || isCompany
 
   const [formSubmitted, setFormSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -44,9 +47,30 @@ export const Contact = () => {
     ? 'Company Name'
     : 'Your Full Name / Company Name'
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setFormSubmitted(true)
+    setIsSubmitting(true)
+    setSubmitError(null)
+
+    try {
+      const senderType = isCandidate ? 'Candidate' : isCompany ? 'Company' : 'Guest'
+      const organization = isCompany ? (user?.companyName || '') : undefined
+
+      await adminApi.submitInquiry({
+        sender: resolvedName || 'Anonymous',
+        email: resolvedEmail,
+        subject: formData.subject || 'General Inquiry',
+        message: formData.message,
+        senderType,
+        organization,
+      })
+      setFormSubmitted(true)
+    } catch (err: any) {
+      console.error('Failed to dispatch inquiry to backend:', err)
+      setSubmitError(err.message || 'Failed to submit inquiry. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -180,12 +204,19 @@ export const Contact = () => {
                 />
               </div>
 
+              {submitError && (
+                <div style={{ color: '#ef4444', fontSize: '13px', fontWeight: 600, marginBottom: '14px', textAlign: 'center' }}>
+                  {submitError}
+                </div>
+              )}
+
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="btn-primary"
-                style={{ width: '100%', padding: '14px', borderRadius: '12px' }}
+                style={{ width: '100%', padding: '14px', borderRadius: '12px', opacity: isSubmitting ? 0.75 : 1, cursor: isSubmitting ? 'not-allowed' : 'pointer' }}
               >
-                <span>Send Message</span>
+                <span>{isSubmitting ? 'Dispatching Message...' : 'Send Message'}</span>
                 <SendIcon />
               </button>
 

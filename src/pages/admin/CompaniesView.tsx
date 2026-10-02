@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Building2,
   Search,
@@ -6,141 +6,64 @@ import {
   Eye,
   TrendingUp,
   Clock,
-  ShieldCheck,
-  CheckCircle2,
   Sparkles,
-  Layers,
-  ArrowUpRight,
-  Filter,
   ExternalLink,
-  Check,
   AlertCircle,
 } from 'lucide-react';
 import '../../pages/TechnicalAssessmentsFull.css';
 import '../../pages/admin/AdminDashboard.css';
-
-interface Company {
-  id: string;
-  name: string;
-  logo: string;
-  industry: string;
-  contactEmail: string;
-  website: string;
-  activeJobPosts: number;
-  totalHires: number;
-  status: 'Active' | 'Pending';
-  tier: 'Enterprise' | 'Startup' | 'ScaleUp';
-  location: string;
-  joinedDate: string;
-}
-
-const INITIAL_COMPANIES: Company[] = [
-  {
-    id: 'comp-101',
-    name: 'Stripe Technologies Inc.',
-    logo: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80',
-    industry: 'FinTech & Payments Infrastructure',
-    contactEmail: 'talent-recruiting@stripe.com',
-    website: 'https://stripe.com',
-    activeJobPosts: 14,
-    totalHires: 42,
-    status: 'Active',
-    tier: 'Enterprise',
-    location: 'San Francisco, CA',
-    joinedDate: 'Jan 2025',
-  },
-  {
-    id: 'comp-102',
-    name: 'Anthropic Compute Labs',
-    logo: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=120&auto=format&fit=crop&q=80',
-    industry: 'Artificial Intelligence & Safety Research',
-    contactEmail: 'careers@anthropic.com',
-    website: 'https://anthropic.com',
-    activeJobPosts: 8,
-    totalHires: 19,
-    status: 'Active',
-    tier: 'Enterprise',
-    location: 'San Francisco, CA',
-    joinedDate: 'Mar 2025',
-  },
-  {
-    id: 'comp-103',
-    name: 'Linear Systems Inc.',
-    logo: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=120&auto=format&fit=crop&q=80',
-    industry: 'Engineering DevTools & Productivity',
-    contactEmail: 'hiring@linear.app',
-    website: 'https://linear.app',
-    activeJobPosts: 5,
-    totalHires: 12,
-    status: 'Active',
-    tier: 'ScaleUp',
-    location: 'New York, NY',
-    joinedDate: 'Jun 2025',
-  },
-  {
-    id: 'comp-104',
-    name: 'Databricks Cloud Analytics',
-    logo: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=120&auto=format&fit=crop&q=80',
-    industry: 'Data Engineering & Lakehouse',
-    contactEmail: 'talent-ops@databricks.com',
-    website: 'https://databricks.com',
-    activeJobPosts: 18,
-    totalHires: 64,
-    status: 'Active',
-    tier: 'Enterprise',
-    location: 'San Francisco, CA',
-    joinedDate: 'Nov 2024',
-  },
-  {
-    id: 'comp-105',
-    name: 'Vercel Platform Inc.',
-    logo: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=120&auto=format&fit=crop&q=80',
-    industry: 'Frontend Cloud & Edge Infrastructure',
-    contactEmail: 'recruiting@vercel.com',
-    website: 'https://vercel.com',
-    activeJobPosts: 9,
-    totalHires: 28,
-    status: 'Active',
-    tier: 'ScaleUp',
-    location: 'Remote / Global',
-    joinedDate: 'Feb 2025',
-  },
-  {
-    id: 'comp-106',
-    name: 'Nexus Quantum Software',
-    logo: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=120&auto=format&fit=crop&q=80',
-    industry: 'Quantum Simulation & Cloud Services',
-    contactEmail: 'hr-compliance@nexusquantum.io',
-    website: 'https://nexusquantum.io',
-    activeJobPosts: 2,
-    totalHires: 3,
-    status: 'Pending',
-    tier: 'Startup',
-    location: 'Austin, TX',
-    joinedDate: 'Sep 2026',
-  },
-];
+import { adminApi, type AdminCompanyDto } from '../../services/api';
 
 export const CompaniesView: React.FC = () => {
-  const [companies, setCompanies] = useState<Company[]>(INITIAL_COMPANIES);
+  const [companies, setCompanies] = useState<AdminCompanyDto[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<'All' | 'Active' | 'Pending'>('All');
   const [selectedTier, setSelectedTier] = useState<string>('All');
-  const [selectedCompanyModal, setSelectedCompanyModal] = useState<Company | null>(null);
+  const [selectedCompanyModal, setSelectedCompanyModal] = useState<AdminCompanyDto | null>(null);
 
-  const toggleCompanyStatus = (id: string) => {
-    setCompanies((prev) =>
-      prev.map((c) =>
-        c.id === id
-          ? { ...c, status: c.status === 'Active' ? 'Pending' : 'Active' }
-          : c
-      )
-    );
-    if (selectedCompanyModal && selectedCompanyModal.id === id) {
-      setSelectedCompanyModal((prev) =>
-        prev
-          ? { ...prev, status: prev.status === 'Active' ? 'Pending' : 'Active' }
-          : null
+  useEffect(() => {
+    const loadCompanies = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await adminApi.getCompanies();
+        setCompanies(data);
+      } catch (err: any) {
+        console.error('Failed to fetch real companies:', err);
+        setError(err.message || 'Failed to load companies from server');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadCompanies();
+  }, []);
+
+  const toggleCompanyStatus = async (id: string) => {
+    try {
+      const res = await adminApi.toggleCompanyStatus(id);
+      setCompanies((prev) =>
+        prev.map((c) =>
+          c.id === id ? { ...c, status: res.status as 'Active' | 'Pending' } : c
+        )
+      );
+      if (selectedCompanyModal && selectedCompanyModal.id === id) {
+        setSelectedCompanyModal((prev) =>
+          prev
+            ? { ...prev, status: res.status as 'Active' | 'Pending' }
+            : null
+        );
+      }
+    } catch (err) {
+      console.error('Failed to toggle company status on server:', err);
+      // Fallback optimistic
+      setCompanies((prev) =>
+        prev.map((c) =>
+          c.id === id
+            ? { ...c, status: c.status === 'Active' ? 'Pending' : 'Active' }
+            : c
+        )
       );
     }
   };
@@ -159,6 +82,7 @@ export const CompaniesView: React.FC = () => {
   const totalActiveJobs = companies.reduce((sum, c) => sum + c.activeJobPosts, 0);
   const totalHiresCount = companies.reduce((sum, c) => sum + c.totalHires, 0);
   const pendingCount = companies.filter((c) => c.status === 'Pending').length;
+  const activeCount = companies.filter((c) => c.status === 'Active').length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -187,7 +111,7 @@ export const CompaniesView: React.FC = () => {
               title={selectedStatus === 'Active' ? 'Show all organizations' : 'Filter to active verified organizations'}
             >
               <Sparkles size={14} />
-              <span>{selectedStatus === 'Active' ? 'Show All Companies' : `Verified Employers (${companies.filter((c) => c.status === 'Active').length})`}</span>
+              <span>{selectedStatus === 'Active' ? 'Show All Companies' : `Verified Employers (${activeCount})`}</span>
             </button>
           </div>
         </div>
@@ -197,7 +121,7 @@ export const CompaniesView: React.FC = () => {
             <div className="summary-icon"><Building2 size={20} /></div>
             <div>
               <span>Registered Companies</span>
-              <strong>38</strong>
+              <strong>{isLoading ? '...' : companies.length}</strong>
               <small>Verified employer accounts</small>
             </div>
           </article>
@@ -205,7 +129,7 @@ export const CompaniesView: React.FC = () => {
             <div className="summary-icon"><Briefcase size={20} /></div>
             <div>
               <span>Active Job Posts</span>
-              <strong>{totalActiveJobs}</strong>
+              <strong>{isLoading ? '...' : totalActiveJobs}</strong>
               <small>Published hiring campaigns</small>
             </div>
           </article>
@@ -213,7 +137,7 @@ export const CompaniesView: React.FC = () => {
             <div className="summary-icon"><TrendingUp size={20} /></div>
             <div>
               <span>Talent Placements</span>
-              <strong>{totalHiresCount}</strong>
+              <strong>{isLoading ? '...' : totalHiresCount}</strong>
               <small>Placed via ATS match engine</small>
             </div>
           </article>
@@ -221,7 +145,7 @@ export const CompaniesView: React.FC = () => {
             <div className="summary-icon"><Clock size={20} /></div>
             <div>
               <span>Pending Approvals</span>
-              <strong>{pendingCount}</strong>
+              <strong>{isLoading ? '...' : pendingCount}</strong>
               <small>Awaiting compliance review</small>
             </div>
           </article>
@@ -365,7 +289,23 @@ export const CompaniesView: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredCompanies.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '56px 20px', textAlign: 'center', color: '#64748b' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontWeight: 650, fontSize: 14 }}>
+                      <span className="pipeline-dashboard-live" style={{ padding: 0 }}><span /></span>
+                      Retrieving verified employer directories from database...
+                    </div>
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '48px 20px', textAlign: 'center', color: '#ef4444' }}>
+                    <div style={{ fontWeight: 700, marginBottom: 4 }}>Failed to load live data</div>
+                    <div style={{ fontSize: 13, color: '#94a3b8' }}>{error}</div>
+                  </td>
+                </tr>
+              ) : filteredCompanies.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: '52px 20px', textAlign: 'center', color: '#94a3b8' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>

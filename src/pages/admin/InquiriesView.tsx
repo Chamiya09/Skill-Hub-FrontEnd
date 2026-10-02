@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Inbox,
   Search,
@@ -7,131 +7,67 @@ import {
   User,
   Check,
   RotateCcw,
-  Mail,
   Clock,
   CheckCircle2,
   Sparkles,
   AlertCircle,
-  ExternalLink,
-  MessageSquare,
   HelpCircle,
-  ShieldCheck,
   Send,
-  Briefcase,
 } from 'lucide-react';
 import '../../pages/TechnicalAssessmentsFull.css';
 import '../../pages/admin/AdminDashboard.css';
-
-interface Inquiry {
-  id: string;
-  sender: string;
-  senderType: 'Candidate' | 'Company' | 'Guest';
-  organization?: string;
-  email: string;
-  subject: string;
-  message: string;
-  date: string;
-  status: 'New' | 'Resolved';
-  priority: 'High' | 'Normal';
-}
-
-const INITIAL_INQUIRIES: Inquiry[] = [
-  {
-    id: 'inq-801',
-    sender: 'Elena Vance',
-    organization: 'CloudScale Systems Inc.',
-    senderType: 'Company',
-    email: 'elena.vance@cloudscale.io',
-    subject: 'Enterprise Talent Match API & ATS Integration Walkthrough',
-    message:
-      'We are scaling our core infrastructure engineering organization and would like to integrate our Greenhouse ATS with Skill Hub’s AI Match Engine API. Could you share your OpenAPI schemas, enterprise pricing tiers, and schedule an architecture walkthrough this week?',
-    date: 'Oct 02, 2026',
-    status: 'New',
-    priority: 'High',
-  },
-  {
-    id: 'inq-802',
-    sender: 'David Miller',
-    senderType: 'Candidate',
-    email: 'david.miller@gmail.com',
-    subject: 'Question regarding profile AI verification badge timeline',
-    message:
-      'Hello team, my Python Data Structures and Distributed Systems technical assessments were completed yesterday afternoon with an overall 94% score. How long does the verified talent badge typically take to populate on my public candidate profile for employers to view?',
-    date: 'Oct 01, 2026',
-    status: 'Resolved',
-    priority: 'Normal',
-  },
-  {
-    id: 'inq-803',
-    sender: 'Apex Autonomous Robotics',
-    organization: 'Apex Robotics Labs',
-    senderType: 'Company',
-    email: 'talent@apexrobotics.ai',
-    subject: 'Expedited Access to Top 5% Machine Learning Engineers',
-    message:
-      'We require expedited access to thoroughly benchmarked ML engineers specializing in ROS2, CUDA optimization, and Computer Vision. We are looking to fill 5 senior positions immediately and would like to review pre-assessed candidates on your leaderboard.',
-    date: 'Sep 30, 2026',
-    status: 'New',
-    priority: 'High',
-  },
-  {
-    id: 'inq-804',
-    sender: 'Dr. Sarah Jenkins',
-    organization: 'Global Tech Academy',
-    senderType: 'Guest',
-    email: 'sarah.jenkins@consultant.org',
-    subject: 'Partnership Inquiry for University & Bootcamp Graduates',
-    message:
-      'Reaching out on behalf of our tech fellowship to explore whether our graduating cohort of 120 software engineers can participate in Skill Hub’s standardized skill assessments to facilitate direct talent placements with hiring partners.',
-    date: 'Sep 28, 2026',
-    status: 'Resolved',
-    priority: 'Normal',
-  },
-  {
-    id: 'inq-805',
-    sender: 'Kavitha Patel',
-    senderType: 'Candidate',
-    email: 'kavitha.patel@devcloud.tech',
-    subject: 'Requesting Code Review Re-evaluation for Assessment #T-882',
-    message:
-      'I completed the React State Machine challenge. One test case failed due to an edge case timeout in the virtual browser runner, though the solution was O(n). Could an administrator or evaluator take a secondary look at my submission logs?',
-    date: 'Sep 27, 2026',
-    status: 'New',
-    priority: 'Normal',
-  },
-  {
-    id: 'inq-806',
-    sender: 'Marcus Aurelius Vance',
-    organization: 'Vance Capital & Ventures',
-    senderType: 'Company',
-    email: 'marcus@vancecap.vc',
-    subject: 'Custom Technical Assessment Suite for Portfolio Companies',
-    message:
-      'We are interested in licensing Skill Hub across 14 of our seed and Series-A portfolio startups to standardize engineering screening. Inquiring about a unified portfolio dashboard and volume billing.',
-    date: 'Sep 25, 2026',
-    status: 'Resolved',
-    priority: 'High',
-  },
-];
+import { adminApi, type AdminInquiryDto } from '../../services/api';
 
 export const InquiriesView: React.FC = () => {
-  const [inquiries, setInquiries] = useState<Inquiry[]>(INITIAL_INQUIRIES);
+  const [inquiries, setInquiries] = useState<AdminInquiryDto[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<'All' | 'New' | 'Resolved'>('All');
   const [selectedSenderType, setSelectedSenderType] = useState<string>('All');
-  const [activeMessageModal, setActiveMessageModal] = useState<Inquiry | null>(null);
+  const [activeMessageModal, setActiveMessageModal] = useState<AdminInquiryDto | null>(null);
 
-  const toggleResolved = (id: string) => {
-    setInquiries((prev) =>
-      prev.map((inq) =>
-        inq.id === id
-          ? { ...inq, status: inq.status === 'New' ? 'Resolved' : 'New' }
-          : inq
-      )
-    );
-    if (activeMessageModal && activeMessageModal.id === id) {
-      setActiveMessageModal((prev) =>
-        prev ? { ...prev, status: prev.status === 'New' ? 'Resolved' : 'New' } : null
+  useEffect(() => {
+    const loadInquiries = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await adminApi.getInquiries();
+        setInquiries(data);
+      } catch (err: any) {
+        console.error('Failed to fetch real inquiries:', err);
+        setError(err.message || 'Failed to load inquiries from server');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadInquiries();
+  }, []);
+
+  const toggleResolved = async (id: string) => {
+    try {
+      const res = await adminApi.toggleInquiryStatus(id);
+      setInquiries((prev) =>
+        prev.map((inq) =>
+          inq.id === id
+            ? { ...inq, status: res.status as 'New' | 'Resolved' }
+            : inq
+        )
+      );
+      if (activeMessageModal && activeMessageModal.id === id) {
+        setActiveMessageModal((prev) =>
+          prev ? { ...prev, status: res.status as 'New' | 'Resolved' } : null
+        );
+      }
+    } catch (err) {
+      console.error('Failed to toggle inquiry status on server:', err);
+      // Fallback optimistic
+      setInquiries((prev) =>
+        prev.map((inq) =>
+          inq.id === id
+            ? { ...inq, status: inq.status === 'New' ? 'Resolved' : 'New' }
+            : inq
+        )
       );
     }
   };
@@ -190,7 +126,7 @@ export const InquiriesView: React.FC = () => {
             <div className="summary-icon"><Inbox size={20} /></div>
             <div>
               <span>Total Inquiries</span>
-              <strong>{totalInquiriesCount}</strong>
+              <strong>{isLoading ? '...' : totalInquiriesCount}</strong>
               <small>Universal contact submissions</small>
             </div>
           </article>
@@ -198,7 +134,7 @@ export const InquiriesView: React.FC = () => {
             <div className="summary-icon"><Clock size={20} /></div>
             <div>
               <span>Pending Review</span>
-              <strong>{newInquiriesCount}</strong>
+              <strong>{isLoading ? '...' : newInquiriesCount}</strong>
               <small>Awaiting admin response</small>
             </div>
           </article>
@@ -206,7 +142,7 @@ export const InquiriesView: React.FC = () => {
             <div className="summary-icon"><Building2 size={20} /></div>
             <div>
               <span>Enterprise Requests</span>
-              <strong>{companyInquiriesCount}</strong>
+              <strong>{isLoading ? '...' : companyInquiriesCount}</strong>
               <small>Corporate &amp; API inquiries</small>
             </div>
           </article>
@@ -214,7 +150,7 @@ export const InquiriesView: React.FC = () => {
             <div className="summary-icon"><CheckCircle2 size={20} /></div>
             <div>
               <span>Resolved Tickets</span>
-              <strong>{resolvedInquiriesCount}</strong>
+              <strong>{isLoading ? '...' : resolvedInquiriesCount}</strong>
               <small>Successfully handled cases</small>
             </div>
           </article>
@@ -358,7 +294,23 @@ export const InquiriesView: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredInquiries.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '56px 20px', textAlign: 'center', color: '#64748b' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontWeight: 650, fontSize: 14 }}>
+                      <span className="pipeline-dashboard-live" style={{ padding: 0 }}><span /></span>
+                      Retrieving customer inquiries & enterprise correspondence...
+                    </div>
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '48px 20px', textAlign: 'center', color: '#ef4444' }}>
+                    <div style={{ fontWeight: 700, marginBottom: 4 }}>Failed to load live inquiries</div>
+                    <div style={{ fontSize: 13, color: '#94a3b8' }}>{error}</div>
+                  </td>
+                </tr>
+              ) : filteredInquiries.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: '52px 20px', textAlign: 'center', color: '#94a3b8' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>

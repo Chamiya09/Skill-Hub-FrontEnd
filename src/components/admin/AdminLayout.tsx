@@ -29,25 +29,29 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
+  interface NavItem {
+    id: AdminTab;
+    label: string;
+    icon: React.ComponentType<{ size?: number; className?: string }>;
+    badge?: string;
+  }
+
   // 3 navigation menu items
-  const navItems = [
+  const navItems: NavItem[] = [
     {
-      id: 'candidates' as AdminTab,
+      id: 'candidates',
       label: 'Candidates',
       icon: Users,
-      badge: '4 New',
     },
     {
-      id: 'companies' as AdminTab,
+      id: 'companies',
       label: 'Companies',
       icon: Building2,
-      badge: '3 Active',
     },
     {
-      id: 'inquiries' as AdminTab,
+      id: 'inquiries',
       label: 'Inquiries',
       icon: Inbox,
-      badge: '2 Pending',
     },
   ];
 

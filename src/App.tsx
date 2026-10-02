@@ -4,6 +4,7 @@ import { Header } from "./components/common/Header";
 import { Footer } from "./components/common/Footer";
 import { ProtectedRoute } from "./components/common/ProtectedRoute";
 import { PublicRoute } from "./components/common/PublicRoute";
+import { SuspendedAccountModal } from "./components/common/SuspendedAccountModal";
 import { CandidateLayout } from "./components/layout/CandidateLayout";
 import { Home } from "./pages/Home";
 import { About } from "./pages/About";
@@ -74,6 +75,9 @@ function AppContent() {
 
   return (
     <div className={`page-container ${isDashboardOrAuth ? "dashboard-view-mode auth-full-screen" : ""}`}>
+      {/* Universal Non-Dismissible Account Suspension Modal */}
+      <SuspendedAccountModal />
+
       <div className={`content-wrapper ${isDashboardOrAuth ? "dashboard-wrapper-full auth-wrapper-full" : ""}`}>
         {!isDashboardOrAuth && <Header />}
         <main className={`main-content ${isDashboardOrAuth ? "dashboard-main-full auth-main-full" : ""}`}>

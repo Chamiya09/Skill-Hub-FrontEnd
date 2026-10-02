@@ -29,6 +29,7 @@ export interface UserDto {
   twitterUrl?: string;
   githubUrl?: string;
   updatedAt?: string;
+  isSuspended?: boolean;
 }
 
 export interface AuthResponseDto {
@@ -70,11 +71,22 @@ export interface LoginPayload {
 // AUTH & TOKEN LOCAL STORAGE UTILITIES
 // ==========================================
 export const authStorage = {
+  isAdminPortal(): boolean {
+    return typeof window !== 'undefined' && window.location.pathname.startsWith('/skillhub-secure-admin');
+  },
   getToken(): string | null {
+    if (this.isAdminPortal()) {
+      return localStorage.getItem('skillhub_admin_token') || localStorage.getItem('skillhub_jwt_token');
+    }
     return localStorage.getItem('skillhub_jwt_token') || localStorage.getItem('skillhub_admin_token');
   },
   getUser(): UserDto | null {
-    const raw = localStorage.getItem('skillhub_user') || localStorage.getItem('skillhub_admin_user');
+    let raw: string | null = null;
+    if (this.isAdminPortal()) {
+      raw = localStorage.getItem('skillhub_admin_user') || localStorage.getItem('skillhub_user');
+    } else {
+      raw = localStorage.getItem('skillhub_user') || localStorage.getItem('skillhub_admin_user');
+    }
     if (!raw) return null;
     try {
       return JSON.parse(raw);
@@ -83,30 +95,80 @@ export const authStorage = {
     }
   },
   setAuth(data: AuthResponseDto): void {
-    localStorage.setItem('skillhub_jwt_token', data.token);
-    localStorage.setItem('skillhub_user', JSON.stringify(data.user));
-    if (data.user?.role?.toLowerCase() === 'admin') {
+    const role = (data.user?.role || '').toLowerCase();
+    const isAdmin = role === 'admin' || role === 'super_admin';
+    if (isAdmin) {
       localStorage.setItem('skillhub_admin_token', data.token);
       localStorage.setItem('skillhub_admin_user', JSON.stringify(data.user));
+    } else {
+      localStorage.setItem('skillhub_jwt_token', data.token);
+      localStorage.setItem('skillhub_user', JSON.stringify(data.user));
     }
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('skillhub_auth_change', { detail: data.user }));
     }
   },
   setUser(user: UserDto): void {
-    localStorage.setItem('skillhub_user', JSON.stringify(user));
-    if (user?.role?.toLowerCase() === 'admin') {
+    const role = (user?.role || '').toLowerCase();
+    const isAdmin = role === 'admin' || role === 'super_admin';
+    if (isAdmin) {
       localStorage.setItem('skillhub_admin_user', JSON.stringify(user));
+    } else {
+      localStorage.setItem('skillhub_user', JSON.stringify(user));
     }
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('skillhub_auth_change', { detail: user }));
     }
   },
+  syncAccountSuspension(id: string, email?: string, isSuspended: boolean = true): void {
+    const raw = localStorage.getItem('skillhub_user');
+    if (raw) {
+      try {
+        const u = JSON.parse(raw);
+        const matchesId = u.id === id || (u as any).companyId === id;
+        const matchesEmail = email && (
+          (u.email && u.email.toLowerCase() === email.toLowerCase()) ||
+          (u.contactEmail && u.contactEmail.toLowerCase() === email.toLowerCase())
+        );
+        if (matchesId || matchesEmail) {
+          u.isSuspended = isSuspended;
+          localStorage.setItem('skillhub_user', JSON.stringify(u));
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    const payload = { id, email, isSuspended, timestamp: Date.now() };
+    try {
+      localStorage.setItem('skillhub_suspension_broadcast', JSON.stringify(payload));
+    } catch {
+      // ignore
+    }
+
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        const bc = new BroadcastChannel('skillhub_account_channel');
+        bc.postMessage({ type: 'ACCOUNT_SUSPENDED_TOGGLE', ...payload });
+        setTimeout(() => bc.close(), 200);
+      } catch {
+        // ignore
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('skillhub_account_suspended_change', { detail: payload }));
+      window.dispatchEvent(new CustomEvent('skillhub_auth_change'));
+    }
+  },
   clearAuth(): void {
-    localStorage.removeItem('skillhub_jwt_token');
-    localStorage.removeItem('skillhub_user');
-    localStorage.removeItem('skillhub_admin_token');
-    localStorage.removeItem('skillhub_admin_user');
+    if (this.isAdminPortal()) {
+      localStorage.removeItem('skillhub_admin_token');
+      localStorage.removeItem('skillhub_admin_user');
+    } else {
+      localStorage.removeItem('skillhub_jwt_token');
+      localStorage.removeItem('skillhub_user');
+    }
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('skillhub_auth_change', { detail: null }));
     }
@@ -157,6 +219,7 @@ async function request<T>(
 
     if (!response.ok) {
       let errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
+      let isSuspendedFlag = false;
       try {
         const errorData = await response.json();
         console.error('Server Error Data:', errorData);
@@ -165,9 +228,32 @@ async function request<T>(
         } else if (errorData && errorData.errors) {
           errorMessage = Object.values(errorData.errors).flat().join(' ');
         }
+        if (errorData && (errorData.isSuspended || errorData.code === 'ACCOUNT_SUSPENDED')) {
+          isSuspendedFlag = true;
+        }
       } catch {
         // Fallback to text status
       }
+
+      // If forbidden due to suspension, immediately trigger client suspension modal
+      if (response.status === 403 && (isSuspendedFlag || errorMessage.toLowerCase().includes('suspend'))) {
+        const raw = localStorage.getItem('skillhub_user');
+        if (raw) {
+          try {
+            const u = JSON.parse(raw);
+            if (u && !u.isSuspended) {
+              u.isSuspended = true;
+              localStorage.setItem('skillhub_user', JSON.stringify(u));
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('skillhub_auth_change', { detail: u }));
+              }
+            }
+          } catch {
+            // ignore
+          }
+        }
+      }
+
       throw new Error(errorMessage);
     }
 
@@ -176,7 +262,28 @@ async function request<T>(
       return null as T;
     }
 
-    return response.json();
+    const data = await response.json();
+
+    // Check if response contains user profile with isSuspended status
+    if (data && typeof data === 'object' && (data as any).isSuspended === true) {
+      const raw = localStorage.getItem('skillhub_user');
+      if (raw) {
+        try {
+          const u = JSON.parse(raw);
+          if (u && !u.isSuspended) {
+            u.isSuspended = true;
+            localStorage.setItem('skillhub_user', JSON.stringify(u));
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('skillhub_auth_change', { detail: u }));
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    return data as T;
   } catch (error: unknown) {
     if (didTimeout && error instanceof DOMException && error.name === 'AbortError') {
       throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)} seconds.`, { cause: error });
@@ -2472,7 +2579,7 @@ export interface AdminCompanyDto {
   website: string;
   activeJobPosts: number;
   totalHires: number;
-  status: 'Active' | 'Pending';
+  status: 'Active' | 'Suspended' | 'Pending';
   tier: 'Enterprise' | 'Startup' | 'ScaleUp';
   location: string;
   joinedDate: string;
@@ -2487,7 +2594,7 @@ export interface AdminInquiryDto {
   subject: string;
   message: string;
   date: string;
-  status: 'New' | 'Resolved';
+  status: 'New' | 'Read' | 'Resolved';
   priority: 'High' | 'Normal';
 }
 
@@ -2623,6 +2730,16 @@ export const adminApi = {
     return await request<{ message: string }>('/admin/change-password', {
       method: 'PUT',
       body: JSON.stringify(payload),
+    });
+  },
+
+  /**
+   * Toggles the IsSuspended boolean flag for a Candidate or Company in the database.
+   * Calls: PUT /api/admin/users/{userId}/toggle-suspend
+   */
+  async toggleUserSuspend(userId: string): Promise<{ id: string; isSuspended: boolean; status: string; message: string }> {
+    return await request<{ id: string; isSuspended: boolean; status: string; message: string }>(`/admin/users/${userId}/toggle-suspend`, {
+      method: 'PUT',
     });
   },
 };

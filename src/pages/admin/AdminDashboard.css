@@ -2026,3 +2026,141 @@
   color: #0f172a;
 }
 
+/* ==========================================================================
+   5. COMPANY-SIDE UI THEME & TYPOGRAPHY HARMONIZATION
+   Aligns Admin Side Fonts, Colors, Cards, Tables, Badges & Buttons with Company Side
+   ========================================================================== */
+
+/* Universal typography for Admin Side matching Company Side */
+.dashboard-container,
+.dashboard-main-area,
+.dashboard-topbar,
+.dashboard-sidebar,
+.admin-login-viewport,
+.pipeline-dashboard-card,
+.admin-company-search-box,
+.pipeline-summary-grid,
+.pipeline-summary-card,
+.admin-modal-card {
+  font-family: var(--font-family, 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif) !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Company Side Tab Bar & Buttons */
+.unified-tab-bar {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px;
+  background: #f1f5f9;
+  border-radius: 9999px;
+  border: 1px solid #e2e8f0;
+  gap: 4px;
+}
+
+.unified-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.unified-tab-btn:hover {
+  color: #0f172a;
+}
+
+.unified-tab-btn.active {
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 800;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+/* Company-Side Badges & Status Pills */
+.badge-active-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 750;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+
+.badge-suspended-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 750;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+}
+
+/* Company-Side Table Container */
+.company-table-card {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #dce7e2;
+  border-radius: 18px;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.035);
+  overflow: hidden;
+}
+
+.company-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13.5px;
+}
+
+.company-table thead tr {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.company-table th {
+  padding: 14px 24px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.company-table td {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s ease;
+}
+
+.company-table tbody tr:hover {
+  background: #fcfdfd;
+}
+
+.company-table-footer {
+  padding: 12px 24px;
+  background: #f8fafc;
+  border-top: 1px solid #edf2f7;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+

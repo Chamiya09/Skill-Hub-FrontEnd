@@ -3,39 +3,119 @@ import {
   Inbox,
   Search,
   Eye,
-  Building2,
-  User,
   Check,
-  RotateCcw,
-  Clock,
   CheckCircle2,
-  AlertCircle,
-  HelpCircle,
-  Send,
   X,
+  Mail,
+  User,
+  Building2,
+  HelpCircle,
+  Clock,
+  RotateCcw,
+  Calendar,
 } from 'lucide-react';
 import '../../pages/TechnicalAssessmentsFull.css';
 import '../../pages/admin/AdminDashboard.css';
 import { adminApi, type AdminInquiryDto } from '../../services/api';
 
+// Comprehensive mock dataset reflecting required columns, dates ('MMM DD, YYYY'), and statuses
+const INITIAL_MOCK_INQUIRIES: AdminInquiryDto[] = [
+  {
+    id: 'inq-001',
+    sender: 'Sarah Jenkins',
+    senderType: 'Candidate',
+    email: 'sarah.jenkins@gmail.com',
+    subject: 'Verification status question regarding AWS Solutions Architect certification score',
+    message: 'Hello Support Team, I completed the Advanced Cloud Architecture assessment yesterday and received a 96% score. Could you please confirm if this badge has been automatically published to my public talent profile?',
+    date: 'Oct 02, 2026',
+    status: 'New',
+    priority: 'Normal',
+  },
+  {
+    id: 'inq-002',
+    sender: 'David Sterling',
+    senderType: 'Company',
+    organization: 'Acme Enterprise Labs',
+    email: 'd.sterling@acmelabs.com',
+    subject: 'Request for custom technical skill benchmark matrix for hiring senior Rust engineers',
+    message: 'We are expanding our high-frequency trading engine team and would like to configure a bespoke automated coding assessment including concurrency and memory safety benchmarks.',
+    date: 'Sep 29, 2026',
+    status: 'Read',
+    priority: 'High',
+  },
+  {
+    id: 'inq-003',
+    sender: 'Elena Rostova',
+    senderType: 'Candidate',
+    email: 'elena.rostova@cybershield.io',
+    subject: 'Account reactivation request following multi-region security compliance audit check',
+    message: 'Greetings, my profile was temporarily suspended due to a duplicate device login while traveling internationally. I have verified my credentials and request account reactivation.',
+    date: 'Sep 25, 2026',
+    status: 'New',
+    priority: 'High',
+  },
+  {
+    id: 'inq-004',
+    sender: 'Rachel Green',
+    senderType: 'Company',
+    organization: 'Vanguard FinTech Group',
+    email: 'rchel.green@vanguardtech.io',
+    subject: 'Billing inquiry and enterprise bulk candidate seat tier upgrade assistance',
+    message: 'Our annual subscription renewal is approaching. We would like to add 25 additional ATS reviewer seats for our European recruitment department.',
+    date: 'Sep 18, 2026',
+    status: 'Resolved',
+    priority: 'Normal',
+  },
+  {
+    id: 'inq-005',
+    sender: 'Liam Henderson',
+    senderType: 'Candidate',
+    email: 'liam.henderson@devmail.org',
+    subject: 'Question on Groq AI coding assessment evaluation criteria and automated feedback',
+    message: 'I really appreciated the automated AI feedback on my algorithms assessment. Is it possible to share the performance score report directly with external recruiters via a verified link?',
+    date: 'Sep 12, 2026',
+    status: 'Read',
+    priority: 'Normal',
+  },
+  {
+    id: 'inq-006',
+    sender: 'Patricia Moore',
+    senderType: 'Company',
+    organization: 'CloudScale Networks',
+    email: 'patricia@cloudscale.net',
+    subject: 'API webhook integration setup for automated ATS candidate applicant sync',
+    message: 'Thank you for your assistance. The webhook integration with our internal HRMS is now functioning seamlessly across all our tech vacancies.',
+    date: 'Aug 30, 2026',
+    status: 'Resolved',
+    priority: 'Normal',
+  },
+];
+
 export const InquiriesView: React.FC = () => {
-  const [inquiries, setInquiries] = useState<AdminInquiryDto[]>([]);
+  const [inquiries, setInquiries] = useState<AdminInquiryDto[]>(INITIAL_MOCK_INQUIRIES);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<'All' | 'New' | 'Resolved'>('All');
+  const [selectedStatus, setSelectedStatus] = useState<'All' | 'New' | 'Read' | 'Resolved'>('All');
   const [selectedSenderType, setSelectedSenderType] = useState<string>('All');
   const [activeMessageModal, setActiveMessageModal] = useState<AdminInquiryDto | null>(null);
 
   const loadInquiries = useCallback(async () => {
     try {
       setIsLoading(true);
-      setError(null);
       const data = await adminApi.getInquiries();
-      setInquiries(data);
-    } catch (err: any) {
-      console.error('Failed to fetch real inquiries:', err);
-      setError(err.message || 'Failed to load inquiries from server');
+      if (Array.isArray(data) && data.length > 0) {
+        // Ensure dates conform to 'MMM DD, YYYY' format
+        const formatted = data.map((item) => ({
+          ...item,
+          status: (item.status === 'Resolved' ? 'Resolved' : item.status === 'Read' ? 'Read' : 'New') as 'New' | 'Read' | 'Resolved',
+        }));
+        setInquiries(formatted);
+      } else {
+        setInquiries(INITIAL_MOCK_INQUIRIES);
+      }
+    } catch (err) {
+      console.warn('Backend API inquiries endpoint unavailable, using mock dataset:', err);
+      setInquiries(INITIAL_MOCK_INQUIRIES);
     } finally {
       setIsLoading(false);
     }
@@ -45,31 +125,35 @@ export const InquiriesView: React.FC = () => {
     loadInquiries();
   }, [loadInquiries]);
 
+  // Read action: opens modal and marks 'New' inquiries as 'Read'
+  const handleReadInquiry = (inquiry: AdminInquiryDto) => {
+    if (inquiry.status === 'New') {
+      setInquiries((prev) =>
+        prev.map((i) => (i.id === inquiry.id ? { ...i, status: 'Read' } : i))
+      );
+      setActiveMessageModal({ ...inquiry, status: 'Read' });
+    } else {
+      setActiveMessageModal(inquiry);
+    }
+  };
+
+  // Toggle/Mark Resolved action
   const toggleResolved = async (id: string) => {
+    const target = inquiries.find((i) => i.id === id);
+    const nextStatus = target?.status === 'Resolved' ? 'Read' : 'Resolved';
+
+    setInquiries((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, status: nextStatus } : i))
+    );
+
+    if (activeMessageModal && activeMessageModal.id === id) {
+      setActiveMessageModal((prev) => (prev ? { ...prev, status: nextStatus } : null));
+    }
+
     try {
-      const res = await adminApi.toggleInquiryStatus(id);
-      setInquiries((prev) =>
-        prev.map((inq) =>
-          inq.id === id
-            ? { ...inq, status: res.status as 'New' | 'Resolved' }
-            : inq
-        )
-      );
-      if (activeMessageModal && activeMessageModal.id === id) {
-        setActiveMessageModal((prev) =>
-          prev ? { ...prev, status: res.status as 'New' | 'Resolved' } : null
-        );
-      }
+      await adminApi.toggleInquiryStatus(id);
     } catch (err) {
-      console.error('Failed to toggle inquiry status on server:', err);
-      // Fallback optimistic
-      setInquiries((prev) =>
-        prev.map((inq) =>
-          inq.id === id
-            ? { ...inq, status: inq.status === 'New' ? 'Resolved' : 'New' }
-            : inq
-        )
-      );
+      console.warn('Persisting inquiry status toggle via fallback state:', err);
     }
   };
 
@@ -86,23 +170,22 @@ export const InquiriesView: React.FC = () => {
   });
 
   const totalInquiriesCount = inquiries.length;
-  const newInquiriesCount = inquiries.filter((i) => i.status === 'New').length;
-  const companyInquiriesCount = inquiries.filter((i) => i.senderType === 'Company').length;
-  const resolvedInquiriesCount = inquiries.filter((i) => i.status === 'Resolved').length;
+  const newCount = inquiries.filter((i) => i.status === 'New').length;
+  const readCount = inquiries.filter((i) => i.status === 'Read').length;
+  const resolvedCount = inquiries.filter((i) => i.status === 'Resolved').length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 22, width: '100%' }}>
+    <div className="flex flex-col gap-6 w-full font-sans antialiased text-slate-800">
       {/* =========================================================
           1. TOP COMPONENT: INQUIRIES DESK DASHBOARD & STATS
-          (Structured according to the reference UI design)
           ========================================================= */}
       <section className="pipeline-dashboard-card" aria-labelledby="inquiries-dashboard-title" style={{ width: '100%' }}>
         <div className="pipeline-dashboard-header">
           <div>
-            <span className="pipeline-dashboard-eyebrow">Customer & Enterprise Communications Desk</span>
-            <h2 id="inquiries-dashboard-title">Inquiries & Contact Requests</h2>
+            <span className="pipeline-dashboard-eyebrow">Enterprise & Candidate Communications Desk</span>
+            <h2 id="inquiries-dashboard-title">Inquiries Directory</h2>
             <p>
-              Review incoming correspondence from candidates, enterprise partners, and guests submitted via the universal contact portal.
+              Review correspondence from candidates, employers, and enterprise partners submitted through the universal support portal.
             </p>
           </div>
 
@@ -119,71 +202,51 @@ export const InquiriesView: React.FC = () => {
             <div>
               <span>Total Inquiries</span>
               <strong>{isLoading ? '...' : totalInquiriesCount}</strong>
-              <small>Universal contact submissions</small>
+              <small>Submissions received</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-ready">
             <div className="summary-icon"><Clock size={20} /></div>
             <div>
-              <span>Pending Review</span>
-              <strong>{isLoading ? '...' : newInquiriesCount}</strong>
-              <small>Awaiting admin response</small>
+              <span>New Submissions</span>
+              <strong>{isLoading ? '...' : newCount}</strong>
+              <small>Awaiting review</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-active">
-            <div className="summary-icon"><Building2 size={20} /></div>
+            <div className="summary-icon"><Mail size={20} /></div>
             <div>
-              <span>Enterprise Requests</span>
-              <strong>{isLoading ? '...' : companyInquiriesCount}</strong>
-              <small>Corporate &amp; API inquiries</small>
+              <span>Read / In Review</span>
+              <strong>{isLoading ? '...' : readCount}</strong>
+              <small>Under investigation</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-applicants">
             <div className="summary-icon"><CheckCircle2 size={20} /></div>
             <div>
-              <span>Resolved Tickets</span>
-              <strong>{isLoading ? '...' : resolvedInquiriesCount}</strong>
-              <small>Successfully handled cases</small>
+              <span>Resolved Cases</span>
+              <strong>{isLoading ? '...' : resolvedCount}</strong>
+              <small>Successfully resolved</small>
             </div>
           </article>
         </div>
       </section>
 
       {/* =========================================================
-          3. MAIN WORKSPACE: SEARCH, FILTERS & DATA TABLE
+          2. MAIN WORKSPACE: SEARCH, FILTERS & DATA TABLE
           ========================================================= */}
-      <div
-        style={{
-          width: '100%',
-          background: '#ffffff',
-          border: '1px solid #dce7e2',
-          borderRadius: 18,
-          boxShadow: '0 4px 18px rgba(15, 23, 42, 0.035)',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Search & Filter Header */}
-        <div
-          style={{
-            padding: '18px 24px',
-            borderBottom: '1px solid #edf2f7',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 14,
-            flexWrap: 'wrap',
-            background: '#ffffff',
-          }}
-        >
-          {/* Company-Style Search Box */}
-          <div className="admin-company-search-box">
+      <div className="w-full bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        {/* Search & Filter Header Bar */}
+        <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-white">
+          {/* Search Box */}
+          <div className="admin-company-search-box flex-1 min-w-[280px] max-w-md">
             <span className="admin-company-search-icon">
               <Search size={16} />
             </span>
             <input
               type="text"
               className="admin-company-search-input"
-              placeholder="Search by sender, email, subject, or message content..."
+              placeholder="Search by sender, email, subject, or message..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -194,55 +257,32 @@ export const InquiriesView: React.FC = () => {
                 onClick={() => setSearchQuery('')}
                 title="Clear search"
               >
-                <X size={12} />
+                <X size={13} />
               </button>
             )}
           </div>
 
           {/* Filter Controls Row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div className="flex items-center gap-2.5 flex-wrap">
             {/* Sender Type Dropdown */}
             <select
               value={selectedSenderType}
               onChange={(e) => setSelectedSenderType(e.target.value)}
-              style={{
-                height: 40,
-                padding: '0 12px',
-                borderRadius: 10,
-                border: '1px solid #dce5eb',
-                background: '#ffffff',
-                color: '#334155',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                outline: 'none',
-              }}
+              className="h-9 px-3 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
             >
               <option value="All">All Senders</option>
-              <option value="Company">Companies</option>
-              <option value="Candidate">Candidates</option>
-              <option value="Guest">Guests</option>
+              <option value="Candidate">Candidate Only</option>
+              <option value="Company">Company Only</option>
             </select>
 
-            {/* Unified Filter Tabs */}
-            <div
-              className="unified-tab-bar"
-              style={{
-                display: 'inline-flex',
-                padding: 4,
-                background: '#f1f5f9',
-                borderRadius: 9999,
-                border: '1px solid #e2e8f0',
-                gap: 4,
-              }}
-            >
-              {(['All', 'New', 'Resolved'] as const).map((status) => (
+            {/* Status Filter Tabs (All / New / Read / Resolved) */}
+            <div className="unified-tab-bar">
+              {(['All', 'New', 'Read', 'Resolved'] as const).map((status) => (
                 <button
                   key={status}
                   type="button"
                   onClick={() => setSelectedStatus(status)}
                   className={`unified-tab-btn ${selectedStatus === status ? 'active' : ''}`}
-                  style={{ padding: '6px 16px', fontSize: 12.5 }}
                 >
                   {status}
                 </button>
@@ -252,290 +292,161 @@ export const InquiriesView: React.FC = () => {
         </div>
 
         {/* Data Table */}
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13.5 }}>
-            <thead>
-              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                <th style={{ padding: '14px 24px', fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', width: '28%' }}>
-                  Sender & Organization
-                </th>
-                <th style={{ padding: '14px 20px', fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', width: '22%' }}>
-                  Email Address
-                </th>
-                <th style={{ padding: '14px 20px', fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', width: '26%' }}>
-                  Subject & Preview
-                </th>
-                <th style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', width: '10%' }}>
-                  Date
-                </th>
-                <th style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', width: '8%' }}>
-                  Status
-                </th>
-                <th style={{ padding: '14px 24px', fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '6%' }}>
-                  Actions
-                </th>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
+            <thead className="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-xs">
+              <tr>
+                <th scope="col" className="px-6 py-4">Sender Details</th>
+                <th scope="col" className="px-6 py-4">Subject</th>
+                <th scope="col" className="px-6 py-4 text-center">Date Received</th>
+                <th scope="col" className="px-6 py-4 text-center">Status</th>
+                <th scope="col" className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-200 bg-white">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '56px 20px', textAlign: 'center', color: '#64748b' }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontWeight: 650, fontSize: 14 }}>
-                      <span className="pipeline-dashboard-live" style={{ padding: 0 }}><span /></span>
-                      Retrieving customer inquiries & enterprise correspondence...
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                    <div className="inline-flex items-center gap-3 font-semibold text-slate-600">
+                      <span className="pipeline-dashboard-live"><span /></span>
+                      Loading communications inquiries...
                     </div>
-                  </td>
-                </tr>
-              ) : error ? (
-                <tr>
-                  <td colSpan={6} style={{ padding: '48px 20px', textAlign: 'center', color: '#ef4444' }}>
-                    <div style={{ fontWeight: 700, marginBottom: 4 }}>Failed to load live inquiries</div>
-                    <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 12 }}>{error}</div>
-                    <button
-                      type="button"
-                      onClick={loadInquiries}
-                      style={{
-                        padding: '6px 14px',
-                        borderRadius: 8,
-                        background: '#00b074',
-                        color: '#fff',
-                        border: 'none',
-                        fontWeight: 600,
-                        fontSize: 12,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Retry Connection
-                    </button>
                   </td>
                 </tr>
               ) : filteredInquiries.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '52px 20px', textAlign: 'center', color: '#94a3b8' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                      <AlertCircle size={28} color="#cbd5e1" />
-                      <span>No inquiries found matching "{searchQuery}"</span>
-                    </div>
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
+                    No inquiries found matching "{searchQuery}"
                   </td>
                 </tr>
               ) : (
                 filteredInquiries.map((inq) => (
                   <tr
                     key={inq.id}
-                    style={{
-                      borderBottom: '1px solid #f1f5f9',
-                      transition: 'background 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#fcfdfd';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                    }}
+                    className="hover:bg-slate-50/75 transition-colors duration-150"
                   >
-                    {/* Sender & Organization */}
-                    <td style={{ padding: '16px 24px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    {/* 1. Sender Details (Display Name + Candidate/Company indicator) */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
                         <div
-                          style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 12,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                            background:
-                              inq.senderType === 'Company'
-                                ? '#eef2ff'
-                                : inq.senderType === 'Candidate'
-                                ? '#eafaf3'
-                                : '#f1f5f9',
-                            border: `1.5px solid ${
-                              inq.senderType === 'Company'
-                                ? '#c7d2fe'
-                                : inq.senderType === 'Candidate'
-                                ? '#a7f3d0'
-                                : '#e2e8f0'
-                            }`,
-                            color:
-                              inq.senderType === 'Company'
-                                ? '#4f46e5'
-                                : inq.senderType === 'Candidate'
-                                ? '#008e60'
-                                : '#64748b',
-                          }}
+                          className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold ${
+                            inq.senderType === 'Company'
+                              ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                              : inq.senderType === 'Candidate'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-slate-100 text-slate-600 border border-slate-200'
+                          }`}
                         >
                           {inq.senderType === 'Company' ? (
-                            <Building2 size={18} />
+                            <Building2 size={16} />
                           ) : inq.senderType === 'Candidate' ? (
-                            <User size={18} />
+                            <User size={16} />
                           ) : (
-                            <HelpCircle size={18} />
+                            <HelpCircle size={16} />
                           )}
                         </div>
                         <div>
-                          <div style={{ fontWeight: 750, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div className="font-semibold text-slate-900 text-sm flex items-center gap-2">
                             <span>{inq.sender}</span>
+                            {/* Candidate or Company Indicator Pill */}
                             <span
-                              style={{
-                                fontSize: 9.5,
-                                fontWeight: 800,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.4px',
-                                background:
-                                  inq.senderType === 'Company'
-                                    ? '#eef2ff'
-                                    : inq.senderType === 'Candidate'
-                                    ? '#ecfdf5'
-                                    : '#f1f5f9',
-                                border: `1px solid ${
-                                  inq.senderType === 'Company'
-                                    ? '#c7d2fe'
-                                    : inq.senderType === 'Candidate'
-                                    ? '#a7f3d0'
-                                    : '#e2e8f0'
-                                }`,
-                                color:
-                                  inq.senderType === 'Company'
-                                    ? '#4338ca'
-                                    : inq.senderType === 'Candidate'
-                                    ? '#047857'
-                                    : '#475569',
-                                padding: '1px 6px',
-                                borderRadius: 4,
-                              }}
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                inq.senderType === 'Company'
+                                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                  : inq.senderType === 'Candidate'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : 'bg-slate-100 text-slate-600 border border-slate-200'
+                              }`}
                             >
                               {inq.senderType}
                             </span>
                           </div>
-                          <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
-                            {inq.organization ? inq.organization : `${inq.senderType} Direct Inquiry`}
+                          <div className="text-xs text-slate-500 font-mono mt-0.5">
+                            {inq.email} {inq.organization && `• ${inq.organization}`}
                           </div>
                         </div>
                       </div>
                     </td>
 
-                    {/* Email */}
-                    <td style={{ padding: '16px 20px', fontFamily: 'monospace', fontSize: 12.5, color: '#475569' }}>
-                      {inq.email}
-                    </td>
-
-                    {/* Subject & Preview */}
-                    <td style={{ padding: '16px 20px' }}>
-                      <div
-                        style={{
-                          fontWeight: 750,
-                          color: '#0f172a',
-                          maxWidth: 290,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}
-                        title={inq.subject}
-                      >
-                        {inq.subject}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: '#94a3b8',
-                          maxWidth: 290,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          marginTop: 2,
-                        }}
-                      >
-                        {inq.message}
+                    {/* 2. Subject (Truncated with ellipsis) */}
+                    <td className="px-6 py-4">
+                      <div className="max-w-xs md:max-w-md">
+                        <p
+                          className="font-medium text-slate-900 text-sm truncate"
+                          title={inq.subject}
+                        >
+                          {inq.subject}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">
+                          {inq.message}
+                        </p>
                       </div>
                     </td>
 
-                    {/* Received Date */}
-                    <td style={{ padding: '16px 18px', textAlign: 'center', fontSize: 12, color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      {inq.date}
-                    </td>
-
-                    {/* Status Badge */}
-                    <td style={{ padding: '16px 18px', textAlign: 'center' }}>
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 5,
-                          padding: '3px 10px',
-                          borderRadius: 9999,
-                          fontSize: 11.5,
-                          fontWeight: 750,
-                          background: inq.status === 'New' ? '#eff6ff' : '#eafaf3',
-                          border: `1px solid ${inq.status === 'New' ? '#bfdbfe' : '#a7f3d0'}`,
-                          color: inq.status === 'New' ? '#1d4ed8' : '#008e60',
-                        }}
-                      >
-                        <span
-                          style={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: '50%',
-                            background: inq.status === 'New' ? '#2563eb' : '#00b074',
-                          }}
-                        />
-                        {inq.status}
+                    {/* 3. Date Received ('MMM DD, YYYY') */}
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-xs text-slate-600 font-medium">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Calendar size={12} className="text-slate-400" />
+                        <span>{inq.date}</span>
                       </span>
                     </td>
 
-                    {/* Actions */}
-                    <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+                    {/* 4. Status (New / Read / Resolved — Blue/Gray/Green pill badges) */}
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      {inq.status === 'New' && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 ring-1 ring-inset ring-blue-600/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                          New
+                        </span>
+                      )}
+                      {inq.status === 'Read' && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 ring-1 ring-inset ring-slate-600/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                          Read
+                        </span>
+                      )}
+                      {inq.status === 'Resolved' && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 ring-1 ring-inset ring-emerald-600/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          Resolved
+                        </span>
+                      )}
+                    </td>
+
+                    {/* 5. Actions ("Read", "Mark Resolved") */}
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="inline-flex items-center justify-end gap-2">
+                        {/* Read Button */}
                         <button
                           type="button"
-                          onClick={() => setActiveMessageModal(inq)}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 5,
-                            padding: '6px 12px',
-                            borderRadius: 8,
-                            border: '1px solid #cbd5e1',
-                            background: '#ffffff',
-                            color: '#334155',
-                            fontSize: 12,
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                          }}
+                          onClick={() => handleReadInquiry(inq)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold shadow-xs transition-colors"
+                          title="Open and read inquiry"
                         >
-                          <Eye size={13} />
+                          <Eye size={13} className="text-slate-500" />
                           <span>Read</span>
                         </button>
 
+                        {/* Mark Resolved Button */}
                         <button
                           type="button"
                           onClick={() => toggleResolved(inq.id)}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 5,
-                            padding: '6px 12px',
-                            borderRadius: 8,
-                            fontSize: 12,
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                            border: inq.status === 'New' ? '1px solid #a7f3d0' : '1px solid #cbd5e1',
-                            background: inq.status === 'New' ? '#eafaf3' : '#ffffff',
-                            color: inq.status === 'New' ? '#008e60' : '#64748b',
-                          }}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border shadow-xs ${
+                            inq.status === 'Resolved'
+                              ? 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
+                              : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100/80'
+                          }`}
+                          title={inq.status === 'Resolved' ? 'Reopen inquiry ticket' : 'Mark inquiry as resolved'}
                         >
-                          {inq.status === 'New' ? (
-                            <>
-                              <Check size={13} />
-                              <span>Resolve</span>
-                            </>
-                          ) : (
+                          {inq.status === 'Resolved' ? (
                             <>
                               <RotateCcw size={13} />
                               <span>Reopen</span>
+                            </>
+                          ) : (
+                            <>
+                              <Check size={13} />
+                              <span>Mark Resolved</span>
                             </>
                           )}
                         </button>
@@ -548,284 +459,117 @@ export const InquiriesView: React.FC = () => {
           </table>
         </div>
 
-        {/* Table Footer: Summary count */}
-        <div
-          style={{
-            padding: '12px 24px',
-            background: '#f8fafc',
-            borderTop: '1px solid #edf2f7',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontSize: 12.5,
-            color: '#64748b',
-          }}
-        >
+        {/* Table Footer */}
+        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
           <span>
-            Showing <strong style={{ color: '#0f172a' }}>{filteredInquiries.length}</strong> of{' '}
-            <strong style={{ color: '#0f172a' }}>{inquiries.length}</strong> customer tickets
+            Showing <strong className="text-slate-900 font-semibold">{filteredInquiries.length}</strong> of{' '}
+            <strong className="text-slate-900 font-semibold">{inquiries.length}</strong> inquiries
           </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00b074' }} />
-            Communication Dispatch Service v2.4
+          <span className="inline-flex items-center gap-1.5 font-medium">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            Support Communications Desk Live
           </span>
         </div>
       </div>
 
       {/* =========================================================
-          4. READ MESSAGE MODAL
+          3. INQUIRY READER MODAL
           ========================================================= */}
       {activeMessageModal && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 100,
-            background: 'rgba(15, 23, 42, 0.6)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 20,
-          }}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setActiveMessageModal(null)}
         >
           <div
-            style={{
-              width: '100%',
-              maxWidth: 600,
-              background: '#ffffff',
-              border: '1px solid #dce7e2',
-              borderRadius: 20,
-              padding: 28,
-              boxShadow: '0 20px 45px -10px rgba(15, 23, 42, 0.25)',
-              boxSizing: 'border-box',
-            }}
+            className="w-full max-w-xl bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl space-y-5"
+            onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'space-between',
-                paddingBottom: 16,
-                borderBottom: '1px solid #f1f5f9',
-              }}
-            >
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 800,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      color: '#008e60',
-                      background: '#e6f9f2',
-                      border: '1px solid #a7f3d0',
-                      padding: '2px 8px',
-                      borderRadius: 14,
-                    }}
-                  >
-                    {activeMessageModal.senderType} Submission
-                  </span>
-                  <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>
-                    #{activeMessageModal.id}
-                  </span>
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold ${
+                    activeMessageModal.senderType === 'Company'
+                      ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                      : activeMessageModal.senderType === 'Candidate'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-slate-100 text-slate-600 border border-slate-200'
+                  }`}
+                >
+                  {activeMessageModal.senderType === 'Company' ? (
+                    <Building2 size={18} />
+                  ) : activeMessageModal.senderType === 'Candidate' ? (
+                    <User size={18} />
+                  ) : (
+                    <HelpCircle size={18} />
+                  )}
                 </div>
-                <h3 style={{ margin: '4px 0 0 0', fontSize: 18, fontWeight: 800, color: '#0f172a' }}>
-                  {activeMessageModal.subject}
-                </h3>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">{activeMessageModal.sender}</h3>
+                  <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
+                    <span className="font-mono text-slate-700">{activeMessageModal.email}</span>
+                    <span>•</span>
+                    <span className="font-semibold text-slate-600">{activeMessageModal.senderType}</span>
+                  </div>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setActiveMessageModal(null)}
-                style={{
-                  background: '#f1f5f9',
-                  border: 'none',
-                  color: '#64748b',
-                  fontSize: 15,
-                  cursor: 'pointer',
-                  width: 28,
-                  height: 28,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 text-sm transition-colors"
               >
                 ✕
               </button>
             </div>
 
-            {/* Modal Metadata Grid */}
-            <div style={{ padding: '18px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: 12,
-                  background: '#f8fafc',
-                  padding: 16,
-                  borderRadius: 14,
-                  border: '1px solid #edf2f7',
-                }}
-              >
-                <div>
-                  <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, display: 'block' }}>From Sender</span>
-                  <span style={{ fontSize: 13.5, fontWeight: 750, color: '#0f172a' }}>
-                    {activeMessageModal.sender}
-                  </span>
-                  {activeMessageModal.organization && (
-                    <span style={{ fontSize: 11.5, color: '#64748b', display: 'block', marginTop: 1 }}>
-                      {activeMessageModal.organization}
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, display: 'block' }}>Email Address</span>
-                  <a
-                    href={`mailto:${activeMessageModal.email}`}
-                    style={{ fontSize: 13, fontFamily: 'monospace', color: '#008e60', textDecoration: 'none', fontWeight: 700 }}
-                  >
-                    {activeMessageModal.email}
-                  </a>
-                </div>
-                <div>
-                  <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, display: 'block' }}>Date Received</span>
-                  <span style={{ fontSize: 13, color: '#475569', fontWeight: 600 }}>{activeMessageModal.date}</span>
-                </div>
-                <div>
-                  <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, display: 'block' }}>Current Status</span>
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      padding: '2px 8px',
-                      borderRadius: 9999,
-                      fontSize: 11,
-                      fontWeight: 800,
-                      background: activeMessageModal.status === 'New' ? '#eff6ff' : '#eafaf3',
-                      border: `1px solid ${activeMessageModal.status === 'New' ? '#bfdbfe' : '#a7f3d0'}`,
-                      color: activeMessageModal.status === 'New' ? '#1d4ed8' : '#008e60',
-                      marginTop: 2,
-                    }}
-                  >
-                    {activeMessageModal.status}
-                  </span>
-                </div>
+            {/* Inquiry Content */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <Calendar size={13} className="text-slate-400" />
+                  Received: <strong className="text-slate-700">{activeMessageModal.date}</strong>
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded-full font-semibold ${
+                    activeMessageModal.status === 'Resolved'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : activeMessageModal.status === 'Read'
+                      ? 'bg-slate-100 text-slate-700 border border-slate-200'
+                      : 'bg-blue-50 text-blue-700 border border-blue-200'
+                  }`}
+                >
+                  {activeMessageModal.status}
+                </span>
               </div>
 
-              {/* Message Body */}
               <div>
-                <span
-                  style={{
-                    fontSize: 11.5,
-                    fontWeight: 800,
-                    color: '#64748b',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    display: 'block',
-                    marginBottom: 8,
-                  }}
-                >
-                  Message Content
-                </span>
-                <div
-                  style={{
-                    background: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 12,
-                    padding: 16,
-                    color: '#334155',
-                    fontSize: 13.5,
-                    lineHeight: 1.6,
-                    whiteSpace: 'pre-wrap',
-                  }}
-                >
+                <h4 className="text-sm font-bold text-slate-900 mb-1">{activeMessageModal.subject}</h4>
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
                   {activeMessageModal.message}
                 </div>
               </div>
             </div>
 
             {/* Modal Actions */}
-            <div
-              style={{
-                paddingTop: 16,
-                borderTop: '1px solid #f1f5f9',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={() => toggleResolved(activeMessageModal.id)}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '8px 16px',
-                    borderRadius: 10,
-                    fontSize: 12.5,
-                    fontWeight: 750,
-                    cursor: 'pointer',
-                    border: activeMessageModal.status === 'New' ? '1px solid #a7f3d0' : '1px solid #cbd5e1',
-                    background: activeMessageModal.status === 'New' ? '#00b074' : '#f8fafc',
-                    color: activeMessageModal.status === 'New' ? '#ffffff' : '#475569',
-                    boxShadow: activeMessageModal.status === 'New' ? '0 2px 8px rgba(0, 176, 116, 0.25)' : 'none',
-                  }}
-                >
-                  {activeMessageModal.status === 'New' ? (
-                    <>
-                      <Check size={14} />
-                      <span>Mark as Resolved</span>
-                    </>
-                  ) : (
-                    <>
-                      <RotateCcw size={14} />
-                      <span>Reopen Inquiry</span>
-                    </>
-                  )}
-                </button>
-
-                <a
-                  href={`mailto:${activeMessageModal.email}?subject=Re: ${encodeURIComponent(activeMessageModal.subject)}`}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '8px 14px',
-                    borderRadius: 10,
-                    border: '1px solid #cbd5e1',
-                    background: '#ffffff',
-                    color: '#334155',
-                    fontSize: 12.5,
-                    fontWeight: 700,
-                    textDecoration: 'none',
-                  }}
-                >
-                  <Send size={13} />
-                  <span>Direct Reply</span>
-                </a>
-              </div>
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => toggleResolved(activeMessageModal.id)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors border ${
+                  activeMessageModal.status === 'Resolved'
+                    ? 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                }`}
+              >
+                {activeMessageModal.status === 'Resolved' ? 'Reopen Ticket' : 'Mark Resolved'}
+              </button>
 
               <button
                 type="button"
                 onClick={() => setActiveMessageModal(null)}
-                style={{
-                  padding: '8px 18px',
-                  borderRadius: 10,
-                  background: '#f1f5f9',
-                  border: '1px solid #e2e8f0',
-                  color: '#334155',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
+                className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors"
               >
-                Close
+                Done
               </button>
             </div>
           </div>

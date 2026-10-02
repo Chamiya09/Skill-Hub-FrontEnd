@@ -111,12 +111,15 @@ export const authStorage = {
   setUser(user: UserDto): void {
     const role = (user?.role || '').toLowerCase();
     const isAdmin = role === 'admin' || role === 'super_admin';
+    const key = isAdmin ? 'skillhub_admin_user' : 'skillhub_user';
+    const prevRaw = localStorage.getItem(key);
+    const nextRaw = JSON.stringify(user);
     if (isAdmin) {
-      localStorage.setItem('skillhub_admin_user', JSON.stringify(user));
+      localStorage.setItem('skillhub_admin_user', nextRaw);
     } else {
-      localStorage.setItem('skillhub_user', JSON.stringify(user));
+      localStorage.setItem('skillhub_user', nextRaw);
     }
-    if (typeof window !== 'undefined') {
+    if (prevRaw !== nextRaw && typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('skillhub_auth_change', { detail: user }));
     }
   },
@@ -348,8 +351,21 @@ export const companyAuthApi = {
   }
 };
 
-// Backward-compatible alias
-export const authApi = companyAuthApi;
+// Universal auth API (supporting both Candidate and Company)
+export const authApi = {
+  ...companyAuthApi,
+  /**
+   * Universal endpoint fetching authenticated user profile and suspension status.
+   * Calls: GET /api/auth/me
+   */
+  async getMe(): Promise<UserDto> {
+    const data = await request<UserDto>('/auth/me', {
+      method: 'GET',
+    });
+    authStorage.setUser(data);
+    return data;
+  },
+};
 
 // ==========================================
 // CANDIDATE AUTHENTICATION API

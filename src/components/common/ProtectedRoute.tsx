@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { SleekSpinner } from './SkeletonCard';
+import { SuspendedAccountModal } from './SuspendedAccountModal';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -14,8 +15,22 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles,
   redirectPath,
 }) => {
-  const { currentUser, isAuthenticated, isLoading } = useAuth();
+  const { currentUser, isAuthenticated, isLoading, refreshProfile } = useAuth();
   const location = useLocation();
+  const lastVerifiedRoute = useRef<string>('');
+
+  // 2. State Verification: re-verify account suspension & identity via background API on route change
+  useEffect(() => {
+    if (isAuthenticated && currentUser) {
+      const role = (currentUser.role || '').toLowerCase();
+      if (role !== 'admin' && role !== 'super_admin') {
+        if (lastVerifiedRoute.current !== location.pathname) {
+          lastVerifiedRoute.current = location.pathname;
+          refreshProfile().catch(() => {});
+        }
+      }
+    }
+  }, [location.pathname, isAuthenticated, currentUser?.id]);
 
   if (isLoading) {
     return (
@@ -33,20 +48,23 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
+  // If unauthenticated: ALWAYS redirect to the correct login page.
+  // NEVER redirect an unauthenticated user to a protected dashboard route (e.g. redirectPath="/dashboard"),
+  // as this creates an infinite redirect ping-pong loop.
   if (!isAuthenticated || !currentUser) {
-    if (redirectPath) {
-      return <Navigate to={redirectPath} state={{ from: location }} replace />;
-    }
     const isAdminPath = location.pathname.startsWith('/skillhub-secure-admin');
     if (isAdminPath) {
       return <Navigate to="/skillhub-secure-admin" state={{ from: location }} replace />;
     }
-    const isCandidatePath = location.pathname.startsWith('/candidate');
+    const isCandidatePath =
+      location.pathname.startsWith('/candidate') ||
+      location.pathname.startsWith('/candidate-profile') ||
+      location.pathname.startsWith('/digital-cv');
     const loginTarget = isCandidatePath ? '/candidate-login' : '/company-login';
     return <Navigate to={loginTarget} state={{ from: location }} replace />;
   }
 
-  // Strict Role Check & Redirection
+  // Strict Role Check & Redirection for authenticated users
   if (allowedRoles && allowedRoles.length > 0) {
     const userRole = (currentUser.role || '').toLowerCase();
     const isAuthorized = allowedRoles.some((role) => {
@@ -63,15 +81,46 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       }
       // If Employer/Company attempts to access Candidate profile/routes -> redirect to Employer Dashboard
       if (userRole === 'company' || userRole === 'employer' || userRole === 'admin') {
-        return <Navigate to={redirectPath || '/dashboard'} replace />;
+        return <Navigate to="/dashboard" replace />;
       }
       // If Candidate attempts to access Employer ATS routes -> redirect to Candidate Portal
       if (userRole === 'candidate') {
-        return <Navigate to={redirectPath || '/candidate/profile'} replace />;
+        return <Navigate to="/candidate/profile" replace />;
       }
-      return <Navigate to={redirectPath || '/'} replace />;
+      return <Navigate to="/" replace />;
     }
   }
 
-  return <>{children}</>;
+  const isSuspended = Boolean(
+    currentUser && (
+      currentUser.isSuspended === true ||
+      (currentUser.isSuspended as unknown) === 'true' ||
+      (currentUser as any).status === 'Suspended'
+    )
+  );
+
+  return (
+    <>
+      {/* 1. Global Placement: SuspendedAccountModal included on all protected routes */}
+      <SuspendedAccountModal />
+
+      {/* If suspended, blur and block all interactions with the underlying dashboard content */}
+      {isSuspended ? (
+        <div
+          style={{
+            filter: 'blur(8px)',
+            pointerEvents: 'none',
+            userSelect: 'none',
+            minHeight: '100vh',
+            width: '100%',
+          }}
+          aria-hidden="true"
+        >
+          {children}
+        </div>
+      ) : (
+        children
+      )}
+    </>
+  );
 };

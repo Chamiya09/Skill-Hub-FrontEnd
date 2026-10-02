@@ -18,7 +18,7 @@ import { useAuth } from '../../context/AuthContext';
 import { authStorage } from '../../services/api';
 import '../../pages/admin/AdminDashboard.css';
 
-export type AdminTab = 'overview' | 'candidates' | 'companies' | 'inquiries';
+export type AdminTab = 'overview' | 'candidates' | 'companies' | 'inquiries' | 'security';
 
 interface AdminLayoutProps {
   children?: React.ReactNode;
@@ -241,6 +241,27 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 </button>
               );
             })}
+
+            <div className="nav-group-header" style={{ marginTop: '14px' }}>
+              <span className="nav-group-label">ROOT SECURITY</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (onTabChange) onTabChange('security');
+                setSidebarOpen(false);
+              }}
+              className={`dashboard-nav-item ${activeTab === 'security' ? 'active' : ''}`}
+            >
+              <span className="nav-icon-wrap">
+                <ShieldCheck size={17} />
+              </span>
+              {!sidebarCollapsed && <span className="nav-item-label">Account Security</span>}
+              {sidebarCollapsed && (
+                <span className="nav-collapsed-tooltip">Account Security</span>
+              )}
+            </button>
           </nav>
         </div>
 

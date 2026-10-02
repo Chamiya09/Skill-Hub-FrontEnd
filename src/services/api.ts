@@ -2618,5 +2618,12 @@ export const adminApi = {
       body: JSON.stringify(payload),
     });
   },
+
+  async changePassword(payload: { currentPassword: string; newPassword: string; confirmNewPassword?: string }): Promise<{ message: string }> {
+    return await request<{ message: string }>('/admin/change-password', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
 };
 

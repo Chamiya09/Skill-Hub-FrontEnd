@@ -4,6 +4,7 @@ import { AdminOverviewView } from './AdminOverviewView';
 import { CandidatesView } from './CandidatesView';
 import { CompaniesView } from './CompaniesView';
 import { InquiriesView } from './InquiriesView';
+import { AdminSecurityView } from './AdminSecurityView';
 import './AdminDashboard.css';
 
 export const AdminDashboard: React.FC = () => {
@@ -15,6 +16,7 @@ export const AdminDashboard: React.FC = () => {
       {activeTab === 'candidates' && <CandidatesView />}
       {activeTab === 'companies' && <CompaniesView />}
       {activeTab === 'inquiries' && <InquiriesView />}
+      {activeTab === 'security' && <AdminSecurityView />}
     </AdminLayout>
   );
 };

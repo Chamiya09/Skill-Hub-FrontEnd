@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -9,6 +9,10 @@ import {
   LogOut,
   Activity,
   ShieldCheck,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { authStorage } from '../../services/api';
@@ -29,6 +33,42 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 }) => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+
+  // Collapsible & responsive drawer state matching Company Dashboard
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('skillhub_admin_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSidebarCollapsed = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('skillhub_admin_sidebar_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  // Keyboard shortcut Ctrl+B / Cmd+B to toggle sidebar collapse
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || (e.target as HTMLElement)?.isContentEditable) {
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        toggleSidebarCollapsed();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleSidebarCollapsed]);
 
   interface NavItem {
     id: AdminTab;
@@ -67,81 +107,112 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     navigate('/skillhub-secure-admin', { replace: true });
   };
 
+  const adminName = currentUser?.fullName || 'Super Administrator';
+  const adminEmail = currentUser?.email || 'admin@skillhub.internal';
+  const adminInitials =
+    adminName
+      .split(' ')
+      .filter(Boolean)
+      .map((p) => p[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || 'SA';
+
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        background: '#f8fafc',
-        fontFamily: 'var(--font-family, inherit)',
-        color: '#0f172a',
-      }}
-    >
+    <div className={`dashboard-container ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
+      {/* Mobile Drawer Overlay */}
+      {sidebarOpen && (
+        <div
+          className="dashboard-backdrop"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* =========================================================
-          1. SKILL HUB DASHBOARD SIDEBAR (Candidate & Company Theme)
-          White background, emerald accents, executive user pill
+          1. SKILL HUB DASHBOARD SIDEBAR (Matching Company Side Design)
           ========================================================= */}
-      <aside
-        className="dashboard-sidebar"
-        style={{
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          width: 272,
-          minWidth: 272,
-          height: '100vh',
-          background: '#ffffff',
-          borderRight: '1px solid #edf2f7',
-          zIndex: 50,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          boxShadow: '1px 0 4px rgba(15, 23, 42, 0.02)',
-        }}
-      >
+      <aside className={`dashboard-sidebar ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+        {/* Creative Edge Dock Toggle Handle */}
+        <button
+          type="button"
+          className="sidebar-edge-toggle"
+          onClick={toggleSidebarCollapsed}
+          title={sidebarCollapsed ? 'Expand Sidebar (Ctrl+B)' : 'Collapse Sidebar (Ctrl+B)'}
+          aria-label={sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+        >
+          {sidebarCollapsed ? (
+            <ChevronRight size={13} strokeWidth={2.6} />
+          ) : (
+            <ChevronLeft size={13} strokeWidth={2.6} />
+          )}
+        </button>
+
         <div>
           {/* 1.1 Brand Header */}
           <div className="dashboard-sidebar-header">
-            <div className="dashboard-brand-link" style={{ cursor: 'pointer' }}>
+            <div
+              className="dashboard-brand-link"
+              style={{ cursor: 'pointer' }}
+              onClick={() => onTabChange && onTabChange('overview')}
+              title="Skill Hub Admin"
+            >
               <div className="logo-icon-wrap">
                 <Sparkles size={18} strokeWidth={2.5} />
               </div>
-              <div className="dashboard-brand-text">
-                <div className="dashboard-brand-row">
-                  <span className="dashboard-brand-title">Skill Hub</span>
-                  <span
-                    className="dashboard-brand-badge"
-                    style={{ color: '#00b074', background: '#e6f9f2' }}
-                  >
-                    SUPER ADMIN
-                  </span>
+              {!sidebarCollapsed && (
+                <div className="dashboard-brand-text">
+                  <div className="dashboard-brand-row">
+                    <span className="dashboard-brand-title">Skill Hub</span>
+                    <span
+                      className="dashboard-brand-badge"
+                      style={{ color: '#00b074', background: '#e6f9f2' }}
+                    >
+                      SUPER ADMIN
+                    </span>
+                  </div>
+                  <span className="dashboard-brand-subtitle">Platform Governance</span>
                 </div>
-                <span className="dashboard-brand-subtitle">Platform Governance</span>
-              </div>
+              )}
             </div>
+
+            <button
+              type="button"
+              className="sidebar-close-btn"
+              onClick={() => setSidebarOpen(false)}
+              aria-label="Close Sidebar"
+            >
+              <X size={18} />
+            </button>
           </div>
 
-          {/* 1.2 Identity Card (Like in Candidate / Company Dashboards) */}
-          <div className="candidate-identity-card" style={{ cursor: 'default' }}>
-            <div className="candidate-card-avatar-wrap">
-              <div className="candidate-card-avatar">
-                <span className="candidate-card-initials">SA</span>
-              </div>
-              <span className="candidate-card-online-dot" />
+          {/* 1.2 Company-Style Workspace Switcher / Identity Card */}
+          <div
+            className="dashboard-company-pill"
+            title={sidebarCollapsed ? `${adminName} • Active Workspace` : undefined}
+          >
+            <div className="company-avatar-box">
+              <ShieldCheck size={18} strokeWidth={2.2} />
+              <span className="company-status-dot" title="Active Workspace" />
             </div>
-            <div className="candidate-card-details">
-              <div className="candidate-card-top-row">
-                <span className="candidate-card-name">Super Admin</span>
-                <span className="candidate-card-badge">ROOT</span>
+            {!sidebarCollapsed && (
+              <div className="company-pill-details">
+                <span className="company-pill-name" title={adminName}>
+                  {adminName}
+                </span>
+                <div className="company-pill-meta">
+                  <span className="company-pill-tag">
+                    Root Access
+                  </span>
+                  <span className="company-pill-divider">•</span>
+                  <span className="company-pill-status">Active Workspace</span>
+                </div>
               </div>
-              <div className="candidate-card-bottom-row">
-                <span className="candidate-card-headline">Production Node • Online</span>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* 1.3 Navigation Menu */}
-          <div className="dashboard-nav-list" style={{ padding: '10px 12px' }}>
+          <nav className="dashboard-nav-list">
             <div className="nav-group-header">
               <span className="nav-group-label">PLATFORM GOVERNANCE</span>
             </div>
@@ -154,91 +225,85 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => onTabChange && onTabChange(item.id)}
+                  onClick={() => {
+                    if (onTabChange) onTabChange(item.id);
+                    setSidebarOpen(false);
+                  }}
                   className={`dashboard-nav-item ${isActive ? 'active' : ''}`}
                 >
-                  <div className="nav-icon-wrap">
-                    <Icon size={16} />
-                  </div>
-                  <span className="nav-item-label">{item.label}</span>
-                  {item.badge && (
-                    <span
-                      className={`nav-badge-pill ${
-                        isActive ? 'nav-badge-ai' : 'nav-badge-neutral'
-                      }`}
-                    >
-                      {item.badge}
-                    </span>
+                  <span className="nav-icon-wrap">
+                    <Icon size={17} />
+                  </span>
+                  {!sidebarCollapsed && <span className="nav-item-label">{item.label}</span>}
+                  {sidebarCollapsed && (
+                    <span className="nav-collapsed-tooltip">{item.label}</span>
                   )}
                 </button>
               );
             })}
-          </div>
+          </nav>
         </div>
 
         {/* 1.4 Sidebar Footer: Profile Card & Logout */}
         <div className="dashboard-sidebar-footer">
-          <div className="sidebar-user-card">
+          <div
+            className="sidebar-user-card"
+            title={sidebarCollapsed ? `${adminName} • Click to Sign Out` : undefined}
+            onClick={sidebarCollapsed ? handleLogout : undefined}
+            style={sidebarCollapsed ? { cursor: 'pointer' } : undefined}
+          >
             <div className="user-avatar-initials">
-              <ShieldCheck size={18} />
+              {adminInitials}
             </div>
-            <div className="sidebar-user-info">
-              <span className="sidebar-user-name">
-                {currentUser?.fullName || 'Super Administrator'}
-              </span>
-              <span className="sidebar-user-email">
-                {currentUser?.email || 'admin@skillhub.internal'}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="sidebar-user-logout-icon"
-              title="Terminate Admin Session"
-            >
-              <LogOut size={16} />
-            </button>
+            {!sidebarCollapsed ? (
+              <>
+                <div className="sidebar-user-info">
+                  <span className="sidebar-user-name" title={adminName}>
+                    {adminName}
+                  </span>
+                  <span className="sidebar-user-email" title={adminEmail}>
+                    {adminEmail}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="sidebar-user-logout-icon"
+                  onClick={handleLogout}
+                  title="Sign Out"
+                  aria-label="Sign Out"
+                >
+                  <LogOut size={16} />
+                </button>
+              </>
+            ) : (
+              <span className="nav-collapsed-tooltip">Sign Out ({adminName})</span>
+            )}
           </div>
         </div>
       </aside>
 
       {/* =========================================================
-          2. MAIN CONTENT AREA (Offset by 272px)
+          2. MAIN CONTENT AREA (Matches Company Dashboard Area)
           ========================================================= */}
-      <div
-        style={{
-          flex: 1,
-          marginLeft: 272,
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: '100vh',
-          background: '#f8fafc',
-          minWidth: 0,
-        }}
-      >
+      <div className="dashboard-main-area">
         {/* Topbar Header */}
-        <header
-          style={{
-            position: 'sticky',
-            top: 0,
-            zIndex: 30,
-            height: 64,
-            background: '#ffffff',
-            borderBottom: '1px solid #edf2f7',
-            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
-            padding: '0 32px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          {/* Breadcrumbs */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px' }}>
-            <span style={{ color: '#64748b', fontWeight: 600 }}>Platform Governance</span>
-            <span style={{ color: '#cbd5e1' }}>/</span>
-            <span style={{ color: '#0f172a', fontWeight: 800, textTransform: 'capitalize' }}>
-              {activeTab}
-            </span>
+        <header className="dashboard-topbar">
+          <div className="topbar-left" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              type="button"
+              className="topbar-menu-toggle"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open Sidebar"
+            >
+              <Menu size={18} />
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px' }}>
+              <span style={{ color: '#64748b', fontWeight: 600 }}>Platform Governance</span>
+              <span style={{ color: '#cbd5e1' }}>/</span>
+              <span style={{ color: '#0f172a', fontWeight: 800, textTransform: 'capitalize' }}>
+                {activeTab}
+              </span>
+            </div>
           </div>
 
           {/* Right Header Status */}

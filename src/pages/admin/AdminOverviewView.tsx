@@ -4,9 +4,6 @@ import {
   Building2,
   Briefcase,
   Inbox,
-  Sparkles,
-  TrendingUp,
-  ArrowRight,
   ShieldCheck,
   CheckCircle2,
   Clock,
@@ -20,6 +17,7 @@ import {
   type AdminCompanyDto,
   type AdminInquiryDto,
 } from '../../services/api';
+import '../../pages/TechnicalAssessmentsFull.css';
 import '../../components/dashboard/CompanyOverview.css';
 import '../../components/dashboard/CompanyOverviewFull.css';
 import './AdminDashboard.css';
@@ -93,44 +91,8 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
 
   const recentInquiries = inquiries.slice(0, 3);
 
-  // KPI card configs matching CompanyOverview
-  const kpis = [
-    {
-      label: 'Total Candidates',
-      value: totalCandidatesCount,
-      suffix: 'in Pool',
-      note: `${highMatchCount} AI Verified (>85%)`,
-      icon: <Users size={16} />,
-      accent: false,
-    },
-    {
-      label: 'Verified Employers',
-      value: totalCompaniesCount,
-      suffix: 'Enterprises',
-      note: `${activeCompaniesCount} Active Accounts`,
-      icon: <Building2 size={16} />,
-      accent: false,
-    },
-    {
-      label: 'Live Job Vacancies',
-      value: totalActiveJobs,
-      suffix: 'Active Roles',
-      note: `${totalPlacementsCount} Placements Made`,
-      icon: <Briefcase size={16} />,
-      accent: true,
-    },
-    {
-      label: 'Pending Inquiries',
-      value: pendingInquiriesCount,
-      suffix: 'Awaiting Action',
-      note: `${inquiries.length} Total Submissions`,
-      icon: <Inbox size={16} />,
-      accent: false,
-    },
-  ];
-
   return (
-    <div className="company-overview" style={{ width: '100%' }}>
+    <div className="company-overview" style={{ display: 'flex', flexDirection: 'column', gap: 22, width: '100%' }}>
       {/* Error state */}
       {error && (
         <div className="overview-error" role="alert">
@@ -144,68 +106,61 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
         </div>
       )}
 
-      {/* 1. HERO HEADER (Matches Company Overview header with Kickers and Actions) */}
-      <header className="overview-heading">
-        <div>
-          <span className="overview-kicker">
-            <Sparkles size={13} /> PLATFORM TELEMETRY &amp; ATS GOVERNANCE
-          </span>
-          <h1>Admin Overview</h1>
-          <p>
-            Real-time platform activity, enterprise requisitions, verified candidate assessment pipeline, and ecosystem telemetry.
-          </p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            className="overview-primary-action"
-            onClick={() => onNavigateTab('candidates')}
-          >
-            Manage Candidates
-          </button>
-          <button
-            type="button"
-            className="overview-ghost-action"
-            style={{
-              padding: '0 16px',
-              minHeight: 44,
-              borderRadius: 11,
-              fontWeight: 700,
-              fontSize: 12.5,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-            onClick={() => onNavigateTab('companies')}
-          >
-            <span>View Employers</span>
-            <ArrowRight size={13} />
-          </button>
-        </div>
-      </header>
+      {/* =========================================================
+          1. TOP COMPONENT: ADMIN ECOSYSTEM OVERVIEW & STATS
+          (Matching Admin Side Details Box & Architecture)
+          ========================================================= */}
+      <section className="pipeline-dashboard-card" aria-labelledby="overview-dashboard-title" style={{ width: '100%' }}>
+        <div className="pipeline-dashboard-header">
+          <div>
+            <span className="pipeline-dashboard-eyebrow">Platform Telemetry &amp; ATS Governance</span>
+            <h2 id="overview-dashboard-title">Admin Ecosystem Overview</h2>
+            <p>
+              Real-time platform activity, enterprise requisitions, verified candidate assessment pipeline, and ecosystem telemetry.
+            </p>
+          </div>
 
-      {/* 2. 4-KPI METRIC GRID (Matches Company Overview KPI Grid) */}
-      <section className="overview-kpi-grid" aria-label="Ecosystem metrics">
-        {kpis.map((kpi) => (
-          <article
-            className={`overview-kpi ${kpi.accent ? 'is-accent' : ''}`}
-            key={kpi.label}
-          >
-            <div className="overview-kpi-top">
-              <span>{kpi.label}</span>
-              <i>{kpi.icon}</i>
+          <div className="pipeline-dashboard-header-actions">
+            <span className="pipeline-dashboard-live">
+              <span /> Telemetry Live
+            </span>
+          </div>
+        </div>
+
+        <div className="pipeline-summary-grid">
+          <article className="pipeline-summary-card summary-total">
+            <div className="summary-icon"><Users size={20} /></div>
+            <div>
+              <span>Total Candidates</span>
+              <strong>{isLoading ? '...' : totalCandidatesCount}</strong>
+              <small>{highMatchCount} AI verified talent profiles</small>
             </div>
-            <div className="overview-kpi-value">
-              <strong>{isLoading ? '—' : kpi.value}</strong>
-              <span>{kpi.suffix}</span>
-            </div>
-            {kpi.note && (
-              <small>
-                <TrendingUp size={12} /> {kpi.note}
-              </small>
-            )}
           </article>
-        ))}
+          <article className="pipeline-summary-card summary-ready">
+            <div className="summary-icon"><Building2 size={20} /></div>
+            <div>
+              <span>Verified Employers</span>
+              <strong>{isLoading ? '...' : totalCompaniesCount}</strong>
+              <small>{activeCompaniesCount} active corporate accounts</small>
+            </div>
+          </article>
+          <article className="pipeline-summary-card summary-active">
+            <div className="summary-icon"><Briefcase size={20} /></div>
+            <div>
+              <span>Live Job Vacancies</span>
+              <strong>{isLoading ? '...' : totalActiveJobs}</strong>
+              <small>{totalPlacementsCount} placements completed</small>
+            </div>
+          </article>
+          <article className="pipeline-summary-card summary-applicants">
+            <div className="summary-icon"><Inbox size={20} /></div>
+            <div>
+              <span>Pending Inquiries</span>
+              <strong>{isLoading ? '...' : pendingInquiriesCount}</strong>
+              <small>{inquiries.length} universal contact submissions</small>
+            </div>
+          </article>
+        </div>
       </section>
 
       {/* 3. DUAL-COLUMN CONTENT GRID */}

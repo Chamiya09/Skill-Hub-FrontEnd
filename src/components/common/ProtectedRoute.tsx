@@ -34,6 +34,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!isAuthenticated || !currentUser) {
+    if (redirectPath) {
+      return <Navigate to={redirectPath} state={{ from: location }} replace />;
+    }
+    const isAdminPath = location.pathname.startsWith('/skillhub-secure-admin');
+    if (isAdminPath) {
+      return <Navigate to="/skillhub-secure-admin" state={{ from: location }} replace />;
+    }
     const isCandidatePath = location.pathname.startsWith('/candidate');
     const loginTarget = isCandidatePath ? '/candidate-login' : '/company-login';
     return <Navigate to={loginTarget} state={{ from: location }} replace />;
@@ -51,6 +58,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     });
 
     if (!isAuthorized) {
+      if (allowedRoles.map((r) => r.toLowerCase()).includes('admin')) {
+        return <Navigate to={redirectPath || '/skillhub-secure-admin'} replace />;
+      }
       // If Employer/Company attempts to access Candidate profile/routes -> redirect to Employer Dashboard
       if (userRole === 'company' || userRole === 'employer' || userRole === 'admin') {
         return <Navigate to={redirectPath || '/dashboard'} replace />;

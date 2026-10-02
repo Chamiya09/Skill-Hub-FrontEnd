@@ -7,7 +7,7 @@ import './AdminDashboard.css';
 
 export const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
-  const { setAuthData, currentUser } = useAuth();
+  const { setAuthData, currentUser, isLoading: authLoading } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -16,10 +16,20 @@ export const AdminLogin: React.FC = () => {
 
   // If already logged in as Admin, redirect immediately
   React.useEffect(() => {
-    if (currentUser && currentUser.role?.toLowerCase() === 'admin') {
+    if (!authLoading && currentUser && currentUser.role?.toLowerCase() === 'admin') {
       navigate('/skillhub-secure-admin/dashboard', { replace: true });
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, authLoading, navigate]);
+
+  if (authLoading) {
+    return (
+      <div className="admin-login-viewport" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: '#00b074', fontWeight: 700, fontSize: 14 }}>
+          Verifying security authorization...
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

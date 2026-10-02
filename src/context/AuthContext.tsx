@@ -52,21 +52,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const currentToken = authStorage.getToken();
     const cachedUser = authStorage.getUser();
 
-    if (!currentToken) {
+    if (!currentToken || !cachedUser) {
       setCurrentUser(null);
       setToken(null);
       setIsLoading(false);
       return null;
     }
 
-    // Immediately preserve cached credentials so routes are immediately authenticated
-    if (cachedUser) {
-      setCurrentUser((prev) => (JSON.stringify(prev) === JSON.stringify(cachedUser) ? prev : cachedUser));
-      setToken(currentToken);
+    // Immediately restore cached credentials so routes are immediately authenticated
+    setCurrentUser((prev) => (JSON.stringify(prev) === JSON.stringify(cachedUser) ? prev : cachedUser));
+    setToken(currentToken);
+
+    // ADMIN PERSISTENCE:
+    // If the authenticated user is an Admin, their session is already restored from localStorage.
+    // They must not be queried against company/candidate getMe() endpoints which would fail and wipe out the session.
+    const userRole = (cachedUser.role || '').toLowerCase();
+    if (userRole === 'admin' || userRole === 'super_admin') {
+      setIsLoading(false);
+      return cachedUser;
     }
 
     try {
-      const isCandidate = cachedUser?.role?.toUpperCase() === 'CANDIDATE';
+      const isCandidate = cachedUser.role?.toUpperCase() === 'CANDIDATE';
       const userProfile = isCandidate
         ? await candidateAuthApi.getMe()
         : await companyAuthApi.getMe();
@@ -162,6 +169,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (jwtToken) {
       localStorage.setItem('skillhub_jwt_token', jwtToken);
     }
+    if (user?.role?.toLowerCase() === 'admin') {
+      localStorage.setItem('skillhub_admin_token', jwtToken);
+      localStorage.setItem('skillhub_admin_user', JSON.stringify(user));
+    }
     setCurrentUser(user);
     setToken(jwtToken);
     setIsLoading(false);
@@ -182,6 +193,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const logout = useCallback(() => {
+    localStorage.removeItem('skillhub_admin_token');
+    localStorage.removeItem('skillhub_admin_user');
     authStorage.clearAuth();
     setCurrentUser(null);
     setToken(null);

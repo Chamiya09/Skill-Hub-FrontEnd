@@ -82,12 +82,12 @@ export const CandidatesView: React.FC = () => {
   const suspendedCount = candidates.filter((c) => c.status === 'Suspended').length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 22, width: '100%' }}>
       {/* =========================================================
           1. TOP COMPONENT: CANDIDATE DIRECTORY DASHBOARD & STATS
           (Structured according to the reference UI design)
           ========================================================= */}
-      <section className="pipeline-dashboard-card" aria-labelledby="candidates-dashboard-title">
+      <section className="pipeline-dashboard-card" aria-labelledby="candidates-dashboard-title" style={{ width: '100%' }}>
         <div className="pipeline-dashboard-header">
           <div>
             <span className="pipeline-dashboard-eyebrow">Global Talent Evaluation & ATS Telemetry</span>

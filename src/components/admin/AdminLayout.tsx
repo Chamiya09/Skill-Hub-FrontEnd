@@ -267,8 +267,15 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         </header>
 
         {/* Viewport */}
-        <main style={{ flex: 1, padding: '32px', boxSizing: 'border-box' }}>
-          <div style={{ maxWidth: 1400, margin: '0 auto' }}>{children}</div>
+        <main
+          style={{
+            flex: 1,
+            padding: '24px clamp(20px, 2.5vw, 40px)',
+            boxSizing: 'border-box',
+            width: '100%',
+          }}
+        >
+          <div style={{ width: '100%', maxWidth: 'none', margin: 0 }}>{children}</div>
         </main>
       </div>
     </div>

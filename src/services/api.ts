@@ -71,10 +71,10 @@ export interface LoginPayload {
 // ==========================================
 export const authStorage = {
   getToken(): string | null {
-    return localStorage.getItem('skillhub_jwt_token');
+    return localStorage.getItem('skillhub_jwt_token') || localStorage.getItem('skillhub_admin_token');
   },
   getUser(): UserDto | null {
-    const raw = localStorage.getItem('skillhub_user');
+    const raw = localStorage.getItem('skillhub_user') || localStorage.getItem('skillhub_admin_user');
     if (!raw) return null;
     try {
       return JSON.parse(raw);
@@ -85,12 +85,19 @@ export const authStorage = {
   setAuth(data: AuthResponseDto): void {
     localStorage.setItem('skillhub_jwt_token', data.token);
     localStorage.setItem('skillhub_user', JSON.stringify(data.user));
+    if (data.user?.role?.toLowerCase() === 'admin') {
+      localStorage.setItem('skillhub_admin_token', data.token);
+      localStorage.setItem('skillhub_admin_user', JSON.stringify(data.user));
+    }
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('skillhub_auth_change', { detail: data.user }));
     }
   },
   setUser(user: UserDto): void {
     localStorage.setItem('skillhub_user', JSON.stringify(user));
+    if (user?.role?.toLowerCase() === 'admin') {
+      localStorage.setItem('skillhub_admin_user', JSON.stringify(user));
+    }
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('skillhub_auth_change', { detail: user }));
     }
@@ -98,6 +105,8 @@ export const authStorage = {
   clearAuth(): void {
     localStorage.removeItem('skillhub_jwt_token');
     localStorage.removeItem('skillhub_user');
+    localStorage.removeItem('skillhub_admin_token');
+    localStorage.removeItem('skillhub_admin_user');
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('skillhub_auth_change', { detail: null }));
     }

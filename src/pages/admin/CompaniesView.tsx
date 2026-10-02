@@ -87,12 +87,12 @@ export const CompaniesView: React.FC = () => {
   const activeCount = companies.filter((c) => c.status === 'Active').length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 22, width: '100%' }}>
       {/* =========================================================
           1. TOP COMPONENT: COMPANY DIRECTORY DASHBOARD & STATS
           (Structured according to the reference UI design)
           ========================================================= */}
-      <section className="pipeline-dashboard-card" aria-labelledby="companies-dashboard-title">
+      <section className="pipeline-dashboard-card" aria-labelledby="companies-dashboard-title" style={{ width: '100%' }}>
         <div className="pipeline-dashboard-header">
           <div>
             <span className="pipeline-dashboard-eyebrow">Enterprise Hiring & ATS Governance</span>
@@ -169,6 +169,7 @@ export const CompaniesView: React.FC = () => {
           ========================================================= */}
       <div
         style={{
+          width: '100%',
           background: '#ffffff',
           border: '1px solid #dce7e2',
           borderRadius: 18,

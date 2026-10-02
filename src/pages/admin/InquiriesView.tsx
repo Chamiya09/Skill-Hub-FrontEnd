@@ -92,12 +92,12 @@ export const InquiriesView: React.FC = () => {
   const resolvedInquiriesCount = inquiries.filter((i) => i.status === 'Resolved').length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 22, width: '100%' }}>
       {/* =========================================================
           1. TOP COMPONENT: INQUIRIES DESK DASHBOARD & STATS
           (Structured according to the reference UI design)
           ========================================================= */}
-      <section className="pipeline-dashboard-card" aria-labelledby="inquiries-dashboard-title">
+      <section className="pipeline-dashboard-card" aria-labelledby="inquiries-dashboard-title" style={{ width: '100%' }}>
         <div className="pipeline-dashboard-header">
           <div>
             <span className="pipeline-dashboard-eyebrow">Customer & Enterprise Communications Desk</span>
@@ -175,6 +175,7 @@ export const InquiriesView: React.FC = () => {
           ========================================================= */}
       <div
         style={{
+          width: '100%',
           background: '#ffffff',
           border: '1px solid #dce7e2',
           borderRadius: 18,

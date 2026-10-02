@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Inbox,
   Search,
@@ -13,6 +13,7 @@ import {
   AlertCircle,
   HelpCircle,
   Send,
+  RefreshCw,
 } from 'lucide-react';
 import '../../pages/TechnicalAssessmentsFull.css';
 import '../../pages/admin/AdminDashboard.css';
@@ -27,22 +28,23 @@ export const InquiriesView: React.FC = () => {
   const [selectedSenderType, setSelectedSenderType] = useState<string>('All');
   const [activeMessageModal, setActiveMessageModal] = useState<AdminInquiryDto | null>(null);
 
-  useEffect(() => {
-    const loadInquiries = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await adminApi.getInquiries();
-        setInquiries(data);
-      } catch (err: any) {
-        console.error('Failed to fetch real inquiries:', err);
-        setError(err.message || 'Failed to load inquiries from server');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadInquiries();
+  const loadInquiries = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await adminApi.getInquiries();
+      setInquiries(data);
+    } catch (err: any) {
+      console.error('Failed to fetch real inquiries:', err);
+      setError(err.message || 'Failed to load inquiries from server');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadInquiries();
+  }, [loadInquiries]);
 
   const toggleResolved = async (id: string) => {
     try {
@@ -109,6 +111,17 @@ export const InquiriesView: React.FC = () => {
             <span className="pipeline-dashboard-live">
               <span /> Dispatch Active
             </span>
+            <button
+              type="button"
+              className="pipeline-action-btn"
+              onClick={loadInquiries}
+              disabled={isLoading}
+              title="Refresh inquiries from server"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            >
+              <RefreshCw size={13} className={isLoading ? 'animate-spin' : ''} />
+              <span>{isLoading ? 'Syncing...' : 'Sync DB'}</span>
+            </button>
             <button
               type="button"
               className="pipeline-action-btn"
@@ -307,7 +320,23 @@ export const InquiriesView: React.FC = () => {
                 <tr>
                   <td colSpan={6} style={{ padding: '48px 20px', textAlign: 'center', color: '#ef4444' }}>
                     <div style={{ fontWeight: 700, marginBottom: 4 }}>Failed to load live inquiries</div>
-                    <div style={{ fontSize: 13, color: '#94a3b8' }}>{error}</div>
+                    <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 12 }}>{error}</div>
+                    <button
+                      type="button"
+                      onClick={loadInquiries}
+                      style={{
+                        padding: '6px 14px',
+                        borderRadius: 8,
+                        background: '#00b074',
+                        color: '#fff',
+                        border: 'none',
+                        fontWeight: 600,
+                        fontSize: 12,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Retry Connection
+                    </button>
                   </td>
                 </tr>
               ) : filteredInquiries.length === 0 ? (

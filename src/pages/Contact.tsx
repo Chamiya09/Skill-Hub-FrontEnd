@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 import {
   SparkleIcon,
   MailIcon,
@@ -10,15 +11,38 @@ import {
 } from '../components/common/Icons'
 
 export const Contact = () => {
-  const [roleType, setRoleType] = useState<'candidate' | 'employer' | 'partner'>('candidate')
+  const auth = useAuth() as any
+  const user = auth?.user ?? auth?.currentUser ?? null
+
+  const isCandidate = Boolean(user && user.role?.toLowerCase() === 'candidate')
+  const isCompany = Boolean(user && (user.role?.toLowerCase() === 'company' || user.role?.toLowerCase() === 'employer'))
+  const isReadOnly = isCandidate || isCompany
+
   const [formSubmitted, setFormSubmitted] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    company: '',
     subject: '',
     message: '',
   })
+
+  // Dynamic values based on auth state
+  const resolvedName = isCandidate
+    ? (user?.fullName || '')
+    : isCompany
+    ? (user?.companyName || user?.fullName || '')
+    : formData.name
+
+  const resolvedEmail = isReadOnly
+    ? (user?.email || '')
+    : formData.email
+
+  // Dynamic field labels
+  const nameLabel = isCandidate
+    ? 'Your Full Name'
+    : isCompany
+    ? 'Company Name'
+    : 'Your Full Name / Company Name'
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,38 +67,8 @@ export const Contact = () => {
 
       {/* Two-Column Bento Layout */}
       <div className="contact-layout-grid">
-        {/* Left Column: Standardized Contact Form */}
+        {/* Left Column: Unified Single Contact Form */}
         <div className="contact-form-container">
-          {/* Standardized Role Selector Tabs */}
-          <div style={{ marginBottom: '24px' }}>
-            <div className="unified-tab-bar" style={{ width: '100%', display: 'flex' }}>
-              <button
-                type="button"
-                className={`unified-tab-btn ${roleType === 'candidate' ? 'active' : ''}`}
-                style={{ flex: 1, justifyContent: 'center' }}
-                onClick={() => setRoleType('candidate')}
-              >
-                Candidate / Talent
-              </button>
-              <button
-                type="button"
-                className={`unified-tab-btn ${roleType === 'employer' ? 'active' : ''}`}
-                style={{ flex: 1, justifyContent: 'center' }}
-                onClick={() => setRoleType('employer')}
-              >
-                Employer / Recruiter
-              </button>
-              <button
-                type="button"
-                className={`unified-tab-btn ${roleType === 'partner' ? 'active' : ''}`}
-                style={{ flex: 1, justifyContent: 'center' }}
-                onClick={() => setRoleType('partner')}
-              >
-                API & Partner
-              </button>
-            </div>
-          </div>
-
           {formSubmitted ? (
             <div
               style={{
@@ -104,7 +98,7 @@ export const Contact = () => {
                 Message Dispatched!
               </h3>
               <p style={{ color: '#64748b', fontSize: '15px', maxWidth: '440px', margin: '0 auto 24px', lineHeight: '1.6' }}>
-                Thank you for reaching out, <strong>{formData.name || 'there'}</strong>. Our {roleType === 'employer' ? 'Enterprise Talent' : 'Support'} team will respond within 2 hours.
+                Thank you for reaching out, <strong>{resolvedName || 'there'}</strong>. Our team will review your inquiry and respond within 2 hours.
               </p>
               <button
                 type="button"
@@ -112,7 +106,7 @@ export const Contact = () => {
                 style={{ margin: '0 auto' }}
                 onClick={() => {
                   setFormSubmitted(false)
-                  setFormData({ name: '', email: '', company: '', subject: '', message: '' })
+                  setFormData({ name: '', email: '', subject: '', message: '' })
                 }}
               >
                 Send Another Note
@@ -122,45 +116,42 @@ export const Contact = () => {
             <form onSubmit={handleSubmit}>
               <div className="form-field-row">
                 <div className="form-group-item">
-                  <label htmlFor="fullName">Your Full Name *</label>
+                  <label htmlFor="nameOrCompany">{nameLabel} *</label>
                   <input
-                    id="fullName"
+                    id="nameOrCompany"
                     type="text"
                     required
-                    placeholder="e.g. Alex Morgan"
-                    className="input-field-standard"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    readOnly={isReadOnly}
+                    placeholder={
+                      isCandidate
+                        ? 'e.g. Alex Morgan'
+                        : isCompany
+                        ? 'e.g. Vector Compute Inc.'
+                        : 'e.g. Alex Morgan or Vector Compute Inc.'
+                    }
+                    className={`input-field-standard ${
+                      isReadOnly ? 'bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200 select-none' : ''
+                    }`}
+                    value={resolvedName}
+                    onChange={(e) => !isReadOnly && setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
                 <div className="form-group-item">
-                  <label htmlFor="workEmail">Work / Personal Email *</label>
+                  <label htmlFor="email">Email *</label>
                   <input
-                    id="workEmail"
+                    id="email"
                     type="email"
                     required
+                    readOnly={isReadOnly}
                     placeholder="alex@example.com"
-                    className="input-field-standard"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className={`input-field-standard ${
+                      isReadOnly ? 'bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200 select-none' : ''
+                    }`}
+                    value={resolvedEmail}
+                    onChange={(e) => !isReadOnly && setFormData({ ...formData, email: e.target.value })}
                   />
                 </div>
               </div>
-
-              {roleType !== 'candidate' && (
-                <div className="form-group-item">
-                  <label htmlFor="companyName">Company / Organization *</label>
-                  <input
-                    id="companyName"
-                    type="text"
-                    required
-                    placeholder="e.g. Vector Compute Inc."
-                    className="input-field-standard"
-                    value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  />
-                </div>
-              )}
 
               <div className="form-group-item">
                 <label htmlFor="inquirySubject">Subject *</label>
@@ -168,13 +159,7 @@ export const Contact = () => {
                   id="inquirySubject"
                   type="text"
                   required
-                  placeholder={
-                    roleType === 'candidate'
-                      ? 'e.g. Question regarding profile AI verification'
-                      : roleType === 'employer'
-                      ? 'e.g. Hiring 5+ Senior ML Engineers'
-                      : 'e.g. Integrating Skill Hub ATS with Greenhouse'
-                  }
+                  placeholder="e.g. Enterprise inquiry, talent questions, or support"
                   className="input-field-standard"
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}

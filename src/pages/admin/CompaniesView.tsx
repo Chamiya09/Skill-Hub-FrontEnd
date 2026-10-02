@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Building2,
   Search,
@@ -9,6 +9,7 @@ import {
   Sparkles,
   ExternalLink,
   AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import '../../pages/TechnicalAssessmentsFull.css';
 import '../../pages/admin/AdminDashboard.css';
@@ -23,22 +24,23 @@ export const CompaniesView: React.FC = () => {
   const [selectedTier, setSelectedTier] = useState<string>('All');
   const [selectedCompanyModal, setSelectedCompanyModal] = useState<AdminCompanyDto | null>(null);
 
-  useEffect(() => {
-    const loadCompanies = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await adminApi.getCompanies();
-        setCompanies(data);
-      } catch (err: any) {
-        console.error('Failed to fetch real companies:', err);
-        setError(err.message || 'Failed to load companies from server');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadCompanies();
+  const loadCompanies = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await adminApi.getCompanies();
+      setCompanies(data);
+    } catch (err: any) {
+      console.error('Failed to fetch real companies:', err);
+      setError(err.message || 'Failed to load companies from server');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadCompanies();
+  }, [loadCompanies]);
 
   const toggleCompanyStatus = async (id: string) => {
     try {
@@ -112,6 +114,16 @@ export const CompaniesView: React.FC = () => {
             >
               <Sparkles size={14} />
               <span>{selectedStatus === 'Active' ? 'Show All Companies' : `Verified Employers (${activeCount})`}</span>
+            </button>
+            <button
+              type="button"
+              className="pipeline-action-btn"
+              onClick={() => loadCompanies()}
+              disabled={isLoading}
+              title="Refresh company data from live database"
+            >
+              <RefreshCw size={13} style={{ animation: isLoading ? 'spin 1s linear infinite' : 'none' }} />
+              <span>{isLoading ? 'Fetching...' : 'Sync DB'}</span>
             </button>
           </div>
         </div>
@@ -302,7 +314,23 @@ export const CompaniesView: React.FC = () => {
                 <tr>
                   <td colSpan={6} style={{ padding: '48px 20px', textAlign: 'center', color: '#ef4444' }}>
                     <div style={{ fontWeight: 700, marginBottom: 4 }}>Failed to load live data</div>
-                    <div style={{ fontSize: 13, color: '#94a3b8' }}>{error}</div>
+                    <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 12 }}>{error}</div>
+                    <button
+                      type="button"
+                      onClick={() => loadCompanies()}
+                      style={{
+                        padding: '6px 16px',
+                        borderRadius: 8,
+                        background: '#00b074',
+                        color: '#ffffff',
+                        border: 'none',
+                        fontWeight: 700,
+                        fontSize: 12,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Retry Connection
+                    </button>
                   </td>
                 </tr>
               ) : filteredCompanies.length === 0 ? (
@@ -335,6 +363,9 @@ export const CompaniesView: React.FC = () => {
                         <img
                           src={company.logo}
                           alt={company.name}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80';
+                          }}
                           style={{
                             width: 44,
                             height: 44,
@@ -567,6 +598,9 @@ export const CompaniesView: React.FC = () => {
                 <img
                   src={selectedCompanyModal.logo}
                   alt={selectedCompanyModal.name}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80';
+                  }}
                   style={{
                     width: 52,
                     height: 52,

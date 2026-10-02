@@ -17,6 +17,7 @@ import {
   HelpCircle,
   ShieldCheck,
   Send,
+  Briefcase,
 } from 'lucide-react';
 import '../../pages/TechnicalAssessmentsFull.css';
 import '../../pages/admin/AdminDashboard.css';
@@ -155,169 +156,70 @@ export const InquiriesView: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       {/* =========================================================
-          1. TOP HERO HEADER (Company Assessment Page Banner Style)
+          1. TOP COMPONENT: INQUIRIES DESK DASHBOARD & STATS
+          (Structured according to the reference UI design)
           ========================================================= */}
-      <div
-        style={{
-          position: 'relative',
-          padding: '28px 32px',
-          background: 'linear-gradient(112deg, #ffffff 0%, #ffffff 66%, #e6f9f2 100%)',
-          border: '1px solid #dce7e2',
-          borderRadius: 18,
-          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.04)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 16,
-          overflow: 'hidden',
-          isolation: 'isolate',
-        }}
-      >
-        {/* Decorative background geometry matching company assessment page */}
-        <div
-          style={{
-            position: 'absolute',
-            width: 170,
-            height: 170,
-            top: -70,
-            right: 40,
-            border: '22px solid rgba(0, 176, 116, 0.06)',
-            borderRadius: '50%',
-            pointerEvents: 'none',
-            zIndex: 0,
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            width: 90,
-            height: 90,
-            bottom: -45,
-            right: 180,
-            border: '14px solid rgba(0, 176, 116, 0.05)',
-            borderRadius: '50%',
-            pointerEvents: 'none',
-            zIndex: 0,
-          }}
-        />
-
-        <div style={{ zIndex: 1 }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 11,
-              fontWeight: 800,
-              color: '#008e60',
-              background: '#e6f9f2',
-              border: '1px solid #a7f3d0',
-              padding: '3px 10px',
-              borderRadius: 20,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              marginBottom: 8,
-            }}
-          >
-            <Mail size={13} color="#008e60" />
-            <span>CUSTOMER & ENTERPRISE COMMUNICATIONS DESK</span>
+      <section className="pipeline-dashboard-card" aria-labelledby="inquiries-dashboard-title">
+        <div className="pipeline-dashboard-header">
+          <div>
+            <span className="pipeline-dashboard-eyebrow">Customer & Enterprise Communications Desk</span>
+            <h2 id="inquiries-dashboard-title">Inquiries & Contact Requests</h2>
+            <p>
+              Review incoming correspondence from candidates, enterprise partners, and guests submitted via the universal contact portal.
+            </p>
           </div>
-          <h1
-            style={{
-              margin: '0 0 6px 0',
-              fontSize: 24,
-              fontWeight: 850,
-              color: '#0f172a',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Inquiries & Contact Requests
-          </h1>
-          <p style={{ margin: 0, fontSize: 13.5, color: '#64748b', maxWidth: 680, lineHeight: 1.5 }}>
-            Review incoming correspondence from candidates, enterprise partners, and guests submitted via the universal contact portal.
-          </p>
-        </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, zIndex: 1 }}>
-          <div
-            style={{
-              padding: '10px 18px',
-              borderRadius: 12,
-              background: '#ffffff',
-              border: '1px solid #dce7e2',
-              boxShadow: '0 2px 8px rgba(15, 23, 42, 0.035)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-end',
-            }}
-          >
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b' }}>Response SLA Rate</span>
-            <span style={{ fontSize: 15, fontWeight: 850, color: '#008e60', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: '50%',
-                  background: '#00b074',
-                  boxShadow: '0 0 0 2px rgba(0, 176, 116, 0.25)',
-                }}
-              />
-              98.4% On Time (&lt; 2h)
+          <div className="pipeline-dashboard-header-actions">
+            <span className="pipeline-dashboard-live">
+              <span /> Dispatch Active
             </span>
-          </div>
-        </div>
-      </div>
-
-      {/* =========================================================
-          2. TOP STATS BOX (Exact Company Assessment Page Grid)
-          Using .assessment-overview-grid & .assessment-overview-card
-          ========================================================= */}
-      <div className="assessment-overview-grid" style={{ marginBottom: 0 }}>
-        {/* Card 1: Total Inquiries (Emerald) */}
-        <div className="assessment-overview-card">
-          <div className="assessment-overview-icon">
-            <Inbox size={20} />
-          </div>
-          <div>
-            <strong>{totalInquiriesCount}</strong>
-            <span>Total Inquiries</span>
+            <button
+              type="button"
+              className="pipeline-action-btn"
+              onClick={() => setSelectedStatus(selectedStatus === 'New' ? 'All' : 'New')}
+              title={selectedStatus === 'New' ? 'Show all inquiries' : 'Filter to pending new inquiries'}
+            >
+              <Sparkles size={14} />
+              <span>{selectedStatus === 'New' ? 'Show All Inquiries' : `Pending Inquiries (${newInquiriesCount})`}</span>
+            </button>
           </div>
         </div>
 
-        {/* Card 2: Pending Review (Blue) */}
-        <div className="assessment-overview-card assessment-overview-card--blue">
-          <div className="assessment-overview-icon">
-            <Clock size={20} />
-          </div>
-          <div>
-            <strong>{newInquiriesCount}</strong>
-            <span>Pending Review</span>
-          </div>
+        <div className="pipeline-summary-grid">
+          <article className="pipeline-summary-card summary-total">
+            <div className="summary-icon"><Inbox size={20} /></div>
+            <div>
+              <span>Total Inquiries</span>
+              <strong>{totalInquiriesCount}</strong>
+              <small>Universal contact submissions</small>
+            </div>
+          </article>
+          <article className="pipeline-summary-card summary-ready">
+            <div className="summary-icon"><Clock size={20} /></div>
+            <div>
+              <span>Pending Review</span>
+              <strong>{newInquiriesCount}</strong>
+              <small>Awaiting admin response</small>
+            </div>
+          </article>
+          <article className="pipeline-summary-card summary-active">
+            <div className="summary-icon"><Building2 size={20} /></div>
+            <div>
+              <span>Enterprise Requests</span>
+              <strong>{companyInquiriesCount}</strong>
+              <small>Corporate &amp; API inquiries</small>
+            </div>
+          </article>
+          <article className="pipeline-summary-card summary-applicants">
+            <div className="summary-icon"><CheckCircle2 size={20} /></div>
+            <div>
+              <span>Resolved Tickets</span>
+              <strong>{resolvedInquiriesCount}</strong>
+              <small>Successfully handled cases</small>
+            </div>
+          </article>
         </div>
-
-        {/* Card 3: Enterprise Requests (Amber) */}
-        <div className="assessment-overview-card assessment-overview-card--amber">
-          <div className="assessment-overview-icon">
-            <Building2 size={20} />
-          </div>
-          <div>
-            <strong>{companyInquiriesCount}</strong>
-            <span>Enterprise Requests</span>
-          </div>
-        </div>
-
-        {/* Card 4: Resolved Tickets (Violet) */}
-        <div className="assessment-overview-card assessment-overview-card--violet">
-          <div className="assessment-overview-icon">
-            <CheckCircle2 size={20} />
-          </div>
-          <div>
-            <strong>{resolvedInquiriesCount}</strong>
-            <span>Resolved Inquiries</span>
-          </div>
-        </div>
-      </div>
+      </section>
 
       {/* =========================================================
           3. MAIN WORKSPACE: SEARCH, FILTERS & DATA TABLE

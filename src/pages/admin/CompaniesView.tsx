@@ -163,169 +163,70 @@ export const CompaniesView: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       {/* =========================================================
-          1. TOP HERO HEADER (Company Assessment Page Banner Style)
+          1. TOP COMPONENT: COMPANY DIRECTORY DASHBOARD & STATS
+          (Structured according to the reference UI design)
           ========================================================= */}
-      <div
-        style={{
-          position: 'relative',
-          padding: '28px 32px',
-          background: 'linear-gradient(112deg, #ffffff 0%, #ffffff 66%, #e6f9f2 100%)',
-          border: '1px solid #dce7e2',
-          borderRadius: 18,
-          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.04)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 16,
-          overflow: 'hidden',
-          isolation: 'isolate',
-        }}
-      >
-        {/* Subtle decorative geometric rings matching company assessment header */}
-        <div
-          style={{
-            position: 'absolute',
-            width: 170,
-            height: 170,
-            top: -70,
-            right: 40,
-            border: '22px solid rgba(0, 176, 116, 0.06)',
-            borderRadius: '50%',
-            pointerEvents: 'none',
-            zIndex: 0,
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            width: 90,
-            height: 90,
-            bottom: -45,
-            right: 180,
-            border: '14px solid rgba(0, 176, 116, 0.05)',
-            borderRadius: '50%',
-            pointerEvents: 'none',
-            zIndex: 0,
-          }}
-        />
-
-        <div style={{ zIndex: 1 }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 11,
-              fontWeight: 800,
-              color: '#008e60',
-              background: '#e6f9f2',
-              border: '1px solid #a7f3d0',
-              padding: '3px 10px',
-              borderRadius: 20,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              marginBottom: 8,
-            }}
-          >
-            <Building2 size={13} color="#008e60" />
-            <span>ENTERPRISE HIRING & ATS GOVERNANCE</span>
+      <section className="pipeline-dashboard-card" aria-labelledby="companies-dashboard-title">
+        <div className="pipeline-dashboard-header">
+          <div>
+            <span className="pipeline-dashboard-eyebrow">Enterprise Hiring & ATS Governance</span>
+            <h2 id="companies-dashboard-title">Company & Employer Directory</h2>
+            <p>
+              Monitor verified employer accounts, active hiring requisitions, candidate placement benchmarks, and enterprise licensing compliance.
+            </p>
           </div>
-          <h1
-            style={{
-              margin: '0 0 6px 0',
-              fontSize: 24,
-              fontWeight: 850,
-              color: '#0f172a',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Company & Employer Directory
-          </h1>
-          <p style={{ margin: 0, fontSize: 13.5, color: '#64748b', maxWidth: 680, lineHeight: 1.5 }}>
-            Monitor verified employer accounts, active hiring requisitions, candidate placement benchmarks, and enterprise licensing compliance.
-          </p>
-        </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, zIndex: 1 }}>
-          <div
-            style={{
-              padding: '10px 18px',
-              borderRadius: 12,
-              background: '#ffffff',
-              border: '1px solid #dce7e2',
-              boxShadow: '0 2px 8px rgba(15, 23, 42, 0.035)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-end',
-            }}
-          >
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b' }}>Hiring Pipelines</span>
-            <span style={{ fontSize: 15, fontWeight: 850, color: '#008e60', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: '50%',
-                  background: '#00b074',
-                  boxShadow: '0 0 0 2px rgba(0, 176, 116, 0.25)',
-                }}
-              />
-              {companies.filter((c) => c.status === 'Active').length} Verified Organizations
+          <div className="pipeline-dashboard-header-actions">
+            <span className="pipeline-dashboard-live">
+              <span /> Directory Active
             </span>
-          </div>
-        </div>
-      </div>
-
-      {/* =========================================================
-          2. TOP STATS BOX (Exact Company Assessment Page Grid)
-          Using .assessment-overview-grid & .assessment-overview-card
-          ========================================================= */}
-      <div className="assessment-overview-grid" style={{ marginBottom: 0 }}>
-        {/* Card 1: Registered Companies (Emerald) */}
-        <div className="assessment-overview-card">
-          <div className="assessment-overview-icon">
-            <Building2 size={20} />
-          </div>
-          <div>
-            <strong>38</strong>
-            <span>Registered Companies</span>
+            <button
+              type="button"
+              className="pipeline-action-btn"
+              onClick={() => setSelectedStatus(selectedStatus === 'Active' ? 'All' : 'Active')}
+              title={selectedStatus === 'Active' ? 'Show all organizations' : 'Filter to active verified organizations'}
+            >
+              <Sparkles size={14} />
+              <span>{selectedStatus === 'Active' ? 'Show All Companies' : `Verified Employers (${companies.filter((c) => c.status === 'Active').length})`}</span>
+            </button>
           </div>
         </div>
 
-        {/* Card 2: Active Job Requisitions (Blue) */}
-        <div className="assessment-overview-card assessment-overview-card--blue">
-          <div className="assessment-overview-icon">
-            <Briefcase size={20} />
-          </div>
-          <div>
-            <strong>{totalActiveJobs}</strong>
-            <span>Active Job Posts</span>
-          </div>
+        <div className="pipeline-summary-grid">
+          <article className="pipeline-summary-card summary-total">
+            <div className="summary-icon"><Building2 size={20} /></div>
+            <div>
+              <span>Registered Companies</span>
+              <strong>38</strong>
+              <small>Verified employer accounts</small>
+            </div>
+          </article>
+          <article className="pipeline-summary-card summary-ready">
+            <div className="summary-icon"><Briefcase size={20} /></div>
+            <div>
+              <span>Active Job Posts</span>
+              <strong>{totalActiveJobs}</strong>
+              <small>Published hiring campaigns</small>
+            </div>
+          </article>
+          <article className="pipeline-summary-card summary-active">
+            <div className="summary-icon"><TrendingUp size={20} /></div>
+            <div>
+              <span>Talent Placements</span>
+              <strong>{totalHiresCount}</strong>
+              <small>Placed via ATS match engine</small>
+            </div>
+          </article>
+          <article className="pipeline-summary-card summary-applicants">
+            <div className="summary-icon"><Clock size={20} /></div>
+            <div>
+              <span>Pending Approvals</span>
+              <strong>{pendingCount}</strong>
+              <small>Awaiting compliance review</small>
+            </div>
+          </article>
         </div>
-
-        {/* Card 3: Talent Placements (Amber) */}
-        <div className="assessment-overview-card assessment-overview-card--amber">
-          <div className="assessment-overview-icon">
-            <TrendingUp size={20} />
-          </div>
-          <div>
-            <strong>{totalHiresCount}</strong>
-            <span>Talent Placements</span>
-          </div>
-        </div>
-
-        {/* Card 4: Pending Authorization (Violet) */}
-        <div className="assessment-overview-card assessment-overview-card--violet">
-          <div className="assessment-overview-icon">
-            <Clock size={20} />
-          </div>
-          <div>
-            <strong>{pendingCount}</strong>
-            <span>Pending Approvals</span>
-          </div>
-        </div>
-      </div>
+      </section>
 
       {/* =========================================================
           3. MAIN WORKSPACE: SEARCH, FILTERS & DATA TABLE

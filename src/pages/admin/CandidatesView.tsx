@@ -12,6 +12,7 @@ import {
   ShieldAlert,
   ArrowUpRight,
   TrendingUp,
+  Briefcase,
 } from 'lucide-react';
 import '../../pages/TechnicalAssessmentsFull.css';
 import '../../pages/admin/AdminDashboard.css';
@@ -100,135 +101,77 @@ export const CandidatesView: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const totalCandidatesCount = candidates.length;
+  const activeCount = candidates.filter((c) => c.status === 'Active').length;
+  const highMatchCount = candidates.filter((c) => c.aiMatchAverage >= 90).length;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       {/* =========================================================
-          1. TOP HERO HEADER (Company Assessment Page Style)
+          1. TOP COMPONENT: CANDIDATE DIRECTORY DASHBOARD & STATS
+          (Structured according to the reference UI design)
           ========================================================= */}
-      <div
-        style={{
-          position: 'relative',
-          padding: '24px 28px',
-          background: 'linear-gradient(115deg, #ffffff 0%, #ffffff 60%, #e6f9f2 100%)',
-          border: '1px solid #dce7e2',
-          borderRadius: 18,
-          boxShadow: '0 6px 20px rgba(15, 23, 42, 0.035)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 16,
-          overflow: 'hidden',
-        }}
-      >
-        <div style={{ zIndex: 1 }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 11,
-              fontWeight: 800,
-              color: '#008e60',
-              background: '#e6f9f2',
-              border: '1px solid #a7f3d0',
-              padding: '3px 10px',
-              borderRadius: 20,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              marginBottom: 8,
-            }}
-          >
-            <Sparkles size={13} color="#008e60" />
-            <span>GLOBAL TALENT EVALUATION & ATS TELEMETRY</span>
+      <section className="pipeline-dashboard-card" aria-labelledby="candidates-dashboard-title">
+        <div className="pipeline-dashboard-header">
+          <div>
+            <span className="pipeline-dashboard-eyebrow">Global Talent Evaluation & ATS Telemetry</span>
+            <h2 id="candidates-dashboard-title">Candidate Assessment Directory</h2>
+            <p>
+              Real-time governance over candidate assessment metrics, verified skill matrices, AI match benchmarks, and account security authorizations.
+            </p>
           </div>
-          <h1
-            style={{
-              margin: '0 0 6px 0',
-              fontSize: 24,
-              fontWeight: 850,
-              color: '#0f172a',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Candidate Assessment Directory
-          </h1>
-          <p style={{ margin: 0, fontSize: 13.5, color: '#64748b', maxWidth: 680, lineHeight: 1.5 }}>
-            Real-time governance over candidate assessment metrics, verified skill matrices, AI match benchmarks, and account security authorizations.
-          </p>
-        </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, zIndex: 1 }}>
-          <div
-            style={{
-              padding: '10px 16px',
-              borderRadius: 12,
-              background: '#ffffff',
-              border: '1px solid #dce7e2',
-              boxShadow: '0 2px 6px rgba(15, 23, 42, 0.03)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-end',
-            }}
-          >
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b' }}>Match Engine SLA</span>
-            <span style={{ fontSize: 15, fontWeight: 850, color: '#008e60', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00b074' }} />
-              99.98% Live
+          <div className="pipeline-dashboard-header-actions">
+            <span className="pipeline-dashboard-live">
+              <span /> Evaluation Live
             </span>
-          </div>
-        </div>
-      </div>
-
-      {/* =========================================================
-          2. TOP STATS BOX (Exact Company Assessment Page Grid)
-          Using .assessment-overview-grid & .assessment-overview-card
-          ========================================================= */}
-      <div className="assessment-overview-grid" style={{ marginBottom: 0 }}>
-        {/* Card 1: Total Candidates (Emerald) */}
-        <div className="assessment-overview-card">
-          <div className="assessment-overview-icon">
-            <Users size={20} />
-          </div>
-          <div>
-            <strong>1,428</strong>
-            <span>Total Candidates</span>
+            <button
+              type="button"
+              className="pipeline-action-btn"
+              onClick={() => setSelectedStatus(selectedStatus === 'Active' ? 'All' : 'Active')}
+              title={selectedStatus === 'Active' ? 'Show all candidates' : 'Filter to active verified talent'}
+            >
+              <Sparkles size={14} />
+              <span>{selectedStatus === 'Active' ? 'Show All Candidates' : `Verified Talent (${activeCount})`}</span>
+            </button>
           </div>
         </div>
 
-        {/* Card 2: AI Verified / High Match (Blue) */}
-        <div className="assessment-overview-card assessment-overview-card--blue">
-          <div className="assessment-overview-icon">
-            <Sparkles size={20} />
-          </div>
-          <div>
-            <strong>1,180</strong>
-            <span>AI Verified (&gt;85%)</span>
-          </div>
+        <div className="pipeline-summary-grid">
+          <article className="pipeline-summary-card summary-total">
+            <div className="summary-icon"><Users size={20} /></div>
+            <div>
+              <span>Total Candidates</span>
+              <strong>1,428</strong>
+              <small>Registered talent profiles</small>
+            </div>
+          </article>
+          <article className="pipeline-summary-card summary-ready">
+            <div className="summary-icon"><Sparkles size={20} /></div>
+            <div>
+              <span>AI Verified Talent</span>
+              <strong>1,180</strong>
+              <small>Passed AI benchmark (&gt;85%)</small>
+            </div>
+          </article>
+          <article className="pipeline-summary-card summary-active">
+            <div className="summary-icon"><CheckCircle2 size={20} /></div>
+            <div>
+              <span>Available for Hire</span>
+              <strong>842</strong>
+              <small>Open for employer placement</small>
+            </div>
+          </article>
+          <article className="pipeline-summary-card summary-applicants">
+            <div className="summary-icon"><ShieldAlert size={20} /></div>
+            <div>
+              <span>Suspended / Audit</span>
+              <strong>24</strong>
+              <small>Flagged compliance accounts</small>
+            </div>
+          </article>
         </div>
-
-        {/* Card 3: Ready for Hire (Amber) */}
-        <div className="assessment-overview-card assessment-overview-card--amber">
-          <div className="assessment-overview-icon">
-            <CheckCircle2 size={20} />
-          </div>
-          <div>
-            <strong>842</strong>
-            <span>Available for Hire</span>
-          </div>
-        </div>
-
-        {/* Card 4: Suspended / Audit (Violet) */}
-        <div className="assessment-overview-card assessment-overview-card--violet">
-          <div className="assessment-overview-icon">
-            <ShieldAlert size={20} />
-          </div>
-          <div>
-            <strong>24</strong>
-            <span>Suspended Accounts</span>
-          </div>
-        </div>
-      </div>
+      </section>
 
       {/* =========================================================
           3. MAIN WORKSPACE: SEARCH, TABS & DATA TABLE

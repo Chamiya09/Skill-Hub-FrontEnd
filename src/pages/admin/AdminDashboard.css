@@ -1946,3 +1946,83 @@
   color: #b45309;
 }
 
+/* ==========================================================================
+   COMPANY-SIDE AESTHETIC SEARCH BAR FOR ADMIN CONSOLE
+   (Matches Hiring Pipeline & Technical Assessments Search UI)
+   ========================================================================== */
+.admin-company-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1.5px solid #dce5eb;
+  border-radius: 12px;
+  padding: 0 14px;
+  height: 42px;
+  flex: 1;
+  min-width: 260px;
+  max-width: 480px;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.admin-company-search-box:hover {
+  border-color: #cbd5e1;
+}
+
+.admin-company-search-box:focus-within {
+  border-color: #00b074;
+  box-shadow: 0 0 0 3px rgba(0, 176, 116, 0.12);
+  background: #ffffff;
+}
+
+.admin-company-search-icon {
+  color: #00b074;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.admin-company-search-input {
+  border: none !important;
+  outline: none !important;
+  font-size: 13.5px;
+  font-weight: 500;
+  width: 100%;
+  background: transparent !important;
+  color: #0f172a !important;
+  font-family: inherit;
+  padding: 0 !important;
+  height: 100% !important;
+  box-shadow: none !important;
+}
+
+.admin-company-search-input::placeholder {
+  color: #94a3b8;
+  font-weight: 450;
+}
+
+.admin-company-search-clear {
+  border: none;
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: pointer;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.admin-company-search-clear:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+

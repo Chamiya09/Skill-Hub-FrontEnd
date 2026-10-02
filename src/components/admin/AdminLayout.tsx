@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  LayoutDashboard,
   Users,
   Building2,
   Inbox,
@@ -13,7 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 import { authStorage } from '../../services/api';
 import '../../pages/admin/AdminDashboard.css';
 
-export type AdminTab = 'candidates' | 'companies' | 'inquiries';
+export type AdminTab = 'overview' | 'candidates' | 'companies' | 'inquiries';
 
 interface AdminLayoutProps {
   children?: React.ReactNode;
@@ -23,7 +24,7 @@ interface AdminLayoutProps {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({
   children,
-  activeTab = 'candidates',
+  activeTab = 'overview',
   onTabChange,
 }) => {
   const { currentUser, logout } = useAuth();
@@ -36,8 +37,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     badge?: string;
   }
 
-  // 3 navigation menu items
+  // 4 navigation menu items
   const navItems: NavItem[] = [
+    {
+      id: 'overview',
+      label: 'Overview',
+      icon: LayoutDashboard,
+    },
     {
       id: 'candidates',
       label: 'Candidates',
@@ -253,15 +259,6 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             >
               <Activity size={13} color="#00b074" />
               <span>Production Live</span>
-            </div>
-
-            <div style={{ width: 1, height: 20, background: '#e2e8f0' }} />
-
-            <div style={{ fontSize: '12px', color: '#64748b' }}>
-              Signed in as{' '}
-              <strong style={{ color: '#0f172a' }}>
-                {currentUser?.email || 'admin@skillhub.internal'}
-              </strong>
             </div>
           </div>
         </header>

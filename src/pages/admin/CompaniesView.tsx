@@ -9,7 +9,7 @@ import {
   Sparkles,
   ExternalLink,
   AlertCircle,
-  RefreshCw,
+  X,
 } from 'lucide-react';
 import '../../pages/TechnicalAssessmentsFull.css';
 import '../../pages/admin/AdminDashboard.css';
@@ -84,7 +84,6 @@ export const CompaniesView: React.FC = () => {
   const totalActiveJobs = companies.reduce((sum, c) => sum + c.activeJobPosts, 0);
   const totalHiresCount = companies.reduce((sum, c) => sum + c.totalHires, 0);
   const pendingCount = companies.filter((c) => c.status === 'Pending').length;
-  const activeCount = companies.filter((c) => c.status === 'Active').length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22, width: '100%' }}>
@@ -106,25 +105,6 @@ export const CompaniesView: React.FC = () => {
             <span className="pipeline-dashboard-live">
               <span /> Directory Active
             </span>
-            <button
-              type="button"
-              className="pipeline-action-btn"
-              onClick={() => setSelectedStatus(selectedStatus === 'Active' ? 'All' : 'Active')}
-              title={selectedStatus === 'Active' ? 'Show all organizations' : 'Filter to active verified organizations'}
-            >
-              <Sparkles size={14} />
-              <span>{selectedStatus === 'Active' ? 'Show All Companies' : `Verified Employers (${activeCount})`}</span>
-            </button>
-            <button
-              type="button"
-              className="pipeline-action-btn"
-              onClick={() => loadCompanies()}
-              disabled={isLoading}
-              title="Refresh company data from live database"
-            >
-              <RefreshCw size={13} style={{ animation: isLoading ? 'spin 1s linear infinite' : 'none' }} />
-              <span>{isLoading ? 'Fetching...' : 'Sync DB'}</span>
-            </button>
           </div>
         </div>
 
@@ -190,38 +170,28 @@ export const CompaniesView: React.FC = () => {
             background: '#ffffff',
           }}
         >
-          {/* Search Box */}
-          <div style={{ position: 'relative', flex: 1, minWidth: 260, maxWidth: 440 }}>
-            <Search
-              size={16}
-              style={{
-                position: 'absolute',
-                left: 14,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#94a3b8',
-                pointerEvents: 'none',
-              }}
-            />
+          {/* Company-Style Search Box */}
+          <div className="admin-company-search-box">
+            <span className="admin-company-search-icon">
+              <Search size={16} />
+            </span>
             <input
               type="text"
+              className="admin-company-search-input"
               placeholder="Search company by name, email, or industry..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                height: 40,
-                padding: '0 14px 0 40px',
-                borderRadius: 10,
-                border: '1px solid #dce5eb',
-                background: '#f8fafc',
-                color: '#0f172a',
-                fontSize: 13.5,
-                outline: 'none',
-                transition: 'all 0.18s ease',
-                boxSizing: 'border-box',
-              }}
             />
+            {searchQuery && (
+              <button
+                type="button"
+                className="admin-company-search-clear"
+                onClick={() => setSearchQuery('')}
+                title="Clear search"
+              >
+                <X size={12} />
+              </button>
+            )}
           </div>
 
           {/* Filter Controls Row */}

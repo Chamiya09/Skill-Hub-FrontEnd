@@ -9,11 +9,10 @@ import {
   RotateCcw,
   Clock,
   CheckCircle2,
-  Sparkles,
   AlertCircle,
   HelpCircle,
   Send,
-  RefreshCw,
+  X,
 } from 'lucide-react';
 import '../../pages/TechnicalAssessmentsFull.css';
 import '../../pages/admin/AdminDashboard.css';
@@ -111,26 +110,6 @@ export const InquiriesView: React.FC = () => {
             <span className="pipeline-dashboard-live">
               <span /> Dispatch Active
             </span>
-            <button
-              type="button"
-              className="pipeline-action-btn"
-              onClick={loadInquiries}
-              disabled={isLoading}
-              title="Refresh inquiries from server"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-            >
-              <RefreshCw size={13} className={isLoading ? 'animate-spin' : ''} />
-              <span>{isLoading ? 'Syncing...' : 'Sync DB'}</span>
-            </button>
-            <button
-              type="button"
-              className="pipeline-action-btn"
-              onClick={() => setSelectedStatus(selectedStatus === 'New' ? 'All' : 'New')}
-              title={selectedStatus === 'New' ? 'Show all inquiries' : 'Filter to pending new inquiries'}
-            >
-              <Sparkles size={14} />
-              <span>{selectedStatus === 'New' ? 'Show All Inquiries' : `Pending Inquiries (${newInquiriesCount})`}</span>
-            </button>
           </div>
         </div>
 
@@ -196,38 +175,28 @@ export const InquiriesView: React.FC = () => {
             background: '#ffffff',
           }}
         >
-          {/* Search Box */}
-          <div style={{ position: 'relative', flex: 1, minWidth: 260, maxWidth: 440 }}>
-            <Search
-              size={16}
-              style={{
-                position: 'absolute',
-                left: 14,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#94a3b8',
-                pointerEvents: 'none',
-              }}
-            />
+          {/* Company-Style Search Box */}
+          <div className="admin-company-search-box">
+            <span className="admin-company-search-icon">
+              <Search size={16} />
+            </span>
             <input
               type="text"
+              className="admin-company-search-input"
               placeholder="Search by sender, email, subject, or message content..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                height: 40,
-                padding: '0 14px 0 40px',
-                borderRadius: 10,
-                border: '1px solid #dce5eb',
-                background: '#f8fafc',
-                color: '#0f172a',
-                fontSize: 13.5,
-                outline: 'none',
-                transition: 'all 0.18s ease',
-                boxSizing: 'border-box',
-              }}
             />
+            {searchQuery && (
+              <button
+                type="button"
+                className="admin-company-search-clear"
+                onClick={() => setSearchQuery('')}
+                title="Clear search"
+              >
+                <X size={12} />
+              </button>
+            )}
           </div>
 
           {/* Filter Controls Row */}

@@ -30,10 +30,10 @@ import {
   MenuIcon,
   XIcon,
   BuildingIcon,
-  ClockIcon,
   PlusIcon,
   UsersIcon,
 } from '../components/common/Icons'
+import { LiveDateTime } from '../components/common/LiveDateTime'
 import { PipelineJobSelector } from './PipelineJobSelector'
 import { HiringPipeline } from './HiringPipeline'
 import { TechnicalAssessments } from './TechnicalAssessments'
@@ -116,31 +116,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
   const [jobs, setJobs] = useState<JobDto[]>([])
   const [dataLoading, setDataLoading] = useState<boolean>(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
-  // Real-time Date and Time state
-  const [currentDateTime, setCurrentDateTime] = useState<Date>(new Date())
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentDateTime(new Date())
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [])
-
-  const formattedDateTime = (() => {
-    const dateStr = currentDateTime.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
-    const timeStr = currentDateTime.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    })
-    return `${dateStr} | ${timeStr}`
-  })()
 
   // Authenticate gate & Role Protection
   useEffect(() => {
@@ -624,12 +599,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
           </div>
 
           <div className="topbar-right">
-            <div className="topbar-live-clock">
-              <span className="topbar-clock-icon">
-                <ClockIcon />
-              </span>
-              <span>{formattedDateTime}</span>
-            </div>
+            <LiveDateTime />
           </div>
         </header>
 

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { CandidateSidebar } from './CandidateSidebar';
-import { ClockIcon, MenuIcon } from '../common/Icons';
+import { MenuIcon } from '../common/Icons';
+import { LiveDateTime } from '../common/LiveDateTime';
 
 
 export const CandidateLayout: React.FC = () => {
@@ -55,31 +56,6 @@ export const CandidateLayout: React.FC = () => {
       }
     }
   }, [isLoading, isAuthenticated, currentUser, navigate]);
-
-  // Real-time Live Clock (matching Company Dashboard)
-  const [currentDateTime, setCurrentDateTime] = useState<Date>(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentDateTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const formattedDateTime = (() => {
-    const dateStr = currentDateTime.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-    const timeStr = currentDateTime.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-    return `${dateStr} | ${timeStr}`;
-  })();
 
   const getPageTitle = () => {
     if (location.pathname.startsWith('/candidate/dashboard') || location.pathname.startsWith('/candidate/interviews') || location.pathname === '/candidate') return 'My Interviews';
@@ -134,12 +110,7 @@ export const CandidateLayout: React.FC = () => {
           </div>
 
           <div className="topbar-right">
-            <div className="topbar-live-clock">
-              <span className="topbar-clock-icon">
-                <ClockIcon />
-              </span>
-              <span>{formattedDateTime}</span>
-            </div>
+            <LiveDateTime />
           </div>
         </header>
 

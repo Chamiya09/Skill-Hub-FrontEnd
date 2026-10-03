@@ -6,7 +6,6 @@ import {
   SparkleIcon,
   MailIcon,
   LockIcon,
-  ShieldCheckIcon,
   CheckIcon,
   ArrowRightIcon,
 } from '../components/common/Icons';
@@ -208,10 +207,6 @@ export const Login = () => {
             </Link>
           </p>
 
-          <div className="auth-security-badge" style={{ marginTop: '8px' }}>
-            <ShieldCheckIcon />
-            <span>SOC-2 Type II Certified • 256-Bit Enterprise SSL</span>
-          </div>
         </div>
       </div>
     </AuthSplitLayout>

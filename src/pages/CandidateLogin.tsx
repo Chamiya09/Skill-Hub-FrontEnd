@@ -5,7 +5,6 @@ import { AuthSplitLayout } from '../components/common/AuthSplitLayout';
 import {
   MailIcon,
   LockIcon,
-  ShieldCheckIcon,
   CheckIcon,
   ArrowRightIcon,
   BriefcaseIcon,
@@ -234,10 +233,6 @@ export const CandidateLogin: React.FC = () => {
             </Link>
           </p>
 
-          <div className="auth-security-badge" style={{ marginTop: '8px' }}>
-            <ShieldCheckIcon />
-            <span>Secure TLS 1.3 • Privacy Guaranteed</span>
-          </div>
         </div>
       </div>
     </AuthSplitLayout>

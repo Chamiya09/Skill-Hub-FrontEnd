@@ -7,6 +7,7 @@ import {
   MapPinIcon,
   SearchIcon,
 } from '../components/common/Icons';
+import { CandidateLoadingIndicator } from '../components/common/CandidateLoadingIndicator';
 import './CandidateSavedJobs.css';
 
 const BookmarkIcon: React.FC = () => (
@@ -74,7 +75,7 @@ export const CandidateSavedJobs: React.FC = () => {
 
       {isLoading ? (
         <div className="saved-jobs-state" aria-live="polite">
-          <div className="saved-jobs-spinner" /><p>Loading your saved opportunities...</p>
+          <CandidateLoadingIndicator /><p>Loading your saved opportunities...</p>
         </div>
       ) : savedJobs.length === 0 ? (
         <div className="saved-jobs-state saved-jobs-empty">

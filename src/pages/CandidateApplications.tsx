@@ -12,6 +12,7 @@ import {
   BriefcaseIcon,
   SearchIcon,
 } from '../components/common/Icons';
+import { CandidateLoadingIndicator } from '../components/common/CandidateLoadingIndicator';
 import './CandidateApplications.css';
 
 const STAGE_LABELS = ['Applied', 'Under Review', 'Shortlisted', 'Assessment', 'Interview', 'Hire'];
@@ -96,7 +97,7 @@ export const CandidateApplications: React.FC = () => {
         <button type="button" onClick={() => void fetchApplications()}>Retry</button></div>}
 
       {isLoading ? (
-        <div className="applications-state-card" aria-live="polite"><div className="applications-spinner" /><p>Loading your applications...</p></div>
+        <div className="applications-state-card" aria-live="polite"><CandidateLoadingIndicator /><p>Loading your applications...</p></div>
       ) : applications.length === 0 ? (
         <div className="applications-state-card applications-empty">
           <div className="applications-empty-icon"><BriefcaseIcon /></div><h2>No Job Applications Yet</h2>

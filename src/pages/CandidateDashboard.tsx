@@ -22,6 +22,7 @@ import {
   eventsApi,
   type CandidateInterviewDto,
 } from '../services/api';
+import { CandidateLoadingIndicator } from '../components/common/CandidateLoadingIndicator';
 import './CandidateDashboard.css';
 
 type InterviewFilter = 'all' | 'upcoming' | 'completed';
@@ -275,7 +276,7 @@ export function CandidateDashboard() {
       {/* 3. Interview Results */}
       {loadingInterviews ? (
           <div className="interviews-loading-wrap">
-            <div className="interviews-loading-spinner" />
+            <CandidateLoadingIndicator />
             <p>Checking for scheduled interviews...</p>
           </div>
         ) : interviewsError ? (

@@ -16,6 +16,7 @@ import {
   ArrowRightIcon,
   SearchIcon,
 } from '../components/common/Icons';
+import { CandidateLoadingIndicator } from '../components/common/CandidateLoadingIndicator';
 import './CandidateAssessments.css';
 
 // SVG Icon for Code / Technical assessment
@@ -332,7 +333,7 @@ export const CandidateAssessments: React.FC = () => {
       {/* 3. Main Assessment Cards Grid */}
       {isLoading ? (
         <div className="assessments-state-card">
-          <div className="assessments-spinner" />
+          <CandidateLoadingIndicator />
           <p>Loading your technical assessments...</p>
         </div>
       ) : filteredAssessments.length === 0 ? (

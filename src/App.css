@@ -14660,6 +14660,39 @@ select.w-full {
   animation: auth-transition-progress 900ms cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
+.candidate-loading-indicator {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  flex: 0 0 56px;
+}
+
+.candidate-loading-indicator-ring {
+  position: absolute;
+  inset: 0;
+  border: 4px solid #ecfdf5;
+  border-top-color: #059669;
+  border-radius: 50%;
+  animation: candidate-loading-spin 850ms linear infinite;
+}
+
+.candidate-loading-indicator-mark {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #047857;
+}
+
+.candidate-loading-indicator-mark svg { width: 20px; height: 20px; }
+
+.study-loading-card .candidate-loading-indicator { margin-bottom: 18px; }
+
+@keyframes candidate-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
 @keyframes auth-transition-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -14684,7 +14717,8 @@ select.w-full {
   .auth-transition-overlay { animation: none; }
   .auth-transition-mark,
   .auth-transition-mark::after,
-  .auth-transition-track span { animation-duration: 1ms; }
+  .auth-transition-track span,
+  .candidate-loading-indicator-ring { animation-duration: 1ms; }
 }
 
 .ai-score-section {

@@ -10,7 +10,8 @@ import {
   StudyFocusAreaCard,
   StudyDisclaimerFooter,
 } from '../components/interview-prep';
-import { SparkleIcon, TargetIcon } from '../components/common/Icons';
+import { CandidateLoadingIndicator } from '../components/common/CandidateLoadingIndicator';
+import { TargetIcon } from '../components/common/Icons';
 import './CandidateStudyDashboard.css';
 
 const LightbulbIcon: React.FC = () => (
@@ -208,12 +209,7 @@ export const CandidateStudyDashboard: React.FC = () => {
     return (
       <div className="study-dashboard-page">
         <div className="study-loading-card">
-          <div className="study-loading-spinner-wrap">
-            <div className="study-loading-spinner" />
-            <div className="study-loading-icon">
-              <SparkleIcon />
-            </div>
-          </div>
+          <CandidateLoadingIndicator />
           <h2 className="study-loading-title">
             Loading Interview Preparation Guidelines...
           </h2>

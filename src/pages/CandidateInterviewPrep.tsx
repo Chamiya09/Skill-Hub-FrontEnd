@@ -13,6 +13,7 @@ import {
   GeneratingGuideModal,
   ReviewStudyGuideModal,
 } from '../components/interview-prep';
+import { CandidateLoadingIndicator } from '../components/common/CandidateLoadingIndicator';
 import { BookOpen, BriefcaseBusiness, CheckCircle2, Clock, Search, Sparkles, X } from 'lucide-react';
 import './CandidateInterviewPrep.css';
 
@@ -384,7 +385,7 @@ export const CandidateInterviewPrep: React.FC = () => {
       {/* 2. Initial Loading State */}
       {isLoadingApps ? (
         <div className="prep-loading-state-card" aria-live="polite">
-          <div className="prep-state-spinner" />
+          <CandidateLoadingIndicator />
           <p>Checking eligible interview applications...</p>
         </div>
       ) : (

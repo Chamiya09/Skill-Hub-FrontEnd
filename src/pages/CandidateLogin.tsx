@@ -23,14 +23,14 @@ export const CandidateLogin: React.FC = () => {
 
   // If already authenticated, redirect
   useEffect(() => {
-    if (!authLoading && isAuthenticated && currentUser) {
+    if (!authLoading && isAuthenticated && currentUser && !loading && !successMessage) {
       if (currentUser.role?.toUpperCase() === 'CANDIDATE') {
         navigate('/candidate/profile', { replace: true });
       } else {
         navigate('/dashboard', { replace: true });
       }
     }
-  }, [isAuthenticated, authLoading, currentUser, navigate]);
+  }, [isAuthenticated, authLoading, currentUser, loading, successMessage, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,9 +51,8 @@ export const CandidateLogin: React.FC = () => {
     try {
       const user = await candidateLogin(email.trim().toLowerCase(), password);
       setSuccessMessage(`Welcome back, ${user.fullName || user.firstName || 'Candidate'}! Redirecting...`);
-      setTimeout(() => {
-        navigate('/candidate/profile', { replace: true });
-      }, 500);
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 900));
+      navigate('/candidate/profile', { replace: true });
     } catch (err: any) {
       console.error('Candidate login error:', err);
       setErrorMessage(
@@ -69,6 +68,7 @@ export const CandidateLogin: React.FC = () => {
       eyebrow="FOR PEOPLE READY TO GROW"
       quote="Your next opportunity starts with the skills you bring."
       description="Make your experience visible, find work that fits, and take your next step with confidence."
+      transitioning={Boolean(successMessage)}
     >
       <div className="auth-card-premium auth-split-form">
 

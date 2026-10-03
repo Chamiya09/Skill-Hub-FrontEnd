@@ -22,10 +22,10 @@ export const Login = () => {
 
   // If already authenticated, redirect to dashboard
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
+    if (!authLoading && isAuthenticated && !loading && !successMessage) {
       navigate('/dashboard', { replace: true });
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, loading, successMessage, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +35,7 @@ export const Login = () => {
     try {
       const user = await login(email.trim(), password);
       setSuccessMessage(`Welcome back, ${user.fullName || user.companyName}!`);
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 900));
       navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to authenticate company user. Please verify your credentials.';
@@ -49,6 +50,7 @@ export const Login = () => {
       eyebrow="FOR TEAMS THAT BUILD WHAT'S NEXT"
       quote="Great teams aren't found. They're built with intention."
       description="Bring your hiring into focus, connect with the right people, and give every great hire a place to begin."
+      transitioning={Boolean(successMessage)}
     >
       <div className="auth-card-premium auth-split-form">
 

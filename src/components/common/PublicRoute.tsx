@@ -4,16 +4,22 @@ import { useAuth } from '../../context/AuthContext';
 
 interface PublicRouteProps {
   children: React.ReactNode;
+  deferAuthenticatedRedirect?: boolean;
 }
 
-export const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
+export const PublicRoute: React.FC<PublicRouteProps> = ({ children, deferAuthenticatedRedirect = false }) => {
   const { isAuthenticated, currentUser, isLoading } = useAuth();
+  const [hasCompletedInitialLoad, setHasCompletedInitialLoad] = React.useState(!isLoading);
 
-  if (isLoading) {
+  React.useEffect(() => {
+    if (!isLoading) setHasCompletedInitialLoad(true);
+  }, [isLoading]);
+
+  if (isLoading && (!deferAuthenticatedRedirect || !hasCompletedInitialLoad)) {
     return null;
   }
 
-  if (isAuthenticated && currentUser) {
+  if (isAuthenticated && currentUser && !deferAuthenticatedRedirect) {
     const role = (currentUser.role || '').toLowerCase();
     if (role === 'admin' || role === 'super_admin') {
       return <Navigate to="/skillhub-secure-admin/dashboard" replace />;

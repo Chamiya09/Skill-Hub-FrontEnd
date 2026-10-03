@@ -7,9 +7,10 @@ type AuthSplitLayoutProps = {
   eyebrow: string;
   quote: string;
   description: string;
+  transitioning?: boolean;
 };
 
-export const AuthSplitLayout = ({ children, eyebrow, quote, description }: AuthSplitLayoutProps) => (
+export const AuthSplitLayout = ({ children, eyebrow, quote, description, transitioning = false }: AuthSplitLayoutProps) => (
   <div className="auth-split-layout">
     <aside className="auth-split-story">
       <Link to="/" className="auth-split-brand">
@@ -40,5 +41,15 @@ export const AuthSplitLayout = ({ children, eyebrow, quote, description }: AuthS
         {children}
       </div>
     </main>
+
+    {transitioning && (
+      <div className="auth-transition-overlay" role="status" aria-label="Signing in to SkillHub">
+        <div className="auth-transition-content">
+          <span className="auth-transition-mark"><SparkleIcon /></span>
+          <span className="auth-transition-wordmark">Skill<span>Hub</span></span>
+          <span className="auth-transition-track"><span /></span>
+        </div>
+      </div>
+    )}
   </div>
 );

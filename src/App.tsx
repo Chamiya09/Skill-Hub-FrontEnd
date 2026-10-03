@@ -97,7 +97,7 @@ function AppContent() {
             <Route
               path="/candidate-login"
               element={
-                <PublicRoute>
+                <PublicRoute deferAuthenticatedRedirect>
                   <CandidateLogin />
                 </PublicRoute>
               }
@@ -105,7 +105,7 @@ function AppContent() {
             <Route
               path="/candidate/login"
               element={
-                <PublicRoute>
+                <PublicRoute deferAuthenticatedRedirect>
                   <CandidateLogin />
                 </PublicRoute>
               }
@@ -192,7 +192,7 @@ function AppContent() {
             <Route
               path="/company-login"
               element={
-                <PublicRoute>
+                <PublicRoute deferAuthenticatedRedirect>
                   <Login />
                 </PublicRoute>
               }
@@ -200,7 +200,7 @@ function AppContent() {
             <Route
               path="/login"
               element={
-                <PublicRoute>
+                <PublicRoute deferAuthenticatedRedirect>
                   <Login />
                 </PublicRoute>
               }

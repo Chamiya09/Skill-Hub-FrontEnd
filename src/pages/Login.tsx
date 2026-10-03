@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { AuthSplitLayout } from '../components/common/AuthSplitLayout';
 import {
   SparkleIcon,
   MailIcon,
@@ -8,7 +9,6 @@ import {
   ShieldCheckIcon,
   CheckIcon,
   ArrowRightIcon,
-  ArrowLeftIcon,
 } from '../components/common/Icons';
 
 export const Login = () => {
@@ -46,23 +46,12 @@ export const Login = () => {
   };
 
   return (
-    <div className="auth-viewport-wrapper">
-      <div className="auth-card-premium">
-        {/* Top Navigation & Brand */}
-        <div className="auth-top-nav">
-          <Link to="/" className="auth-back-link">
-            <ArrowLeftIcon />
-            <span>Back to Home</span>
-          </Link>
-          <Link to="/" className="auth-brand-mark">
-            <div className="logo-icon-wrap" style={{ width: '30px', height: '30px', borderRadius: '8px' }}>
-              <SparkleIcon />
-            </div>
-            <span className="brand-name">
-              Skill<span>Hub</span>
-            </span>
-          </Link>
-        </div>
+    <AuthSplitLayout
+      eyebrow="FOR TEAMS THAT BUILD WHAT'S NEXT"
+      quote="Great teams aren't found. They're built with intention."
+      description="Bring your hiring into focus, connect with the right people, and give every great hire a place to begin."
+    >
+      <div className="auth-card-premium auth-split-form">
 
         {/* Header Branding */}
         <div className="auth-header">
@@ -225,6 +214,6 @@ export const Login = () => {
           </div>
         </div>
       </div>
-    </div>
+    </AuthSplitLayout>
   );
 };

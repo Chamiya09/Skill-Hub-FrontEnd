@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Shield, Lock, Mail, ArrowRight, AlertCircle, KeyRound } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { adminApi, authStorage } from '../../services/api';
+import { AuthSplitLayout } from '../../components/common/AuthSplitLayout';
 import './AdminDashboard.css';
 
 export const AdminLogin: React.FC = () => {
@@ -23,11 +24,15 @@ export const AdminLogin: React.FC = () => {
 
   if (authLoading) {
     return (
-      <div className="admin-login-viewport" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#00b074', fontWeight: 700, fontSize: 14 }}>
+      <AuthSplitLayout
+        eyebrow="PLATFORM OPERATIONS"
+        quote="Clarity is the beginning of better decisions."
+        description="A considered view of the platform helps protect the people and opportunities within it."
+      >
+        <div className="admin-login-card auth-split-form admin-login-loading">
           Verifying security authorization...
         </div>
-      </div>
+      </AuthSplitLayout>
     );
   }
 
@@ -60,10 +65,11 @@ export const AdminLogin: React.FC = () => {
   };
 
   return (
-    <div className="admin-login-viewport">
-      {/* Background radial glow */}
-      <div className="admin-login-glow-bg" />
-
+    <AuthSplitLayout
+      eyebrow="PLATFORM OPERATIONS"
+      quote="Clarity is the beginning of better decisions."
+      description="A considered view of the platform helps protect the people and opportunities within it."
+    >
       <div className="admin-login-card">
         {/* Top Header Badge */}
         <div className="admin-login-header">
@@ -153,6 +159,6 @@ export const AdminLogin: React.FC = () => {
           <code>admin@skillhub.internal / SkillHub@Admin2026</code>
         </div>
       </div>
-    </div>
+    </AuthSplitLayout>
   );
 };

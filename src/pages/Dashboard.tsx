@@ -120,9 +120,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
   // Authenticate gate & Role Protection
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      navigate('/company-login')
-    } else if (!authLoading && isAuthenticated && currentUser?.role?.toLowerCase() === 'candidate') {
-      navigate('/candidate/profile', { replace: true })
+      navigate('/company-login', { replace: true })
+    } else if (!authLoading && isAuthenticated) {
+      const role = currentUser?.role?.toLowerCase()
+      if (role === 'admin' || role === 'super_admin') {
+        navigate('/skillhub-secure-admin/dashboard', { replace: true })
+      } else if (role === 'candidate') {
+        navigate('/candidate/dashboard', { replace: true })
+      }
     }
   }, [authLoading, isAuthenticated, currentUser, navigate])
 

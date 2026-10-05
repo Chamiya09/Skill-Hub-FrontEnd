@@ -51,7 +51,9 @@ export const CandidateLayout: React.FC = () => {
   useEffect(() => {
     if (!isLoading && isAuthenticated && currentUser) {
       const role = (currentUser.role || '').toLowerCase();
-      if (role === 'company' || role === 'employer' || role === 'admin') {
+      if (role === 'admin' || role === 'super_admin') {
+        navigate('/skillhub-secure-admin/dashboard', { replace: true });
+      } else if (role === 'company' || role === 'employer') {
         navigate('/dashboard', { replace: true });
       }
     }

@@ -17,7 +17,7 @@ import { AuthSplitLayout } from '../components/common/AuthSplitLayout';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { login, isAuthenticated, currentUser, isLoading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -25,12 +25,19 @@ export const Login: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // If already authenticated, redirect to dashboard
+  // If already authenticated, redirect to appropriate role dashboard
   useEffect(() => {
     if (!authLoading && isAuthenticated && !loading && !successMessage) {
-      navigate('/dashboard', { replace: true });
+      const role = currentUser?.role?.toLowerCase();
+      if (role === 'admin' || role === 'super_admin') {
+        navigate('/skillhub-secure-admin/dashboard', { replace: true });
+      } else if (role === 'candidate') {
+        navigate('/candidate/dashboard', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     }
-  }, [isAuthenticated, authLoading, loading, successMessage, navigate]);
+  }, [isAuthenticated, authLoading, currentUser, loading, successMessage, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

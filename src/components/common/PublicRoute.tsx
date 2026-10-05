@@ -19,15 +19,19 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({ children, deferAuthent
     return null;
   }
 
-  if (isAuthenticated && currentUser && !deferAuthenticatedRedirect) {
+  if (isAuthenticated && currentUser) {
     const role = (currentUser.role || '').toLowerCase();
+    // Super Admin must ALWAYS be redirected to the Admin Dashboard and never allowed on public auth routes
     if (role === 'admin' || role === 'super_admin') {
       return <Navigate to="/skillhub-secure-admin/dashboard" replace />;
     }
-    if (role === 'candidate') {
-      return <Navigate to="/candidate/profile" replace />;
+
+    if (!deferAuthenticatedRedirect) {
+      if (role === 'candidate') {
+        return <Navigate to="/candidate/dashboard" replace />;
+      }
+      return <Navigate to="/dashboard" replace />;
     }
-    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

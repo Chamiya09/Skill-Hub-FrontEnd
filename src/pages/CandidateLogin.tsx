@@ -27,11 +27,14 @@ export const CandidateLogin: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // If already authenticated, redirect
+  // If already authenticated, redirect to appropriate role dashboard
   useEffect(() => {
     if (!authLoading && isAuthenticated && currentUser && !loading && !successMessage) {
-      if (currentUser.role?.toUpperCase() === 'CANDIDATE') {
-        navigate('/candidate/profile', { replace: true });
+      const role = currentUser.role?.toLowerCase();
+      if (role === 'admin' || role === 'super_admin') {
+        navigate('/skillhub-secure-admin/dashboard', { replace: true });
+      } else if (role === 'candidate') {
+        navigate('/candidate/dashboard', { replace: true });
       } else {
         navigate('/dashboard', { replace: true });
       }

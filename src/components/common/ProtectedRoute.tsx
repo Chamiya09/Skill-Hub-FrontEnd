@@ -64,25 +64,31 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Strict Role Check & Redirection for authenticated users
   if (allowedRoles && allowedRoles.length > 0) {
     const userRole = (currentUser.role || '').toLowerCase();
+    const isAdminUser = userRole === 'admin' || userRole === 'super_admin';
+    const isAdminPath = location.pathname.startsWith('/skillhub-secure-admin') || location.pathname.startsWith('/admin');
+
+    // Super Admin must NEVER be loaded into company ATS or candidate workspaces
+    if (isAdminUser && !isAdminPath) {
+      return <Navigate to="/skillhub-secure-admin/dashboard" replace />;
+    }
+
     const isAuthorized = allowedRoles.some((role) => {
       const targetRole = role.toLowerCase();
       if (targetRole === 'employer' || targetRole === 'company') {
-        return userRole === 'employer' || userRole === 'company' || userRole === 'admin';
+        return userRole === 'employer' || userRole === 'company';
       }
       return userRole === targetRole;
     });
 
     if (!isAuthorized) {
-      if (allowedRoles.map((r) => r.toLowerCase()).includes('admin')) {
-        return <Navigate to={redirectPath || '/skillhub-secure-admin'} replace />;
+      if (isAdminUser) {
+        return <Navigate to="/skillhub-secure-admin/dashboard" replace />;
       }
-      // If Employer/Company attempts to access Candidate profile/routes -> redirect to Employer Dashboard
-      if (userRole === 'company' || userRole === 'employer' || userRole === 'admin') {
+      if (userRole === 'company' || userRole === 'employer') {
         return <Navigate to="/dashboard" replace />;
       }
-      // If Candidate attempts to access Employer ATS routes -> redirect to Candidate Portal
       if (userRole === 'candidate') {
-        return <Navigate to="/candidate/profile" replace />;
+        return <Navigate to="/candidate/dashboard" replace />;
       }
       return <Navigate to="/" replace />;
     }

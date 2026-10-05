@@ -17,7 +17,7 @@ import {
 
 export const Register = () => {
   const navigate = useNavigate();
-  const { register, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { register, isAuthenticated, currentUser, isLoading: authLoading } = useAuth();
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
   // Strictly Company Registration Form State
@@ -36,12 +36,19 @@ export const Register = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // If already authenticated, redirect to dashboard
+  // If already authenticated, redirect to appropriate role dashboard
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      navigate('/dashboard', { replace: true });
+      const role = currentUser?.role?.toLowerCase();
+      if (role === 'admin' || role === 'super_admin') {
+        navigate('/skillhub-secure-admin/dashboard', { replace: true });
+      } else if (role === 'candidate') {
+        navigate('/candidate/dashboard', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, currentUser, navigate]);
 
   // Step 1: Company Identity Validation
   const validateStep1 = () => {

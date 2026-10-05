@@ -70,6 +70,8 @@ function AppContent() {
     location.pathname.startsWith("/company/settings") ||
     location.pathname === "/company-security" ||
     location.pathname.startsWith("/company/security") ||
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/company/dashboard") ||
     location.pathname.startsWith("/skillhub-secure-admin") ||
     location.pathname === "/security";
 
@@ -225,6 +227,14 @@ function AppContent() {
             {/* Protected Enterprise ATS Routes */}
             <Route
               path="/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/company/dashboard"
               element={
                 <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard />
@@ -516,6 +526,23 @@ function AppContent() {
               element={
                 <ProtectedRoute allowedRoles={['Admin']} redirectPath="/skillhub-secure-admin">
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            {/* Admin Route Aliases */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['Admin']} redirectPath="/skillhub-secure-admin">
+                  <Navigate to="/skillhub-secure-admin/dashboard" replace />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['Admin']} redirectPath="/skillhub-secure-admin">
+                  <Navigate to="/skillhub-secure-admin/dashboard" replace />
                 </ProtectedRoute>
               }
             />

@@ -18,6 +18,7 @@ import {
   InfoIcon,
   DollarSignIcon,
 } from '../common/Icons';
+import './AIScreeningModal.css';
 
 export interface ModalCandidate {
   id: string; // application id
@@ -38,12 +39,12 @@ export interface ModalCandidate {
 }
 
 const AVATAR_GRADIENTS = [
-  'linear-gradient(135deg, #00b074 0%, #008759 100%)',
-  'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-  'linear-gradient(135deg, #0f766e 0%, #115e59 100%)',
-  'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-  'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
-  'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+  'linear-gradient(135deg, #059669 0%, #00b074 100%)', // Corporate Emerald
+  'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)', // Teal Forest
+  'linear-gradient(135deg, #047857 0%, #10b981 100%)', // Forest Mint
+  'linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)', // Ocean Cyan
+  'linear-gradient(135deg, #1e293b 0%, #334155 100%)', // Deep Slate
+  'linear-gradient(135deg, #065f46 0%, #059669 100%)', // Deep Jade
 ];
 
 const getGradientForName = (name: string): string => {
@@ -291,51 +292,175 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
     );
   };
 
+  const renderCandidateCard = (candidate: ModalCandidate, isForceShortlisted = false) => {
+    const initials = candidate.name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+
+    const isShortlisted = isForceShortlisted || candidate.isShortlisted || candidate.status?.toLowerCase() === 'shortlisted';
+    const isRejected = candidate.status?.toLowerCase() === 'rejected';
+    const isSelected = selectedCandidateIds.includes(candidate.id);
+
+    return (
+      <div
+        key={candidate.id}
+        onClick={() => setSelectedCandidateId(candidate.candidateId)}
+        className={`ai-modal-candidate-card ${isSelected ? 'is-selected' : ''}`}
+        title="Click to view full verified Digital CV Profile"
+      >
+        <div className="ai-modal-candidate-main">
+          <input
+            type="checkbox"
+            className="ai-modal-checkbox"
+            checked={isSelected}
+            onChange={(e) => {
+              e.stopPropagation();
+              setSelectedCandidateIds((prev) =>
+                e.target.checked
+                  ? [...prev, candidate.id]
+                  : prev.filter((id) => id !== candidate.id)
+              );
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+          {candidate.avatarUrl ? (
+            <img
+              src={candidate.avatarUrl}
+              alt={candidate.name}
+              className="ai-modal-avatar object-cover"
+            />
+          ) : (
+            <div className="ai-modal-avatar" style={{ background: candidate.avatarBg }}>
+              {initials}
+            </div>
+          )}
+
+          <div className="ai-modal-details">
+            <div className="ai-modal-name-row">
+              <h4 className="ai-modal-name">{candidate.name}</h4>
+              <span className="ai-modal-location">
+                <MapPinIcon />
+                <span>{candidate.location}</span>
+              </span>
+              {candidate.rank && (
+                <span className="ai-modal-rank-badge">#{candidate.rank} ranked</span>
+              )}
+            </div>
+            <p className="ai-modal-headline">{candidate.headline}</p>
+            <div className="ai-modal-skills">
+              {candidate.skills.slice(0, 4).map((skill, idx) => (
+                <span key={idx} className="ai-modal-skill-pill">
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="ai-modal-actions">
+          {candidate.aiScore !== null && candidate.aiScore !== undefined ? (
+            <div
+              className="ai-modal-score-ring"
+              onClick={(e) => {
+                e.stopPropagation();
+                setAiReportCandidateId(candidate.candidateId);
+              }}
+              title="Click to view AI Evaluation Report"
+              style={{ '--match-score': `${candidate.aiScore}%` } as React.CSSProperties}
+            >
+              <span>{candidate.aiScore}%</span>
+              <small>Match</small>
+            </div>
+          ) : (
+            <span className="ai-modal-score-pending">
+              <ClockIcon />
+              <span>AI score pending</span>
+            </span>
+          )}
+
+          <button
+            type="button"
+            className="ai-modal-view-cv-btn"
+            onClick={(event) => {
+              event.stopPropagation();
+              setSelectedCandidateId(candidate.candidateId);
+            }}
+          >
+            <span>View CV</span>
+            <ArrowRightIcon />
+          </button>
+
+          {isShortlisted ? (
+            <span className="ai-modal-status-badge shortlisted">
+              <span className="ai-modal-status-dot shortlisted" />
+              <CheckIcon />
+              <span>Shortlisted</span>
+            </span>
+          ) : isRejected ? (
+            <span className="ai-modal-status-badge rejected">
+              <span className="ai-modal-status-dot rejected" />
+              <XIcon />
+              <span>Rejected</span>
+            </span>
+          ) : (
+            <span className="ai-modal-status-badge under-review">
+              <span className="ai-modal-status-dot under-review" />
+              <span>Under Review</span>
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="popup-backdrop" onClick={onClose}>
+    <div className="ai-modal-backdrop popup-backdrop" onClick={onClose}>
       {/* Modal Card */}
-      <div className="popup-card" onClick={(e) => e.stopPropagation()}>
+      <div className="ai-modal-card popup-card" onClick={(e) => e.stopPropagation()}>
         {/* =========================================================
             1. POPUP HEADER
             ========================================================= */}
-        <div className="popup-header">
-          <div className="popup-header-info">
-            <div className="popup-badge-row">
-              <span className="popup-tag-req">
+        <div className="ai-modal-header popup-header">
+          <div className="ai-modal-header-info popup-header-info">
+            <div className="ai-modal-badge-row popup-badge-row">
+              <span className="ai-modal-tag-req popup-tag-req">
                 REQ #{currentJob.id.substring(0, 8).toUpperCase()}
               </span>
-              <span className="popup-tag-dept">
+              <span className="ai-modal-tag-dept popup-tag-dept">
                 {currentJob.department}
               </span>
-              <span className={`popup-tag-status ${isJobClosed ? 'closed' : 'active'}`}>
-                <span className={`popup-tag-dot ${isJobClosed ? 'closed' : 'active'}`} />
+              <span className={`ai-modal-tag-status popup-tag-status ${isJobClosed ? 'closed' : 'active'}`}>
+                <span className={`ai-modal-tag-dot popup-tag-dot ${isJobClosed ? 'closed' : 'active'}`} />
                 {isJobClosed ? 'Closed (Intake Ended)' : 'Active (Applications Open)'}
               </span>
             </div>
 
-            <h2 className="popup-title">
+            <h2 className="ai-modal-title popup-title">
               {currentJob.title}
             </h2>
 
-            <div className="popup-header-meta">
-              <span className="popup-meta-item highlight">
+            <div className="ai-modal-header-meta popup-header-meta">
+              <span className="ai-modal-meta-item popup-meta-item highlight">
                 <UsersIcon />
                 <span>{candidates.length} Applicants Received</span>
               </span>
-              <span className="popup-meta-divider">•</span>
-              <span className="popup-meta-item">
+              <span className="ai-modal-meta-divider popup-meta-divider">•</span>
+              <span className="ai-modal-meta-item popup-meta-item">
                 <MapPinIcon />
                 <span>{currentJob.location}</span>
               </span>
-              <span className="popup-meta-divider">•</span>
-              <span className="popup-meta-item">
+              <span className="ai-modal-meta-divider popup-meta-divider">•</span>
+              <span className="ai-modal-meta-item popup-meta-item">
                 <ClockIcon />
                 <span>{currentJob.employmentType}</span>
               </span>
               {currentJob.salaryRange && (
                 <>
-                  <span className="popup-meta-divider">•</span>
-                  <span className="popup-meta-item highlight">
+                  <span className="ai-modal-meta-divider popup-meta-divider">•</span>
+                  <span className="ai-modal-meta-item popup-meta-item highlight">
                     <DollarSignIcon />
                     <span>{currentJob.salaryRange}</span>
                   </span>
@@ -345,12 +470,12 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
           </div>
 
           {/* Header Actions: Toggle Status & Close */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <div className="ai-modal-header-actions">
             <button
               type="button"
               onClick={handleToggleJobStatus}
               disabled={isUpdatingStatus}
-              className="popup-status-toggle-btn"
+              className="ai-modal-status-toggle-btn popup-status-toggle-btn"
               title={isJobClosed ? 'Reopen applications' : 'Mark job closed to enable AI screening'}
             >
               <ClockIcon />
@@ -360,7 +485,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="popup-close-btn"
+              className="ai-modal-close-btn popup-close-btn"
               aria-label="Close modal"
             >
               <XIcon />
@@ -371,16 +496,16 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
         {/* =========================================================
             2. SCROLLABLE BODY
             ========================================================= */}
-        <div className="popup-body">
+        <div className="ai-modal-body popup-body">
           {/* DEADLINE ENFORCEMENT BANNER (IF ACTIVE) */}
           {isJobActive && (
-            <div className="popup-banner-info">
-              <div className="popup-banner-info-icon">
+            <div className="ai-modal-banner-open popup-banner-info">
+              <div className="ai-modal-banner-open-icon popup-banner-info-icon">
                 <InfoIcon />
               </div>
               <div>
-                <div className="popup-banner-info-title">Applications Are Still Open</div>
-                <p className="popup-banner-info-desc">
+                <div className="ai-modal-banner-open-title popup-banner-info-title">Applications Are Still Open</div>
+                <p className="ai-modal-banner-open-desc popup-banner-info-desc">
                   Applications are currently open for candidates. AI Screening can be run anytime or once this job is marked as Closed.
                 </p>
               </div>
@@ -389,13 +514,13 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
 
           {/* AI ACTION BANNER (IF CLOSED) */}
           {isJobClosed && !isAiAnalyzed && !isAnalyzing && (
-            <div className="popup-banner-ready">
+            <div className="ai-modal-banner-ready popup-banner-ready">
               <div style={{ maxWidth: '560px' }}>
-                <div className="popup-banner-ready-title">
+                <div className="ai-modal-banner-ready-title popup-banner-ready-title">
                   <SparkleIcon />
                   <span>Requisition Closed — Ready for Batch AI Screening</span>
                 </div>
-                <p className="popup-banner-ready-desc">
+                <p className="ai-modal-banner-ready-desc popup-banner-ready-desc">
                   Run comprehensive AI parsing across all {candidates.length} candidate CVs to calculate match scores and shortlist the top candidates.
                 </p>
               </div>
@@ -404,7 +529,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                 type="button"
                 onClick={handleRunAiAnalysis}
                 disabled={candidates.length === 0}
-                className="popup-footer-btn-primary"
+                className="ai-modal-footer-btn-primary popup-footer-btn-primary"
                 style={{ padding: '9px 18px', fontSize: '13px' }}
               >
                 <SparkleIcon />
@@ -452,8 +577,8 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
           )}
 
           {/* SEARCH & FILTER BAR */}
-          <div className="popup-search-bar">
-            <span className="popup-search-icon">
+          <div className="ai-modal-search-row popup-search-bar">
+            <span className="ai-modal-search-icon popup-search-icon">
               <SearchIcon />
             </span>
             <input
@@ -461,28 +586,14 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
               placeholder="Search candidates by name, headline, or skills..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="popup-search-input"
+              className="ai-modal-search-input popup-search-input"
             />
             {candidates.length > 0 && (
               <button
                 type="button"
                 onClick={handleRunAiAnalysis}
                 disabled={isAnalyzing}
-                style={{
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: '#009e67',
-                  background: '#e6f9f2',
-                  border: '1px solid #b7eedc',
-                  padding: '5px 12px',
-                  borderRadius: '7px',
-                  cursor: isAnalyzing ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  whiteSpace: 'nowrap',
-                  transition: 'all 0.15s ease'
-                }}
+                className="ai-modal-sparkle-btn"
                 title="Run manual AI match analysis"
               >
                 <SparkleIcon />
@@ -515,148 +626,48 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
           ) : isAiAnalyzed ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {/* Shortlisted Section */}
-              <div className="popup-section-card shortlist-highlight">
-                <div className="popup-section-header">
-                  <div className="popup-section-title" style={{ color: '#064e3b' }}>
+              <div className="ai-modal-section-card popup-section-card shortlist-highlight">
+                <div className="ai-modal-section-header popup-section-header">
+                  <div className="ai-modal-section-title popup-section-title" style={{ color: '#064e3b' }}>
                     <SparkleIcon />
                     <span>AI Shortlisted Candidates ({shortlistedList.length})</span>
                   </div>
-                  <span className="popup-tag-status active">
+                  <span className="ai-modal-tag-status popup-tag-status active">
                     Top Tier (85%+ Match)
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {filterList(shortlistedList).length === 0 ? (
                     <div className="py-6 text-center text-xs text-slate-500">
                       No shortlisted candidates match your filter.
                     </div>
                   ) : (
-                    filterList(shortlistedList).map((candidate) => {
-                      const initials = candidate.name
-                        .split(' ')
-                        .map((n) => n[0])
-                        .join('')
-                        .substring(0, 2)
-                        .toUpperCase();
-
-                      return (
-                        <div
-                          key={candidate.id}
-                          onClick={() => setSelectedCandidateId(candidate.candidateId)}
-                          className="ai-screening-candidate-card flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white border border-indigo-100 rounded-2xl gap-4 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer"
-                          title="Click to view full verified Digital CV Profile"
-                        >
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 gap-4 w-full">
-  <div className="flex items-center gap-4 ai-screening-candidate-identity">
-                            <input
-                              type="checkbox"
-                              className="ai-screening-checkbox"
-                              checked={selectedCandidateIds.includes(candidate.id)}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                setSelectedCandidateIds((prev) =>
-                                  e.target.checked
-                                    ? [...prev, candidate.id]
-                                    : prev.filter((id) => id !== candidate.id)
-                                );
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            {candidate.avatarUrl ? (
-                              <img
-                                src={candidate.avatarUrl}
-                                alt={candidate.name}
-                                className="candidate-avatar object-cover"
-                              />
-                            ) : (
-                              <div className="candidate-avatar" style={{ background: candidate.avatarBg }}>
-                                {initials}
-                              </div>
-                            )}
-                            <div className="flex flex-col justify-center">
-                              <div className="flex items-center gap-2 ai-screening-name-row">
-                                <h4 className="text-base font-bold text-gray-900 leading-none">{candidate.name}</h4>
-                                <span className="text-sm font-medium text-gray-400 leading-none flex items-center gap-1">
-                                  <MapPinIcon /> {candidate.location}
-                                </span>
-                                {candidate.rank && (
-                                  <span className="ai-rank-badge">#{candidate.rank} ranked</span>
-                                )}
-                              </div>
-                              <p className="text-sm font-medium text-gray-600 mt-1.5">{candidate.headline}</p>
-                              <div className="flex flex-wrap items-center gap-2 mt-2">
-                                {candidate.skills.slice(0, 4).map((skill, idx) => (
-                                  <span key={idx} className="px-2.5 py-1 rounded-lg bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-700">
-                                    {skill}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-4 shrink-0 sm:ml-auto ai-screening-actions">
-                            {candidate.aiScore !== null && candidate.aiScore !== undefined ? (
-                              <div className="ai-match-ring cursor-pointer hover:scale-105 transition-transform" onClick={(e) => { e.stopPropagation(); setAiReportCandidateId(candidate.candidateId); }} title="Click to view AI Evaluation Report" style={{ '--match-score': `${candidate.aiScore}%` } as React.CSSProperties}>
-                                <span>{candidate.aiScore}%</span>
-                                <small>Match</small>
-                              </div>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-sm font-medium text-indigo-700">
-                                <ClockIcon />
-                                <span>AI score pending</span>
-                              </span>
-                            )}
-                            <button
-                              type="button"
-                              className="ai-view-cv-link"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                setSelectedCandidateId(candidate.candidateId);
-                              }}
-                            >
-                              View CV <ArrowRightIcon />
-                            </button>
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                padding: '6px 14px',
-                                borderRadius: '9999px',
-                                backgroundColor: '#ecfdf5',
-                                border: '1px solid #a7f3d0',
-                                color: '#047857',
-                                fontSize: '13px',
-                                fontWeight: 600,
-                              }}
-                            >
-                              <CheckIcon />
-                              <span>Shortlisted</span>
-                            </span>
-                          </div>
-  </div>
-
-                        </div>
-                      );
-                    })
+                    filterList(shortlistedList).map((candidate) => renderCandidateCard(candidate, true))
                   )}
                 </div>
               </div>
 
               {/* Other Applicants Section */}
               {otherList.length > 0 && (
-                <div className="popup-section-card">
-                  <div className="popup-section-header flex justify-between items-center">
-                    <h3 className="popup-section-title">
-                      Other Applicants ({otherList.length})
-                    </h3>
-                    <div className="flex items-center gap-3">
-                      <label className="text-sm font-medium text-slate-600 flex items-center gap-2">
-                        Quick Select Top:
+                <div className="ai-modal-section-card popup-section-card">
+                  <div className="ai-modal-section-header popup-section-header flex justify-between items-center">
+                    <div className="ai-modal-section-title-wrap">
+                      <div className="ai-modal-section-icon-badge">
+                        <UsersIcon />
+                      </div>
+                      <h3 className="ai-modal-section-title popup-section-title">
+                        <span>Other Applicants</span>
+                        <span className="ai-modal-counter-badge">{otherList.length}</span>
+                      </h3>
+                    </div>
+                    <div className="ai-auto-select-group">
+                      <label className="ai-auto-select-label">
+                        <span>Quick Select Top:</span>
                         <input
                           type="number"
                           min="1"
+                          max={otherList.length}
                           className="ai-auto-select-input"
                           value={topCount}
                           onChange={(e) => setTopCount(Math.max(1, parseInt(e.target.value) || 1))}
@@ -666,314 +677,46 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
                         type="button"
                         onClick={handleAutoSelect}
                         className="ai-auto-select-btn"
+                        title="Automatically select top ranked applicants"
                       >
-                        Auto-Select
+                        <SparkleIcon />
+                        <span>Auto-Select</span>
                       </button>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {filterList(otherList).map((candidate) => {
-                      const initials = candidate.name
-                        .split(' ')
-                        .map((n) => n[0])
-                        .join('')
-                        .substring(0, 2)
-                        .toUpperCase();
-
-                      return (
-                        <div
-                          key={candidate.id}
-                          onClick={() => setSelectedCandidateId(candidate.candidateId)}
-                          className="ai-screening-candidate-card flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white border border-indigo-100 rounded-2xl gap-4 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer"
-                          title="Click to view full verified Digital CV Profile"
-                        >
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 gap-4 w-full">
-  <div className="flex items-center gap-4 ai-screening-candidate-identity">
-                            <input
-                              type="checkbox"
-                              className="ai-screening-checkbox"
-                              checked={selectedCandidateIds.includes(candidate.id)}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                setSelectedCandidateIds((prev) =>
-                                  e.target.checked
-                                    ? [...prev, candidate.id]
-                                    : prev.filter((id) => id !== candidate.id)
-                                );
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            {candidate.avatarUrl ? (
-                              <img src={candidate.avatarUrl} alt={candidate.name} className="candidate-avatar object-cover" />
-                            ) : (
-                              <div className="candidate-avatar" style={{ background: candidate.avatarBg }}>{initials}</div>
-                            )}
-                            <div className="flex flex-col justify-center">
-                              <div className="flex items-center gap-2 ai-screening-name-row">
-                                <h4 className="text-base font-bold text-gray-900 leading-none">{candidate.name}</h4>
-                                <span className="text-sm font-medium text-gray-400 leading-none flex items-center gap-1">
-                                  <MapPinIcon /> {candidate.location}
-                                </span>
-                              </div>
-                              <p className="text-sm font-medium text-gray-600 mt-1.5">{candidate.headline}</p>
-                              <div className="flex flex-wrap items-center gap-2 mt-2">
-                                {candidate.skills.slice(0, 3).map((skill, idx) => (
-                                  <span key={idx} className="px-2.5 py-1 rounded-lg bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-700">
-                                    {skill}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-4 shrink-0 sm:ml-auto ai-screening-actions">
-                            {candidate.aiScore !== null && candidate.aiScore !== undefined ? (
-                              <div className="ai-match-ring cursor-pointer hover:scale-105 transition-transform" onClick={(e) => { e.stopPropagation(); setAiReportCandidateId(candidate.candidateId); }} title="Click to view AI Evaluation Report" style={{ '--match-score': `${candidate.aiScore}%` } as React.CSSProperties}>
-                                <span>{candidate.aiScore}%</span>
-                                <small>Match</small>
-                              </div>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-sm font-medium text-indigo-700">
-                                <ClockIcon />
-                                <span>AI score pending</span>
-                              </span>
-                            )}
-                            <button
-                              type="button"
-                              className="ai-view-cv-link"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                setSelectedCandidateId(candidate.candidateId);
-                              }}
-                            >
-                              View CV <ArrowRightIcon />
-                            </button>
-                            {candidate.isShortlisted || candidate.status?.toLowerCase() === 'shortlisted' ? (
-                              <span
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  padding: '6px 14px',
-                                  borderRadius: '9999px',
-                                  backgroundColor: '#ecfdf5',
-                                  border: '1px solid #a7f3d0',
-                                  color: '#047857',
-                                  fontSize: '13px',
-                                  fontWeight: 600,
-                                }}
-                              >
-                                <CheckIcon />
-                                <span>Shortlisted</span>
-                              </span>
-                            ) : candidate.status?.toLowerCase() === 'rejected' ? (
-                              <span
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  padding: '6px 14px',
-                                  borderRadius: '9999px',
-                                  backgroundColor: '#fef2f2',
-                                  border: '1px solid #fecaca',
-                                  color: '#dc2626',
-                                  fontSize: '13px',
-                                  fontWeight: 600,
-                                }}
-                              >
-                                <XIcon />
-                                <span>Rejected</span>
-                              </span>
-                            ) : (
-                              <span
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  padding: '6px 14px',
-                                  borderRadius: '9999px',
-                                  backgroundColor: '#f8fafc',
-                                  border: '1px solid #e2e8f0',
-                                  color: '#64748b',
-                                  fontSize: '13px',
-                                  fontWeight: 600,
-                                }}
-                              >
-                                <span>Under Review</span>
-                              </span>
-                            )}
-                          </div>
-  </div>
-
-                        </div>
-                      );
-                    })}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {filterList(otherList).map((candidate) => renderCandidateCard(candidate))}
                   </div>
                 </div>
               )}
             </div>
           ) : (
-            /* BEFORE AI ANALYSIS: PURE APPLICANTS LIST */
-            <div className="popup-section-card">
-              <div className="popup-section-header">
-                <h3 className="popup-section-title">
-                  Received Applications ({candidates.length})
-                </h3>
-                <span className="popup-section-subtitle">
-                  Click any applicant to view full Digital CV Profile
+            /* BEFORE AI ANALYSIS: PURE APPLICANTS LIST (SCREENSHOT VIEW) */
+            <div className="ai-modal-section-card popup-section-card">
+              <div className="ai-modal-section-header popup-section-header">
+                <div className="ai-modal-section-title-wrap">
+                  <div className="ai-modal-section-icon-badge">
+                    <UsersIcon />
+                  </div>
+                  <h3 className="ai-modal-section-title popup-section-title">
+                    <span>Received Applications</span>
+                    <span className="ai-modal-counter-badge">{candidates.length}</span>
+                  </h3>
+                </div>
+                <span className="ai-modal-section-subtitle-pill popup-section-subtitle">
+                  <SparkleIcon />
+                  <span>Click any applicant to view full Digital CV Profile</span>
                 </span>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {filterList(candidates).length === 0 ? (
                   <div className="py-6 text-center text-xs text-slate-500">
                     No candidates match your search keyword.
                   </div>
                 ) : (
-                  filterList(candidates).map((candidate) => {
-                    const initials = candidate.name
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                      .substring(0, 2)
-                      .toUpperCase();
-
-                    return (
-                      <div
-                        key={candidate.id}
-                        onClick={() => setSelectedCandidateId(candidate.candidateId)}
-                        className="ai-screening-candidate-card flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white border border-indigo-100 rounded-2xl gap-4 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer"
-                        title="Click to view full verified Digital CV Profile"
-                      >
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 gap-4 w-full">
-  <div className="flex items-center gap-4">
-                          <input
-                            type="checkbox"
-                            className="ai-screening-checkbox"
-                            checked={selectedCandidateIds.includes(candidate.id)}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              setSelectedCandidateIds((prev) =>
-                                e.target.checked
-                                  ? [...prev, candidate.id]
-                                  : prev.filter((id) => id !== candidate.id)
-                              );
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          {candidate.avatarUrl ? (
-                            <img
-                              src={candidate.avatarUrl}
-                              alt={candidate.name}
-                              className="candidate-avatar object-cover"
-                            />
-                          ) : (
-                            <div className="candidate-avatar" style={{ background: candidate.avatarBg }}>
-                              {initials}
-                            </div>
-                          )}
-
-                          <div className="flex flex-col justify-center">
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-base font-bold text-gray-900 leading-none">
-                                {candidate.name}
-                              </h4>
-                              <span className="text-sm font-medium text-gray-400 leading-none flex items-center gap-1">
-                                <MapPinIcon />
-                                {candidate.location}
-                              </span>
-                            </div>
-                            <p className="text-sm font-medium text-gray-600 mt-1.5">
-                              {candidate.headline}
-                            </p>
-                            <div className="flex flex-wrap items-center gap-2 mt-2">
-                              {candidate.skills.slice(0, 4).map((skill, idx) => (
-                                <span
-                                  key={idx}
-                                  className="px-2.5 py-1 rounded-lg bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-700"
-                                >
-                                  {skill}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-4 shrink-0 sm:ml-auto ai-screening-actions">
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-sm font-medium text-indigo-700">
-                            <ClockIcon />
-                            <span>AI score pending</span>
-                          </span>
-                          <button
-                            type="button"
-                            className="ai-view-cv-link"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setSelectedCandidateId(candidate.candidateId);
-                            }}
-                          >
-                            View CV <ArrowRightIcon />
-                          </button>
-                          {candidate.isShortlisted || candidate.status?.toLowerCase() === 'shortlisted' ? (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                padding: '6px 14px',
-                                borderRadius: '9999px',
-                                backgroundColor: '#ecfdf5',
-                                border: '1px solid #a7f3d0',
-                                color: '#047857',
-                                fontSize: '13px',
-                                fontWeight: 600,
-                              }}
-                            >
-                              <CheckIcon />
-                              <span>Shortlisted</span>
-                            </span>
-                          ) : candidate.status?.toLowerCase() === 'rejected' ? (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                padding: '6px 14px',
-                                borderRadius: '9999px',
-                                backgroundColor: '#fef2f2',
-                                border: '1px solid #fecaca',
-                                color: '#dc2626',
-                                fontSize: '13px',
-                                fontWeight: 600,
-                              }}
-                            >
-                              <XIcon />
-                              <span>Rejected</span>
-                            </span>
-                          ) : (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                padding: '6px 14px',
-                                borderRadius: '9999px',
-                                backgroundColor: '#f8fafc',
-                                border: '1px solid #e2e8f0',
-                                color: '#64748b',
-                                fontSize: '13px',
-                                fontWeight: 600,
-                              }}
-                            >
-                              <span>Under Review</span>
-                            </span>
-                          )}
-                        </div>
-  </div>
-                        </div>
-                    );
-                  })
+                  filterList(candidates).map((candidate) => renderCandidateCard(candidate))
                 )}
               </div>
             </div>
@@ -983,11 +726,11 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
         {/* =========================================================
             3. POPUP FOOTER
             ========================================================= */}
-        <div className="popup-footer">
+        <div className="ai-modal-footer popup-footer">
           <button
             type="button"
             onClick={onClose}
-            className="popup-footer-btn-secondary"
+            className="ai-modal-footer-btn-secondary popup-footer-btn-secondary"
           >
             Close Window
           </button>
@@ -997,27 +740,12 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
               type="button"
               onClick={handleBulkReject}
               disabled={selectedCandidateIds.length === 0 || isProcessingBulk}
+              className="ai-modal-footer-btn-reject"
               title={
                 selectedCandidateIds.length === 0
                   ? 'Select one or more candidates to reject'
                   : `Reject ${selectedCandidateIds.length} candidate(s)`
               }
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 18px',
-                borderRadius: '9999px',
-                fontSize: '13px',
-                fontWeight: 600,
-                backgroundColor: '#fef2f2',
-                border: '1px solid #fecaca',
-                color: '#dc2626',
-                cursor: selectedCandidateIds.length === 0 || isProcessingBulk ? 'not-allowed' : 'pointer',
-                opacity: selectedCandidateIds.length === 0 || isProcessingBulk ? 0.5 : 1,
-                transition: 'all 0.15s ease',
-                fontFamily: 'inherit',
-              }}
             >
               <XIcon />
               <span>
@@ -1029,7 +757,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
               type="button"
               onClick={handleBulkShortlist}
               disabled={selectedCandidateIds.length === 0 || isProcessingBulk}
-              className="popup-footer-btn-primary"
+              className="ai-modal-footer-btn-primary popup-footer-btn-primary"
               title={
                 selectedCandidateIds.length === 0
                   ? 'Select one or more candidates to shortlist'

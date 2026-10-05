@@ -16,6 +16,15 @@ interface EligibleJobCardProps {
   onViewGuide?: (guideId: string) => void;
 }
 
+const RefreshIcon: React.FC = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M20 6v5h-5" />
+    <path d="M4 18v-5h5" />
+    <path d="M18.5 9a7 7 0 0 0-11.8-2.6L4 9" />
+    <path d="M5.5 15a7 7 0 0 0 11.8 2.6L20 15" />
+  </svg>
+);
+
 export const EligibleJobCard: React.FC<EligibleJobCardProps> = ({
   application,
   isGenerating,
@@ -132,7 +141,8 @@ export const EligibleJobCard: React.FC<EligibleJobCardProps> = ({
               disabled={isGenerating}
               title="Regenerate guidelines with AI Career Coach"
             >
-              <span>🔄 Regenerate</span>
+              <RefreshIcon />
+              <span>Regenerate</span>
             </button>
           </div>
         ) : (

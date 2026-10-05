@@ -170,9 +170,9 @@ export const CandidateSecurity: React.FC = () => {
         </div>
 
         <form onSubmit={handlePasswordUpdate}>
-          <div className="settings-form-grid" style={{ maxWidth: '640px' }}>
+          <div className="settings-form-grid candidate-security-form-grid">
             {/* Current Password Field */}
-            <div className="settings-form-group settings-col-full">
+            <div className="settings-form-group">
               <label htmlFor="currentPassword" className="settings-label">
                 <span>Current Password</span>
                 <span className="required-star">*</span>
@@ -203,7 +203,7 @@ export const CandidateSecurity: React.FC = () => {
             </div>
 
             {/* New Password Field */}
-            <div className="settings-form-group settings-col-full">
+            <div className="settings-form-group">
               <label htmlFor="newPassword" className="settings-label">
                 <span>New Password</span>
                 <span className="required-star">*</span>
@@ -235,7 +235,7 @@ export const CandidateSecurity: React.FC = () => {
             </div>
 
             {/* Confirm New Password Field */}
-            <div className="settings-form-group settings-col-full">
+            <div className="settings-form-group">
               <label htmlFor="confirmNewPassword" className="settings-label">
                 <span>Confirm New Password</span>
                 <span className="required-star">*</span>
@@ -291,7 +291,6 @@ export const CandidateSecurity: React.FC = () => {
           <div
             className="settings-actions-footer"
             style={{
-              maxWidth: '640px',
               marginTop: '24px',
               padding: '16px 0 0 0',
               borderTop: '1px solid #f1f5f9',
@@ -301,7 +300,7 @@ export const CandidateSecurity: React.FC = () => {
               type="submit"
               disabled={isUpdatingPassword}
               className="settings-btn-save"
-              style={{ width: 'auto', minWidth: '180px' }}
+              style={{ minWidth: '180px' }}
             >
               {isUpdatingPassword ? (
                 <>

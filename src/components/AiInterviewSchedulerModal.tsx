@@ -16,6 +16,7 @@ import {
   type ScheduleProposalResponseDto,
   type ConfirmInterviewScheduleDto,
 } from '../services/api';
+import './AiInterviewSchedulerModal.css';
 
 interface AiInterviewSchedulerModalProps {
   isOpen: boolean;
@@ -312,82 +313,28 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
 
   return (
     <div
-      className="popup-backdrop"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(15, 23, 42, 0.65)',
-        backdropFilter: 'blur(4px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1400,
-        padding: '20px',
-      }}
+      className="ai-scheduler-backdrop"
       onClick={() => !isGeneratingSchedule && !isConfirmingSchedule && onClose()}
     >
       <div
-        className="popup-card"
-        style={{
-          maxWidth: scheduleProposal ? '1060px' : '580px',
-          width: '100%',
-          background: '#ffffff',
-          borderRadius: '18px',
-          padding: '28px',
-          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          transition: 'all 0.2s ease',
-        }}
+        className={`ai-scheduler-card ${scheduleProposal ? 'is-proposal-view' : ''}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            marginBottom: '20px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div
-              style={{
-                width: '46px',
-                height: '46px',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)',
-                color: '#6d28d9',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(109, 40, 217, 0.15)',
-              }}
-            >
+        <div className="ai-scheduler-header">
+          <div className="ai-scheduler-header-title">
+            <div className="ai-scheduler-bot-icon">
               <Bot size={26} />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ fontSize: '19px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  AI Interview Slot Generator
-                </h3>
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 800,
-                    padding: '2px 8px',
-                    borderRadius: '999px',
-                    background: '#f3e8ff',
-                    color: '#7e22ce',
-                    border: '1px solid #d8b4fe',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.4px',
-                  }}
-                >
-                  Student 3 Agent
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <h3>AI Interview Slot Generator</h3>
+                <span className="ai-scheduler-tag">
+                  <Sparkles size={11} />
+                  AI Agent • Orchestration
                 </span>
               </div>
-              <p style={{ fontSize: '12.5px', color: '#64748b', margin: '3px 0 0 0' }}>
+              <p>
                 Meeting Orchestration • Automated clash-free scheduling with forward-search overflow
               </p>
             </div>
@@ -396,14 +343,9 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
           {!isGeneratingSchedule && !isConfirmingSchedule && (
             <button
               type="button"
+              className="ai-scheduler-close-btn"
               onClick={onClose}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#94a3b8',
-                cursor: 'pointer',
-                padding: '4px',
-              }}
+              title="Close"
             >
               <X size={18} />
             </button>
@@ -434,27 +376,16 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
 
         {/* VIEW A: Configuration Form */}
         {!scheduleProposal && (
-          <form onSubmit={handleGenerateSchedule} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          <form onSubmit={handleGenerateSchedule} className="ai-scheduler-form">
             {/* Vacancy Selector */}
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                Target Job Vacancy <span style={{ color: '#ef4444' }}>*</span>
+            <div className="ai-scheduler-field">
+              <label>
+                Target Job Vacancy <span className="req">*</span>
               </label>
               <select
                 value={selectedVacancyId}
                 onChange={(e) => setSelectedVacancyId(e.target.value)}
                 required
-                style={{
-                  width: '100%',
-                  padding: '11px 14px',
-                  borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  fontSize: '13.5px',
-                  color: '#0f172a',
-                  background: '#ffffff',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
               >
                 {vacancies.length === 0 ? (
                   <option value="">No active job vacancies found</option>
@@ -466,76 +397,43 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                   ))
                 )}
               </select>
-              <p style={{ fontSize: '11.5px', color: '#64748b', margin: '4px 0 0 2px' }}>
+              <p className="ai-scheduler-field-helper">
                 The AI agent will fetch candidates in "Interview Selection" (or Shortlisted) for this requisition.
               </p>
             </div>
 
             {/* Date Window */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                  Start Date <span style={{ color: '#ef4444' }}>*</span>
+            <div className="ai-scheduler-grid-2">
+              <div className="ai-scheduler-field">
+                <label>
+                  Start Date <span className="req">*</span>
                 </label>
                 <input
                   type="date"
                   value={aiStartDate}
                   onChange={(e) => setAiStartDate(e.target.value)}
                   required
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '13.5px',
-                    color: '#0f172a',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
                 />
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                  Target End Date <span style={{ color: '#ef4444' }}>*</span>
+              <div className="ai-scheduler-field">
+                <label>
+                  Target End Date <span className="req">*</span>
                 </label>
                 <input
                   type="date"
                   value={aiEndDate}
                   onChange={(e) => setAiEndDate(e.target.value)}
                   required
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '13.5px',
-                    color: '#0f172a',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
                 />
               </div>
             </div>
 
             {/* Interview Duration */}
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                Interview Duration
-              </label>
+            <div className="ai-scheduler-field">
+              <label>Interview Duration</label>
               <select
                 value={aiDuration}
                 onChange={(e) => setAiDuration(Number(e.target.value))}
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  fontSize: '13.5px',
-                  color: '#0f172a',
-                  background: '#ffffff',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
               >
                 <option value={15}>15 Minutes</option>
                 <option value={30}>30 Minutes</option>
@@ -545,106 +443,50 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
             </div>
 
             {/* Working Hours */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                  Working Hours Start
-                </label>
+            <div className="ai-scheduler-grid-2">
+              <div className="ai-scheduler-field">
+                <label>Working Hours Start</label>
                 <input
                   type="time"
                   value={aiWorkStart}
                   onChange={(e) => setAiWorkStart(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '13.5px',
-                    color: '#0f172a',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                  Working Hours End
-                </label>
+              <div className="ai-scheduler-field">
+                <label>Working Hours End</label>
                 <input
                   type="time"
                   value={aiWorkEnd}
                   onChange={(e) => setAiWorkEnd(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '13.5px',
-                    color: '#0f172a',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
                 />
               </div>
             </div>
 
             {/* Info Card on Agent Intelligence */}
-            <div
-              style={{
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: '12px',
-                padding: '13px 16px',
-                fontSize: '12.5px',
-                color: '#475569',
-                lineHeight: 1.5,
-              }}
-            >
-              <div style={{ fontWeight: 800, color: '#1e293b', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Sparkles size={14} color="#7c3aed" />
+            <div className="ai-scheduler-info-card">
+              <div className="info-title">
+                <Sparkles size={15} color="#059669" />
                 <span>Multi-Agent Constraint Solving:</span>
               </div>
               The AI agent queries all company calendar events saved in the database to prevent clashes, prioritizes your selected interview dates, and automatically applies forward-search overflow (up to 14 days) if candidates exceed the target window.
             </div>
 
             {/* Form Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+            <div className="ai-scheduler-footer">
               <button
                 type="button"
+                className="ai-scheduler-btn-cancel"
                 onClick={onClose}
                 disabled={isGeneratingSchedule}
-                style={{
-                  padding: '10px 18px',
-                  borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  background: '#ffffff',
-                  color: '#475569',
-                  fontSize: '13.5px',
-                  fontWeight: 650,
-                  cursor: 'pointer',
-                }}
               >
                 Cancel
               </button>
 
               <button
                 type="submit"
+                className="ai-scheduler-btn-submit"
                 disabled={isGeneratingSchedule || vacancies.length === 0}
-                style={{
-                  padding: '10px 22px',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
-                  color: '#ffffff',
-                  fontSize: '13.5px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 12px rgba(124, 58, 237, 0.3)',
-                }}
               >
                 {isGeneratingSchedule ? (
                   <>
@@ -664,96 +506,34 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
 
         {/* VIEW B: Proposal Review & Confirmation (Human-In-The-Loop) */}
         {scheduleProposal && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          <div className="ai-proposal-view">
             {/* Metric Summary Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-              <div
-                style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '12px',
-                  padding: '12px 14px',
-                  textAlign: 'center',
-                }}
-              >
-                <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
-                  Candidates
-                </div>
-                <div style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>
-                  {scheduleProposal.summary.totalCandidates}
-                </div>
+            <div className="ai-proposal-metrics">
+              <div className="ai-proposal-metric-card card-total">
+                <span>Candidates</span>
+                <strong>{scheduleProposal.summary.totalCandidates}</strong>
               </div>
 
-              <div
-                style={{
-                  background: liveScheduledCount > 0 ? '#ecfdf5' : '#f8fafc',
-                  border: liveScheduledCount > 0 ? '1px solid #a7f3d0' : '1px solid #e2e8f0',
-                  borderRadius: '12px',
-                  padding: '12px 14px',
-                  textAlign: 'center',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <div style={{ fontSize: '11.5px', fontWeight: 700, color: liveScheduledCount > 0 ? '#047857' : '#64748b', textTransform: 'uppercase' }}>
-                  Scheduled
-                </div>
-                <div style={{ fontSize: '22px', fontWeight: 800, color: liveScheduledCount > 0 ? '#065f46' : '#0f172a', marginTop: '2px' }}>
-                  {liveScheduledCount}
-                </div>
+              <div className="ai-proposal-metric-card card-scheduled">
+                <span>Scheduled</span>
+                <strong>{liveScheduledCount}</strong>
               </div>
 
-              <div
-                style={{
-                  background: liveUnscheduledCount > 0 ? '#fef2f2' : '#f8fafc',
-                  border: liveUnscheduledCount > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0',
-                  borderRadius: '12px',
-                  padding: '12px 14px',
-                  textAlign: 'center',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: '11.5px',
-                    fontWeight: 700,
-                    color: liveUnscheduledCount > 0 ? '#b91c1c' : '#64748b',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Unscheduled
-                </div>
-                <div
-                  style={{
-                    fontSize: '22px',
-                    fontWeight: 800,
-                    color: liveUnscheduledCount > 0 ? '#dc2626' : '#0f172a',
-                    marginTop: '2px',
-                  }}
-                >
-                  {liveUnscheduledCount}
-                </div>
+              <div className="ai-proposal-metric-card card-unscheduled">
+                <span>Unscheduled</span>
+                <strong>{liveUnscheduledCount}</strong>
               </div>
             </div>
 
             {/* Forward-Search Notification Banner */}
             {scheduleProposal.summary.forwardDaysExtended > 0 && (
-              <div
-                style={{
-                  background: '#fffbeb',
-                  border: '1px solid #fde68a',
-                  borderRadius: '12px',
-                  padding: '12px 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                }}
-              >
+              <div className="ai-proposal-banner-overflow">
                 <Sparkles size={20} color="#b45309" />
                 <div>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#92400e' }}>
+                  <span className="overflow-title">
                     Forward Search Overflow Extension:
                   </span>{' '}
-                  <span style={{ fontSize: '12.5px', color: '#78350f' }}>
+                  <span className="overflow-desc">
                     The AI agent automatically extended the schedule by {scheduleProposal.summary.forwardDaysExtended} day(s)
                     (effective window: {scheduleProposal.summary.effectiveDateRange}) to avoid clashes and schedule all candidates.
                   </span>
@@ -810,90 +590,40 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
             )}
 
             {/* AI Assumptions & Validation Box */}
-            <div
-              style={{
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: '12px',
-                padding: '14px 16px',
-                fontSize: '12.5px',
-                color: '#334155',
-              }}
-            >
-              <div style={{ fontWeight: 800, color: '#0f172a', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Bot size={15} color="#6366f1" />
+            <div className="ai-proposal-rationale">
+              <div className="rationale-header">
+                <Bot size={16} color="#059669" />
                 <span>Agent Rationale & Stated Assumptions:</span>
               </div>
-              <ul style={{ margin: 0, paddingLeft: '18px', lineHeight: 1.6 }}>
+              <ul>
                 {scheduleProposal.summary.assumptionsMade.map((a, i) => (
                   <li key={i}>{a}</li>
                 ))}
                 {scheduleProposal.summary.aiValidationNotes.map((n, i) => (
-                  <li key={`v-${i}`} style={{ color: '#059669', fontWeight: 600 }}>{n}</li>
+                  <li key={`v-${i}`} className="validation-note">{n}</li>
                 ))}
               </ul>
             </div>
 
             {/* Proposed Slots Table */}
             <div>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '12px',
-                  flexWrap: 'wrap',
-                  gap: '12px',
-                }}
-              >
+              <div className="ai-proposal-toolbar" style={{ marginBottom: '12px' }}>
                 {/* Left side: Bulk Apply Tools (Link & Location) */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                   {/* Bulk Apply Common Link */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      background: '#f8fafc',
-                      border: '1.5px solid #cbd5e1',
-                      borderRadius: '10px',
-                      padding: '4px 8px',
-                    }}
-                  >
+                  <div className="ai-proposal-bulk-group">
                     <LinkIcon size={14} color="#059669" />
                     <input
                       type="text"
                       placeholder="Paste common meeting link here..."
                       value={commonMeetingLinkInput}
                       onChange={(e) => setCommonMeetingLinkInput(e.target.value)}
-                      style={{
-                        border: 'none',
-                        background: 'transparent',
-                        outline: 'none',
-                        fontSize: '12px',
-                        width: '180px',
-                        color: '#0f172a',
-                      }}
                     />
                     <button
                       type="button"
+                      className="ai-proposal-bulk-btn-link"
                       onClick={handleApplyCommonLinkToSelected}
                       title="Apply this common meeting link to all currently checked candidates"
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: 'linear-gradient(135deg, #059669 0%, #00b074 100%)',
-                        color: '#ffffff',
-                        fontSize: '11.5px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        whiteSpace: 'nowrap',
-                        boxShadow: '0 2px 4px rgba(5, 150, 105, 0.2)',
-                      }}
                     >
                       <Copy size={12} />
                       <span>Apply Same Link to Selected</span>
@@ -901,51 +631,19 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                   </div>
 
                   {/* Bulk Apply Common Location */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      background: '#f8fafc',
-                      border: '1.5px solid #cbd5e1',
-                      borderRadius: '10px',
-                      padding: '4px 8px',
-                    }}
-                  >
-                    <MapPin size={14} color="#d97706" />
+                  <div className="ai-proposal-bulk-group">
+                    <MapPin size={14} color="#0f766e" />
                     <input
                       type="text"
                       placeholder="Enter common venue / location..."
                       value={commonLocationInput}
                       onChange={(e) => setCommonLocationInput(e.target.value)}
-                      style={{
-                        border: 'none',
-                        background: 'transparent',
-                        outline: 'none',
-                        fontSize: '12px',
-                        width: '180px',
-                        color: '#0f172a',
-                      }}
                     />
                     <button
                       type="button"
+                      className="ai-proposal-bulk-btn-loc"
                       onClick={handleApplyCommonLocationToSelected}
                       title="Apply this common interview venue/location to all currently checked candidates"
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
-                        color: '#ffffff',
-                        fontSize: '11.5px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        whiteSpace: 'nowrap',
-                        boxShadow: '0 2px 4px rgba(217, 119, 6, 0.2)',
-                      }}
                     >
                       <MapPin size={12} />
                       <span>Apply Same Location to Selected</span>
@@ -974,18 +672,11 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                 </div>
               </div>
 
-              <div
-                style={{
-                  maxHeight: '340px',
-                  overflowY: 'auto',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '12px',
-                }}
-              >
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+              <div className="ai-slots-table-shell">
+                <table className="ai-slots-table">
                   <thead>
-                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
-                      <th style={{ padding: '10px 14px', width: '38px', textAlign: 'center' }}>
+                    <tr>
+                      <th style={{ width: '38px', textAlign: 'center' }}>
                         <input
                           type="checkbox"
                           checked={
@@ -1003,12 +694,12 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                           title="Select All / Deselect All"
                         />
                       </th>
-                      <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700, minWidth: '150px' }}>Candidate</th>
-                      <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700, minWidth: '95px' }}>Date</th>
-                      <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700, minWidth: '110px' }}>Time Slot</th>
-                      <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700, minWidth: '120px' }}>Delivery Mode</th>
-                      <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700, minWidth: '170px' }}>Location</th>
-                      <th style={{ padding: '10px 14px', color: '#475569', fontWeight: 700, minWidth: '220px' }}>Meeting Link</th>
+                      <th style={{ minWidth: '150px' }}>Candidate</th>
+                      <th style={{ minWidth: '95px' }}>Date</th>
+                      <th style={{ minWidth: '110px' }}>Time Slot</th>
+                      <th style={{ minWidth: '120px' }}>Delivery Mode</th>
+                      <th style={{ minWidth: '170px' }}>Location</th>
+                      <th style={{ minWidth: '220px' }}>Meeting Link</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1024,14 +715,10 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                       return (
                         <tr
                           key={slot.slotId}
-                          style={{
-                            borderBottom: '1px solid #f1f5f9',
-                            background: isChecked ? '#fafffc' : '#ffffff',
-                            transition: 'background-color 0.15s ease',
-                          }}
+                          className={isChecked ? 'is-selected' : ''}
                         >
                           {/* Checkbox */}
-                          <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                          <td style={{ textAlign: 'center' }}>
                             <input
                               type="checkbox"
                               checked={isChecked}
@@ -1047,23 +734,23 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                           </td>
 
                           {/* Candidate */}
-                          <td style={{ padding: '10px 14px' }}>
+                          <td>
                             <div style={{ fontWeight: 700, color: '#0f172a' }}>{slot.candidateName}</div>
                             <div style={{ fontSize: '11px', color: '#64748b' }}>{slot.candidateEmail}</div>
                           </td>
 
                           {/* Date */}
-                          <td style={{ padding: '10px 14px', fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap' }}>
+                          <td style={{ fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap' }}>
                             {slot.date}
                           </td>
 
                           {/* Time Slot */}
-                          <td style={{ padding: '10px 14px', color: '#059669', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                          <td style={{ color: '#059669', fontWeight: 700, whiteSpace: 'nowrap' }}>
                             {formatSingleTime(slot.startTime)} - {formatSingleTime(slot.endTime)}
                           </td>
 
                           {/* Delivery Mode Dropdown Selector */}
-                          <td style={{ padding: '10px 14px' }}>
+                          <td>
                             <select
                               value={cfg.meetingMode}
                               disabled={!isChecked}
@@ -1089,16 +776,9 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                                   },
                                 }));
                               }}
+                              className={`ai-slots-mode-select ${cfg.meetingMode === 'Online' ? 'is-online' : 'is-physical'}`}
                               style={{
-                                padding: '5px 8px',
-                                borderRadius: '7px',
-                                border: '1px solid #cbd5e1',
-                                fontSize: '12px',
-                                fontWeight: 650,
-                                color: cfg.meetingMode === 'Online' ? '#0369a1' : '#b45309',
-                                background: cfg.meetingMode === 'Online' ? '#e0f2fe' : '#fef3c7',
                                 cursor: isChecked ? 'pointer' : 'not-allowed',
-                                outline: 'none',
                               }}
                             >
                               <option value="Online">Online</option>
@@ -1107,7 +787,7 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                           </td>
 
                           {/* Location Column */}
-                          <td style={{ padding: '10px 14px' }}>
+                          <td>
                             {isOnline ? (
                               <input
                                 type="text"
@@ -1159,7 +839,7 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                           </td>
 
                           {/* Meeting Link Column */}
-                          <td style={{ padding: '10px 14px' }}>
+                          <td>
                             {isOnline ? (
                               <input
                                 type="text"
@@ -1191,7 +871,7 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                             ) : (
                               <input
                                 type="text"
-                                value="Physical"
+                                value="Physical Venue"
                                 disabled
                                 style={{
                                   padding: '5px 8px',
@@ -1217,84 +897,52 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
               </div>
             </div>
 
-          {/* Review Action Buttons */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-            <button
-              type="button"
-              onClick={() => setScheduleProposal(null)}
-              disabled={isConfirmingSchedule}
-              style={{
-                padding: '10px 16px',
-                borderRadius: '10px',
-                border: '1px solid #cbd5e1',
-                background: '#ffffff',
-                color: '#475569',
-                fontSize: '13px',
-                fontWeight: 650,
-                cursor: 'pointer',
-              }}
-            >
-              ← Modify Parameters
-            </button>
-
-            <div style={{ display: 'flex', gap: '10px' }}>
+            {/* Review Action Buttons */}
+            <div className="ai-proposal-footer">
               <button
                 type="button"
-                onClick={onClose}
+                className="ai-scheduler-btn-cancel"
+                onClick={() => setScheduleProposal(null)}
                 disabled={isConfirmingSchedule}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  background: '#ffffff',
-                  color: '#475569',
-                  fontSize: '13px',
-                  fontWeight: 650,
-                  cursor: 'pointer',
-                }}
               >
-                Cancel
+                ← Modify Parameters
               </button>
 
-              <button
-                type="button"
-                onClick={handleConfirmSchedule}
-                disabled={isConfirmingSchedule || selectedProposedSlotIds.length === 0}
-                style={{
-                  padding: '10px 22px',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #059669 0%, #00b074 100%)',
-                  color: '#ffffff',
-                  fontSize: '13.5px',
-                  fontWeight: 700,
-                  cursor: selectedProposedSlotIds.length === 0 ? 'not-allowed' : 'pointer',
-                  opacity: selectedProposedSlotIds.length === 0 ? 0.6 : 1,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 14px rgba(5, 150, 105, 0.3)',
-                }}
-              >
-                {isConfirmingSchedule ? (
-                  <>
-                    <RefreshCw size={16} className="animate-spin" />
-                    <span>Confirming & Scheduling...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={16} />
-                    <span>
-                      Approve &amp; Confirm {selectedProposedSlotIds.length} Interview Appointment
-                      {selectedProposedSlotIds.length === 1 ? '' : 's'}
-                    </span>
-                  </>
-                )}
-              </button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  className="ai-scheduler-btn-cancel"
+                  onClick={onClose}
+                  disabled={isConfirmingSchedule}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  className="ai-proposal-btn-confirm"
+                  onClick={handleConfirmSchedule}
+                  disabled={isConfirmingSchedule || selectedProposedSlotIds.length === 0}
+                >
+                  {isConfirmingSchedule ? (
+                    <>
+                      <RefreshCw size={16} className="animate-spin" />
+                      <span>Confirming & Scheduling...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={16} />
+                      <span>
+                        Approve &amp; Confirm {selectedProposedSlotIds.length} Interview Appointment
+                        {selectedProposedSlotIds.length === 1 ? '' : 's'}
+                      </span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
     </div>
   );

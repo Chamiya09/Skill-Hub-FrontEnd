@@ -22,6 +22,7 @@ import {
   AwardIcon,
   XIcon,
 } from '../common/Icons';
+import './CandidateProfileReadOnly.css';
 
 const sanitizeHtml = (htmlContent: string) => {
   return { __html: DOMPurify.sanitize(htmlContent || '') };
@@ -148,6 +149,16 @@ export const CandidateProfileReadOnly: React.FC<CandidateProfileReadOnlyProps> =
     fetchCandidateCv();
   }, [candidateId, initialData]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   if (isLoading) {
     return (
       <div className="p-8 text-center space-y-4">
@@ -192,15 +203,18 @@ export const CandidateProfileReadOnly: React.FC<CandidateProfileReadOnlyProps> =
 
   return (
     <div className="candidate-cv-readonly-container bg-white text-slate-900 pb-12">
-      {/* Top Bar with Badges & Optional Close */}
-      <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50/50 sticky top-0 z-10">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
+      {/* Top Bar with Badges & Creative Close Button */}
+      <div className="candidate-cv-topbar">
+        <div className="candidate-cv-topbar-left">
+          <span className="candidate-cv-verified-badge">
             <SparkleIcon />
             <span>Verified Digital CV</span>
           </span>
-          <span className="text-xs text-slate-400 font-mono">
+          <span className="candidate-cv-id-badge">
             ID: {profileData.id ? profileData.id.substring(0, 8).toUpperCase() : 'N/A'}
+          </span>
+          <span className="candidate-cv-topbar-subtext">
+            • Confidential Employer Profile
           </span>
         </div>
 
@@ -208,10 +222,15 @@ export const CandidateProfileReadOnly: React.FC<CandidateProfileReadOnlyProps> =
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 rounded-lg transition-colors"
-            title="Close CV Viewer"
+            className="cv-creative-close-btn"
+            aria-label="Close Digital CV Viewer"
+            title="Close CV Viewer (Esc)"
           >
-            <XIcon />
+            <span className="cv-creative-close-icon-wrap">
+              <XIcon />
+            </span>
+            <span className="cv-creative-close-text">Close</span>
+            <kbd className="cv-creative-close-kbd">ESC</kbd>
           </button>
         )}
       </div>

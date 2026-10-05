@@ -1,90 +1,40 @@
 import React from 'react';
-import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
-  SparkleIcon,
-  LogOutIcon,
-  XIcon,
-} from '../common/Icons';
+  Sparkles,
+  FileText,
+  Briefcase,
+  Bookmark,
+  ClipboardCheck,
+  CalendarDays,
+  Compass,
+  BookOpen,
+  ShieldCheck,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
+import { XIcon } from '../common/Icons';
 
 interface CandidateSidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-const BookOpenIcon: React.FC = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-  </svg>
-);
-
-// Crisp Lucide-style SVG Icons
-const FileTextIcon: React.FC = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-    <polyline points="14 2 14 8 20 8" />
-    <line x1="16" y1="13" x2="8" y2="13" />
-    <line x1="16" y1="17" x2="8" y2="17" />
-    <line x1="10" y1="9" x2="8" y2="9" />
-  </svg>
-);
-
-const BriefcaseCheckIcon: React.FC = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect width="20" height="14" x="2" y="7" rx="2" ry="2" />
-    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-    <polyline points="9 13 11 15 15 11" />
-  </svg>
-);
-
-const BookmarkIcon: React.FC = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
-  </svg>
-);
-
-const ShieldLockIcon: React.FC = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-    <circle cx="12" cy="11" r="1.5" />
-    <path d="M12 12.5V15" />
-  </svg>
-);
-
-const CodeTerminalIcon: React.FC = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="16 18 22 12 16 6" />
-    <polyline points="8 6 2 12 8 18" />
-  </svg>
-);
-
-const TargetCompassIcon: React.FC = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <path d="m16.2 7.8-2 6.3-6.4 2.1 2-6.3z" />
-  </svg>
-);
-
-const CalendarClockIcon: React.FC = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5" />
-    <path d="M16 2v4" />
-    <path d="M8 2v4" />
-    <path d="M3 10h18" />
-    <circle cx="18" cy="18" r="4" />
-    <polyline points="18 16.5 18 18 19 19" />
-  </svg>
-);
-
-export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onClose }) => {
+export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({
+  isOpen,
+  onClose,
+  isCollapsed = false,
+  onToggleCollapse,
+}) => {
   const { currentUser, logout } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
 
   const handleSignOut = () => {
     logout();
-    navigate('/candidate-login');
   };
 
   const candidateDisplayName =
@@ -103,21 +53,47 @@ export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onCl
       .join('')
       .toUpperCase() || 'CA';
 
-  const headline = currentUser?.headline || 'Candidate Portal';
+  const headline = currentUser?.headline || 'Active Candidate';
 
   return (
-    <aside className={`dashboard-sidebar ${isOpen ? 'sidebar-open' : ''}`}>
+    <aside className={`dashboard-sidebar ${isOpen ? 'sidebar-open' : ''} ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
+      {/* Creative Edge Dock Toggle Handle */}
+      {onToggleCollapse && (
+        <button
+          type="button"
+          className="sidebar-edge-toggle"
+          onClick={onToggleCollapse}
+          title={isCollapsed ? 'Expand Sidebar (Ctrl+B)' : 'Collapse Sidebar (Ctrl+B)'}
+          aria-label={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+        >
+          {isCollapsed ? (
+            <ChevronRight size={13} strokeWidth={2.6} />
+          ) : (
+            <ChevronLeft size={13} strokeWidth={2.6} />
+          )}
+        </button>
+      )}
+
       {/* 1. Sidebar Brand Header */}
       <div className="dashboard-sidebar-header">
-        <Link to="/" className="dashboard-brand-link" onClick={onClose}>
+        <Link to="/" className="dashboard-brand-link" onClick={onClose} title="Skill Hub Home">
           <div className="logo-icon-wrap">
-            <SparkleIcon />
+            <Sparkles size={18} strokeWidth={2.5} />
           </div>
-          <div className="dashboard-brand-text">
-            <span className="dashboard-brand-title">Skill Hub</span>
-            <span className="dashboard-brand-badge">CANDIDATE PORTAL</span>
-          </div>
+          {!isCollapsed && (
+            <div className="dashboard-brand-text">
+              <div className="dashboard-brand-row">
+                <span className="dashboard-brand-title">Skill Hub</span>
+                <span className="dashboard-brand-badge" style={{ color: '#00b074', background: '#e6f9f2' }}>
+                  CANDIDATE PRO
+                </span>
+              </div>
+              <span className="dashboard-brand-subtitle">Career & Assessment Hub</span>
+            </div>
+          )}
         </Link>
+
+
         <button
           type="button"
           className="sidebar-close-btn"
@@ -129,32 +105,62 @@ export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onCl
       </div>
 
       {/* 2. Candidate Identity Profile Card */}
-      <div className="dashboard-company-pill">
-        <div className="company-avatar-box">
-          {candidateInitials}
+      <Link
+        to="/candidate/profile"
+        onClick={onClose}
+        className="candidate-identity-card"
+        title={isCollapsed ? `${candidateDisplayName} • ${headline}` : `${candidateDisplayName} (${headline}) - View Profile`}
+        aria-label="View Candidate Profile"
+      >
+        <div className="candidate-card-avatar-wrap">
+          <div className="candidate-card-avatar">
+            {currentUser?.avatarUrl ? (
+              <img
+                src={currentUser.avatarUrl}
+                alt={candidateDisplayName}
+                className="candidate-card-avatar-img"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = 'none';
+                }}
+              />
+            ) : (
+              <span className="candidate-card-initials">{candidateInitials}</span>
+            )}
+          </div>
+          <span className="candidate-card-online-dot" title="Active Candidate" />
         </div>
-        <div className="company-pill-details">
-          <span className="company-pill-name" title={candidateDisplayName}>
-            {candidateDisplayName}
-          </span>
-          <span className="company-pill-role" title={headline}>
-            <span className="company-pill-role-dot"></span>
-            <span>{headline}</span>
-          </span>
-        </div>
-      </div>
+        {!isCollapsed && (
+          <div className="candidate-card-details">
+            <div className="candidate-card-top-row">
+              <span className="candidate-card-name" title={candidateDisplayName}>
+                {candidateDisplayName}
+              </span>
+              <span className="candidate-card-badge">Candidate</span>
+            </div>
+            <div className="candidate-card-bottom-row" title={headline}>
+              <span className="candidate-card-headline">{headline}</span>
+            </div>
+          </div>
+        )}
+      </Link>
 
       {/* 3. Sidebar Navigation Links */}
       <nav className="dashboard-nav-list">
-        <div className="nav-group-label">CAREER PLATFORM</div>
+        {/* Group 1: CAREER PLATFORM */}
+        <div className="nav-group-header">
+          <span className="nav-group-label">CAREER PLATFORM</span>
+        </div>
 
         <NavLink
           to="/candidate/profile"
           onClick={onClose}
           className={({ isActive }) => `dashboard-nav-item ${isActive ? 'active' : ''}`}
         >
-          <FileTextIcon />
-          <span>My Digital CV</span>
+          <span className="nav-icon-wrap">
+            <FileText size={17} />
+          </span>
+          {!isCollapsed && <span className="nav-item-label">My Digital CV</span>}
+          {isCollapsed && <span className="nav-collapsed-tooltip">My Digital CV</span>}
         </NavLink>
 
         <NavLink
@@ -162,8 +168,11 @@ export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onCl
           onClick={onClose}
           className={({ isActive }) => `dashboard-nav-item ${isActive ? 'active' : ''}`}
         >
-          <BriefcaseCheckIcon />
-          <span>Applied Jobs</span>
+          <span className="nav-icon-wrap">
+            <Briefcase size={17} />
+          </span>
+          {!isCollapsed && <span className="nav-item-label">Applied Jobs</span>}
+          {isCollapsed && <span className="nav-collapsed-tooltip">Applied Jobs</span>}
         </NavLink>
 
         <NavLink
@@ -171,17 +180,28 @@ export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onCl
           onClick={onClose}
           className={({ isActive }) => `dashboard-nav-item ${isActive ? 'active' : ''}`}
         >
-          <BookmarkIcon />
-          <span>Saved Jobs</span>
+          <span className="nav-icon-wrap">
+            <Bookmark size={17} />
+          </span>
+          {!isCollapsed && <span className="nav-item-label">Saved Jobs</span>}
+          {isCollapsed && <span className="nav-collapsed-tooltip">Saved Jobs</span>}
         </NavLink>
+
+        {/* Group 2: ASSESSMENTS & INTERVIEWS */}
+        <div className="nav-group-header" style={{ marginTop: '14px' }}>
+          <span className="nav-group-label">INTERVIEWS & PREP</span>
+        </div>
 
         <NavLink
           to="/candidate/assessments"
           onClick={onClose}
           className={({ isActive }) => `dashboard-nav-item ${isActive ? 'active' : ''}`}
         >
-          <CodeTerminalIcon />
-          <span>Technical Assessments</span>
+          <span className="nav-icon-wrap">
+            <ClipboardCheck size={17} />
+          </span>
+          {!isCollapsed && <span className="nav-item-label">Technical Assessments</span>}
+          {isCollapsed && <span className="nav-collapsed-tooltip">Technical Assessments</span>}
         </NavLink>
 
         <NavLink
@@ -195,8 +215,11 @@ export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onCl
             }`
           }
         >
-          <CalendarClockIcon />
-          <span>My Interviews</span>
+          <span className="nav-icon-wrap">
+            <CalendarDays size={17} />
+          </span>
+          {!isCollapsed && <span className="nav-item-label">My Interviews</span>}
+          {isCollapsed && <span className="nav-collapsed-tooltip">My Interviews</span>}
         </NavLink>
 
         <NavLink
@@ -206,8 +229,17 @@ export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onCl
             `dashboard-nav-item ${isActive && !location.pathname.includes('/guide') ? 'active' : ''}`
           }
         >
-          <TargetCompassIcon />
-          <span>Interview Prep Hub</span>
+          <span className="nav-icon-wrap">
+            <Compass size={17} />
+            {isCollapsed && <span className="nav-collapsed-badge-dot nav-badge-dot--ai" />}
+          </span>
+          {!isCollapsed && (
+            <>
+              <span className="nav-item-label">Interview Prep Hub</span>
+              <span className="nav-badge-pill nav-badge-ai">AI</span>
+            </>
+          )}
+          {isCollapsed && <span className="nav-collapsed-tooltip">Interview Prep Hub (AI)</span>}
         </NavLink>
 
         <NavLink
@@ -222,43 +254,64 @@ export const CandidateSidebar: React.FC<CandidateSidebarProps> = ({ isOpen, onCl
             }`
           }
         >
-          <BookOpenIcon />
-          <span>Study Dashboard</span>
+          <span className="nav-icon-wrap">
+            <BookOpen size={17} />
+          </span>
+          {!isCollapsed && <span className="nav-item-label">Study Dashboard</span>}
+          {isCollapsed && <span className="nav-collapsed-tooltip">Study Dashboard</span>}
         </NavLink>
 
-        <div className="nav-group-label" style={{ marginTop: '16px' }}>SYSTEM & SECURITY</div>
+        {/* Group 3: SYSTEM & SECURITY */}
+        <div className="nav-group-header" style={{ marginTop: '14px' }}>
+          <span className="nav-group-label">SYSTEM</span>
+        </div>
 
         <NavLink
           to="/candidate/settings"
           onClick={onClose}
           className={({ isActive }) => `dashboard-nav-item ${isActive ? 'active' : ''}`}
         >
-          <ShieldLockIcon />
-          <span>Account & Security</span>
+          <span className="nav-icon-wrap">
+            <ShieldCheck size={17} />
+          </span>
+          {!isCollapsed && <span className="nav-item-label">Account & Security</span>}
+          {isCollapsed && <span className="nav-collapsed-tooltip">Account & Security</span>}
         </NavLink>
-
       </nav>
 
       {/* 4. Sidebar Footer with User Info & Sign Out */}
       <div className="dashboard-sidebar-footer">
-        <div className="sidebar-user-card">
-          <div className="user-avatar-initials">
-            {candidateInitials}
-          </div>
-          <div className="sidebar-user-info">
-            <span className="sidebar-user-name">{candidateDisplayName}</span>
-            <span className="sidebar-user-email">{candidateEmail}</span>
-          </div>
-        </div>
-        <button
-          type="button"
-          className="sidebar-logout-btn"
-          onClick={handleSignOut}
-          title="Sign Out"
+        <div
+          className="sidebar-user-card"
+          title={isCollapsed ? `${candidateDisplayName} • Click to Sign Out` : undefined}
+          onClick={isCollapsed ? handleSignOut : undefined}
+          style={isCollapsed ? { cursor: 'pointer' } : undefined}
         >
-          <LogOutIcon />
-          <span>Sign Out</span>
-        </button>
+          <div className="user-avatar-initials">{candidateInitials}</div>
+          {!isCollapsed ? (
+            <>
+              <div className="sidebar-user-info">
+                <span className="sidebar-user-name" title={candidateDisplayName}>
+                  {candidateDisplayName}
+                </span>
+                <span className="sidebar-user-email" title={candidateEmail}>
+                  {candidateEmail}
+                </span>
+              </div>
+              <button
+                type="button"
+                className="sidebar-user-logout-icon"
+                onClick={handleSignOut}
+                title="Sign Out"
+                aria-label="Sign Out"
+              >
+                <LogOut size={16} />
+              </button>
+            </>
+          ) : (
+            <span className="nav-collapsed-tooltip">Sign Out ({candidateDisplayName})</span>
+          )}
+        </div>
       </div>
     </aside>
   );

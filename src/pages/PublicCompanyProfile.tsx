@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   companyProfileApi,
+  savedJobsApi,
   type CompanyProfileDto,
   type JobDto,
 } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { JobVacancyCard } from '../components/jobs/JobVacancyCard';
 import { SkeletonGrid } from '../components/common/SkeletonCard';
 import {
@@ -24,10 +26,14 @@ import {
   BriefcaseIcon,
   ArrowRightIcon,
   SparkleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
 } from '../components/common/Icons';
 
 export const PublicCompanyProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
   const [company, setCompany] = useState<CompanyProfileDto | null>(null);
   const [jobs, setJobs] = useState<JobDto[]>([]);
@@ -35,7 +41,20 @@ export const PublicCompanyProfile: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedDept, setSelectedDept] = useState<string>('ALL');
+  const [showAllJobs, setShowAllJobs] = useState<boolean>(false);
   const [logoError, setLogoError] = useState<boolean>(false);
+
+  // Sync saved bookmarks from database
+  useEffect(() => {
+    if (!currentUser) return;
+    const isCandidate = currentUser.role?.toLowerCase() === 'candidate';
+    if (!isCandidate) return;
+
+    savedJobsApi.getIds()
+      .then(setBookmarkedIds)
+      .catch((err) => console.warn('Could not load saved job IDs:', err));
+  }, [currentUser]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -84,10 +103,30 @@ export const PublicCompanyProfile: React.FC = () => {
     };
   }, [id]);
 
-  const toggleBookmark = (jobId: string) => {
+  const toggleBookmark = async (jobId: string) => {
+    if (!currentUser) {
+      navigate(`/candidate/login?redirect=/company/${id}`);
+      return;
+    }
+
+    const wasSaved = bookmarkedIds.includes(jobId);
     setBookmarkedIds((prev) =>
-      prev.includes(jobId) ? prev.filter((i) => i !== jobId) : [...prev, jobId]
+      wasSaved ? prev.filter((i) => i !== jobId) : [...prev, jobId]
     );
+
+    try {
+      if (wasSaved) {
+        await savedJobsApi.remove(jobId);
+      } else {
+        await savedJobsApi.save(jobId);
+      }
+    } catch (err) {
+      console.error('Failed to update saved job status:', err);
+      // Revert optimistic update
+      setBookmarkedIds((prev) =>
+        wasSaved ? [...new Set([...prev, jobId])] : prev.filter((i) => i !== jobId)
+      );
+    }
   };
 
   // Strict Frontend Filter: ensure ONLY jobs matching this specific company's ID or exact company name are displayed
@@ -110,19 +149,45 @@ export const PublicCompanyProfile: React.FC = () => {
     });
   }, [jobs, company]);
 
-  // Filter company's jobs by search term (title, department, location, tags)
-  const filteredJobs = useMemo(() => {
-    if (!searchQuery.trim()) return companyJobs;
-    const q = searchQuery.toLowerCase().trim();
-    return companyJobs.filter((job) => {
-      const inTitle = job.title.toLowerCase().includes(q);
-      const inDept = job.department.toLowerCase().includes(q);
-      const inLoc = job.location.toLowerCase().includes(q);
-      const inType = job.employmentType.toLowerCase().includes(q);
-      const inTags = job.tags ? job.tags.some((t) => t.toLowerCase().includes(q)) : false;
-      return inTitle || inDept || inLoc || inType || inTags;
+  // Extract unique departments for dynamic quick filters
+  const departments = useMemo(() => {
+    const depts = new Set<string>();
+    companyJobs.forEach((job) => {
+      if (job.department && job.department.trim()) {
+        depts.add(job.department.trim());
+      }
     });
-  }, [companyJobs, searchQuery]);
+    return Array.from(depts);
+  }, [companyJobs]);
+
+  // Filter company's jobs by search term and selected department
+  const filteredJobs = useMemo(() => {
+    let result = companyJobs;
+
+    if (selectedDept !== 'ALL') {
+      result = result.filter(
+        (job) => (job.department || '').toLowerCase().trim() === selectedDept.toLowerCase().trim()
+      );
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter((job) => {
+        const inTitle = job.title?.toLowerCase().includes(q);
+        const inDept = job.department?.toLowerCase().includes(q);
+        const inLoc = job.location?.toLowerCase().includes(q);
+        const inType = job.employmentType?.toLowerCase().includes(q);
+        const inTags = job.tags ? job.tags.some((t) => t.toLowerCase().includes(q)) : false;
+        return inTitle || inDept || inLoc || inType || inTags;
+      });
+    }
+
+    return result;
+  }, [companyJobs, selectedDept, searchQuery]);
+
+  const INITIAL_VISIBLE_COUNT = 4;
+  const isFiltering = searchQuery.trim().length > 0 || selectedDept !== 'ALL';
+  const displayedJobs = isFiltering || showAllJobs ? filteredJobs : filteredJobs.slice(0, INITIAL_VISIBLE_COUNT);
 
   const companyInitials =
     (company?.companyName || 'CO')
@@ -190,58 +255,213 @@ export const PublicCompanyProfile: React.FC = () => {
   return (
     <div className="public-company-container">
       {/* =========================================================
-          1. CLEAN TOP HEADER (Strictly Brand Logo, Name, Verified Badge & Positions Count)
+          1. TOP HORIZONTAL HERO (Brand Identity & Consolidated Details)
           ========================================================= */}
       <header className="public-company-hero">
-        <div className="public-company-identity-stack">
-          {/* Company Logo / Initials Avatar */}
-          <div className="public-company-logo-badge">
-            {company.logoUrl && !logoError ? (
-              <img
-                src={company.logoUrl}
-                alt={`${company.companyName} Logo`}
-                onError={() => setLogoError(true)}
-              />
-            ) : (
-              <span className="public-company-logo-initials">{companyInitials}</span>
-            )}
+        <div className="public-company-hero-top">
+          <div className="public-company-identity-stack">
+            {/* Company Logo / Initials Avatar */}
+            <div className="public-company-logo-badge">
+              {company.logoUrl && !logoError ? (
+                <img
+                  src={company.logoUrl}
+                  alt={`${company.companyName} Logo`}
+                  onError={() => setLogoError(true)}
+                />
+              ) : (
+                <span className="public-company-logo-initials">{companyInitials}</span>
+              )}
+            </div>
+
+            {/* Identity Title & Verified Tag */}
+            <div className="public-company-title-box">
+              <div className="public-company-title-row">
+                <h1 className="public-company-name">{company.companyName}</h1>
+                <span className="public-company-verified-tag">
+                  <CheckIcon />
+                  <span>Verified Employer</span>
+                </span>
+              </div>
+              <p className="public-company-tagline">
+                Official Employer & Engineering Recruitment Hub on Skill Hub
+              </p>
+            </div>
           </div>
 
-          {/* Identity Title & Verified Tag */}
-          <div className="public-company-title-box">
-            <div className="public-company-title-row">
-              <h1 className="public-company-name">{company.companyName}</h1>
-              <span className="public-company-verified-tag">
-                <CheckIcon />
-                <span>Verified Employer</span>
-              </span>
+          {/* Right Header Stats Tag */}
+          <div className="public-positions-badge">
+            <span className="public-positions-badge-label">Active Requisitions</span>
+            <div className="public-positions-badge-pill">
+              <BriefcaseIcon />
+              <span>{companyJobs.length} Open {companyJobs.length === 1 ? 'Position' : 'Positions'}</span>
             </div>
-            <p className="public-company-tagline">
-              Official Employer & Engineering Recruitment Hub on Skill Hub
-            </p>
           </div>
         </div>
 
-        {/* Right Header Stats Tag */}
-        <div className="public-positions-badge">
-          <span className="public-positions-badge-label">Active Requisitions</span>
-          <div className="public-positions-badge-pill">
-            <BriefcaseIcon />
-            <span>{companyJobs.length} Open {companyJobs.length === 1 ? 'Position' : 'Positions'}</span>
+        {/* Top Horizontal Box Details Row */}
+        <div
+          className="public-company-hero-details"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            flexWrap: 'wrap',
+            paddingTop: '18px',
+            borderTop: '1px solid #f1f5f9',
+            width: '100%',
+          }}
+        >
+          <div
+            className="public-company-meta-items"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              flexWrap: 'wrap',
+            }}
+          >
+            {primaryLocation && (
+              <div className="public-hero-meta-pill" title="Headquarters">
+                <MapPinIcon />
+                <span>{primaryLocation}</span>
+              </div>
+            )}
+
+            {company.industry && (
+              <div className="public-hero-meta-pill" title="Industry">
+                <BuildingIcon />
+                <span>{company.industry}</span>
+              </div>
+            )}
+
+            {company.companySize && (
+              <div className="public-hero-meta-pill" title="Company Size">
+                <UsersIcon />
+                <span>{company.companySize}</span>
+              </div>
+            )}
+
+            {company.foundedYear && (
+              <div className="public-hero-meta-pill" title="Founded Year">
+                <CalendarIcon />
+                <span>Founded {company.foundedYear}</span>
+              </div>
+            )}
+
+            {websiteHref && (
+              <a
+                href={websiteHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="public-hero-meta-link"
+                title="Official Website"
+              >
+                <GlobeIcon />
+                <span>{websiteDisplay}</span>
+                <ExternalLinkIcon />
+              </a>
+            )}
+
+            {company.contactEmail && (
+              <a
+                href={`mailto:${company.contactEmail}`}
+                className="public-hero-meta-link"
+                title="Official Email"
+              >
+                <MailIcon />
+                <span>{company.contactEmail}</span>
+              </a>
+            )}
+
+            {company.phone && (
+              <a
+                href={`tel:${company.phone}`}
+                className="public-hero-meta-link"
+                title="Phone Number"
+              >
+                <PhoneIcon />
+                <span>{company.phone}</span>
+              </a>
+            )}
           </div>
+
+          {/* Social Channels */}
+          {(company.linkedinUrl || company.twitterUrl || company.githubUrl) && (
+            <div className="public-hero-social-links">
+              {company.linkedinUrl && (
+                <a
+                  href={company.linkedinUrl.startsWith('http') ? company.linkedinUrl : `https://${company.linkedinUrl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="public-hero-social-btn"
+                  title="LinkedIn"
+                >
+                  <span style={{ color: '#0a66c2' }}><LinkedInIcon /></span>
+                  <span>LinkedIn</span>
+                </a>
+              )}
+
+              {company.twitterUrl && (
+                <a
+                  href={company.twitterUrl.startsWith('http') ? company.twitterUrl : `https://${company.twitterUrl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="public-hero-social-btn"
+                  title="Twitter / X"
+                >
+                  <span style={{ color: '#0f172a' }}><TwitterIcon /></span>
+                  <span>Twitter</span>
+                </a>
+              )}
+
+              {company.githubUrl && (
+                <a
+                  href={company.githubUrl.startsWith('http') ? company.githubUrl : `https://${company.githubUrl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="public-hero-social-btn"
+                  title="GitHub"
+                >
+                  <span style={{ color: '#24292f' }}><GitHubIcon /></span>
+                  <span>GitHub</span>
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
       {/* =========================================================
-          2. TWO-COLUMN GRID LAYOUT (Main Content Left & Details Card Right)
+          2. CONTENT LAYOUT (About Us & Open Positions)
           ========================================================= */}
-      <div className="public-company-grid-layout">
-        {/* =========================================================
-            LEFT COLUMN (Approx. 2/3 Width): About Us & Open Positions
-            ========================================================= */}
-        <main className="public-company-main-col">
+      <div
+        className="public-company-grid-layout"
+        style={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '24px',
+        }}
+      >
+        <main
+          className="public-company-main-col"
+          style={{
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '24px',
+          }}
+        >
           {/* About Company Card */}
-          <section className="public-about-card">
+          <section
+            className="public-about-card"
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+            }}
+          >
             <div className="public-about-header">
               <div>
                 <h2>About {company.companyName}</h2>
@@ -295,6 +515,36 @@ export const PublicCompanyProfile: React.FC = () => {
               )}
             </div>
 
+            {/* Department Quick Filter Tabs */}
+            {departments.length >= 2 && (
+              <div className="public-jobs-dept-tabs">
+                <button
+                  type="button"
+                  className={`public-jobs-dept-chip ${selectedDept === 'ALL' ? 'active' : ''}`}
+                  onClick={() => setSelectedDept('ALL')}
+                >
+                  <span>All Roles</span>
+                  <span className="public-jobs-dept-count">{companyJobs.length}</span>
+                </button>
+                {departments.map((dept) => {
+                  const count = companyJobs.filter(
+                    (j) => (j.department || '').toLowerCase().trim() === dept.toLowerCase().trim()
+                  ).length;
+                  return (
+                    <button
+                      key={dept}
+                      type="button"
+                      className={`public-jobs-dept-chip ${selectedDept.toLowerCase() === dept.toLowerCase() ? 'active' : ''}`}
+                      onClick={() => setSelectedDept(dept)}
+                    >
+                      <span>{dept}</span>
+                      <span className="public-jobs-dept-count">{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {/* Reused Unified JobVacancyCard Components */}
             {filteredJobs.length === 0 ? (
               <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '48px 24px', textAlign: 'center' }}>
@@ -321,199 +571,59 @@ export const PublicCompanyProfile: React.FC = () => {
                 )}
               </div>
             ) : (
-              <div className="public-vacancies-grid">
-                {filteredJobs.map((job) => (
-                  <JobVacancyCard
-                    key={job.id}
-                    job={job}
-                    isBookmarked={bookmarkedIds.includes(job.id)}
-                    onToggleBookmark={toggleBookmark}
-                    showBookmark={true}
-                  />
-                ))}
-              </div>
+              <>
+                <div
+                  className="public-vacancies-grid"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                    gap: '20px',
+                    width: '100%',
+                  }}
+                >
+                  {displayedJobs.map((job) => (
+                    <JobVacancyCard
+                      key={job.id}
+                      job={job}
+                      isBookmarked={bookmarkedIds.includes(job.id)}
+                      onToggleBookmark={toggleBookmark}
+                      showBookmark={true}
+                    />
+                  ))}
+                </div>
+
+                {/* Progressive Show More / Show Less Controls */}
+                {!isFiltering && filteredJobs.length > INITIAL_VISIBLE_COUNT && (
+                  <div className="public-jobs-load-more">
+                    <span className="public-jobs-count-hint">
+                      Showing {displayedJobs.length} of {filteredJobs.length} open positions
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowAllJobs((prev) => !prev)}
+                      className="btn-show-more-jobs"
+                    >
+                      {showAllJobs ? (
+                        <>
+                          <span>Show Less</span>
+                          <ChevronUpIcon />
+                        </>
+                      ) : (
+                        <>
+                          <span>View All {filteredJobs.length} Positions</span>
+                          <span className="remaining-badge">+{filteredJobs.length - INITIAL_VISIBLE_COUNT} more</span>
+                          <ChevronDownIcon />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </section>
         </main>
 
-        {/* =========================================================
-            RIGHT COLUMN (Approx. 1/3 Width): Single Consolidated Details Card
-            ========================================================= */}
-        <aside className="public-company-sidebar-col">
-          <div className="public-sidebar-card">
-            <div className="public-sidebar-header">
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e6f9f2', color: '#00b074', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <BuildingIcon />
-              </div>
-              <h3>Company Details & Links</h3>
-            </div>
 
-            {/* Consolidated Details List (Single Source of Truth) */}
-            <div className="public-sidebar-details-list">
-              {/* Headquarters Location */}
-              <div className="public-sidebar-item">
-                <div className="public-sidebar-icon">
-                  <MapPinIcon />
-                </div>
-                <div className="public-sidebar-info">
-                  <span className="public-sidebar-label">Headquarters</span>
-                  <span className="public-sidebar-value">{primaryLocation}</span>
-                </div>
-              </div>
-
-              {/* Industry */}
-              {company.industry && (
-                <div className="public-sidebar-item">
-                  <div className="public-sidebar-icon">
-                    <BuildingIcon />
-                  </div>
-                  <div className="public-sidebar-info">
-                    <span className="public-sidebar-label">Industry</span>
-                    <span className="public-sidebar-value">{company.industry}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Company Size */}
-              {company.companySize && (
-                <div className="public-sidebar-item">
-                  <div className="public-sidebar-icon">
-                    <UsersIcon />
-                  </div>
-                  <div className="public-sidebar-info">
-                    <span className="public-sidebar-label">Company Size</span>
-                    <span className="public-sidebar-value">{company.companySize}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Founded Year */}
-              {company.foundedYear && (
-                <div className="public-sidebar-item">
-                  <div className="public-sidebar-icon">
-                    <CalendarIcon />
-                  </div>
-                  <div className="public-sidebar-info">
-                    <span className="public-sidebar-label">Founded</span>
-                    <span className="public-sidebar-value">{company.foundedYear}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Official Website Link */}
-              {websiteHref && (
-                <div className="public-sidebar-item">
-                  <div className="public-sidebar-icon">
-                    <GlobeIcon />
-                  </div>
-                  <div className="public-sidebar-info">
-                    <span className="public-sidebar-label">Official Website</span>
-                    <a
-                      href={websiteHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="public-sidebar-link"
-                    >
-                      <span>{websiteDisplay}</span>
-                      <ExternalLinkIcon />
-                    </a>
-                  </div>
-                </div>
-              )}
-
-              {/* Official Email */}
-              {company.contactEmail && (
-                <div className="public-sidebar-item">
-                  <div className="public-sidebar-icon">
-                    <MailIcon />
-                  </div>
-                  <div className="public-sidebar-info">
-                    <span className="public-sidebar-label">Official Email</span>
-                    <a
-                      href={`mailto:${company.contactEmail}`}
-                      className="public-sidebar-link"
-                    >
-                      <span>{company.contactEmail}</span>
-                    </a>
-                  </div>
-                </div>
-              )}
-
-              {/* Phone Number */}
-              {company.phone && (
-                <div className="public-sidebar-item">
-                  <div className="public-sidebar-icon">
-                    <PhoneIcon />
-                  </div>
-                  <div className="public-sidebar-info">
-                    <span className="public-sidebar-label">Phone Number</span>
-                    <a
-                      href={`tel:${company.phone}`}
-                      className="public-sidebar-link"
-                    >
-                      <span>{company.phone}</span>
-                    </a>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Social Media Channels */}
-            {(company.linkedinUrl || company.twitterUrl || company.githubUrl) && (
-              <div style={{ paddingTop: '18px', borderTop: '1px solid #f1f5f9' }}>
-                <span className="public-sidebar-label" style={{ display: 'block', marginBottom: '10px' }}>
-                  Social Channels
-                </span>
-                <div className="public-social-grid">
-                  {company.linkedinUrl && (
-                    <a
-                      href={company.linkedinUrl.startsWith('http') ? company.linkedinUrl : `https://${company.linkedinUrl}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="public-social-btn"
-                    >
-                      <div className="public-social-btn-inner">
-                        <span style={{ color: '#0a66c2' }}><LinkedInIcon /></span>
-                        <span>LinkedIn</span>
-                      </div>
-                      <ExternalLinkIcon />
-                    </a>
-                  )}
-
-                  {company.twitterUrl && (
-                    <a
-                      href={company.twitterUrl.startsWith('http') ? company.twitterUrl : `https://${company.twitterUrl}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="public-social-btn"
-                    >
-                      <div className="public-social-btn-inner">
-                        <span style={{ color: '#0f172a' }}><TwitterIcon /></span>
-                        <span>Twitter / X</span>
-                      </div>
-                      <ExternalLinkIcon />
-                    </a>
-                  )}
-
-                  {company.githubUrl && (
-                    <a
-                      href={company.githubUrl.startsWith('http') ? company.githubUrl : `https://${company.githubUrl}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="public-social-btn"
-                    >
-                      <div className="public-social-btn-inner">
-                        <span style={{ color: '#24292f' }}><GitHubIcon /></span>
-                        <span>GitHub</span>
-                      </div>
-                      <ExternalLinkIcon />
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </aside>
       </div>
     </div>
   );

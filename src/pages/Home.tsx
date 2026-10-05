@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { publicJobsApi, type JobDto } from '../services/api'
+import { publicJobsApi, savedJobsApi, type JobDto } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import { JobVacancyCard } from '../components/jobs/JobVacancyCard'
 import { SkeletonGrid } from '../components/common/SkeletonCard'
 import {
@@ -12,9 +13,11 @@ import {
   LightningIcon,
   TrendUpIcon,
 } from '../components/common/Icons'
+import './Home.css'
 
 export const Home = () => {
   const navigate = useNavigate()
+  const { currentUser } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [jobs, setJobs] = useState<JobDto[]>([])
   const [loading, setLoading] = useState(true)
@@ -45,97 +48,154 @@ export const Home = () => {
 
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([])
 
-  const toggleBookmark = (id: string) => {
+  // Sync saved bookmarks from database for logged in candidates
+  useEffect(() => {
+    if (!currentUser) return
+    const isCandidate = currentUser.role?.toLowerCase() === 'candidate'
+    if (!isCandidate) return
+
+    savedJobsApi.getIds()
+      .then(setBookmarkedIds)
+      .catch((err) => console.warn('Could not load saved job IDs on home:', err))
+  }, [currentUser])
+
+  const toggleBookmark = async (id: string) => {
+    if (!currentUser) {
+      navigate('/candidate/login?redirect=/')
+      return
+    }
+
+    const wasSaved = bookmarkedIds.includes(id)
     setBookmarkedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      wasSaved ? prev.filter((item) => item !== id) : [...prev, id]
     )
+
+    try {
+      if (wasSaved) {
+        await savedJobsApi.remove(id)
+      } else {
+        await savedJobsApi.save(id)
+      }
+    } catch (err) {
+      console.error('Failed to update saved job status:', err)
+      setBookmarkedIds((prev) =>
+        wasSaved ? [...new Set([...prev, id])] : prev.filter((item) => item !== id)
+      )
+    }
   }
 
   return (
-    <>
+    <div className="skillhub-home">
       {/* Hero Section */}
-      <section className="hero-section">
-        <div className="badge-tag">
-          <SparkleIcon />
-          <span>AI-POWERED RECRUITMENT PLATFORM</span>
-        </div>
+      <section className="home-hero-section">
+        <div className="home-hero-content">
+          <div className="home-eyebrow">
+            <SparkleIcon />
+            <span>AI-powered career platform</span>
+          </div>
 
-        <h1 className="hero-heading">
-          Find your next role with <span className="ai-text">AI precision</span>
-        </h1>
+          <h1>Build skills. Prove your ability. <span>Land the right role.</span></h1>
+          <p className="home-hero-copy">
+            Discover verified opportunities, complete technical assessments, track every application,
+            and prepare for interviews from one focused career workspace.
+          </p>
 
-        <p className="hero-subtext">
-          Skill Hub matches you to verified technical and AI roles directly from registered employers.
-          Smart matching, real-time updates, and a seamless application experience.
-        </p>
-
-        {/* Search Bar */}
-        <form onSubmit={handleSearchSubmit} className="search-bar-container">
-          <div className="search-input-wrap">
-            <span className="search-icon">
-              <SearchIcon />
-            </span>
+          <form onSubmit={handleSearchSubmit} className="home-search-form">
+            <span className="home-search-icon"><SearchIcon /></span>
             <input
-              type="text"
-              className="search-input"
-              placeholder="Search for jobs, companies, or skills..."
+              type="search"
+              aria-label="Search jobs, companies, or skills"
+              placeholder="Search jobs, companies, or skills..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-          </div>
-          <button className="search-button" type="submit">
-            Search
-            <ArrowRightIcon />
-          </button>
-        </form>
+            <button type="submit">Find Jobs <ArrowRightIcon /></button>
+          </form>
 
-        {/* Metric Highlights */}
-        <div className="metrics-row">
-          <div className="metric-item">
-            <CheckIcon />
-            <span>{loading ? '...' : `${jobs.length}+`} active verified roles</span>
+          <div className="home-trust-row">
+            <span><CheckIcon /> Verified employers</span>
+            <span><CheckIcon /> Technical assessments</span>
+            <span><CheckIcon /> AI interview preparation</span>
           </div>
-          <div className="metric-item">
-            <CheckIcon />
-            <span>Direct employer requisitions</span>
+        </div>
+
+        <div className="home-workspace-preview" aria-label="SkillHub career journey preview">
+          <div className="home-preview-topline">
+            <div>
+              <small>Your career workspace</small>
+              <strong>One journey, fully connected</strong>
+            </div>
+            <span className="home-live-pill"><i /> Live</span>
+          </div>
+          <div className="home-journey-list">
+            <div className="home-journey-item active">
+              <b>01</b><div><strong>Discover roles</strong><span>Explore verified opportunities</span></div><CheckIcon />
+            </div>
+            <div className="home-journey-item">
+              <b>02</b><div><strong>Show your skills</strong><span>Complete technical challenges</span></div><LightningIcon />
+            </div>
+            <div className="home-journey-item">
+              <b>03</b><div><strong>Prepare with confidence</strong><span>Use tailored interview guides</span></div><SparkleIcon />
+            </div>
+          </div>
+          <div className="home-preview-footer">
+            <span>{loading ? 'Loading live roles...' : `${jobs.length} featured roles available now`}</span>
+            <Link to="/candidate-register">Create your profile <ArrowRightIcon /></Link>
           </div>
         </div>
       </section>
 
       {/* Feature Value Proposition Cards */}
-      <section className="features-grid">
-        <div className="feature-card">
-          <div className="feature-icon-box">
+      <section className="home-capabilities-section">
+        <div className="home-section-heading centered">
+          <span>Everything in one place</span>
+          <h2>A clearer path from application to interview</h2>
+          <p>Purpose-built tools help candidates stay organized, demonstrate skills, and prepare for every hiring stage.</p>
+        </div>
+        <div className="home-capabilities-grid">
+        <article className="home-capability-card">
+          <div className="home-feature-icon">
             <LightningIcon />
           </div>
-          <h3 className="feature-title">Instant Applications</h3>
-          <p className="feature-description">
-            Apply with one click directly to verified employer databases with zero middleman noise.
+          <span>01</span>
+          <h3>Simple applications</h3>
+          <p>
+            Find verified vacancies and manage saved roles and submitted applications from your candidate portal.
           </p>
-        </div>
+        </article>
 
-        <div className="feature-card">
-          <div className="feature-icon-box">
+        <article className="home-capability-card">
+          <div className="home-feature-icon">
             <TrendUpIcon />
           </div>
-          <h3 className="feature-title">Real-time Tracking</h3>
-          <p className="feature-description">
-            Track requisition status, employer feedback, and interview schedules in real time.
+          <span>02</span>
+          <h3>Visible hiring progress</h3>
+          <p>
+            Follow application stages, technical assessment results, and scheduled interviews without losing context.
           </p>
+        </article>
+
+        <article className="home-capability-card">
+          <div className="home-feature-icon"><SparkleIcon /></div>
+          <span>03</span>
+          <h3>Focused interview prep</h3>
+          <p>Review role-specific theoretical concepts, practical focus areas, and coach guidance before your interview.</p>
+        </article>
         </div>
       </section>
 
       {/* Featured Roles Section */}
-      <section className="featured-section">
-        <div className="section-header">
-          <div className="section-header-left">
-            <div className="section-tag">
+      <section className="home-featured-section">
+        <div className="home-featured-header">
+          <div className="home-section-heading">
+            <div className="home-section-tag">
               <SparkleIcon />
-              <span>FEATURED ROLES</span>
+              <span>Featured opportunities</span>
             </div>
-            <h2 className="section-title">Top live opportunities</h2>
+            <h2>Explore roles hiring now</h2>
+            <p>Open positions published directly by registered employers.</p>
           </div>
-          <Link to="/jobs" className="view-all-link">
+          <Link to="/jobs" className="home-view-all-link">
             View all jobs
             <ArrowRightIcon />
           </Link>
@@ -145,52 +205,12 @@ export const Home = () => {
         {loading ? (
           <SkeletonGrid count={4} variant="rich-grid" />
         ) : jobs.length === 0 ? (
-          <div
-            style={{
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '16px',
-              padding: '48px 24px',
-              textAlign: 'center',
-              maxWidth: '520px',
-              margin: '0 auto',
-              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
-            }}
-          >
-            <div
-              style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '50%',
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 16px',
-                color: '#94a3b8',
-              }}
-            >
-              <SearchIcon />
-            </div>
-            <h3
-              style={{
-                fontSize: '17px',
-                fontWeight: 700,
-                color: '#0f172a',
-                marginBottom: '6px',
-              }}
-            >
+          <div className="home-jobs-empty">
+            <div><SearchIcon /></div>
+            <h3>
               No Active Vacancies Right Now
             </h3>
-            <p
-              style={{
-                fontSize: '13.5px',
-                color: '#64748b',
-                lineHeight: 1.5,
-                margin: 0,
-              }}
-            >
+            <p>
               We are currently updating our open positions. Please check back later for new opportunities.
             </p>
           </div>
@@ -208,6 +228,18 @@ export const Home = () => {
           </div>
         )}
       </section>
-    </>
+
+      <section className="home-cta-section">
+        <div>
+          <span>Ready for your next opportunity?</span>
+          <h2>Turn your skills into career momentum.</h2>
+          <p>Create your candidate profile and keep your entire hiring journey organized in SkillHub.</p>
+        </div>
+        <div className="home-cta-actions">
+          <Link to="/candidate-register">Get started <ArrowRightIcon /></Link>
+          <Link to="/jobs">Browse jobs</Link>
+        </div>
+      </section>
+    </div>
   )
 }

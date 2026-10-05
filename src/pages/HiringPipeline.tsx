@@ -20,14 +20,14 @@ import {
   MapPinIcon,
   ClockIcon,
   ArrowRightIcon,
-  BuildingIcon,
   PlusIcon,
   XIcon,
   MailIcon,
   PhoneIcon,
   UserCheckIcon,
 } from '../components/common/Icons';
-import { SkeletonGrid } from '../components/common/SkeletonCard';
+import { SkeletonGrid, SkeletonStatValue, SkeletonStatLabel } from '../components/common/SkeletonCard';
+import './PipelineJobSelectorFull.css';
 
 // Clipboard / Assessment Icon
 const ClipboardCheckIcon = () => (
@@ -59,12 +59,12 @@ export interface ShortlistedCandidate {
 }
 
 const AVATAR_GRADIENTS = [
-  'linear-gradient(135deg, #00b074 0%, #008759 100%)',
-  'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-  'linear-gradient(135deg, #0f766e 0%, #115e59 100%)',
-  'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-  'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
-  'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+  'linear-gradient(135deg, #059669 0%, #00b074 100%)', // Corporate Emerald
+  'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)', // Teal Forest
+  'linear-gradient(135deg, #047857 0%, #10b981 100%)', // Forest Mint
+  'linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)', // Ocean Cyan
+  'linear-gradient(135deg, #1e293b 0%, #334155 100%)', // Slate Indigo
+  'linear-gradient(135deg, #065f46 0%, #059669 100%)', // Deep Emerald
 ];
 
 const getGradientForName = (name: string): string => {
@@ -92,7 +92,8 @@ export const HiringPipeline: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('All');
-  const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Closed'>('All');
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Shortlisted' | 'Active' | 'Closed'>('All');
+  const [sortBy, setSortBy] = useState<'shortlisted' | 'applicants' | 'newest' | 'title'>('shortlisted');
   const [applicantCounts, setApplicantCounts] = useState<Record<string, { total: number; shortlisted: number }>>({});
 
   // 2. Selected Job Modal Popup State
@@ -245,8 +246,33 @@ export const HiringPipeline: React.FC = () => {
     return ['All', ...Array.from(set)];
   }, [publishedJobs]);
 
+  const totalShortlistedCount = useMemo(() => {
+    return Object.values(applicantCounts).reduce((acc, curr) => acc + (curr.shortlisted || 0), 0);
+  }, [applicantCounts]);
+
+  const activeCount = useMemo(() => {
+    return publishedJobs.filter((j) => (j.status || 'Active').toLowerCase() === 'active').length;
+  }, [publishedJobs]);
+
+  const totalApplicantsCount = useMemo(() => {
+    return Object.values(applicantCounts).reduce((acc, curr) => acc + (curr.total || 0), 0);
+  }, [applicantCounts]);
+
+  const requisitionsWithShortlistCount = useMemo(() => {
+    return publishedJobs.filter((j) => (applicantCounts[j.id]?.shortlisted || 0) > 0).length;
+  }, [publishedJobs, applicantCounts]);
+
+  const hasActiveFilters = searchQuery.trim() !== '' || selectedDepartment !== 'All' || statusFilter !== 'All';
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedDepartment('All');
+    setStatusFilter('All');
+    setSortBy('shortlisted');
+  };
+
   const filteredJobs = useMemo(() => {
-    return publishedJobs.filter((job) => {
+    const list = publishedJobs.filter((job) => {
       const query = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !query ||
@@ -259,22 +285,37 @@ export const HiringPipeline: React.FC = () => {
         job.department.toLowerCase() === selectedDepartment.toLowerCase();
 
       const jobStatus = (job.status || 'Active').toLowerCase();
+      const shortlistedNum = applicantCounts[job.id]?.shortlisted || 0;
+
       const matchesStatus =
         statusFilter === 'All' ||
+        (statusFilter === 'Shortlisted' && shortlistedNum > 0) ||
         (statusFilter === 'Active' && jobStatus === 'active') ||
         (statusFilter === 'Closed' && jobStatus === 'closed');
 
       return matchesSearch && matchesDept && matchesStatus;
     });
-  }, [publishedJobs, searchQuery, selectedDepartment, statusFilter]);
 
-  const totalShortlistedCount = useMemo(() => {
-    return Object.values(applicantCounts).reduce((acc, curr) => acc + (curr.shortlisted || 0), 0);
-  }, [applicantCounts]);
-
-  const activeCount = useMemo(() => {
-    return publishedJobs.filter((j) => (j.status || 'Active').toLowerCase() === 'active').length;
-  }, [publishedJobs]);
+    return [...list].sort((a, b) => {
+      if (sortBy === 'shortlisted') {
+        const diff = (applicantCounts[b.id]?.shortlisted || 0) - (applicantCounts[a.id]?.shortlisted || 0);
+        if (diff !== 0) return diff;
+        return (applicantCounts[b.id]?.total || 0) - (applicantCounts[a.id]?.total || 0);
+      }
+      if (sortBy === 'applicants') {
+        return (applicantCounts[b.id]?.total || 0) - (applicantCounts[a.id]?.total || 0);
+      }
+      if (sortBy === 'newest') {
+        const timeB = new Date(b.createdAt || 0).getTime();
+        const timeA = new Date(a.createdAt || 0).getTime();
+        return timeB - timeA;
+      }
+      if (sortBy === 'title') {
+        return a.title.localeCompare(b.title);
+      }
+      return 0;
+    });
+  }, [publishedJobs, searchQuery, selectedDepartment, statusFilter, sortBy, applicantCounts]);
 
   // Filtered Candidates inside Modal
   const filteredModalCandidates = useMemo(() => {
@@ -331,94 +372,178 @@ export const HiringPipeline: React.FC = () => {
   };
 
   return (
-    <div className="pipeline-selector-container">
+    <div className="pipeline-selector-container hiring-pipeline-page">
       {/* =========================================================
-          1. INITIAL VIEW: JOBS LIST (AISCREEN MIRROR)
+          1. TOP COMPONENT: HIRING PIPELINE DASHBOARD CARD
+          (Matches Candidate Technical Assessments Dashboard Header & Metrics)
           ========================================================= */}
-      <div className="pipeline-selector-header">
-        <div className="pipeline-header-title-box">
-          <div className="badge-tag">
-            <SparkleIcon />
-            <span>SHORTLISTED TALENT PIPELINE</span>
+      <section className="pipeline-dashboard-card" aria-labelledby="pipeline-dashboard-title">
+        <div className="pipeline-dashboard-header">
+          <div>
+            <span className="pipeline-dashboard-eyebrow">AI Shortlisted Candidates & Talent Pipeline</span>
+            <h2 id="pipeline-dashboard-title">Hiring Pipeline Dashboard</h2>
+            <p>
+              Review qualified talent pools who passed AI screening, inspect digital CV profiles, track recruitment progression, and dispatch skill assessments.
+            </p>
           </div>
-          <h1 className="pipeline-page-title">Hiring Pipeline & Shortlisted Candidates</h1>
-          <p className="pipeline-page-subtitle">
-            Select a job requisition below to view the <strong>AI Shortlisted Candidates</strong>. Review qualifications and dispatch assessments.
-          </p>
+
+          <div className="pipeline-dashboard-header-actions">
+            <span className="pipeline-dashboard-live">
+              <span /> Pipeline Active
+            </span>
+            <button
+              type="button"
+              className="btn-primary pipeline-action-btn"
+              onClick={() => setStatusFilter(statusFilter === 'Shortlisted' ? 'All' : 'Shortlisted')}
+              title={statusFilter === 'Shortlisted' ? 'Show all requisitions' : 'Filter to roles with shortlisted candidates'}
+            >
+              <SparkleIcon />
+              <span>{statusFilter === 'Shortlisted' ? 'Show All Roles' : `Shortlisted Talent (${totalShortlistedCount})`}</span>
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="pipeline-header-stats-badge" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-            <span className="pipeline-stats-num" style={{ color: '#00b074' }}>{activeCount}</span>
-            <span className="pipeline-stats-label">Active Requisitions</span>
-          </div>
-          <div className="pipeline-header-stats-badge" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-            <span className="pipeline-stats-num" style={{ color: '#0284c7' }}>{totalShortlistedCount}</span>
-            <span className="pipeline-stats-label">Shortlisted Talent</span>
-          </div>
+        <div className="pipeline-summary-grid">
+          <article className="pipeline-summary-card summary-total">
+            <div className="summary-icon"><BriefcaseIcon /></div>
+            <div>
+              <span>Total Requisitions</span>
+              <strong>{loading ? <SkeletonStatValue width="45px" /> : publishedJobs.length}</strong>
+              <small>{loading ? <SkeletonStatLabel width="125px" /> : 'Published hiring campaigns'}</small>
+            </div>
+          </article>
+          <article className="pipeline-summary-card summary-ready">
+            <div className="summary-icon"><SparkleIcon /></div>
+            <div>
+              <span>Shortlisted Talent</span>
+              <strong>{loading ? <SkeletonStatValue width="40px" /> : totalShortlistedCount}</strong>
+              <small>{loading ? <SkeletonStatLabel width="115px" /> : 'Passed AI benchmark'}</small>
+            </div>
+          </article>
+          <article className="pipeline-summary-card summary-active">
+            <div className="summary-icon"><ClockIcon /></div>
+            <div>
+              <span>Active Openings</span>
+              <strong>{loading ? <SkeletonStatValue width="40px" /> : activeCount}</strong>
+              <small>{loading ? <SkeletonStatLabel width="110px" /> : 'Open for applications'}</small>
+            </div>
+          </article>
+          <article className="pipeline-summary-card summary-applicants">
+            <div className="summary-icon"><UsersIcon /></div>
+            <div>
+              <span>Total Candidates</span>
+              <strong>{loading ? <SkeletonStatValue width="45px" /> : totalApplicantsCount}</strong>
+              <small>{loading ? <SkeletonStatLabel width="120px" /> : 'Applicants in pipeline'}</small>
+            </div>
+          </article>
         </div>
-      </div>
+      </section>
 
-      {/* Filter & Search Bar */}
-      <div className="filter-card-wrapper" style={{ marginBottom: '24px' }}>
-        <div className="filter-grid-bar" style={{ gridTemplateColumns: '2fr 1fr 1.2fr auto' }}>
-          {/* Search Input */}
-          <div className="filter-input-group">
-            <span style={{ color: '#94a3b8' }}><SearchIcon /></span>
+      {/* =========================================================
+          2. FILTER & SEARCH CONTROLS PANEL
+          (Matches Candidate Technical Assessments Filter Toolbar)
+          ========================================================= */}
+      <section className="pipeline-filter-panel" aria-label="Requisition filters">
+        <div className="pipeline-filter-heading">
+          <div>
+            <span className="filter-eyebrow">Pipeline workspace</span>
+            <h2>Select a job requisition</h2>
+          </div>
+          <span className="filter-result-count">
+            {filteredJobs.length} of {publishedJobs.length} shown
+          </span>
+        </div>
+
+        <div className="pipeline-toolbar">
+          {/* Status Tabs */}
+          <div className="pipeline-tabs">
+            <button
+              type="button"
+              className={`tab-btn ${statusFilter === 'All' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('All')}
+            >
+              All Requisitions ({publishedJobs.length})
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${statusFilter === 'Shortlisted' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('Shortlisted')}
+            >
+              With Shortlist ({requisitionsWithShortlistCount})
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${statusFilter === 'Active' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('Active')}
+            >
+              Active Openings ({activeCount})
+            </button>
+          </div>
+
+          {/* Search Box */}
+          <div className="pipeline-search">
+            <SearchIcon />
             <input
               type="text"
               placeholder="Search requisitions by title, department, or location..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-          </div>
-
-          {/* Status Filter */}
-          <div className="filter-input-group">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'All' | 'Active' | 'Closed')}
-              aria-label="Filter jobs by status"
-            >
-              <option value="All">All Statuses ({publishedJobs.length})</option>
-              <option value="Active">Active ({activeCount})</option>
-              <option value="Closed">Closed</option>
-            </select>
+            {searchQuery && (
+              <button
+                type="button"
+                className="search-clear-btn"
+                onClick={() => setSearchQuery('')}
+                title="Clear search"
+              >
+                <XIcon />
+              </button>
+            )}
           </div>
 
           {/* Department Select */}
-          <div className="filter-input-group">
-            <span style={{ color: '#94a3b8' }}><BuildingIcon /></span>
+          <div className="pipeline-select-group">
+            <label htmlFor="pipeline-dept-filter">Department</label>
             <select
+              id="pipeline-dept-filter"
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
-              aria-label="Filter jobs by department"
             >
               {departments.map((dept) => (
                 <option key={dept} value={dept}>
-                  {dept === 'All' ? 'All Departments' : dept}
+                  {dept === 'All' ? 'All departments' : dept}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Reset Action */}
-          {(searchQuery || selectedDepartment !== 'All' || statusFilter !== 'All') && (
+          {/* Sort By Select */}
+          <div className="pipeline-select-group">
+            <label htmlFor="pipeline-sort-filter">Sort by</label>
+            <select
+              id="pipeline-sort-filter"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+            >
+              <option value="shortlisted">Most shortlisted</option>
+              <option value="applicants">Most applicants</option>
+              <option value="newest">Newest created</option>
+              <option value="title">Role title (A - Z)</option>
+            </select>
+          </div>
+
+          {/* Clear Filters */}
+          {hasActiveFilters && (
             <button
               type="button"
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedDepartment('All');
-                setStatusFilter('All');
-              }}
-              className="btn-secondary"
-              style={{ padding: '10px 16px' }}
+              className="pipeline-clear-filters"
+              onClick={clearFilters}
             >
-              Reset
+              <XIcon /> Clear filters
             </button>
           )}
         </div>
-      </div>
+      </section>
 
       {/* Error Alert */}
       {errorMessage && (
@@ -502,11 +627,7 @@ export const HiringPipeline: React.FC = () => {
           <button
             type="button"
             className="btn-secondary"
-            onClick={() => {
-              setSearchQuery('');
-              setSelectedDepartment('All');
-              setStatusFilter('All');
-            }}
+            onClick={clearFilters}
           >
             Clear Filters
           </button>
@@ -623,76 +744,40 @@ export const HiringPipeline: React.FC = () => {
         >
           {/* Wide Modal Container (max-w-5xl, Premium Corporate Light Theme) */}
           <div
-            className="popup-card"
-            style={{
-              maxWidth: '1024px',
-              width: '100%',
-              maxHeight: '90vh',
-              display: 'flex',
-              flexDirection: 'column',
-              borderRadius: '16px',
-              overflow: 'hidden',
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)',
-            }}
+            className="popup-card shortlist-modal-dialog"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div
-              style={{
-                padding: '20px 24px',
-                borderBottom: '1px solid #e2e8f0',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '16px',
-                background: '#ffffff',
-              }}
-            >
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <div
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '8px',
-                      background: '#00b074',
-                      color: '#ffffff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <SparkleIcon />
-                  </div>
-                  <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                    Shortlisted Candidates: {selectedJob.title}
-                  </h2>
-                  <span
-                    style={{
-                      background: '#e6f9f2',
-                      color: '#008759',
-                      border: '1px solid #bbf7d0',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      padding: '2px 8px',
-                      borderRadius: '9999px',
-                    }}
-                  >
-                    {filteredModalCandidates.length} Candidates
-                  </span>
+            <div className="shortlist-modal-header">
+              <div className="shortlist-modal-header-left">
+                <div className="shortlist-modal-icon-badge">
+                  <SparkleIcon />
                 </div>
-                <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
-                  {selectedJob.department} · {selectedJob.location} · Review verified profiles and send skill assessments.
-                </p>
+                <div>
+                  <div className="shortlist-modal-title-row">
+                    <h2 className="shortlist-modal-title">
+                      <span>Shortlisted Candidates:</span>
+                      <span className="shortlist-job-pill">{selectedJob.title}</span>
+                    </h2>
+                    <span className="shortlist-count-badge">
+                      {filteredModalCandidates.length} Candidates
+                    </span>
+                  </div>
+                  <p className="shortlist-modal-subtitle">
+                    <span>{selectedJob.department}</span>
+                    <span>·</span>
+                    <span>{selectedJob.location}</span>
+                    <span>·</span>
+                    <span>Review verified profiles and send skill assessments.</span>
+                  </p>
+                </div>
               </div>
 
               {/* Close Button */}
               <button
                 type="button"
                 onClick={() => setIsShortlistModalOpen(false)}
-                className="popup-close-btn"
+                className="shortlist-modal-close-btn"
                 aria-label="Close Modal"
               >
                 <XIcon />
@@ -700,56 +785,28 @@ export const HiringPipeline: React.FC = () => {
             </div>
 
             {/* Filter & Search Bar */}
-            <div
-              style={{
-                padding: '12px 24px',
-                borderBottom: '1px solid #f1f5f9',
-                background: '#f8fafc',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  padding: '6px 12px',
-                  flex: 1,
-                  maxWidth: '420px',
-                }}
-              >
-                <span style={{ color: '#94a3b8' }}><SearchIcon /></span>
+            <div className="shortlist-filter-row">
+              <div className="shortlist-search-box">
+                <span className="shortlist-search-icon"><SearchIcon /></span>
                 <input
                   type="text"
+                  className="shortlist-search-input"
                   placeholder="Filter by name, skill, location, or email..."
                   value={modalSearchQuery}
                   onChange={(e) => setModalSearchQuery(e.target.value)}
-                  style={{
-                    border: 'none',
-                    outline: 'none',
-                    fontSize: '13px',
-                    width: '100%',
-                    background: 'transparent',
-                    color: '#0f172a',
-                  }}
                 />
               </div>
 
-              <div style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>
-                Showing <strong style={{ color: '#0f172a' }}>{filteredModalCandidates.length}</strong> Shortlisted
+              <div className="shortlist-showing-badge">
+                <span className="shortlist-pulse-dot" />
+                <span>Showing <strong>{filteredModalCandidates.length}</strong> Shortlisted</span>
               </div>
             </div>
 
             {/* Vertical Shortlist Container (Clean Vertical List, NO KANBAN) */}
             <div
               style={{
-                padding: '20px 24px',
+                padding: '20px 28px',
                 overflowY: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
@@ -758,11 +815,29 @@ export const HiringPipeline: React.FC = () => {
               }}
             >
               {loadingApplicants ? (
-                <div style={{ padding: '48px 0', textAlign: 'center' }}>
-                  <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                  <p style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
-                    Loading shortlisted talent from database...
-                  </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="animate-pulse"
+                      style={{
+                        background: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '16px',
+                        padding: '16px 20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                      }}
+                    >
+                      <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#cbd5e1', flexShrink: 0 }} />
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <div style={{ width: '40%', height: 16, borderRadius: 4, background: '#cbd5e1' }} />
+                        <div style={{ width: '60%', height: 12, borderRadius: 4, background: '#e2e8f0' }} />
+                      </div>
+                      <div style={{ width: 80, height: 32, borderRadius: 8, background: '#e2e8f0' }} />
+                    </div>
+                  ))}
                 </div>
               ) : filteredModalCandidates.length === 0 ? (
                 <div
@@ -834,7 +909,7 @@ export const HiringPipeline: React.FC = () => {
                   return (
                     <div
                       key={candidate.id}
-                      className="pipeline-candidate-card bg-white border border-gray-200 shadow-sm"
+                      className="pipeline-candidate-card"
                     >
                       <div className="pipeline-candidate-identity">
                         {candidate.avatarUrl ? (
@@ -857,9 +932,8 @@ export const HiringPipeline: React.FC = () => {
                             </span>
                           </div>
                           <p className="pipeline-candidate-role">
-                            <strong>{candidate.jobTitle}</strong>
-                            <span>·</span>
-                            {candidate.headline}
+                            <span className="pipeline-job-badge">{candidate.jobTitle}</span>
+                            <span>{candidate.headline}</span>
                           </p>
                           <span className="pipeline-stage-detail">
                             <ClockIcon /> {stageDetail}
@@ -873,7 +947,8 @@ export const HiringPipeline: React.FC = () => {
                               onClick={() => setViewingCvCandidateId(candidate.candidateId)}
                               title="View Verified Candidate Digital CV"
                             >
-                              View CV <ArrowRightIcon />
+                              <span>View CV</span>
+                              <ArrowRightIcon />
                             </button>
                           </div>
                         </div>
@@ -899,17 +974,8 @@ export const HiringPipeline: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div
-              style={{
-                padding: '14px 24px',
-                borderTop: '1px solid #e2e8f0',
-                background: '#f8fafc',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div style={{ fontSize: '12.5px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div className="shortlist-modal-footer">
+              <div className="shortlist-footer-sync">
                 <SparkleIcon />
                 <span>Actions automatically sync with Candidate ATS and notification service.</span>
               </div>
@@ -917,18 +983,7 @@ export const HiringPipeline: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsShortlistModalOpen(false)}
-                style={{
-                  background: '#ffffff',
-                  border: '1px solid #cbd5e1',
-                  color: '#475569',
-                  padding: '7px 18px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+                className="shortlist-modal-footer-close"
               >
                 Close
               </button>
@@ -948,35 +1003,36 @@ export const HiringPipeline: React.FC = () => {
         >
           <div
             className="popup-card"
-            style={{ maxWidth: '520px', width: '100%', padding: '24px', borderRadius: '16px' }}
+            style={{ maxWidth: '520px', width: '100%', padding: '24px 28px', borderRadius: '20px', border: '1px solid #dce7e3', boxShadow: '0 25px 60px -15px rgba(15, 23, 42, 0.22)' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '11px', background: '#ecfdf5', color: '#00b074', border: '1px solid #a7f3d0', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0, 176, 116, 0.12)' }}>
                   <ClipboardCheckIcon />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                  <h3 style={{ fontSize: '16.5px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.01em' }}>
                     Connect Skill Assessment
                   </h3>
-                  <p style={{ fontSize: '12.5px', color: '#64748b', margin: 0 }}>
-                    For {assessmentCandidate.name} ({assessmentCandidate.jobTitle})
+                  <p style={{ fontSize: '12.5px', color: '#64748b', margin: 0, fontWeight: 500 }}>
+                    For <strong style={{ color: '#0f172a' }}>{assessmentCandidate.name}</strong> ({assessmentCandidate.jobTitle})
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setAssessmentCandidate(null)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                className="shortlist-modal-close-btn"
+                aria-label="Close"
               >
                 <XIcon />
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '22px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
                   Select Assessment Track:
                 </label>
                 {loadingTracks ? (
@@ -989,12 +1045,15 @@ export const HiringPipeline: React.FC = () => {
                     onChange={(e) => setSelectedAssessmentType(e.target.value)}
                     style={{
                       width: '100%',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
+                      padding: '9.5px 14px',
+                      borderRadius: '10px',
+                      border: '1.5px solid #cbd5e1',
                       fontSize: '13px',
+                      fontWeight: 600,
                       color: '#0f172a',
                       outline: 'none',
+                      background: '#ffffff',
+                      boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
                     }}
                   >
                     {availableTracks.length > 0 ? (
@@ -1012,12 +1071,12 @@ export const HiringPipeline: React.FC = () => {
                 )}
               </div>
 
-              <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <p style={{ fontSize: '12px', color: '#475569', margin: 0, lineHeight: 1.4 }}>
+              <div style={{ padding: '14px 16px', background: '#f0fdf4', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
+                <p style={{ fontSize: '12.5px', color: '#166534', margin: 0, lineHeight: 1.5 }}>
                   This technical assessment will be delivered directly to <strong>{assessmentCandidate.name}</strong>'s candidate profile under their <strong>Technical Assessments</strong> dashboard.
                 </p>
                 {availableTracks.length === 0 && (
-                  <p style={{ fontSize: '11.5px', color: '#dc2626', margin: '6px 0 0 0', fontWeight: 500 }}>
+                  <p style={{ fontSize: '12px', color: '#dc2626', margin: '8px 0 0 0', fontWeight: 600 }}>
                     ⚠️ No published assessment tracks found for this requisition. Please configure and publish a manual assessment track first under the Coding Assessments tab.
                   </p>
                 )}
@@ -1030,7 +1089,7 @@ export const HiringPipeline: React.FC = () => {
                 onClick={() => setAssessmentCandidate(null)}
                 className="btn-secondary"
                 disabled={sendingAssessment}
-                style={{ padding: '8px 16px', fontSize: '13px' }}
+                style={{ padding: '8.5px 20px', fontSize: '13px', borderRadius: '9999px', fontWeight: 700 }}
               >
                 Cancel
               </button>
@@ -1040,8 +1099,12 @@ export const HiringPipeline: React.FC = () => {
                 className="btn-primary"
                 disabled={sendingAssessment || availableTracks.length === 0}
                 style={{
-                  padding: '8px 18px',
+                  padding: '9px 22px',
                   fontSize: '13px',
+                  borderRadius: '9999px',
+                  fontWeight: 750,
+                  background: 'linear-gradient(135deg, #059669 0%, #00b074 100%)',
+                  boxShadow: '0 3px 10px rgba(0, 176, 116, 0.25)',
                   opacity: availableTracks.length === 0 ? 0.5 : 1,
                   cursor: availableTracks.length === 0 ? 'not-allowed' : 'pointer'
                 }}

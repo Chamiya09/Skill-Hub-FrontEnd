@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { AuthSplitLayout } from '../components/common/AuthSplitLayout';
 import {
   SparkleIcon,
   ShieldCheckIcon,
@@ -16,7 +17,7 @@ import {
 
 export const Register = () => {
   const navigate = useNavigate();
-  const { register, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { register, isAuthenticated, currentUser, isLoading: authLoading } = useAuth();
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
   // Strictly Company Registration Form State
@@ -35,12 +36,19 @@ export const Register = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // If already authenticated, redirect to dashboard
+  // If already authenticated, redirect to appropriate role dashboard
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      navigate('/dashboard', { replace: true });
+      const role = currentUser?.role?.toLowerCase();
+      if (role === 'admin' || role === 'super_admin') {
+        navigate('/skillhub-secure-admin/dashboard', { replace: true });
+      } else if (role === 'candidate') {
+        navigate('/candidate/dashboard', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, currentUser, navigate]);
 
   // Step 1: Company Identity Validation
   const validateStep1 = () => {
@@ -125,24 +133,14 @@ export const Register = () => {
   };
 
   return (
-    <div className="auth-viewport-wrapper">
-      <div className="auth-card-premium auth-card-wizard">
-        {/* Top Navigation & Brand */}
-        <div className="auth-top-nav">
-          <Link to="/" className="auth-back-link">
-            <ArrowLeftIcon />
-            <span>Back to Home</span>
-          </Link>
-          <Link to="/" className="auth-brand-mark">
-            <div className="logo-icon-wrap" style={{ width: '30px', height: '30px', borderRadius: '8px' }}>
-              <SparkleIcon />
-            </div>
-            <span className="brand-name">
-              Skill<span>Hub</span>
-            </span>
-          </Link>
-        </div>
-
+    <AuthSplitLayout
+      portalType="company"
+      eyebrow="ENTERPRISE EMPLOYER ONBOARDING"
+      quote="Hire the top 1% of verified technical talent with zero guesswork."
+      description="Deploy automated code testing, AI-evaluated live benchmarks, and candidate pipelines tailored for your engineering team."
+      transitioning={Boolean(successMessage)}
+    >
+      <div className="auth-form-card auth-card-wizard animate-in fade-in duration-300">
         {/* Header Branding */}
         <div className="auth-header">
           <div className="badge-tag" style={{ display: 'inline-flex', marginBottom: '8px' }}>
@@ -512,6 +510,6 @@ export const Register = () => {
           </div>
         </div>
       </div>
-    </div>
+    </AuthSplitLayout>
   );
 };

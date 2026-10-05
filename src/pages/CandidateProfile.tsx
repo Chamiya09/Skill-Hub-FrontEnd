@@ -161,7 +161,7 @@ const parseProjectDetails = (rawRole?: string) => {
 
 // Skeleton Loader Component (Premium Corporate Light Theme)
 const CandidateProfileSkeleton: React.FC = () => (
-  <div className="candidate-profile-container">
+  <div className="candidate-profile-container" aria-busy="true">
     {/* Hero Card Skeleton */}
     <div className="candidate-hero-card">
       <div className="candidate-hero-banner">

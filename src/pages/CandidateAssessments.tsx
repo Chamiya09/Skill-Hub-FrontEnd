@@ -16,6 +16,7 @@ import {
   ArrowRightIcon,
   SearchIcon,
 } from '../components/common/Icons';
+import { JobCardSkeleton, SkeletonStatValue } from '../components/common/SkeletonCard';
 import './CandidateAssessments.css';
 
 // SVG Icon for Code / Technical assessment
@@ -33,6 +34,7 @@ const PlayIcon: React.FC = () => (
 );
 
 type FilterTab = 'all' | 'pending' | 'completed' | 'expired';
+type SortOption = 'priority' | 'newest' | 'deadline' | 'score';
 
 export const CandidateAssessments: React.FC = () => {
   const { currentUser } = useAuth();
@@ -47,6 +49,8 @@ export const CandidateAssessments: React.FC = () => {
   // Filter & Search states
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [companyFilter, setCompanyFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('priority');
 
   // Scorecard modal state
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
@@ -133,7 +137,11 @@ export const CandidateAssessments: React.FC = () => {
     return Boolean(item.isExpired) || (Boolean(item.expiresAt) && new Date(item.expiresAt!).getTime() < Date.now());
   };
 
-  // Filtered assessments
+  const companyOptions = Array.from(
+    new Set(assessments.map((item) => item.companyName).filter(Boolean)),
+  ).sort((a, b) => a.localeCompare(b));
+
+  // Filter and sort without mutating the API response order.
   const filteredAssessments = assessments.filter((item) => {
     const isCompleted = checkIsCompleted(item);
     const isBlocked = checkIsBlocked(item);
@@ -143,79 +151,124 @@ export const CandidateAssessments: React.FC = () => {
     if (activeTab === 'pending' && !isPending) return false;
     if (activeTab === 'completed' && !isCompleted) return false;
     if (activeTab === 'expired' && !isExpired) return false;
+    if (companyFilter !== 'all' && item.companyName !== companyFilter) return false;
 
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchJob = item.jobTitle.toLowerCase().includes(q);
-      const matchCompany = item.companyName.toLowerCase().includes(q);
-      const matchTrack = item.assessmentTitle.toLowerCase().includes(q);
+      const q = searchQuery.trim().toLowerCase();
+      const matchJob = (item.jobTitle || '').toLowerCase().includes(q);
+      const matchCompany = (item.companyName || '').toLowerCase().includes(q);
+      const matchTrack = (item.assessmentTitle || '').toLowerCase().includes(q);
       return matchJob || matchCompany || matchTrack;
     }
 
     return true;
+  }).sort((a, b) => {
+    if (sortBy === 'newest') {
+      return new Date(b.assignedAt || 0).getTime() - new Date(a.assignedAt || 0).getTime();
+    }
+    if (sortBy === 'deadline') {
+      return new Date(a.expiresAt || '9999-12-31').getTime() - new Date(b.expiresAt || '9999-12-31').getTime();
+    }
+    if (sortBy === 'score') return (b.examScore || 0) - (a.examScore || 0);
+
+    const priority = (item: CandidateAssessmentListItemDto) => {
+      if (!checkIsCompleted(item) && !checkIsExpired(item) && !checkIsBlocked(item)) return 0;
+      if (item.status === 'Under_Review' || item.status === 'Submitted') return 1;
+      if (checkIsCompleted(item)) return 2;
+      return 3;
+    };
+    return priority(a) - priority(b);
   });
 
   const pendingCount = assessments.filter((a) => !checkIsCompleted(a) && !checkIsExpired(a) && !checkIsBlocked(a)).length;
   const completedCount = assessments.filter((a) => checkIsCompleted(a)).length;
   const expiredCount = assessments.filter((a) => checkIsExpired(a)).length;
+  const gradedAssessments = assessments.filter((a) =>
+    a.status === 'Graded' || a.status === 'Passed' || a.status === 'Rejected',
+  );
+  const averageScore = gradedAssessments.length
+    ? Math.round(gradedAssessments.reduce((sum, item) => sum + (item.examScore || 0), 0) / gradedAssessments.length)
+    : 0;
+  const hasActiveFilters = activeTab !== 'all' || searchQuery.trim() !== '' || companyFilter !== 'all' || sortBy !== 'priority';
+
+  const clearFilters = () => {
+    setActiveTab('all');
+    setSearchQuery('');
+    setCompanyFilter('all');
+    setSortBy('priority');
+  };
 
   return (
     <div className="candidate-assessments-page">
-      {/* 1. Hero Header */}
-      <section className="assessments-hero">
-        <div>
-          <div className="assessments-eyebrow">
-            <CodeIcon />
-            <span>TECHNICAL EVALUATION ENGINE</span>
+      {/* 1. Simple Assessment Dashboard */}
+      <section className="assessment-dashboard-card" aria-labelledby="assessment-dashboard-title">
+        <div className="assessment-dashboard-header">
+          <div>
+            <span className="assessment-dashboard-eyebrow">Performance overview</span>
+            <h2 id="assessment-dashboard-title">Assessment Dashboard</h2>
+            <p>A quick overview of your assigned challenges and technical performance.</p>
           </div>
-          <h1>Technical Assessments</h1>
-          <p className="assessments-subtitle">
-            Take real-world coding challenges and skill assessments dispatched directly to your profile by hiring teams.
-          </p>
+          <span className="assessment-dashboard-live"><span /> Live summary</span>
         </div>
 
-        {/* Quick Stats Banner */}
-        <div className="hero-stats-banner">
-          <div className="hero-stat-item">
-            <span className="hero-stat-val">{assessments.length}</span>
-            <span className="hero-stat-lbl">Total Dispatched</span>
-          </div>
-          <div className="hero-stat-divider" />
-          <div className="hero-stat-item">
-            <span className="hero-stat-val active-val">{pendingCount}</span>
-            <span className="hero-stat-lbl">Action Required</span>
-          </div>
-          <div className="hero-stat-divider" />
-          <div className="hero-stat-item">
-            <span className="hero-stat-val done-val">{completedCount}</span>
-            <span className="hero-stat-lbl">Completed</span>
-          </div>
+        <div className="assessment-summary-grid">
+          <article className="assessment-summary-card summary-total">
+            <div className="summary-icon"><CodeIcon /></div>
+            <div><span>Total assessments</span><strong>{isLoading ? <SkeletonStatValue width="40px" /> : assessments.length}</strong><small>All assigned challenges</small></div>
+          </article>
+          <article className="assessment-summary-card summary-action">
+            <div className="summary-icon"><ClockIcon /></div>
+            <div><span>Action required</span><strong>{isLoading ? <SkeletonStatValue width="40px" /> : pendingCount}</strong><small>Ready to start</small></div>
+          </article>
+          <article className="assessment-summary-card summary-complete">
+            <div className="summary-icon"><CheckIcon /></div>
+            <div><span>Completed</span><strong>{isLoading ? <SkeletonStatValue width="40px" /> : completedCount}</strong><small>Submitted challenges</small></div>
+          </article>
+          <article className="assessment-summary-card summary-score">
+            <div className="summary-icon"><TrophyIcon /></div>
+            <div><span>Average score</span><strong>{isLoading ? <SkeletonStatValue width="40px" /> : `${averageScore}%`}</strong><small>{gradedAssessments.length ? `${gradedAssessments.length} graded result${gradedAssessments.length === 1 ? '' : 's'}` : 'No graded results yet'}</small></div>
+          </article>
         </div>
       </section>
 
       {/* 2. Controls & Search Toolbar */}
-      <div className="assessments-toolbar">
+      <section className="assessments-filter-panel" aria-label="Assessment filters">
+        <div className="assessments-filter-heading">
+          <div>
+            <span className="filter-eyebrow">Assessment workspace</span>
+            <h2>Find your assessments</h2>
+          </div>
+          <span className="filter-result-count">
+            {isLoading ? (
+              <span className="animate-pulse" style={{ display: 'inline-block', width: '90px', height: '14px', background: '#cbd5e1', borderRadius: '4px' }} />
+            ) : (
+              `${filteredAssessments.length} of ${assessments.length} shown`
+            )}
+          </span>
+        </div>
+
+        <div className="assessments-toolbar">
         <div className="assessments-tabs">
           <button
             type="button"
             className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
             onClick={() => setActiveTab('all')}
           >
-            All Assessments ({assessments.length})
+            All Assessments ({isLoading ? '...' : assessments.length})
           </button>
           <button
             type="button"
             className={`tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
             onClick={() => setActiveTab('pending')}
           >
-            Action Required ({pendingCount})
+            Action Required ({isLoading ? '...' : pendingCount})
           </button>
           <button
             type="button"
             className={`tab-btn ${activeTab === 'completed' ? 'active' : ''}`}
             onClick={() => setActiveTab('completed')}
           >
-            Completed ({completedCount})
+            Completed ({isLoading ? '...' : completedCount})
           </button>
           {expiredCount > 0 && (
             <button
@@ -223,7 +276,7 @@ export const CandidateAssessments: React.FC = () => {
               className={`tab-btn ${activeTab === 'expired' ? 'active' : ''}`}
               onClick={() => setActiveTab('expired')}
             >
-              Expired ({expiredCount})
+              Expired ({isLoading ? '...' : expiredCount})
             </button>
           )}
         </div>
@@ -246,7 +299,32 @@ export const CandidateAssessments: React.FC = () => {
             </button>
           )}
         </div>
-      </div>
+
+        <div className="assessments-select-group">
+          <label htmlFor="assessment-company-filter">Company</label>
+          <select id="assessment-company-filter" value={companyFilter} onChange={(e) => setCompanyFilter(e.target.value)}>
+            <option value="all">All companies</option>
+            {companyOptions.map((company) => <option key={company} value={company}>{company}</option>)}
+          </select>
+        </div>
+
+        <div className="assessments-select-group">
+          <label htmlFor="assessment-sort">Sort by</label>
+          <select id="assessment-sort" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortOption)}>
+            <option value="priority">Priority</option>
+            <option value="newest">Newest assigned</option>
+            <option value="deadline">Deadline first</option>
+            <option value="score">Highest score</option>
+          </select>
+        </div>
+
+        {hasActiveFilters && (
+          <button type="button" className="assessments-clear-filters" onClick={clearFilters}>
+            <XIcon /> Clear filters
+          </button>
+        )}
+        </div>
+      </section>
 
       {/* Error alert */}
       {error && (
@@ -260,9 +338,10 @@ export const CandidateAssessments: React.FC = () => {
 
       {/* 3. Main Assessment Cards Grid */}
       {isLoading ? (
-        <div className="assessments-state-card">
-          <div className="assessments-spinner" />
-          <p>Loading your technical assessments...</p>
+        <div className="assessments-grid">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <JobCardSkeleton key={i} />
+          ))}
         </div>
       ) : filteredAssessments.length === 0 ? (
         <div className="assessments-state-card assessments-empty">
@@ -276,6 +355,8 @@ export const CandidateAssessments: React.FC = () => {
               ? 'No Pending Assessments'
               : activeTab === 'completed'
               ? 'No Completed Assessments Yet'
+              : activeTab === 'expired'
+              ? 'No Expired Assessments'
               : 'No Technical Assessments Assigned Yet'}
           </h2>
           <p>
@@ -286,9 +367,9 @@ export const CandidateAssessments: React.FC = () => {
           <button
             type="button"
             className="assessments-primary-action"
-            onClick={() => navigate('/candidate/applications')}
+            onClick={hasActiveFilters ? clearFilters : () => navigate('/candidate/applications')}
           >
-            <span>View Job Applications</span>
+            <span>{hasActiveFilters ? 'Reset Assessment Filters' : 'View Job Applications'}</span>
             <ArrowRightIcon />
           </button>
         </div>
@@ -316,8 +397,7 @@ export const CandidateAssessments: React.FC = () => {
             return (
               <div
                 key={item.submissionId}
-                className="assessment-card"
-                style={item.isSelectedForInterview ? { border: '1.5px solid #10b981', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.15)' } : undefined}
+                className={`assessment-card${item.isSelectedForInterview ? ' assessment-card-selected' : ''}`}
               >
                 {/* Top Company & Status Row */}
                 <div className="card-top-row">
@@ -325,29 +405,29 @@ export const CandidateAssessments: React.FC = () => {
                     <div className="company-logo-pill">{companyInitials}</div>
                     <div>
                       <span className="card-company-name">{item.companyName || 'Verified Employer'}</span>
-                      <h3 className="card-job-title">{item.jobTitle}</h3>
+                      <h3 className="card-job-title" title={item.jobTitle}>{item.jobTitle}</h3>
                     </div>
                   </div>
 
                   {/* Status Pill */}
                   {isBlocked ? (
-                    <span className="status-pill status-blocked" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca' }}>
+                    <span className="status-pill status-blocked">
                       <XIcon />
                       <span>Cannot Retake</span>
                     </span>
                   ) : isExpired ? (
-                    <span className="status-pill" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca' }}>
+                    <span className="status-pill status-blocked">
                       <XIcon />
                       <span>Expired</span>
                     </span>
                   ) : isUnderReview ? (
-                    <span className="status-pill" style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }}>
+                    <span className="status-pill status-review">
                       <ClockIcon />
                       <span>Under Review</span>
                     </span>
                   ) : isGraded ? (
                     item.isSelectedForInterview ? (
-                      <span className="status-pill" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', fontWeight: 800 }}>
+                      <span className="status-pill status-selected">
                         <TrophyIcon />
                         <span>Interview Selected ({item.examScore}%)</span>
                       </span>
@@ -377,70 +457,75 @@ export const CandidateAssessments: React.FC = () => {
 
                 {/* Track Title */}
                 <div className="card-track-box">
-                  <span className="track-label">CODING CHALLENGE TRACK</span>
+                  <span className="track-label">
+                    <CodeIcon />
+                    <span>CODING CHALLENGE TRACK</span>
+                  </span>
                   <h4 className="track-title">{item.assessmentTitle}</h4>
                 </div>
 
                 {/* Interview Selected Callout or Under Review Notice */}
                 {item.isSelectedForInterview && (
-                  <div style={{ background: '#ecfdf5', border: '1px solid #6ee7b7', borderRadius: '8px', padding: '9px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: '#d1fae5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div className="assessment-result-notice assessment-result-notice-selected">
+                    <div className="assessment-result-notice-icon">
                       <AwardIcon />
                     </div>
                     <div>
-                      <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#065f46' }}>Selected for Technical Interview!</div>
-                      <p style={{ fontSize: '11.5px', color: '#047857', margin: 0 }}>HR evaluated your code and selected you for the interview stage.</p>
+                      <strong>Selected for Technical Interview!</strong>
+                      <p>HR evaluated your code and selected you for the interview stage.</p>
                     </div>
                   </div>
                 )}
 
                 {isUnderReview && !item.isSelectedForInterview && (
-                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#475569', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <ClockIcon />
-                    <span>Code submitted • Results will be published within <strong>3–4 working days</strong></span>
+                  <div className="assessment-result-notice assessment-result-notice-review">
+                    <div className="assessment-result-notice-icon"><ClockIcon /></div>
+                    <div>
+                      <strong>Code submitted successfully</strong>
+                      <p>Results will be published within 3–4 working days.</p>
+                    </div>
                   </div>
                 )}
 
                 {isGraded && !item.isSelectedForInterview && (
-                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span>Technical Score: <strong>{item.examScore}%</strong></span>
+                  <div className="assessment-score-bar">
+                    <div className="score-bar-metric">
+                      <span className="score-bar-label">Score:</span>
+                      <strong className={`score-bar-val ${item.isPassed ? 'passed' : 'failed'}`}>{item.examScore}%</strong>
+                    </div>
                     {item.reviewerFeedback ? (
-                      <span style={{ color: '#64748b', fontStyle: 'italic', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.reviewerFeedback}>
+                      <span className="reviewer-feedback-preview" title={item.reviewerFeedback}>
                         "{item.reviewerFeedback}"
                       </span>
                     ) : (
-                      <span style={{ color: item.isPassed ? '#059669' : '#64748b', fontWeight: 600 }}>
+                      <span className={`benchmark-pill ${item.isPassed ? 'passed' : 'below'}`}>
                         {item.isPassed ? 'Passed Benchmark' : 'Below Benchmark'}
                       </span>
                     )}
                   </div>
                 )}
 
-                {/* Specs / Meta Details */}
+                {/* Specs / Meta Details Grid */}
                 <div className="card-specs-row">
-                  <div className="spec-badge">
-                    <ClockIcon />
-                    <span>{item.timeLimitMinutes} mins</span>
+                  <div className="spec-badge spec-badge-time" title="Assessment Duration">
+                    <span className="spec-icon-wrap"><ClockIcon /></span>
+                    <span className="spec-text">{item.timeLimitMinutes} mins</span>
                   </div>
-                  <div className="spec-badge">
-                    <CodeIcon />
-                    <span>{item.questionCount} {item.questionCount === 1 ? 'Problem' : 'Problems'}</span>
+                  <div className="spec-badge spec-badge-problems" title="Problem Count">
+                    <span className="spec-icon-wrap"><CodeIcon /></span>
+                    <span className="spec-text">{item.questionCount} {item.questionCount === 1 ? 'Problem' : 'Problems'}</span>
                   </div>
-                  <div className="spec-badge">
-                    <ShieldCheckIcon />
-                    <span>Pass: {item.passingThreshold}%</span>
+                  <div className="spec-badge spec-badge-pass" title="Passing Benchmark">
+                    <span className="spec-icon-wrap"><ShieldCheckIcon /></span>
+                    <span className="spec-text">Pass: {item.passingThreshold}%</span>
                   </div>
                   {item.expiresAt && (
                     <div
-                      className="spec-badge"
-                      style={
-                        isExpired
-                          ? { color: '#ef4444', borderColor: '#fecaca', background: '#fff5f5' }
-                          : undefined
-                      }
+                      className={`spec-badge spec-badge-deadline ${isExpired ? 'is-expired' : ''}`}
+                      title={isExpired ? 'Assessment Expired' : 'Submission Deadline'}
                     >
-                      <ClockIcon />
-                      <span>
+                      <span className="spec-icon-wrap"><ClockIcon /></span>
+                      <span className="spec-text">
                         {isExpired ? 'Expired' : 'Deadline'}:{' '}
                         {new Date(item.expiresAt).toLocaleDateString('en-US', {
                           month: 'short',
@@ -456,7 +541,9 @@ export const CandidateAssessments: React.FC = () => {
                 {/* Card Footer: Date & Action CTA */}
                 <div className="card-footer-row">
                   <div className="card-timeline-info">
-                    <span className="timeline-lbl">{isCompleted ? 'Submitted' : isBlocked ? 'Blocked' : isExpired ? 'Expired' : 'Assigned'}</span>
+                    <span className="timeline-lbl">
+                      {isCompleted ? 'Submitted' : isBlocked ? 'Blocked' : isExpired ? 'Expired' : 'Assigned'}
+                    </span>
                     <span className="timeline-date">
                       {isExpired && item.expiresAt
                         ? new Date(item.expiresAt).toLocaleDateString('en-US', {
@@ -476,6 +563,7 @@ export const CandidateAssessments: React.FC = () => {
                         onClick={() => handleOpenScorecard(item.submissionId)}
                       >
                         <span>{isUnderReview ? 'Check Status' : 'View Scorecard'}</span>
+                        <ArrowRightIcon />
                       </button>
                     ) : isBlocked ? (
                       <button
@@ -490,16 +578,11 @@ export const CandidateAssessments: React.FC = () => {
                     ) : isExpired ? (
                       <button
                         type="button"
-                        className="btn-start-exam"
-                        style={{
-                          background: '#f1f5f9',
-                          color: '#94a3b8',
-                          border: '1px solid #e2e8f0',
-                          cursor: 'not-allowed',
-                        }}
+                        className="btn-start-exam btn-expired"
                         disabled
                         title="The deadline for this assessment has passed."
                       >
+                        <ClockIcon />
                         <span>Expired</span>
                       </button>
                     ) : (
@@ -512,7 +595,6 @@ export const CandidateAssessments: React.FC = () => {
                         <span>Start Assessment</span>
                       </button>
                     )}
-
                   </div>
                 </div>
               </div>
@@ -535,9 +617,15 @@ export const CandidateAssessments: React.FC = () => {
             </button>
 
             {scorecardLoading ? (
-              <div className="scorecard-loading-state">
-                <div className="assessments-spinner" />
-                <p>Retrieving technical scorecard &amp; evaluation report...</p>
+              <div className="scorecard-loading-state animate-pulse" style={{ padding: '32px 16px' }}>
+                <div style={{ width: '60%', height: '24px', borderRadius: '6px', background: '#cbd5e1', margin: '0 auto 16px' }} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
+                  <div style={{ height: '70px', borderRadius: '12px', background: '#f1f5f9' }} />
+                  <div style={{ height: '70px', borderRadius: '12px', background: '#f1f5f9' }} />
+                  <div style={{ height: '70px', borderRadius: '12px', background: '#f1f5f9' }} />
+                </div>
+                <div style={{ height: '140px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', marginBottom: '16px' }} />
+                <p style={{ color: '#64748b', fontSize: '13px', textAlign: 'center' }}>Retrieving technical scorecard &amp; evaluation report...</p>
               </div>
             ) : scorecardError ? (
               <div className="scorecard-error-state">

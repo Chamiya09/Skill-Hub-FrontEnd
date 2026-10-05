@@ -1,0 +1,574 @@
+/* ==========================================================================
+   CREATIVE MONTHLY PLANNER CALENDAR REDESIGN
+   Modern Glassmorphism, Ticket-Style Event Cards, Dynamic Cells & Luminous Glows
+   ========================================================================== */
+
+/* 1. Main Calendar Shell */
+.creative-calendar-shell {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #dce9e5;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px -2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(16, 185, 129, 0.04);
+  overflow: hidden;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 2. Creative Top Control & Navigator Bar */
+.creative-calendar-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdfc 100%);
+  border-bottom: 1px solid #e9f0ec;
+  flex-wrap: wrap;
+}
+
+.creative-cal-nav-cluster {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.creative-month-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #f0fdf8;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  color: #047857;
+  font-size: 15px;
+  font-weight: 850;
+  letter-spacing: -0.015em;
+  box-shadow: 0 1px 2px rgba(4, 120, 87, 0.05);
+}
+
+.creative-month-badge svg {
+  color: #00b074;
+}
+
+.creative-cal-arrows {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f8fafc;
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.creative-arrow-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.creative-arrow-btn:hover {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.creative-today-jump-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  color: #334155;
+  font-size: 12.5px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.creative-today-jump-btn:hover {
+  border-color: #00b074;
+  color: #047857;
+  background: #f0fdf8;
+  box-shadow: 0 2px 6px rgba(0, 176, 116, 0.12);
+}
+
+.creative-today-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+}
+
+/* Category Legend in Topbar */
+.creative-legend-cluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.creative-legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 750;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  transition: all 0.15s ease;
+}
+
+.creative-legend-chip.chip-interviews {
+  background: #e6f9f2;
+  border-color: #bbf7d0;
+  color: #047857;
+}
+
+.creative-legend-chip.chip-general {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+.creative-legend-chip.chip-holidays {
+  background: #fef3c7;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.creative-legend-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.creative-legend-chip.chip-interviews .creative-legend-chip-dot {
+  background: #10b981;
+  box-shadow: 0 0 5px #10b981;
+}
+
+.creative-legend-chip.chip-general .creative-legend-chip-dot {
+  background: #3b82f6;
+  box-shadow: 0 0 5px #3b82f6;
+}
+
+.creative-legend-chip.chip-holidays .creative-legend-chip-dot {
+  background: #f59e0b;
+}
+
+/* Quick Add Button in Topbar */
+.creative-topbar-quick-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 10px;
+  background: #00b074;
+  color: #ffffff;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 6px rgba(0, 176, 116, 0.2);
+}
+
+.creative-topbar-quick-add:hover {
+  background: #009e67;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 176, 116, 0.3);
+}
+
+/* 3. Seven-Column Creative Grid */
+.creative-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  background: #e2e8f0;
+  gap: 1px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Weekday Column Header */
+.creative-weekday-cell {
+  background: #f8fafc;
+  padding: 12px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #475569;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.creative-weekday-cell.is-weekend {
+  color: #94a3b8;
+  background: #fbfcfd;
+}
+
+.creative-weekday-cell.is-today-col {
+  background: #f0fdf8;
+  color: #047857;
+  border-bottom: 2px solid #00b074;
+}
+
+.creative-weekday-today-pill {
+  font-size: 9px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #00b074;
+  color: #ffffff;
+  letter-spacing: 0.4px;
+}
+
+/* 4. Creative Date Cell */
+.creative-cal-cell {
+  min-height: clamp(120px, 13.5vh, 155px);
+  min-width: 0;
+  width: 100%;
+  background: #ffffff;
+  padding: 8px 9px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.creative-cal-cell:hover {
+  background: #fbfdfc;
+  z-index: 5;
+  box-shadow: inset 0 0 0 1.5px rgba(0, 176, 116, 0.35);
+}
+
+.creative-cal-cell.is-weekend {
+  background: linear-gradient(180deg, #fcfdfd 0%, #f8fafb 100%);
+}
+
+.creative-cal-cell.is-outside-month {
+  background: #f9fafb;
+  opacity: 0.45;
+}
+
+.creative-cal-cell.is-outside-month:hover {
+  opacity: 0.85;
+}
+
+/* Today's Cell Creative Styling */
+.creative-cal-cell.is-today {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(16, 185, 129, 0.12) 0%, rgba(255, 255, 255, 0.95) 75%),
+    #ffffff;
+  box-shadow: inset 0 0 0 1.5px #10b981;
+}
+
+/* Selected Date Cell */
+.creative-cal-cell.is-selected {
+  background: #f0fdf4 !important;
+  box-shadow: inset 0 0 0 2px #00b074, 0 4px 14px rgba(0, 176, 116, 0.15) !important;
+  z-index: 6;
+}
+
+/* Cell Header (Top Row) */
+.creative-cell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  min-width: 0;
+  width: 100%;
+}
+
+.creative-cell-number-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.creative-cell-day-num {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.creative-cal-cell:hover .creative-cell-day-num {
+  transform: scale(1.08);
+}
+
+/* Today Day Avatar Pill */
+.creative-cell-day-num.is-today-pill {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00b074 0%, #059669 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 850;
+  box-shadow: 0 2px 6px rgba(0, 176, 116, 0.35);
+}
+
+.creative-cell-day-num.is-selected-num {
+  color: #047857;
+  font-weight: 850;
+}
+
+/* Cell Header Action Controls */
+.creative-cell-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Quick Add Button (Appears on Cell Hover) */
+.creative-cell-quick-add {
+  opacity: 0;
+  transform: scale(0.85);
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: #e6f9f2;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.creative-cal-cell:hover .creative-cell-quick-add {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.creative-cell-quick-add:hover {
+  background: #00b074;
+  color: #ffffff;
+  border-color: #059669;
+}
+
+/* Micro Activity Dots */
+.creative-cell-dots {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.creative-micro-dot {
+  width: 5.5px;
+  height: 5.5px;
+  border-radius: 50%;
+}
+
+.creative-micro-dot.dot-interview {
+  background: #10b981;
+  box-shadow: 0 0 4px #10b981;
+}
+
+.creative-micro-dot.dot-holiday {
+  background: #f59e0b;
+}
+
+.creative-micro-dot.dot-meeting {
+  background: #3b82f6;
+}
+
+/* 5. Creative Event Cards / Ticket Pills inside Cell */
+.creative-events-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3.5px;
+  overflow: hidden;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Ticket Pill Card */
+.creative-ticket-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 6px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.creative-ticket-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
+}
+
+/* Interview Ticket Pill */
+.creative-ticket-pill.ticket-interview {
+  background: #f0fdf4;
+  color: #065f46;
+  border-left: 3px solid #00b074;
+  border-top: 1px solid #e7f8ee;
+  border-right: 1px solid #e7f8ee;
+  border-bottom: 1px solid #e7f8ee;
+}
+
+.creative-ticket-pill.ticket-interview .ticket-time {
+  color: #047857;
+  font-weight: 800;
+  font-size: 10px;
+}
+
+/* General / Meeting Ticket Pill */
+.creative-ticket-pill.ticket-general {
+  background: #f8fafc;
+  color: #1e293b;
+  border-left: 3px solid #3b82f6;
+  border-top: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.creative-ticket-pill.ticket-general .ticket-time {
+  color: #2563eb;
+  font-weight: 800;
+  font-size: 10px;
+}
+
+/* Holiday Pill */
+.creative-ticket-pill.ticket-holiday {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  color: #78350f;
+  border: 1px solid #fde68a;
+  border-left: 3px solid #f59e0b;
+}
+
+.ticket-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.ticket-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
+}
+
+/* "+N More Events" Frosted Pill */
+.creative-more-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 750;
+  color: #047857;
+  background: #e6f9f2;
+  border: 1px solid #a7f3d0;
+  border-radius: 5px;
+  padding: 1.5px 6px;
+  margin-top: 1px;
+  width: fit-content;
+  transition: all 0.15s ease;
+}
+
+.creative-more-pill:hover {
+  background: #00b074;
+  color: #ffffff;
+}
+
+/* 6. Creative Calendar Footer Strip */
+.creative-calendar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: #fbfdfc;
+  border-top: 1px solid #e9f0ec;
+  font-size: 12px;
+  color: #64748b;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.creative-footer-stats {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-weight: 600;
+}
+
+.creative-footer-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.creative-footer-stat-item strong {
+  color: #0f172a;
+}
+
+.creative-footer-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+/* Responsive Grid Rules */
+@media (max-width: 900px) {
+  .creative-weekday-cell span {
+    font-size: 10.5px;
+  }
+
+  .creative-cal-cell {
+    min-height: 105px;
+    padding: 6px;
+  }
+
+  .creative-calendar-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

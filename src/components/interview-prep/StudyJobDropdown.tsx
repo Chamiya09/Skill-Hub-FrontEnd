@@ -1,6 +1,6 @@
 import React from 'react';
 import type { InterviewPrepGuideDto } from '../../services/api';
-import { BriefcaseIcon, ChevronDownIcon, SparkleIcon } from '../common/Icons';
+import { BriefcaseIcon, ChevronDownIcon } from '../common/Icons';
 
 interface StudyJobDropdownProps {
   guides: InterviewPrepGuideDto[];
@@ -35,6 +35,7 @@ export const StudyJobDropdown: React.FC<StudyJobDropdownProps> = ({
           </span>
         </div>
 
+        {/* Normal Dropdown Select Box matching portal design */}
         <div className="study-select-wrapper">
           <select
             id="interview-guide-select"
@@ -57,13 +58,6 @@ export const StudyJobDropdown: React.FC<StudyJobDropdownProps> = ({
           <div className="study-select-chevron" aria-hidden="true">
             <ChevronDownIcon />
           </div>
-        </div>
-      </div>
-
-      <div className="study-dropdown-right">
-        <div className="study-quick-switch-hint">
-          <SparkleIcon />
-          <span>Switch interview roles above to update study guidelines instantly.</span>
         </div>
       </div>
     </div>

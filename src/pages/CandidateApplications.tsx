@@ -12,6 +12,7 @@ import {
   BriefcaseIcon,
   SearchIcon,
 } from '../components/common/Icons';
+import { TableRowSkeleton } from '../components/common/SkeletonCard';
 import './CandidateApplications.css';
 
 const STAGE_LABELS = ['Applied', 'Under Review', 'Shortlisted', 'Assessment', 'Interview', 'Hire'];
@@ -96,7 +97,27 @@ export const CandidateApplications: React.FC = () => {
         <button type="button" onClick={() => void fetchApplications()}>Retry</button></div>}
 
       {isLoading ? (
-        <div className="applications-state-card" aria-live="polite"><div className="applications-spinner" /><p>Loading your applications...</p></div>
+        <div className="applications-table-card">
+          <div className="applications-table-summary">
+            <span className="animate-pulse" style={{ display: 'inline-block', width: '130px', height: '14px', background: '#cbd5e1', borderRadius: '4px' }} />
+          </div>
+          <div className="applications-table-scroll">
+            <table className="applications-table">
+              <thead>
+                <tr>
+                  <th>Position &amp; Company</th>
+                  <th>Location &amp; Type</th>
+                  <th>Date Applied</th>
+                  <th>Status</th>
+                  <th><span className="sr-only">Action</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <TableRowSkeleton cols={5} rows={5} hasAvatar />
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : applications.length === 0 ? (
         <div className="applications-state-card applications-empty">
           <div className="applications-empty-icon"><BriefcaseIcon /></div><h2>No Job Applications Yet</h2>

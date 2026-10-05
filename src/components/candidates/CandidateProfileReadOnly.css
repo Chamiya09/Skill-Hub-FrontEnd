@@ -1,0 +1,584 @@
+/* ==========================================================================
+   CANDIDATE DIGITAL CV PROFILE (READ-ONLY) - SYSTEM UI THEME
+   Corporate Emerald (#059669 / #00b074) & Slate (#0f172a) Design Language,
+   Glassmorphism, Elevated Hero Card, and Creative Animated Close Button
+   ========================================================================== */
+
+/* 1. Base Container */
+.candidate-cv-readonly-container {
+  --cv-primary: #059669;
+  --cv-primary-light: #00b074;
+  --cv-primary-dark: #047857;
+  --cv-primary-soft: #ecfdf5;
+  --cv-primary-border: #a7f3d0;
+  --cv-ink: #0f172a;
+  --cv-muted: #64748b;
+  --cv-border: #e2e8f0;
+  min-height: 100%;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 320px);
+  color: var(--cv-ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* 2. Creative Top Navigation Bar (Frosted Glass Header) */
+.candidate-cv-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 28px;
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid #edf2f0;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.candidate-cv-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Verified Digital CV Badge */
+.candidate-cv-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border: 1px solid #a7f3d0;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 750;
+  box-shadow: 0 1px 3px rgba(5, 150, 105, 0.08);
+}
+
+.candidate-cv-verified-badge svg {
+  color: #059669;
+  filter: drop-shadow(0 1px 2px rgba(5, 150, 105, 0.25));
+}
+
+/* Monospace Candidate ID */
+.candidate-cv-id-badge {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 3.5px 9px;
+  border-radius: 7px;
+  letter-spacing: 0.03em;
+}
+
+.candidate-cv-topbar-subtext {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .candidate-cv-topbar-subtext {
+    display: inline-block;
+  }
+}
+
+/* ==========================================================================
+   3. CREATIVE CLOSE BUTTON (Interactive Morphing Capsule with Micro-interactions)
+   ========================================================================== */
+.cv-creative-close-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4.5px 12px 4.5px 6px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(15, 23, 42, 0.02);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  outline: none;
+  user-select: none;
+}
+
+/* Rotating Orb Inside Close Button */
+.cv-creative-close-icon-wrap {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.cv-creative-close-icon-wrap svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cv-creative-close-text {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #475569;
+  letter-spacing: -0.01em;
+  transition: color 0.15s ease;
+}
+
+/* Subtle ESC Key Chip */
+.cv-creative-close-kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: #f8fafc;
+  color: #94a3b8;
+  border: 1px solid #e2e8f0;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  transition: all 0.15s ease;
+}
+
+/* Creative Hover State: Smooth Transition to Warm Crimson-Rose */
+.cv-creative-close-btn:hover {
+  background: linear-gradient(135deg, #fff1f2 0%, #fee2e2 100%);
+  border-color: #fca5a5;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.18), 0 0 0 1px rgba(239, 68, 68, 0.1);
+  transform: translateY(-1px);
+}
+
+.cv-creative-close-btn:hover .cv-creative-close-icon-wrap {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+  transform: rotate(90deg) scale(1.06);
+}
+
+.cv-creative-close-btn:hover .cv-creative-close-text {
+  color: #dc2626;
+}
+
+.cv-creative-close-btn:hover .cv-creative-close-kbd {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.cv-creative-close-btn:active {
+  transform: translateY(0) scale(0.96);
+}
+
+/* ==========================================================================
+   4. HERO & IDENTITY CARD (System UI Emerald Redesign)
+   ========================================================================== */
+.candidate-cv-readonly-container .candidate-hero-card {
+  position: relative;
+  border: 1px solid #dce7e3;
+  border-radius: 20px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 92% 10%, rgba(16, 185, 129, 0.12), transparent 42%),
+    linear-gradient(135deg, #ffffff 0%, #ffffff 70%, #f4fcf9 100%);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s ease;
+}
+
+.candidate-cv-readonly-container .candidate-hero-card:hover {
+  border-color: #a7f3d0;
+  box-shadow: 0 14px 38px rgba(0, 176, 116, 0.08);
+}
+
+/* Vertical Emerald Indicator Strip */
+.candidate-cv-readonly-container .candidate-hero-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: linear-gradient(180deg, #059669 0%, #00b074 100%);
+}
+
+.candidate-cv-readonly-container .candidate-hero-content {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  padding: 30px 32px 30px 36px;
+}
+
+/* Avatar Wrap */
+.candidate-cv-readonly-container .candidate-avatar-wrap {
+  position: relative;
+  flex: 0 0 104px;
+  width: 104px;
+  height: 104px;
+}
+
+.candidate-cv-readonly-container .candidate-avatar-glow {
+  position: absolute;
+  inset: -6px;
+  border-radius: 30px;
+  background: rgba(16, 185, 129, 0.16);
+  filter: blur(8px);
+}
+
+.candidate-cv-readonly-container .candidate-avatar-img,
+.candidate-cv-readonly-container .candidate-avatar-placeholder {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  border: 4px solid #ffffff;
+  border-radius: 26px;
+  box-shadow: 0 12px 28px rgba(5, 150, 105, 0.22);
+}
+
+.candidate-cv-readonly-container .candidate-avatar-placeholder {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #059669 0%, #00b074 100%);
+  color: #ffffff;
+  font-size: 32px;
+  font-weight: 850;
+  letter-spacing: -0.04em;
+}
+
+.candidate-cv-readonly-container .candidate-avatar-badge {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 3px solid #ffffff;
+  border-radius: 999px;
+  background: #00b074;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+}
+
+/* Name & Title */
+.candidate-cv-readonly-container .candidate-name {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 850;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.candidate-cv-readonly-container .candidate-verified-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4.5px 11px;
+  border: 1px solid #a7f3d0;
+  border-radius: 9999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 1px 3px rgba(5, 150, 105, 0.06);
+}
+
+.candidate-cv-readonly-container .candidate-headline {
+  margin: 8px 0 14px;
+  color: #334155;
+  font-size: 15px;
+  font-weight: 550;
+  line-height: 1.5;
+}
+
+/* Meta Details Row */
+.candidate-cv-readonly-container .candidate-meta-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+}
+
+.candidate-cv-readonly-container .candidate-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.candidate-cv-readonly-container .candidate-meta-item svg {
+  width: 15px;
+  height: 15px;
+  color: #00b074;
+}
+
+/* Contact & Social Links */
+.candidate-cv-readonly-container .candidate-contacts-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin-top: 16px;
+}
+
+.candidate-cv-readonly-container .candidate-contact-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12.5px;
+  font-weight: 650;
+  text-decoration: none;
+  transition: all 0.16s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.candidate-cv-readonly-container .candidate-contact-badge:hover {
+  border-color: #00b074;
+  background: #f0fdf4;
+  color: #047857;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 176, 116, 0.1);
+}
+
+/* ==========================================================================
+   5. SECTION CARDS (About, Experience, Projects, Skills, Education, Certs)
+   ========================================================================== */
+.candidate-cv-readonly-container .candidate-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.025);
+  overflow: hidden;
+  transition: all 0.18s ease;
+}
+
+.candidate-cv-readonly-container .candidate-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.candidate-cv-readonly-container .candidate-card-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #edf2f0;
+  background: linear-gradient(180deg, #ffffff 0%, #fafcfb 100%);
+}
+
+.candidate-cv-readonly-container .candidate-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.candidate-cv-readonly-container .candidate-card-icon-wrap {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #059669;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.08);
+}
+
+.candidate-cv-readonly-container .candidate-card-title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 16.5px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.candidate-cv-readonly-container .candidate-card-subtitle {
+  margin: 2px 0 0;
+  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   6. ABOUT & HIGHLIGHTS GRID (Redesigned from Blue to System UI Emerald)
+   ========================================================================== */
+.candidate-cv-readonly-container .candidate-about-body {
+  padding: 22px 26px 26px;
+}
+
+.candidate-cv-readonly-container .candidate-summary-text {
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.72;
+}
+
+.candidate-cv-readonly-container .candidate-highlights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+/* Highlight Mini-Card */
+.candidate-cv-readonly-container .candidate-highlight-card {
+  padding: 14px 16px;
+  border: 1px solid #dce7e3;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  transition: all 0.16s ease;
+}
+
+.candidate-cv-readonly-container .candidate-highlight-card:hover {
+  border-color: #00b074;
+  background: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 176, 116, 0.08);
+}
+
+.candidate-cv-readonly-container .candidate-highlight-cat {
+  color: #059669;
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.candidate-cv-readonly-container .candidate-highlight-val {
+  margin-top: 4px;
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.candidate-cv-readonly-container .candidate-highlight-sub {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   7. TIMELINE (Experience & Education)
+   ========================================================================== */
+.candidate-cv-readonly-container .candidate-timeline::before {
+  background: linear-gradient(180deg, #059669 0%, #a7f3d0 100%);
+}
+
+.candidate-cv-readonly-container .candidate-timeline-bullet {
+  background: #00b074;
+  box-shadow: 0 0 0 3px rgba(0, 176, 116, 0.2);
+}
+
+.candidate-cv-readonly-container .candidate-item-title {
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.candidate-cv-readonly-container .candidate-item-subtitle {
+  color: #047857;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.candidate-cv-readonly-container .candidate-item-date-badge {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 650;
+  padding: 4px 10px;
+  border-radius: 7px;
+}
+
+/* ==========================================================================
+   8. SKILL CHIPS
+   ========================================================================== */
+.candidate-cv-readonly-container .candidate-skill-pill {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 650;
+  padding: 5px 12px;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.candidate-cv-readonly-container .candidate-skill-pill:hover {
+  background: #f0fdf4;
+  border-color: #00b074;
+  color: #047857;
+  transform: translateY(-1px);
+}
+
+.candidate-cv-readonly-container .candidate-skill-category-tag {
+  color: #059669;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+}
+
+/* ==========================================================================
+   9. RESPONSIVE ADJUSTMENTS
+   ========================================================================== */
+@media (max-width: 640px) {
+  .candidate-cv-topbar {
+    padding: 12px 16px;
+  }
+
+  .candidate-cv-readonly-container .candidate-hero-content {
+    flex-direction: column;
+    text-align: center;
+    padding: 24px 20px;
+  }
+
+  .candidate-cv-readonly-container .candidate-title-row {
+    justify-content: center;
+  }
+
+  .candidate-cv-readonly-container .candidate-meta-grid,
+  .candidate-cv-readonly-container .candidate-contacts-row {
+    justify-content: center;
+  }
+
+  .cv-creative-close-text {
+    display: none;
+  }
+
+  .cv-creative-close-btn {
+    padding: 4px 8px 4px 4px;
+  }
+}
+
+/* ==========================================================================
+   10. DRAWER & OVERLAY ELEVATION
+   ========================================================================== */
+.candidate-cv-drawer {
+  border-top-left-radius: 20px !important;
+  border-bottom-left-radius: 20px !important;
+  border-left: 1px solid #dce7e3 !important;
+  box-shadow: -15px 0 45px rgba(15, 23, 42, 0.22) !important;
+}
+
+.candidate-cv-drawer-overlay {
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  background: rgba(15, 23, 42, 0.6) !important;
+}

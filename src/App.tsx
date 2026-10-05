@@ -4,6 +4,7 @@ import { Header } from "./components/common/Header";
 import { Footer } from "./components/common/Footer";
 import { ProtectedRoute } from "./components/common/ProtectedRoute";
 import { PublicRoute } from "./components/common/PublicRoute";
+import { SuspendedAccountModal } from "./components/common/SuspendedAccountModal";
 import { CandidateLayout } from "./components/layout/CandidateLayout";
 import { Home } from "./pages/Home";
 import { About } from "./pages/About";
@@ -29,6 +30,8 @@ import { CandidateExam } from "./pages/CandidateExam";
 import { CandidateAssessments } from "./pages/CandidateAssessments";
 import { CandidateInterviewPrep } from "./pages/CandidateInterviewPrep";
 import { CandidateStudyDashboard } from "./pages/CandidateStudyDashboard";
+import { AdminLogin } from "./pages/admin/AdminLogin";
+import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { useParams } from "react-router-dom";
 import "./App.css";
 
@@ -58,6 +61,7 @@ function AppContent() {
     location.pathname.startsWith("/performance-hub") ||
     location.pathname.startsWith("/submissions") ||
     location.pathname.startsWith("/leaderboard") ||
+    location.pathname.startsWith("/interview-selection") ||
     location.pathname.startsWith("/exam") ||
     location.pathname.startsWith("/vacancies") ||
     location.pathname.startsWith("/users") ||
@@ -66,10 +70,16 @@ function AppContent() {
     location.pathname.startsWith("/company/settings") ||
     location.pathname === "/company-security" ||
     location.pathname.startsWith("/company/security") ||
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/company/dashboard") ||
+    location.pathname.startsWith("/skillhub-secure-admin") ||
     location.pathname === "/security";
 
   return (
     <div className={`page-container ${isDashboardOrAuth ? "dashboard-view-mode auth-full-screen" : ""}`}>
+      {/* Universal Non-Dismissible Account Suspension Modal */}
+      <SuspendedAccountModal />
+
       <div className={`content-wrapper ${isDashboardOrAuth ? "dashboard-wrapper-full auth-wrapper-full" : ""}`}>
         {!isDashboardOrAuth && <Header />}
         <main className={`main-content ${isDashboardOrAuth ? "dashboard-main-full auth-main-full" : ""}`}>
@@ -89,7 +99,7 @@ function AppContent() {
             <Route
               path="/candidate-login"
               element={
-                <PublicRoute>
+                <PublicRoute deferAuthenticatedRedirect>
                   <CandidateLogin />
                 </PublicRoute>
               }
@@ -97,7 +107,7 @@ function AppContent() {
             <Route
               path="/candidate/login"
               element={
-                <PublicRoute>
+                <PublicRoute deferAuthenticatedRedirect>
                   <CandidateLogin />
                 </PublicRoute>
               }
@@ -184,7 +194,7 @@ function AppContent() {
             <Route
               path="/company-login"
               element={
-                <PublicRoute>
+                <PublicRoute deferAuthenticatedRedirect>
                   <Login />
                 </PublicRoute>
               }
@@ -192,7 +202,7 @@ function AppContent() {
             <Route
               path="/login"
               element={
-                <PublicRoute>
+                <PublicRoute deferAuthenticatedRedirect>
                   <Login />
                 </PublicRoute>
               }
@@ -217,6 +227,14 @@ function AppContent() {
             {/* Protected Enterprise ATS Routes */}
             <Route
               path="/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/company/dashboard"
               element={
                 <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard />
@@ -332,6 +350,22 @@ function AppContent() {
               element={
                 <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard defaultTab="assessment-leaderboard" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/interview-selection"
+              element={
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
+                  <Dashboard defaultTab="interview-selection" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/interview-selection"
+              element={
+                <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
+                  <Dashboard defaultTab="interview-selection" />
                 </ProtectedRoute>
               }
             />
@@ -481,6 +515,34 @@ function AppContent() {
               element={
                 <ProtectedRoute allowedRoles={['Company', 'Employer', 'Admin']} redirectPath="/candidate/profile">
                   <Dashboard defaultTab="security" />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Secret Hidden Super Admin Gateway (Strictly Unlinked in Public/Candidate/HR UI) */}
+            <Route path="/skillhub-secure-admin" element={<AdminLogin />} />
+            <Route
+              path="/skillhub-secure-admin/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['Admin']} redirectPath="/skillhub-secure-admin">
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            {/* Admin Route Aliases */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['Admin']} redirectPath="/skillhub-secure-admin">
+                  <Navigate to="/skillhub-secure-admin/dashboard" replace />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['Admin']} redirectPath="/skillhub-secure-admin">
+                  <Navigate to="/skillhub-secure-admin/dashboard" replace />
                 </ProtectedRoute>
               }
             />

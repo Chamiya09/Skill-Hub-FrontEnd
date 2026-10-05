@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   jobsApi,
   assessmentsApi,
@@ -20,6 +20,7 @@ import {
   TrophyIcon,
   CheckIcon,
   ShieldCheckIcon,
+  SearchIcon,
 } from "../components/common/Icons";
 import {
   Lock,
@@ -42,8 +43,11 @@ import {
   Sparkles,
   CheckCircle2,
 } from "lucide-react";
-import { ProblemStatementViewer } from "../components/assessment";
+import { ProblemStatementViewer, CandidateCodeReviewModal } from "../components/assessment";
 import { AiInterviewSchedulerModal } from "../components/AiInterviewSchedulerModal";
+import { InterviewSelection } from "./InterviewSelection";
+import { TableRowSkeleton, JobCardSkeleton, SkeletonStatValue } from "../components/common/SkeletonCard";
+import "./TechnicalAssessmentsFull.css";
 
 const LANGUAGE_STARTER_TEMPLATES: Record<string, string> = {
   csharp: `using System;
@@ -119,7 +123,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   // 1. Requisition selection state
   const [jobs, setJobs] = useState<JobDto[]>([]);
   const [selectedJob, setSelectedJob] = useState<JobDto | null>(null);
-  const [, setLoadingJobs] = useState<boolean>(true);
+  const [loadingJobs, setLoadingJobs] = useState<boolean>(true);
 
   // 2. Active Section: 'templates' vs 'performance-hub' vs 'interview-selection'
   const isInterviewSelection = activeSection === "interview-selection";
@@ -147,38 +151,151 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
   // 3. Assessments state
   const [assessments, setAssessments] = useState<AssessmentResponseDto[]>([]);
-  const [loadingAssessments, setLoadingAssessments] = useState<boolean>(false);
+  const [loadingAssessments, setLoadingAssessments] = useState<boolean>(true);
+  const [trackStatusFilter, setTrackStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
+  const [trackSearchQuery, setTrackSearchQuery] = useState<string>('');
+  const [trackSortBy, setTrackSortBy] = useState<'submissions' | 'newest' | 'threshold' | 'title'>('submissions');
+
+  const publishedTracksCount = useMemo(() => {
+    return assessments.filter((t) => t.status === 'Published').length;
+  }, [assessments]);
+
+  const draftTracksCount = useMemo(() => {
+    return assessments.filter((t) => t.status === 'Draft').length;
+  }, [assessments]);
+
+  const totalCandidatesEvaluated = useMemo(() => {
+    return assessments.reduce((sum, t) => sum + (t.totalSubmissions || 0), 0);
+  }, [assessments]);
+
+  const filteredAssessments = useMemo(() => {
+    const list = assessments.filter((track) => {
+      const q = trackSearchQuery.toLowerCase().trim();
+      const matchesSearch =
+        !q ||
+        track.title.toLowerCase().includes(q) ||
+        (track.finalQuestions || []).some(
+          (qItem) =>
+            qItem.title.toLowerCase().includes(q) ||
+            qItem.difficulty.toLowerCase().includes(q)
+        );
+
+      const matchesStatus =
+        trackStatusFilter === 'all' ||
+        (trackStatusFilter === 'published' && track.status === 'Published') ||
+        (trackStatusFilter === 'draft' && track.status === 'Draft');
+
+      return matchesSearch && matchesStatus;
+    });
+
+    return [...list].sort((a, b) => {
+      if (trackSortBy === 'submissions') {
+        return (b.totalSubmissions || 0) - (a.totalSubmissions || 0);
+      }
+      if (trackSortBy === 'newest') {
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      }
+      if (trackSortBy === 'threshold') {
+        return (b.passingThreshold || 0) - (a.passingThreshold || 0);
+      }
+      if (trackSortBy === 'title') {
+        return a.title.localeCompare(b.title);
+      }
+      return 0;
+    });
+  }, [assessments, trackSearchQuery, trackStatusFilter, trackSortBy]);
+
+  const hasActiveTrackFilters = trackStatusFilter !== 'all' || trackSearchQuery.trim() !== '';
+
+  const clearTrackFilters = () => {
+    setTrackStatusFilter('all');
+    setTrackSearchQuery('');
+    setTrackSortBy('submissions');
+  };
 
   // 4. Submissions state
   const [submissions, setSubmissions] = useState<SubmissionDetailDto[]>([]);
-  const [loadingSubmissions, setLoadingSubmissions] = useState<boolean>(false);
+  const [loadingSubmissions, setLoadingSubmissions] = useState<boolean>(true);
   const [submissionFilter, setSubmissionFilter] = useState<
     "all" | "pending" | "graded" | "interview"
   >("all");
   const [submissionSearch, setSubmissionSearch] = useState<string>("");
+  const [submissionSortBy, setSubmissionSortBy] = useState<'newest' | 'score' | 'name'>('newest');
+  const [leaderboardSearch, setLeaderboardSearch] = useState<string>('');
+
+  const pendingSubmissionsCount = useMemo(() => {
+    return submissions.filter((s) => s.status === 'Under_Review' || s.status === 'Submitted').length;
+  }, [submissions]);
+
+  const gradedSubmissionsCount = useMemo(() => {
+    return submissions.filter((s) => s.status === 'Graded' || s.status === 'Passed').length;
+  }, [submissions]);
+
+  const interviewSelectedCount = useMemo(() => {
+    return submissions.filter((s) => s.isSelectedForInterview).length;
+  }, [submissions]);
+
+  const hasActiveSubmissionFilters = submissionFilter !== 'all' || submissionSearch.trim() !== '';
+
+  const clearSubmissionFilters = () => {
+    setSubmissionFilter('all');
+    setSubmissionSearch('');
+    setSubmissionSortBy('newest');
+  };
+
+  const filteredSubmissions = useMemo(() => {
+    const list = submissions.filter((s) => {
+      if (submissionFilter === "pending" && s.status !== "Under_Review" && s.status !== "Submitted") return false;
+      if (submissionFilter === "graded" && s.status !== "Graded" && s.status !== "Passed") return false;
+      if (submissionFilter === "interview" && !s.isSelectedForInterview) return false;
+
+      if (submissionSearch.trim()) {
+        const q = submissionSearch.toLowerCase().trim();
+        const nameMatch = (s.candidateName || "").toLowerCase().includes(q);
+        const emailMatch = (s.candidateEmail || "").toLowerCase().includes(q);
+        return nameMatch || emailMatch;
+      }
+      return true;
+    });
+
+    return [...list].sort((a, b) => {
+      if (submissionSortBy === 'score') {
+        return (b.examScore || 0) - (a.examScore || 0);
+      }
+      if (submissionSortBy === 'name') {
+        return (a.candidateName || "").localeCompare(b.candidateName || "");
+      }
+      if (submissionSortBy === 'newest') {
+        return new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime();
+      }
+      return 0;
+    });
+  }, [submissions, submissionFilter, submissionSearch, submissionSortBy]);
 
   // 5. Code Review Modal state
   const [reviewingSubmission, setReviewingSubmission] =
     useState<SubmissionDetailDto | null>(null);
-  const [reviewExamScore, setReviewExamScore] = useState<number>(0);
-  const [reviewIsSelectedForInterview, setReviewIsSelectedForInterview] =
-    useState<boolean>(false);
-  const [reviewFeedback, setReviewFeedback] = useState<string>("");
-  const [questionEvaluations, setQuestionEvaluations] = useState<
-    Record<string, { isCorrect: boolean; pointsEarned: number; notes: string }>
-  >({});
-  const [isSavingReview, setIsSavingReview] = useState<boolean>(false);
 
   // 6. Leaderboard state
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntryDto[]>([]);
-  const [loadingLeaderboard, setLoadingLeaderboard] = useState<boolean>(false);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState<boolean>(true);
+
+  const filteredLeaderboard = useMemo(() => {
+    if (!leaderboardSearch.trim()) return leaderboard;
+    const q = leaderboardSearch.toLowerCase().trim();
+    return leaderboard.filter(
+      (entry) =>
+        (entry.candidateName || "").toLowerCase().includes(q) ||
+        (entry.candidateEmail || "").toLowerCase().includes(q)
+    );
+  }, [leaderboard, leaderboardSearch]);
 
   // 6b. Interview Selection state
   const [interviewSelections, setInterviewSelections] = useState<
     SubmissionDetailDto[]
   >([]);
   const [loadingInterviewSelections, setLoadingInterviewSelections] =
-    useState<boolean>(false);
+    useState<boolean>(true);
   const [interviewJobFilter, setInterviewJobFilter] = useState<string>("all");
   const [interviewSearch, setInterviewSearch] = useState<string>("");
   const [interviewScoreFilter, setInterviewScoreFilter] = useState<
@@ -339,9 +456,18 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
             "skillhub_active_job_requisition_id",
             active[0].id,
           );
+        } else {
+          setLoadingAssessments(false);
+          setLoadingSubmissions(false);
+          setLoadingLeaderboard(false);
+          setLoadingInterviewSelections(false);
         }
       } catch (err) {
         console.error("Failed to load jobs:", err);
+        setLoadingAssessments(false);
+        setLoadingSubmissions(false);
+        setLoadingLeaderboard(false);
+        setLoadingInterviewSelections(false);
       } finally {
         setLoadingJobs(false);
       }
@@ -352,6 +478,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   // Fetch assessments and leaderboard whenever selected job changes
 
   const loadJobLeaderboard = useCallback(async (jobId: string) => {
+    setLoadingLeaderboard(true);
     try {
       const res = await assessmentsApi.getLeaderboard(jobId);
       setLeaderboard(res || []);
@@ -364,6 +491,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   }, []);
 
   const loadJobSubmissions = useCallback(async (jobId: string) => {
+    setLoadingSubmissions(true);
     try {
       const res = await assessmentsApi.getSubmissionsByJob(jobId);
       setSubmissions(res || []);
@@ -931,6 +1059,10 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     let isMounted = true;
 
     const fetchAll = async () => {
+      setLoadingAssessments(true);
+      setLoadingSubmissions(true);
+      setLoadingLeaderboard(true);
+      setLoadingInterviewSelections(true);
       try {
         const [assessmentsData, submissionsData, leaderboardData, interviewData] =
           await Promise.all([
@@ -972,64 +1104,8 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
   const handleOpenReview = (sub: SubmissionDetailDto) => {
     setReviewingSubmission(sub);
-    setReviewExamScore(sub.examScore || 0);
-    setReviewIsSelectedForInterview(sub.isSelectedForInterview || false);
-    setReviewFeedback(sub.reviewerFeedback || "");
-
-    const qMap: Record<
-      string,
-      { isCorrect: boolean; pointsEarned: number; notes: string }
-    > = {};
-    (sub.answers || []).forEach((a) => {
-      qMap[a.questionId] = {
-        isCorrect: (a.testCasesPassed || 0) > 0,
-        pointsEarned: a.score || 0,
-        notes: "",
-      };
-    });
-    setQuestionEvaluations(qMap);
   };
 
-  const handleSaveReview = async () => {
-    if (!reviewingSubmission) return;
-    try {
-      setIsSavingReview(true);
-      const questionReviews = Object.entries(questionEvaluations).map(
-        ([qId, val]) => ({
-          questionId: qId,
-          isCorrect: val.isCorrect,
-          pointsEarned: val.pointsEarned,
-          notes: val.notes,
-        }),
-      );
-
-      await assessmentsApi.reviewSubmission(reviewingSubmission.id, {
-        examScore: reviewExamScore,
-        isSelectedForInterview: reviewIsSelectedForInterview,
-        reviewerFeedback: reviewFeedback,
-        questionReviews,
-      });
-
-      showToast(
-        reviewIsSelectedForInterview
-          ? `✓ Candidate marked as Selected for Interview and grade (${reviewExamScore}%) published to profile!`
-          : `✓ Grade (${reviewExamScore}%) successfully saved and published to candidate profile!`,
-      );
-
-      setReviewingSubmission(null);
-      loadInterviewSelections();
-      if (selectedJob) {
-        loadJobSubmissions(selectedJob.id);
-        loadJobLeaderboard(selectedJob.id);
-      }
-    } catch (err: unknown) {
-      console.error("Error saving review:", err);
-      const errorObj = err as { message?: string };
-      showToast(errorObj?.message || "Failed to save candidate code review.");
-    } finally {
-      setIsSavingReview(false);
-    }
-  };
 
   // Handle Manual Question Add
   const handleAddQuestionToManual = () => {
@@ -1210,10 +1286,13 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     }
   };
 
+  if (isInterviewSelection) {
+    return <InterviewSelection />;
+  }
+
   return (
     <div
-      className="pipeline-selector-container"
-      style={{ maxWidth: "1280px", margin: "0 auto", padding: "24px 20px" }}
+      className={`pipeline-selector-container technical-assessments-page technical-assessments-${activeSection}`}
     >
       {/* Toast */}
       {toastMessage && (
@@ -1239,285 +1318,142 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         </div>
       )}
 
-      {/* Header Banner */}
-      <div
-        className="pipeline-selector-header"
-        style={{ marginBottom: "24px" }}
-      >
-        <div className="pipeline-header-title-box">
-          <div
-            className="badge-tag"
-            style={{
-              background: isInterviewSelection
-                ? "#f5f3ff"
-                : !isPerformanceHub
-                  ? "#ecfdf5"
-                  : "#eff6ff",
-              color: isInterviewSelection
-                ? "#7c3aed"
-                : !isPerformanceHub
-                  ? "#059669"
-                  : "#4338ca",
-              border: isInterviewSelection
-                ? "1px solid #ddd6fe"
-                : !isPerformanceHub
-                  ? "1px solid #a7f3d0"
-                  : "1px solid #c7d2fe",
-            }}
-          >
-            {isInterviewSelection ? (
-              <Star size={13} fill="#7c3aed" />
-            ) : (
-              <SparkleIcon />
-            )}
-            <span>
-              {isInterviewSelection
-                ? "INTERVIEW SELECTION HUB"
-                : !isPerformanceHub
-                  ? "TECHNICAL ASSESSMENT ENGINE"
-                  : "PERFORMANCE HUB"}
-            </span>
-          </div>
-          <h1
-            className="pipeline-page-title"
-            style={{
-              fontSize: "26px",
-              fontWeight: 800,
-              color: "#0f172a",
-              marginTop: "8px",
-            }}
-          >
-            {isInterviewSelection
-              ? "Interview Selection"
-              : !isPerformanceHub
-                ? "Assessments"
-                : "Performance Hub"}
-          </h1>
-          <p
-            className="pipeline-page-subtitle"
-            style={{ fontSize: "14px", color: "#64748b", maxWidth: "800px" }}
-          >
-            {isInterviewSelection
-              ? "Review candidates shortlisted for technical interviews, examine their technical scores and proctoring trust ratings, and coordinate next steps across requisitions."
-              : !isPerformanceHub
-                ? "Design custom coding problem tracks, configure language starter code, and publish technical assessment benchmarks for active requisitions."
-                : "Review candidate code solutions, inspect anti-cheat proctor telemetry, evaluate question performance, and promote the Top 5 finalists directly to Student 3's Meeting Orchestration Hub."}
-          </p>
-        </div>
-
-        {/* Job Requisition Switcher (shown when not in Interview Selection) */}
-        {!isInterviewSelection && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "6px",
-              minWidth: "320px",
-            }}
-          >
-            <label
-              style={{
-                fontSize: "12px",
-                fontWeight: 700,
-                color: "#475569",
-                textTransform: "uppercase",
-              }}
-            >
-              Active Job Requisition:
-            </label>
-            <select
-              value={selectedJob?.id || ""}
-              onChange={(e) => {
-                const j = jobs.find((item) => item.id === e.target.value);
-                if (j) {
-                  setSelectedJob(j);
-                  sessionStorage.setItem(
-                    "skillhub_active_job_requisition_id",
-                    j.id,
-                  );
-                }
-              }}
-              style={{
-                padding: "10px 14px",
-                borderRadius: "10px",
-                border: "1px solid #cbd5e1",
-                fontSize: "13.5px",
-                fontWeight: 600,
-                color: "#0f172a",
-                background: "#ffffff",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-                outline: "none",
-              }}
-            >
-              {jobs.map((j) => (
-                <option key={j.id} value={j.id}>
-                  {j.title} ({j.department})
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-      </div>
-
-      {/* Active Section / Performance Hub Tabs */}
-      {!isInterviewSelection && (
+      {/* When in Interview Selection, display its specialized interview header */}
+      {isInterviewSelection && (
         <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            borderBottom: "2px solid #e2e8f0",
-            marginBottom: "24px",
-          }}
+          className="pipeline-selector-header"
+          style={{ marginBottom: "24px" }}
         >
-          {!isPerformanceHub ? (
+          <div className="pipeline-header-title-box">
+            <div
+              className="badge-tag"
+              style={{
+                background: isInterviewSelection ? "#f5f3ff" : "#eff6ff",
+                color: isInterviewSelection ? "#7c3aed" : "#4338ca",
+                border: isInterviewSelection ? "1px solid #ddd6fe" : "1px solid #c7d2fe",
+              }}
+            >
+              {isInterviewSelection ? (
+                <Star size={13} fill="#7c3aed" />
+              ) : (
+                <SparkleIcon />
+              )}
+              <span>
+                {isInterviewSelection
+                  ? "INTERVIEW SELECTION HUB"
+                  : "PERFORMANCE HUB"}
+              </span>
+            </div>
+            <h1
+              className="pipeline-page-title"
+              style={{
+                fontSize: "26px",
+                fontWeight: 800,
+                color: "#0f172a",
+                marginTop: "8px",
+              }}
+            >
+              {isInterviewSelection ? "Interview Selection" : "Performance Hub"}
+            </h1>
+            <p
+              className="pipeline-page-subtitle"
+              style={{ fontSize: "14px", color: "#64748b", maxWidth: "800px" }}
+            >
+              {isInterviewSelection
+                ? "Review candidates shortlisted for technical interviews, examine their technical scores and proctoring trust ratings, and coordinate next steps across requisitions."
+                : "Review candidate code solutions, inspect anti-cheat proctor telemetry, evaluate question performance, and promote the Top 5 finalists directly to Student 3's Meeting Orchestration Hub."}
+            </p>
+          </div>
+
+          {!isInterviewSelection && (
             <div
               style={{
-                padding: "12px 20px",
-                fontSize: "14.5px",
-                fontWeight: 700,
-                color: "#00b074",
-                borderBottom: "3px solid #00b074",
                 display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                marginBottom: "-2px",
+                flexDirection: "column",
+                gap: "6px",
+                minWidth: "320px",
               }}
             >
-              <BriefcaseIcon />
-              <span>Assessments ({assessments.length})</span>
+              <label
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: "#475569",
+                  textTransform: "uppercase",
+                }}
+              >
+                Active Job Requisition:
+              </label>
+              <select
+                value={selectedJob?.id || ""}
+                disabled={loadingJobs}
+                onChange={(e) => {
+                  const j = jobs.find((item) => item.id === e.target.value);
+                  if (j) {
+                    setLoadingAssessments(true);
+                    setLoadingSubmissions(true);
+                    setLoadingLeaderboard(true);
+                    setSelectedJob(j);
+                    sessionStorage.setItem(
+                      "skillhub_active_job_requisition_id",
+                      j.id,
+                    );
+                  }
+                }}
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: "10px",
+                  border: "1px solid #cbd5e1",
+                  fontSize: "13.5px",
+                  fontWeight: 600,
+                  color: "#0f172a",
+                  background: "#ffffff",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                  outline: "none",
+                }}
+              >
+                {jobs.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    {j.title} ({j.department})
+                  </option>
+                ))}
+              </select>
             </div>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => setPerfTab("submissions")}
-                style={{
-                  padding: "12px 20px",
-                  fontSize: "14.5px",
-                  fontWeight: 700,
-                  color: perfTab === "submissions" ? "#00b074" : "#64748b",
-                  borderBottom:
-                    perfTab === "submissions"
-                      ? "3px solid #00b074"
-                      : "3px solid transparent",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  marginBottom: "-2px",
-                }}
-              >
-                <SparkleIcon />
-                <span>
-                  Candidate Submissions &amp; Review ({submissions.length})
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPerfTab("leaderboard")}
-                style={{
-                  padding: "12px 20px",
-                  fontSize: "14.5px",
-                  fontWeight: 700,
-                  color: perfTab === "leaderboard" ? "#00b074" : "#64748b",
-                  borderBottom:
-                    perfTab === "leaderboard"
-                      ? "3px solid #00b074"
-                      : "3px solid transparent",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  marginBottom: "-2px",
-                }}
-              >
-                <TrophyIcon />
-                <span>Top 5 Leaderboard ({leaderboard.length})</span>
-              </button>
-            </>
           )}
         </div>
       )}
 
       {/* =========================================================
-          VIEW 1: ASSESSMENTS
+          1. TOP COMPONENT: TECHNICAL ASSESSMENTS DASHBOARD CARD
+          (Matches Candidate Technical Assessments Portal Design System)
           ========================================================= */}
       {!isPerformanceHub && !isInterviewSelection && (
-        <div>
-          {/* Action Row */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "20px",
-              flexWrap: "wrap",
-              gap: "12px",
-            }}
-          >
+        <section className="assessment-dashboard-card" aria-labelledby="assessment-dashboard-title">
+          <div className="assessment-dashboard-header">
             <div>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: 700,
-                  color: "#0f172a",
-                  margin: 0,
-                }}
-              >
-                Coding Tracks for {selectedJob?.title || "Selected Role"}
-              </h3>
-              <p
-                style={{
-                  fontSize: "12.5px",
-                  color: "#64748b",
-                  margin: "2px 0 0 0",
-                }}
-              >
-                Candidates will write and run code against these challenges when
-                dispatched.
+              <span className="assessment-dashboard-eyebrow">Technical Assessment Engine &amp; Benchmarking</span>
+              <h2 id="assessment-dashboard-title">Technical Assessments</h2>
+              <p>
+                Design custom coding problem tracks, configure language starter code, and publish technical assessment benchmarks for active requisitions.
               </p>
             </div>
 
-            <div style={{ display: "flex", gap: "10px" }}>
+            <div className="assessment-dashboard-header-actions">
+              <span className="assessment-dashboard-live">
+                <span /> Engine Active
+              </span>
               <button
                 type="button"
                 onClick={handleOpenAiGenerateModal}
-                className="btn-secondary"
-                style={{
-                  padding: "8px 18px",
-                  fontSize: "13px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  background: "#f0fdf4",
-                  color: "#16a34a",
-                  border: "1px solid #bbf7d0",
-                  fontWeight: 600,
-                  borderRadius: "10px",
-                  cursor: "pointer",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-                }}
+                className="assessment-action-ai-btn"
               >
                 <SparkleIcon />
                 <span>Generate with AI</span>
               </button>
-
               <button
                 type="button"
                 onClick={handleOpenCreateModal}
-                className="btn-primary"
-                style={{
-                  padding: "8px 18px",
-                  fontSize: "13px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
+                className="assessment-action-create-btn"
               >
                 <PlusIcon />
                 <span>Create Coding Assessment</span>
@@ -1525,12 +1461,406 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
             </div>
           </div>
 
+          <div className="assessment-summary-grid">
+            <article className="assessment-summary-card summary-total">
+              <div className="summary-icon"><BriefcaseIcon /></div>
+              <div>
+                <span>Total Tracks</span>
+                <strong>{loadingAssessments ? <SkeletonStatValue width="40px" /> : assessments.length}</strong>
+                <small>Configured coding challenges</small>
+              </div>
+            </article>
+            <article className="assessment-summary-card summary-complete">
+              <div className="summary-icon"><CheckCircle2 size={20} /></div>
+              <div>
+                <span>Published Tracks</span>
+                <strong>{loadingAssessments ? <SkeletonStatValue width="40px" /> : publishedTracksCount}</strong>
+                <small>Active for candidates</small>
+              </div>
+            </article>
+            <article className="assessment-summary-card summary-action">
+              <div className="summary-icon"><Pencil size={18} /></div>
+              <div>
+                <span>Draft Assessments</span>
+                <strong>{loadingAssessments ? <SkeletonStatValue width="40px" /> : draftTracksCount}</strong>
+                <small>Work-in-progress challenges</small>
+              </div>
+            </article>
+            <article className="assessment-summary-card summary-score">
+              <div className="summary-icon"><Users size={20} /></div>
+              <div>
+                <span>Candidates Evaluated</span>
+                <strong>{loadingAssessments ? <SkeletonStatValue width="40px" /> : totalCandidatesEvaluated}</strong>
+                <small>Submissions processed</small>
+              </div>
+            </article>
+          </div>
+        </section>
+      )}
+
+      {/* =========================================================
+          2. FILTER & SEARCH CONTROLS PANEL
+          (Matches Candidate Technical Assessments Filter Toolbar)
+          ========================================================= */}
+      {!isPerformanceHub && !isInterviewSelection && (
+        <section className="assessments-filter-panel" aria-label="Assessment filters">
+          <div className="assessments-filter-heading">
+            <div>
+              <span className="filter-eyebrow">Assessment workspace</span>
+              <h2>Coding tracks for {selectedJob?.title || 'Selected Role'}</h2>
+            </div>
+            <span className="filter-result-count">
+              {filteredAssessments.length} of {assessments.length} tracks shown
+            </span>
+          </div>
+
+          <div className="assessments-toolbar">
+            <div className="assessments-tabs">
+              <button
+                type="button"
+                className={`tab-btn ${trackStatusFilter === 'all' ? 'active' : ''}`}
+                onClick={() => setTrackStatusFilter('all')}
+              >
+                All Tracks ({assessments.length})
+              </button>
+              <button
+                type="button"
+                className={`tab-btn ${trackStatusFilter === 'published' ? 'active' : ''}`}
+                onClick={() => setTrackStatusFilter('published')}
+              >
+                Published ({publishedTracksCount})
+              </button>
+              <button
+                type="button"
+                className={`tab-btn ${trackStatusFilter === 'draft' ? 'active' : ''}`}
+                onClick={() => setTrackStatusFilter('draft')}
+              >
+                Drafts ({draftTracksCount})
+              </button>
+            </div>
+
+            <div className="assessments-search">
+              <SearchIcon />
+              <input
+                type="text"
+                placeholder="Search tracks by title, question, or difficulty..."
+                value={trackSearchQuery}
+                onChange={(e) => setTrackSearchQuery(e.target.value)}
+              />
+              {trackSearchQuery && (
+                <button
+                  type="button"
+                  className="search-clear-btn"
+                  onClick={() => setTrackSearchQuery('')}
+                  title="Clear search"
+                >
+                  <XIcon />
+                </button>
+              )}
+            </div>
+
+            <div className="assessments-select-group">
+              <label htmlFor="assessment-job-select">Active Requisition</label>
+              <select
+                id="assessment-job-select"
+                value={selectedJob?.id || ''}
+                onChange={(e) => {
+                  const j = jobs.find((item) => item.id === e.target.value);
+                  if (j) {
+                    setSelectedJob(j);
+                    sessionStorage.setItem(
+                      'skillhub_active_job_requisition_id',
+                      j.id
+                    );
+                  }
+                }}
+              >
+                {jobs.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    {j.title} ({j.department})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="assessments-select-group">
+              <label htmlFor="assessment-sort-select">Sort by</label>
+              <select
+                id="assessment-sort-select"
+                value={trackSortBy}
+                onChange={(e) => setTrackSortBy(e.target.value as any)}
+              >
+                <option value="submissions">Most candidate submissions</option>
+                <option value="newest">Newest created</option>
+                <option value="threshold">Passing score threshold</option>
+                <option value="title">Track title (A - Z)</option>
+              </select>
+            </div>
+
+            {hasActiveTrackFilters && (
+              <button
+                type="button"
+                className="assessments-clear-filters"
+                onClick={clearTrackFilters}
+              >
+                <XIcon /> Clear filters
+              </button>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* =========================================================
+          TOP COMPONENT: PERFORMANCE HUB DASHBOARD CARD
+          (Matches Candidate Technical Assessments Portal Design System)
+          ========================================================= */}
+      {isPerformanceHub && (
+        <section className="assessment-dashboard-card" aria-labelledby="performance-dashboard-title">
+          <div className="assessment-dashboard-header">
+            <div>
+              <span className="assessment-dashboard-eyebrow">Performance Hub &amp; Code Evaluation</span>
+              <h2 id="performance-dashboard-title">Performance Hub Dashboard</h2>
+              <p>
+                Review candidate code solutions, inspect anti-cheat proctor telemetry, evaluate technical submissions, and promote top performers to technical interviews.
+              </p>
+            </div>
+
+            <div className="assessment-dashboard-header-actions">
+              <span className="assessment-dashboard-live">
+                <span /> Review Engine Active
+              </span>
+              {perfTab === "leaderboard" ? (
+                <button
+                  type="button"
+                  onClick={handleFinalizeTop5}
+                  disabled={isFinalizing || leaderboard.length === 0}
+                  className="assessment-action-create-btn"
+                  title="Finalize Top 5 and hand off to Student 3 interview orchestration"
+                >
+                  <TrophyIcon />
+                  <span>{isFinalizing ? "Finalizing..." : "Finalize Top 5 Candidates →"}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setPerfTab("leaderboard")}
+                  className="assessment-action-ai-btn"
+                  title="View ranked candidate leaderboard"
+                >
+                  <TrophyIcon />
+                  <span>View Leaderboard ({leaderboard.length})</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="assessment-summary-grid">
+            <article className="assessment-summary-card summary-total">
+              <div className="summary-icon"><Users size={20} /></div>
+              <div>
+                <span>Total Submissions</span>
+                <strong>{loadingSubmissions ? <SkeletonStatValue width="40px" /> : submissions.length}</strong>
+                <small>Received candidate exams</small>
+              </div>
+            </article>
+            <article className="assessment-summary-card summary-action">
+              <div className="summary-icon"><ClockIcon /></div>
+              <div>
+                <span>Awaiting Review</span>
+                <strong>{loadingSubmissions ? <SkeletonStatValue width="40px" /> : pendingSubmissionsCount}</strong>
+                <small>Needs code evaluation</small>
+              </div>
+            </article>
+            <article className="assessment-summary-card summary-complete">
+              <div className="summary-icon"><CheckCircle2 size={20} /></div>
+              <div>
+                <span>Graded Submissions</span>
+                <strong>{loadingSubmissions ? <SkeletonStatValue width="40px" /> : gradedSubmissionsCount}</strong>
+                <small>Completed evaluations</small>
+              </div>
+            </article>
+            <article className="assessment-summary-card summary-score">
+              <div className="summary-icon"><TrophyIcon /></div>
+              <div>
+                <span>Interview Selected</span>
+                <strong>{loadingSubmissions ? <SkeletonStatValue width="40px" /> : interviewSelectedCount}</strong>
+                <small>Promoted for interview</small>
+              </div>
+            </article>
+          </div>
+        </section>
+      )}
+
+      {/* =========================================================
+          FILTER & SEARCH CONTROLS PANEL: PERFORMANCE HUB
+          (Matches Candidate Technical Assessments Filter Toolbar)
+          ========================================================= */}
+      {isPerformanceHub && (
+        <section className="assessments-filter-panel" aria-label="Performance filters">
+          <div className="assessments-filter-heading">
+            <div>
+              <span className="filter-eyebrow">Performance workspace</span>
+              <h2>Candidate results for {selectedJob?.title || 'Active Role'}</h2>
+            </div>
+            <span className="filter-result-count">
+              {perfTab === "submissions"
+                ? `${filteredSubmissions.length} of ${submissions.length} submissions shown`
+                : `${filteredLeaderboard.length} of ${leaderboard.length} candidates shown`}
+            </span>
+          </div>
+
+          <div className="assessments-toolbar">
+            {/* View Switcher Tabs */}
+            <div className="assessments-tabs">
+              <button
+                type="button"
+                className={`tab-btn ${perfTab === 'submissions' ? 'active' : ''}`}
+                onClick={() => setPerfTab('submissions')}
+              >
+                Candidate Submissions ({submissions.length})
+              </button>
+              <button
+                type="button"
+                className={`tab-btn ${perfTab === 'leaderboard' ? 'active' : ''}`}
+                onClick={() => setPerfTab('leaderboard')}
+              >
+                Top 5 Leaderboard ({leaderboard.length})
+              </button>
+            </div>
+
+            {/* Submissions Status Tabs (when on Submissions tab) */}
+            {perfTab === "submissions" && (
+              <div className="assessments-tabs">
+                <button
+                  type="button"
+                  className={`tab-btn ${submissionFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => setSubmissionFilter('all')}
+                >
+                  All ({submissions.length})
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${submissionFilter === 'pending' ? 'active' : ''}`}
+                  onClick={() => setSubmissionFilter('pending')}
+                >
+                  Pending ({pendingSubmissionsCount})
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${submissionFilter === 'graded' ? 'active' : ''}`}
+                  onClick={() => setSubmissionFilter('graded')}
+                >
+                  Graded ({gradedSubmissionsCount})
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${submissionFilter === 'interview' ? 'active' : ''}`}
+                  onClick={() => setSubmissionFilter('interview')}
+                >
+                  Selected ({interviewSelectedCount})
+                </button>
+              </div>
+            )}
+
+            {/* Search Box */}
+            <div className="assessments-search">
+              <SearchIcon />
+              <input
+                type="text"
+                placeholder={perfTab === "submissions" ? "Search candidate name or email..." : "Search leaderboard..."}
+                value={perfTab === "submissions" ? submissionSearch : leaderboardSearch}
+                onChange={(e) => {
+                  if (perfTab === "submissions") {
+                    setSubmissionSearch(e.target.value);
+                  } else {
+                    setLeaderboardSearch(e.target.value);
+                  }
+                }}
+              />
+              {((perfTab === "submissions" && submissionSearch) || (perfTab === "leaderboard" && leaderboardSearch)) && (
+                <button
+                  type="button"
+                  className="search-clear-btn"
+                  onClick={() => {
+                    if (perfTab === "submissions") {
+                      setSubmissionSearch('');
+                    } else {
+                      setLeaderboardSearch('');
+                    }
+                  }}
+                  title="Clear search"
+                >
+                  <XIcon />
+                </button>
+              )}
+            </div>
+
+            {/* Active Requisition Select */}
+            <div className="assessments-select-group">
+              <label htmlFor="performance-job-select">Active Requisition</label>
+              <select
+                id="performance-job-select"
+                value={selectedJob?.id || ''}
+                onChange={(e) => {
+                  const j = jobs.find((item) => item.id === e.target.value);
+                  if (j) {
+                    setSelectedJob(j);
+                    sessionStorage.setItem(
+                      'skillhub_active_job_requisition_id',
+                      j.id
+                    );
+                  }
+                }}
+              >
+                {jobs.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    {j.title} ({j.department})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sort Dropdown (when on submissions tab) */}
+            {perfTab === "submissions" && (
+              <div className="assessments-select-group">
+                <label htmlFor="performance-sort-select">Sort by</label>
+                <select
+                  id="performance-sort-select"
+                  value={submissionSortBy}
+                  onChange={(e) => setSubmissionSortBy(e.target.value as any)}
+                >
+                  <option value="newest">Newest submission</option>
+                  <option value="score">Highest exam score</option>
+                  <option value="name">Candidate name (A - Z)</option>
+                </select>
+              </div>
+            )}
+
+            {/* Clear Filters Button */}
+            {perfTab === "submissions" && hasActiveSubmissionFilters && (
+              <button
+                type="button"
+                className="assessments-clear-filters"
+                onClick={clearSubmissionFilters}
+              >
+                <XIcon /> Clear filters
+              </button>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* =========================================================
+          VIEW 1: ASSESSMENTS
+          ========================================================= */}
+      {!isPerformanceHub && !isInterviewSelection && (
+        <div className="assessment-workspace">
           {/* Templates Grid */}
           {loadingAssessments ? (
-            <div
-              style={{ textAlign: "center", padding: "40px", color: "#64748b" }}
-            >
-              Loading assessment tracks...
+            <div className="assessment-templates-grid">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <JobCardSkeleton key={i} />
+              ))}
             </div>
           ) : assessments.length === 0 ? (
             <div
@@ -1623,112 +1953,92 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 </button>
               </div>
             </div>
-          ) : (
+          ) : filteredAssessments.length === 0 ? (
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))",
-                gap: "20px",
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "16px",
+                padding: "48px 24px",
+                textAlign: "center",
+                maxWidth: "500px",
+                margin: "20px auto",
               }}
             >
-              {assessments.map((track) => (
-                <div
-                  key={track.id}
-                  style={{
-                    background: "#ffffff",
-                    border: "1px solid #e2e8f0",
-                    borderRadius: "16px",
-                    padding: "20px",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        marginBottom: "10px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                          padding: "3px 8px",
-                          borderRadius: "6px",
-                          background:
-                            track.status === "Published"
-                              ? "#dcfce7"
-                              : track.status === "Draft"
-                                ? "#fef3c7"
-                                : "#f1f5f9",
-                          color:
-                            track.status === "Published"
-                              ? "#16a34a"
-                              : track.status === "Draft"
-                                ? "#d97706"
-                                : "#64748b",
-                        }}
-                      >
-                        {track.status}
-                      </span>
-                      <span style={{ fontSize: "11.5px", color: "#94a3b8" }}>
-                        {track.totalSubmissions} candidate(s) evaluated
-                      </span>
-                    </div>
+              <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#0f172a", marginBottom: "6px" }}>
+                No Tracks Match Filter
+              </h3>
+              <p style={{ fontSize: "13px", color: "#64748b", marginBottom: "16px" }}>
+                Try clearing your search query or switching to another status tab.
+              </p>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={clearTrackFilters}
+              >
+                Clear Filters
+              </button>
+            </div>
+          ) : (
+            <div className="assessment-tracks-grid">
+              {filteredAssessments.map((track) => {
+                const isPublished = track.status === "Published";
+                const isDraft = track.status === "Draft";
 
-                    <h4
-                      style={{
-                        fontSize: "16px",
-                        fontWeight: 700,
-                        color: "#0f172a",
-                        margin: "0 0 10px 0",
-                      }}
-                    >
-                      {track.title}
-                    </h4>
+                return (
+                  <div key={track.id} className="assessment-track-card">
+                    <div className="assessment-track-card-body">
+                      {/* Top Bar: Dept / Role & Status */}
+                      <div className="assessment-track-topbar">
+                        <span className="assessment-track-dept-badge">
+                          {selectedJob?.department || "Coding Track"}
+                        </span>
+                        <span
+                          className={`assessment-track-status-pill ${
+                            isPublished
+                              ? "published"
+                              : isDraft
+                              ? "draft"
+                              : "archived"
+                          }`}
+                        >
+                          <span className="assessment-status-dot"></span>
+                          {track.status}
+                        </span>
+                      </div>
 
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "14px",
-                        fontSize: "12px",
-                        color: "#64748b",
-                        marginBottom: "16px",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                        }}
-                      >
-                        <ClockIcon /> {track.timeLimitMinutes} mins
-                      </span>
-                      <span>•</span>
-                      <span>{track.finalQuestions.length} Coding Problems</span>
-                      <span>•</span>
-                      <span>Pass: {track.passingThreshold}%</span>
+                      {/* Title */}
+                      <h4 className="assessment-track-title" title={track.title}>
+                        {track.title}
+                      </h4>
+
+                      {/* Meta Pills */}
+                      <div className="assessment-track-meta">
+                        <span className="meta-item">
+                          <ClockIcon /> {track.timeLimitMinutes} mins
+                        </span>
+                        <span className="meta-sep">•</span>
+                        <span className="meta-item">
+                          {track.finalQuestions.length} Problem{track.finalQuestions.length === 1 ? '' : 's'}
+                        </span>
+                        <span className="meta-sep">•</span>
+                        <span className="meta-item">
+                          Pass: {track.passingThreshold}%
+                        </span>
+                      </div>
+
                       {track.expiresAt && (
-                        <>
-                          <span>•</span>
-                          <span
-                            style={{
-                              color:
-                                // eslint-disable-next-line react-hooks/purity
-                                new Date(track.expiresAt).getTime() < Date.now()
-                                  ? "#dc2626"
-                                  : "#b45309",
-                              fontWeight: 600,
-                            }}
-                          >
+                        <div
+                          className="assessment-track-deadline"
+                          style={{
+                            color:
+                              new Date(track.expiresAt).getTime() < Date.now()
+                                ? "#dc2626"
+                                : "#b45309",
+                          }}
+                        >
+                          <ClockIcon />
+                          <span>
                             Deadline:{" "}
                             {new Date(track.expiresAt).toLocaleDateString(
                               "en-US",
@@ -1738,159 +2048,101 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                 year: "numeric",
                                 hour: "2-digit",
                                 minute: "2-digit",
-                              },
+                              }
                             )}
                           </span>
-                        </>
+                        </div>
                       )}
+
+                      {/* Questions / Challenges Preview */}
+                      <div className="assessment-track-questions-box">
+                        <span className="questions-box-label">Coding Challenges:</span>
+                        <ul className="questions-box-list">
+                          {track.finalQuestions.slice(0, 3).map((q, idx) => (
+                            <li key={q.id || idx}>
+                              <strong>{q.title}</strong>
+                              <span className={`diff-pill diff-${(q.difficulty || "medium").toLowerCase()}`}>
+                                {q.difficulty}
+                              </span>
+                            </li>
+                          ))}
+                          {track.finalQuestions.length > 3 && (
+                            <li className="questions-more">
+                              +{track.finalQuestions.length - 3} more questions
+                            </li>
+                          )}
+                        </ul>
+                      </div>
                     </div>
 
-                    {/* Problem list preview */}
-                    <div
-                      style={{
-                        background: "#f8fafc",
-                        borderRadius: "10px",
-                        padding: "10px 12px",
-                        marginBottom: "16px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          color: "#475569",
-                          textTransform: "uppercase",
-                          display: "block",
-                          marginBottom: "6px",
-                        }}
-                      >
-                        Coding Challenges:
-                      </span>
-                      <ul
-                        style={{
-                          margin: 0,
-                          paddingLeft: "16px",
-                          fontSize: "12px",
-                          color: "#334155",
-                        }}
-                      >
-                        {track.finalQuestions.slice(0, 3).map((q, idx) => (
-                          <li key={q.id || idx} style={{ marginBottom: "4px" }}>
-                            <strong>{q.title}</strong> ({q.language} •{" "}
-                            {q.difficulty})
-                          </li>
-                        ))}
-                        {track.finalQuestions.length > 3 && (
-                          <li style={{ color: "#64748b" }}>
-                            +{track.finalQuestions.length - 3} more questions
-                          </li>
-                        )}
-                      </ul>
-                    </div>
-                  </div>
+                    {/* Footer Actions */}
+                    {(() => {
+                      const hasActiveExam =
+                        track.hasActiveCandidateExam ??
+                        submissions.some(
+                          (s) =>
+                            s.assessmentId === track.id && s.status === "Started"
+                        );
+                      const isEditable =
+                        track.canEdit !== undefined
+                          ? track.canEdit
+                          : !hasActiveExam;
 
-                  {(() => {
-                    const hasActiveExam =
-                      track.hasActiveCandidateExam ??
-                      submissions.some(
-                        (s) =>
-                          s.assessmentId === track.id && s.status === "Started",
-                      );
-                    const isEditable =
-                      track.canEdit !== undefined
-                        ? track.canEdit
-                        : !hasActiveExam;
+                      return (
+                        <div className="assessment-track-card-footer">
+                          <div className="footer-eval-count">
+                            <Users size={14} />
+                            <span>{track.totalSubmissions} evaluated</span>
+                          </div>
 
-                    return (
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          borderTop: "1px solid #f1f5f9",
-                          paddingTop: "14px",
-                        }}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => setPreviewAssessment(track)}
-                          className="btn-secondary"
-                          style={{ padding: "6px 14px", fontSize: "12px" }}
-                        >
-                          View Question Bank
-                        </button>
-
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          {hasActiveExam ? (
-                            <span
-                              title="This assessment is currently dispatched to a candidate profile and exam is in-progress. Editing will be re-enabled once the candidate completes the assessment."
-                              style={{
-                                fontSize: "11px",
-                                color: "#b45309",
-                                background: "#fef3c7",
-                                border: "1px solid #fde68a",
-                                borderRadius: "6px",
-                                padding: "4px 8px",
-                                fontWeight: 600,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "5px",
-                                cursor: "help",
-                              }}
-                            >
-                              <Lock size={12} strokeWidth={2.2} />
-                              <span>Locked (In Progress)</span>
-                            </span>
-                          ) : isEditable ? (
+                          <div className="footer-actions">
                             <button
                               type="button"
-                              onClick={() => handleOpenEditModal(track)}
-                              className="btn-secondary"
-                              style={{
-                                padding: "6px 14px",
-                                fontSize: "12px",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "4px",
-                              }}
+                              onClick={() => setPreviewAssessment(track)}
+                              className="btn-secondary btn-compact"
+                              title="View question bank & test cases"
                             >
-                              <span>Edit</span>
+                              View Bank
                             </button>
-                          ) : null}
 
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteAssessment(track.id)}
-                            disabled={hasActiveExam}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: hasActiveExam ? "#cbd5e1" : "#ef4444",
-                              cursor: hasActiveExam ? "not-allowed" : "pointer",
-                              fontSize: "12px",
-                              fontWeight: 600,
-                              padding: "6px 8px",
-                            }}
-                            title={
-                              hasActiveExam
-                                ? "Cannot delete while candidate exam is in progress"
-                                : undefined
-                            }
-                          >
-                            Delete
-                          </button>
+                            {hasActiveExam ? (
+                              <span
+                                className="locked-pill"
+                                title="This assessment is currently dispatched to an active candidate exam."
+                              >
+                                <Lock size={12} strokeWidth={2.2} />
+                                <span>Locked</span>
+                              </span>
+                            ) : isEditable ? (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditModal(track)}
+                                className="btn-secondary btn-compact"
+                              >
+                                Edit
+                              </button>
+                            ) : null}
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteAssessment(track.id)}
+                              disabled={hasActiveExam}
+                              className="btn-danger-text"
+                              title={
+                                hasActiveExam
+                                  ? "Cannot delete while candidate exam is in progress"
+                                  : "Delete assessment track"
+                              }
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              ))}
+                      );
+                    })()}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -1900,236 +2152,56 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           VIEW 2: CANDIDATE SUBMISSIONS & MANUAL CODE REVIEW
           ========================================================= */}
       {isPerformanceHub && perfTab === "submissions" && (
-        <div>
-          {/* Header & Filter Controls */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "20px",
-              flexWrap: "wrap",
-              gap: "16px",
-            }}
-          >
-            <div>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: 700,
-                  color: "#0f172a",
-                  margin: 0,
-                }}
-              >
-                Candidate Code Submissions (
-                {selectedJob?.title || "Selected Requisition"})
-              </h3>
-              <p
-                style={{
-                  fontSize: "12.5px",
-                  color: "#64748b",
-                  margin: "2px 0 0 0",
-                }}
-              >
-                Review candidate typed solutions, evaluate code correctness,
-                assign marks, and select candidates for technical interview
-                rounds.
-              </p>
-            </div>
-
-            {/* Search Input */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                background: "#ffffff",
-                border: "1px solid #cbd5e1",
-                borderRadius: "10px",
-                padding: "6px 12px",
-                minWidth: "260px",
-              }}
-            >
-              <span style={{ color: "#94a3b8", fontSize: "13px" }}>🔍</span>
-              <input
-                type="text"
-                placeholder="Search candidate name or email..."
-                value={submissionSearch}
-                onChange={(e) => setSubmissionSearch(e.target.value)}
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  outline: "none",
-                  fontSize: "13px",
-                  width: "100%",
-                  color: "#0f172a",
-                }}
-              />
-              {submissionSearch && (
-                <button
-                  type="button"
-                  onClick={() => setSubmissionSearch("")}
-                  style={{
-                    border: "none",
-                    background: "none",
-                    color: "#94a3b8",
-                    cursor: "pointer",
-                    padding: 0,
-                  }}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Filter Pills Bar */}
-          <div
-            style={{
-              display: "flex",
-              gap: "8px",
-              marginBottom: "20px",
-              flexWrap: "wrap",
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setSubmissionFilter("all")}
-              style={{
-                padding: "6px 14px",
-                borderRadius: "999px",
-                fontSize: "12.5px",
-                fontWeight: 700,
-                border: "1px solid",
-                borderColor: submissionFilter === "all" ? "#00b074" : "#e2e8f0",
-                background: submissionFilter === "all" ? "#ecfdf5" : "#ffffff",
-                color: submissionFilter === "all" ? "#047857" : "#64748b",
-                cursor: "pointer",
-              }}
-            >
-              All Submissions ({submissions.length})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSubmissionFilter("pending")}
-              style={{
-                padding: "6px 14px",
-                borderRadius: "999px",
-                fontSize: "12.5px",
-                fontWeight: 700,
-                border: "1px solid",
-                borderColor:
-                  submissionFilter === "pending" ? "#f59e0b" : "#e2e8f0",
-                background:
-                  submissionFilter === "pending" ? "#fffbeb" : "#ffffff",
-                color: submissionFilter === "pending" ? "#b45309" : "#64748b",
-                cursor: "pointer",
-              }}
-            >
-              Pending Review (
-              {
-                submissions.filter(
-                  (s) =>
-                    s.status === "Under_Review" || s.status === "Submitted",
-                ).length
-              }
-              )
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSubmissionFilter("graded")}
-              style={{
-                padding: "6px 14px",
-                borderRadius: "999px",
-                fontSize: "12.5px",
-                fontWeight: 700,
-                border: "1px solid",
-                borderColor:
-                  submissionFilter === "graded" ? "#10b981" : "#e2e8f0",
-                background:
-                  submissionFilter === "graded" ? "#ecfdf5" : "#ffffff",
-                color: submissionFilter === "graded" ? "#047857" : "#64748b",
-                cursor: "pointer",
-              }}
-            >
-              Graded (
-              {
-                submissions.filter(
-                  (s) => s.status === "Graded" || s.status === "Passed",
-                ).length
-              }
-              )
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSubmissionFilter("interview")}
-              style={{
-                padding: "6px 14px",
-                borderRadius: "999px",
-                fontSize: "12.5px",
-                fontWeight: 700,
-                border: "1px solid",
-                borderColor:
-                  submissionFilter === "interview" ? "#8b5cf6" : "#e2e8f0",
-                background:
-                  submissionFilter === "interview" ? "#f5f3ff" : "#ffffff",
-                color: submissionFilter === "interview" ? "#6d28d9" : "#64748b",
-                cursor: "pointer",
-              }}
-            >
-              Selected for Interview (
-              {submissions.filter((s) => s.isSelectedForInterview).length})
-            </button>
-          </div>
-
+        <div className="performance-workspace performance-submissions-workspace">
           {/* Submissions Table / Empty State */}
           {loadingSubmissions ? (
             <div
+              className="performance-table-shell"
               style={{
-                textAlign: "center",
-                padding: "48px",
-                color: "#64748b",
-                fontSize: "13.5px",
+                background: "#ffffff",
+                borderRadius: "16px",
+                border: "1px solid #e2e8f0",
+                overflow: "hidden",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
               }}
             >
-              Loading candidate submissions...
+              <div style={{ overflowX: "auto" }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    textAlign: "left",
+                    fontSize: "13px",
+                  }}
+                >
+                  <thead>
+                    <tr
+                      style={{
+                        background: "#f8fafc",
+                        borderBottom: "1px solid #e2e8f0",
+                        color: "#475569",
+                        fontWeight: 700,
+                      }}
+                    >
+                      <th style={{ padding: "14px 18px" }}>Candidate</th>
+                      <th style={{ padding: "14px 18px" }}>Assessment Track</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Submitted Date</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Proctor Telemetry</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Status</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Exam Marks</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Interview Status</th>
+                      <th style={{ padding: "14px 18px", textAlign: "right" }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <TableRowSkeleton cols={8} rows={5} hasAvatar />
+                  </tbody>
+                </table>
+              </div>
             </div>
           ) : (
             (() => {
-              const filtered = submissions.filter((s) => {
-                if (
-                  submissionFilter === "pending" &&
-                  s.status !== "Under_Review" &&
-                  s.status !== "Submitted"
-                )
-                  return false;
-                if (
-                  submissionFilter === "graded" &&
-                  s.status !== "Graded" &&
-                  s.status !== "Passed"
-                )
-                  return false;
-                if (
-                  submissionFilter === "interview" &&
-                  !s.isSelectedForInterview
-                )
-                  return false;
-
-                if (submissionSearch.trim()) {
-                  const q = submissionSearch.toLowerCase();
-                  const nameMatch = (s.candidateName || "")
-                    .toLowerCase()
-                    .includes(q);
-                  const emailMatch = (s.candidateEmail || "")
-                    .toLowerCase()
-                    .includes(q);
-                  return nameMatch || emailMatch;
-                }
-                return true;
-              });
+              const filtered = filteredSubmissions;
 
               if (filtered.length === 0) {
                 return (
@@ -2159,19 +2231,29 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         fontSize: "13px",
                         color: "#64748b",
                         maxWidth: "480px",
-                        margin: "0 auto",
+                        margin: "0 auto 16px auto",
                       }}
                     >
                       {submissionSearch || submissionFilter !== "all"
                         ? "Try clearing your search or switching filters."
                         : "When shortlisted candidates take and submit their coding challenges, their typed code and solutions will appear here for review."}
                     </p>
+                    {hasActiveSubmissionFilters && (
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={clearSubmissionFilters}
+                      >
+                        Clear Filters
+                      </button>
+                    )}
                   </div>
                 );
               }
 
               return (
                 <div
+                  className="performance-table-shell"
                   style={{
                     background: "#ffffff",
                     borderRadius: "16px",
@@ -2580,8 +2662,9 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           VIEW 3: TOP 5 LEADERBOARD & STUDENT 3 HANDOFF
           ========================================================= */}
       {isPerformanceHub && perfTab === "leaderboard" && (
-        <div>
+        <div className="performance-workspace performance-leaderboard-workspace">
           <div
+            className="performance-toolbar"
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -2637,12 +2720,52 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
           {loadingLeaderboard ? (
             <div
-              style={{ textAlign: "center", padding: "40px", color: "#64748b" }}
+              className="performance-table-shell performance-leaderboard-table"
+              style={{
+                background: "#ffffff",
+                borderRadius: "16px",
+                border: "1px solid #e2e8f0",
+                overflow: "hidden",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+              }}
             >
-              Loading candidate leaderboard...
+              <div style={{ overflowX: "auto" }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    textAlign: "left",
+                    fontSize: "13px",
+                  }}
+                >
+                  <thead>
+                    <tr
+                      style={{
+                        background: "#f8fafc",
+                        borderBottom: "1px solid #e2e8f0",
+                        color: "#475569",
+                        fontWeight: 700,
+                      }}
+                    >
+                      <th style={{ padding: "14px 18px", width: "70px" }}>Rank</th>
+                      <th style={{ padding: "14px 18px" }}>Candidate</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>CV Match</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Technical Exam</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Final Score</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Proctor Telemetry</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Status</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Student 3 Eligibility</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <TableRowSkeleton cols={8} rows={5} hasAvatar />
+                  </tbody>
+                </table>
+              </div>
             </div>
           ) : leaderboard.length === 0 ? (
             <div
+              className="performance-table-shell performance-leaderboard-table"
               style={{
                 background: "#f8fafc",
                 border: "2px dashed #cbd5e1",
@@ -2677,6 +2800,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
             </div>
           ) : (
             <div
+              className="performance-table-shell performance-leaderboard-table"
               style={{
                 background: "#ffffff",
                 borderRadius: "16px",
@@ -2728,7 +2852,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                     </tr>
                   </thead>
                   <tbody>
-                    {leaderboard.map((row) => (
+                    {filteredLeaderboard.map((row) => (
                       <tr
                         key={row.submissionId}
                         style={{
@@ -2915,9 +3039,10 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           VIEW 4: INTERVIEW SELECTION & REQUISITION FILTER
           ========================================================= */}
       {isInterviewSelection && (
-        <div>
+        <div className="interview-selection-workspace">
           {/* Section Header */}
           <div
+            className="interview-selection-toolbar"
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -2929,6 +3054,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           >
             <div>
               <div
+                className="interview-selection-title-row"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -2937,6 +3063,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 }}
               >
                 <div
+                  className="interview-selection-title-icon"
                   style={{
                     width: "32px",
                     height: "32px",
@@ -3034,6 +3161,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
             return (
               <div
+                className="interview-selection-metrics"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
@@ -3042,6 +3170,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 }}
               >
                 <div
+                  className="interview-selection-metric interview-selection-metric--violet"
                   style={{
                     background: "#ffffff",
                     border: "1px solid #e2e8f0",
@@ -3099,6 +3228,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 </div>
 
                 <div
+                  className="interview-selection-metric interview-selection-metric--green"
                   style={{
                     background: "#ffffff",
                     border: "1px solid #e2e8f0",
@@ -3156,6 +3286,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 </div>
 
                 <div
+                  className="interview-selection-metric interview-selection-metric--blue"
                   style={{
                     background: "#ffffff",
                     border: "1px solid #e2e8f0",
@@ -3213,6 +3344,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 </div>
 
                 <div
+                  className="interview-selection-metric interview-selection-metric--emerald"
                   style={{
                     background: "#ffffff",
                     border: "1px solid #e2e8f0",
@@ -3274,6 +3406,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
           {/* Filtering Controls Bar */}
           <div
+            className="interview-selection-filters"
             style={{
               background: "#ffffff",
               border: "1px solid #e2e8f0",
@@ -3312,6 +3445,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                   Filter by Job:
                 </span>
                 <select
+                  className="interview-filter-select"
                   value={interviewJobFilter}
                   onChange={(e) => setInterviewJobFilter(e.target.value)}
                   style={{
@@ -3343,10 +3477,34 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                   })}
                 </select>
               </div>
+
+              <select
+                className="interview-filter-select interview-filter-select--compact"
+                value={interviewScoreFilter}
+                onChange={(e) => setInterviewScoreFilter(e.target.value as "all" | "top" | "high" | "passed")}
+                aria-label="Filter candidates by technical score"
+              >
+                <option value="all">All scores</option>
+                <option value="top">Top scores (85%+)</option>
+                <option value="high">High scores (70%+)</option>
+                <option value="passed">Passed assessment</option>
+              </select>
+
+              <select
+                className="interview-filter-select interview-filter-select--compact"
+                value={interviewIntegrityFilter}
+                onChange={(e) => setInterviewIntegrityFilter(e.target.value as "all" | "clean" | "flagged")}
+                aria-label="Filter candidates by proctor integrity"
+              >
+                <option value="all">All integrity results</option>
+                <option value="clean">Clean sessions</option>
+                <option value="flagged">Flagged sessions</option>
+              </select>
             </div>
 
             {/* Right Controls: Search Input */}
             <div
+              className="interview-selection-search"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -3393,6 +3551,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
           {/* Action Bar: Schedule Selected Candidates and AI Schedule Buttons */}
           <div
+            className="interview-selection-actions"
             style={{
               display: "flex",
               justifyContent: "flex-start",
@@ -3437,45 +3596,66 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 padding: "9px 20px",
                 borderRadius: "10px",
                 fontSize: "13px",
-                fontWeight: 700,
-                background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+                fontWeight: 750,
+                background: "linear-gradient(135deg, #059669 0%, #0d9488 50%, #0284c7 100%)",
                 color: "#ffffff",
-                boxShadow: "0 4px 12px rgba(99, 102, 241, 0.25)",
+                boxShadow: "0 4px 14px rgba(13, 148, 136, 0.25)",
                 cursor: "pointer",
                 border: "none",
                 transition: "all 0.15s ease",
               }}
             >
               <Sparkles size={16} />
-              <span>AI Schedule</span>
+              <span>AI Auto-Scheduler</span>
             </button>
           </div>
 
           {/* Table or Empty State */}
           {loadingInterviewSelections ? (
             <div
+              className="interview-selection-table-shell"
               style={{
-                textAlign: "center",
-                padding: "60px 20px",
-                color: "#64748b",
-                fontSize: "13.5px",
                 background: "#ffffff",
                 borderRadius: "16px",
                 border: "1px solid #e2e8f0",
+                overflow: "hidden",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
               }}
             >
-              <div
-                style={{
-                  width: "32px",
-                  height: "32px",
-                  border: "3px solid #7c3aed",
-                  borderTopColor: "transparent",
-                  borderRadius: "50%",
-                  animation: "spin 0.8s linear infinite",
-                  margin: "0 auto 12px auto",
-                }}
-              />
-              Loading candidate interview selections...
+              <div style={{ overflowX: "auto" }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    textAlign: "left",
+                    fontSize: "13px",
+                  }}
+                >
+                  <thead>
+                    <tr
+                      style={{
+                        background: "#f8fafc",
+                        borderBottom: "1px solid #e2e8f0",
+                        color: "#475569",
+                        fontWeight: 700,
+                      }}
+                    >
+                      <th style={{ padding: "14px 18px" }}>Candidate</th>
+                      <th style={{ padding: "14px 18px" }}>Job Requisition &amp; Dept</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Selected Date</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Interview Status</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Delivery Mode</th>
+                      <th style={{ padding: "14px 18px", textAlign: "left" }}>Location</th>
+                      <th style={{ padding: "14px 18px", textAlign: "left" }}>Meeting Link</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Connect for Interview</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Interview Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <TableRowSkeleton cols={9} rows={5} hasAvatar />
+                  </tbody>
+                </table>
+              </div>
             </div>
           ) : (
             (() => {
@@ -3665,6 +3845,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
               return (
                 <div
+                  className="interview-selection-table-shell"
                   style={{
                     background: "#ffffff",
                     borderRadius: "16px",
@@ -4177,7 +4358,9 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                   textAlign: "center",
                                 }}
                               >
-                                {s.scheduledEventId ? (
+                                {s.status === "Hired" || s.isHired ? (
+                                  <span style={{ color: "#94a3b8", fontSize: "12px" }}>—</span>
+                                ) : s.scheduledEventId ? (
                                   <div
                                     style={{
                                       display: "inline-flex",
@@ -4358,86 +4541,33 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         <div
           className="popup-backdrop"
           style={{ zIndex: 1200 }}
-          onClick={() => setIsManualModalOpen(false)}
+          onClick={() => {
+            setIsManualModalOpen(false);
+            setEditingAssessment(null);
+          }}
         >
+          {/* Modal Container */}
           <div
-            className="popup-card"
-            style={{
-              maxWidth: "760px",
-              width: "100%",
-              padding: "26px",
-              borderRadius: "18px",
-              maxHeight: "92vh",
-              overflowY: "auto",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-            }}
+            className="popup-card track-builder-modal-card"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                marginBottom: "18px",
-                borderBottom: "1px solid #f1f5f9",
-                paddingBottom: "14px",
-              }}
-            >
+            <div className="track-builder-header">
               <div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginBottom: "4px",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      padding: "2px 8px",
-                      borderRadius: "4px",
-                      background: "#eff6ff",
-                      color: "#1d4ed8",
-                      textTransform: "uppercase",
-                    }}
-                  >
+                <div className="track-builder-badge-row">
+                  <span className="track-builder-tag-primary">
                     Assessment Track Builder
                   </span>
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      padding: "2px 8px",
-                      borderRadius: "4px",
-                      background: "#f1f5f9",
-                      color: "#475569",
-                    }}
-                  >
+                  <span className="track-builder-tag-secondary">
                     Manual Question Authoring
                   </span>
                 </div>
-                <h3
-                  style={{
-                    fontSize: "19px",
-                    fontWeight: 800,
-                    color: "#0f172a",
-                    margin: 0,
-                  }}
-                >
+                <h3 className="track-builder-title">
                   {editingAssessment
                     ? "Edit Coding Assessment"
                     : "Create Technical Assessment"}
                 </h3>
-                <p
-                  style={{
-                    fontSize: "12.5px",
-                    color: "#64748b",
-                    margin: "4px 0 0 0",
-                  }}
-                >
+                <p className="track-builder-subtitle">
                   {editingAssessment
                     ? "Update assessment parameters, problem statements, and coding challenges for this track."
                     : "Configure custom coding problems, runtime environments, and passing benchmarks for candidates."}
@@ -4449,66 +4579,26 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                   setIsManualModalOpen(false);
                   setEditingAssessment(null);
                 }}
-                style={{
-                  background: "#f8fafc",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "8px",
-                  padding: "6px",
-                  color: "#64748b",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+                className="track-builder-close-btn"
+                aria-label="Close"
               >
                 <XIcon />
               </button>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "16px",
-                marginBottom: "20px",
-              }}
-            >
+            <div className="track-builder-body">
               {/* General Parameters Card */}
-              <div
-                style={{
-                  background: "#ffffff",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "12px",
-                  padding: "16px",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-                }}
-              >
+              <div className="track-builder-card">
                 <div style={{ marginBottom: "14px" }}>
-                  <label
-                    style={{
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      color: "#334155",
-                      display: "block",
-                      marginBottom: "5px",
-                    }}
-                  >
-                    Assessment Title <span style={{ color: "#ef4444" }}>*</span>
-                    :
+                  <label className="track-builder-label">
+                    Assessment Title <span className="required-star">*</span>:
                   </label>
                   <input
                     type="text"
                     value={manualTitle}
                     onChange={(e) => setManualTitle(e.target.value)}
                     placeholder="e.g. Lead Full-Stack Engineer (AI & Enterprise Systems) Skill Assessment"
-                    style={{
-                      width: "100%",
-                      padding: "9px 12px",
-                      borderRadius: "8px",
-                      border: "1px solid #cbd5e1",
-                      fontSize: "13px",
-                      color: "#0f172a",
-                    }}
+                    className="track-builder-input"
                   />
                 </div>
 
@@ -4520,18 +4610,10 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                   }}
                 >
                   <div>
-                    <label
-                      style={{
-                        fontSize: "12px",
-                        fontWeight: 700,
-                        color: "#334155",
-                        display: "block",
-                        marginBottom: "5px",
-                      }}
-                    >
+                    <label className="track-builder-label">
                       Time Limit:
                     </label>
-                    <div style={{ position: "relative" }}>
+                    <div className="track-builder-input-with-suffix">
                       <input
                         type="number"
                         value={manualTimeLimit}
@@ -4540,44 +4622,18 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         }
                         min={15}
                         max={240}
-                        style={{
-                          width: "100%",
-                          padding: "9px 12px",
-                          borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
-                          fontSize: "13px",
-                          color: "#0f172a",
-                        }}
+                        className="track-builder-input"
                       />
-                      <span
-                        style={{
-                          position: "absolute",
-                          right: "12px",
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          fontSize: "11.5px",
-                          color: "#94a3b8",
-                          fontWeight: 600,
-                          pointerEvents: "none",
-                        }}
-                      >
+                      <span className="track-builder-suffix-tag">
                         Mins
                       </span>
                     </div>
                   </div>
                   <div>
-                    <label
-                      style={{
-                        fontSize: "12px",
-                        fontWeight: 700,
-                        color: "#334155",
-                        display: "block",
-                        marginBottom: "5px",
-                      }}
-                    >
+                    <label className="track-builder-label">
                       Benchmark (%):
                     </label>
-                    <div style={{ position: "relative" }}>
+                    <div className="track-builder-input-with-suffix">
                       <input
                         type="number"
                         value={manualPassingThreshold}
@@ -4586,41 +4642,15 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         }
                         min={0}
                         max={100}
-                        style={{
-                          width: "100%",
-                          padding: "9px 12px",
-                          borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
-                          fontSize: "13px",
-                          color: "#0f172a",
-                        }}
+                        className="track-builder-input"
                       />
-                      <span
-                        style={{
-                          position: "absolute",
-                          right: "12px",
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          fontSize: "12px",
-                          color: "#94a3b8",
-                          fontWeight: 700,
-                          pointerEvents: "none",
-                        }}
-                      >
+                      <span className="track-builder-suffix-tag">
                         %
                       </span>
                     </div>
                   </div>
                   <div>
-                    <label
-                      style={{
-                        fontSize: "12px",
-                        fontWeight: 700,
-                        color: "#334155",
-                        display: "block",
-                        marginBottom: "5px",
-                      }}
-                    >
+                    <label className="track-builder-label">
                       Expiration Date (Deadline):
                     </label>
                     <input
@@ -4628,14 +4658,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       value={manualExpiresAt}
                       onChange={(e) => setManualExpiresAt(e.target.value)}
                       min={new Date().toISOString().slice(0, 16)}
-                      style={{
-                        width: "100%",
-                        padding: "9px 12px",
-                        borderRadius: "8px",
-                        border: "1px solid #cbd5e1",
-                        fontSize: "13px",
-                        color: "#0f172a",
-                      }}
+                      className="track-builder-input"
                     />
                   </div>
                 </div>
@@ -4643,32 +4666,13 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
               {/* Added Questions List */}
               {manualQuestions.length > 0 && (
-                <div
-                  style={{
-                    background: "#f8fafc",
-                    padding: "14px 16px",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "12.5px",
-                        fontWeight: 800,
-                        color: "#0f172a",
-                      }}
-                    >
-                      Configured Problems ({manualQuestions.length}):
+                <div className="track-builder-problems-card">
+                  <div className="track-builder-problems-header">
+                    <span className="track-builder-problems-title">
+                      <span>Configured Problems</span>
+                      <span className="track-builder-count-pill">{manualQuestions.length}</span>
                     </span>
-                    <span style={{ fontSize: "11px", color: "#64748b" }}>
+                    <span className="track-builder-problems-subtitle">
                       Candidate will solve these questions in sequence
                     </span>
                   </div>
@@ -4682,90 +4686,35 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                     {manualQuestions.map((q, idx) => (
                       <div
                         key={q.id}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          background: "#ffffff",
-                          padding: "10px 14px",
-                          borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
-                          fontSize: "12.5px",
-                        }}
+                        className="track-builder-problem-row"
                       >
                         <div
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: "10px",
+                            gap: "12px",
                           }}
                         >
-                          <span
-                            style={{
-                              width: "24px",
-                              height: "24px",
-                              borderRadius: "6px",
-                              background: "#0f172a",
-                              color: "#ffffff",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "11px",
-                              fontWeight: 700,
-                            }}
-                          >
+                          <span className="track-builder-problem-index">
                             {idx + 1}
                           </span>
                           <div>
-                            <strong style={{ color: "#0f172a" }}>
+                            <h5 className="track-builder-problem-title">
                               {q.title}
-                            </strong>
-                            <div
-                              style={{
-                                display: "flex",
-                                gap: "6px",
-                                marginTop: "2px",
-                              }}
-                            >
-                              <span
-                                style={{
-                                  fontSize: "10.5px",
-                                  padding: "1px 6px",
-                                  borderRadius: "4px",
-                                  background: "#eff6ff",
-                                  color: "#1d4ed8",
-                                  fontWeight: 700,
-                                  textTransform: "uppercase",
-                                }}
-                              >
+                            </h5>
+                            <div className="track-builder-problem-tags">
+                              <span className="track-builder-lang-tag">
                                 {q.language}
                               </span>
                               <span
-                                style={{
-                                  fontSize: "10.5px",
-                                  padding: "1px 6px",
-                                  borderRadius: "4px",
-                                  fontWeight: 600,
-                                  background:
-                                    q.difficulty === "Easy"
-                                      ? "#ecfdf5"
-                                      : q.difficulty === "Hard"
-                                        ? "#fef2f2"
-                                        : "#fffbeb",
-                                  color:
-                                    q.difficulty === "Easy"
-                                      ? "#047857"
-                                      : q.difficulty === "Hard"
-                                        ? "#b91c1c"
-                                        : "#b45309",
-                                }}
+                                className={`track-builder-diff-tag ${q.difficulty.toLowerCase()}`}
                               >
                                 {q.difficulty}
                               </span>
                             </div>
                           </div>
                         </div>
-                        <div style={{ display: "flex", gap: "6px" }}>
+                        <div style={{ display: "flex", gap: "8px" }}>
                           <button
                             type="button"
                             onClick={() => {
@@ -4783,16 +4732,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                 `Loaded "${q.title}" into editor below.`,
                               );
                             }}
-                            style={{
-                              background: "#eff6ff",
-                              border: "1px solid #bfdbfe",
-                              color: "#1d4ed8",
-                              borderRadius: "6px",
-                              padding: "4px 10px",
-                              cursor: "pointer",
-                              fontSize: "11.5px",
-                              fontWeight: 700,
-                            }}
+                            className="track-builder-problem-edit-btn"
                           >
                             Edit
                           </button>
@@ -4805,16 +4745,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                                 ),
                               )
                             }
-                            style={{
-                              background: "#fee2e2",
-                              border: "1px solid #fecaca",
-                              color: "#ef4444",
-                              borderRadius: "6px",
-                              padding: "4px 10px",
-                              cursor: "pointer",
-                              fontSize: "11.5px",
-                              fontWeight: 700,
-                            }}
+                            className="track-builder-problem-remove-btn"
                           >
                             Remove
                           </button>
@@ -4826,49 +4757,16 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               )}
 
               {/* Add New Coding Question Sub-Form */}
-              <div
-                style={{
-                  border: "1.5px solid #cbd5e1",
-                  borderRadius: "12px",
-                  padding: "18px",
-                  background: "#fcfcfd",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginBottom: "12px",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "26px",
-                      height: "26px",
-                      borderRadius: "6px",
-                      background: "#eff6ff",
-                      color: "#2563eb",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
+              <div className="track-builder-authoring-card">
+                <div className="track-builder-authoring-header">
+                  <div className="track-builder-authoring-icon-badge">
                     <PlusIcon />
                   </div>
                   <div>
-                    <span
-                      style={{
-                        fontSize: "13.5px",
-                        fontWeight: 800,
-                        color: "#0f172a",
-                        display: "block",
-                      }}
-                    >
+                    <span className="track-builder-authoring-title">
                       Add Coding Problem
                     </span>
-                    <span style={{ fontSize: "11.5px", color: "#64748b" }}>
+                    <span className="track-builder-authoring-subtitle">
                       Write the problem statement and starter template for
                       candidates
                     </span>
@@ -4879,102 +4777,53 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: "12px",
+                    gap: "14px",
                   }}
                 >
                   <div>
-                    <label
-                      style={{
-                        fontSize: "11.5px",
-                        fontWeight: 700,
-                        color: "#334155",
-                        display: "block",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      Problem Title <span style={{ color: "#ef4444" }}>*</span>:
+                    <label className="track-builder-label">
+                      Problem Title <span className="required-star">*</span>:
                     </label>
                     <input
                       type="text"
                       value={curQTitle}
                       onChange={(e) => setCurQTitle(e.target.value)}
                       placeholder="e.g. Reverse Linked List, LRU Cache, Distributed Lock"
-                      style={{
-                        width: "100%",
-                        padding: "8px 12px",
-                        borderRadius: "8px",
-                        border: "1px solid #cbd5e1",
-                        fontSize: "12.5px",
-                        color: "#0f172a",
-                      }}
+                      className="track-builder-input"
                     />
                   </div>
 
                   <div>
-                    <label
-                      style={{
-                        fontSize: "11.5px",
-                        fontWeight: 700,
-                        color: "#334155",
-                        display: "block",
-                        marginBottom: "4px",
-                      }}
-                    >
+                    <label className="track-builder-label">
                       Problem Description &amp; Requirements{" "}
-                      <span style={{ color: "#ef4444" }}>*</span>:
+                      <span className="required-star">*</span>:
                     </label>
                     <textarea
                       rows={4}
                       value={curQStatement}
                       onChange={(e) => setCurQStatement(e.target.value)}
                       placeholder="Describe the task, expected inputs/outputs, performance constraints, and edge cases..."
-                      style={{
-                        width: "100%",
-                        padding: "8px 12px",
-                        borderRadius: "8px",
-                        border: "1px solid #cbd5e1",
-                        fontSize: "12.5px",
-                        color: "#0f172a",
-                        fontFamily: "inherit",
-                        lineHeight: 1.5,
-                      }}
+                      className="track-builder-textarea"
                     />
                   </div>
 
-                  {/* Language and Difficulty (Points field removed!) */}
+                  {/* Language and Difficulty */}
                   <div
                     style={{
                       display: "grid",
                       gridTemplateColumns: "1fr 1fr",
-                      gap: "12px",
+                      gap: "14px",
                     }}
                   >
                     <div>
-                      <label
-                        style={{
-                          fontSize: "11.5px",
-                          fontWeight: 700,
-                          color: "#334155",
-                          display: "block",
-                          marginBottom: "4px",
-                        }}
-                      >
+                      <label className="track-builder-label">
                         Programming Language{" "}
-                        <span style={{ color: "#ef4444" }}>*</span>:
+                        <span className="required-star">*</span>:
                       </label>
                       <select
                         value={curQLanguage}
                         onChange={(e) => handleLanguageChange(e.target.value)}
-                        style={{
-                          width: "100%",
-                          padding: "8px 10px",
-                          borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
-                          fontSize: "12.5px",
-                          fontWeight: 600,
-                          color: "#0f172a",
-                          background: "#ffffff",
-                        }}
+                        className="track-builder-select"
                       >
                         <option value="csharp">C# (.NET)</option>
                         <option value="python">Python 3</option>
@@ -4988,35 +4837,18 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                     </div>
 
                     <div>
-                      <label
-                        style={{
-                          fontSize: "11.5px",
-                          fontWeight: 700,
-                          color: "#334155",
-                          display: "block",
-                          marginBottom: "4px",
-                        }}
-                      >
+                      <label className="track-builder-label">
                         Difficulty Level{" "}
-                        <span style={{ color: "#ef4444" }}>*</span>:
+                        <span className="required-star">*</span>:
                       </label>
                       <select
                         value={curQDifficulty}
                         onChange={(e) => setCurQDifficulty(e.target.value)}
-                        style={{
-                          width: "100%",
-                          padding: "8px 10px",
-                          borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
-                          fontSize: "12.5px",
-                          fontWeight: 600,
-                          color: "#0f172a",
-                          background: "#ffffff",
-                        }}
+                        className="track-builder-select"
                       >
-                        <option value="Easy">🟢 Easy</option>
-                        <option value="Medium">🟡 Medium</option>
-                        <option value="Hard">🔴 Hard</option>
+                        <option value="Easy">Easy</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Hard">Hard</option>
                       </select>
                     </div>
                   </div>
@@ -5028,16 +4860,10 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        marginBottom: "4px",
+                        marginBottom: "6px",
                       }}
                     >
-                      <label
-                        style={{
-                          fontSize: "11.5px",
-                          fontWeight: 700,
-                          color: "#334155",
-                        }}
-                      >
+                      <label className="track-builder-label" style={{ margin: 0 }}>
                         Starter Code Stub (Auto-populated for{" "}
                         {curQLanguage.toUpperCase()}):
                       </label>
@@ -5052,17 +4878,9 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                             `✓ Reset code template for ${curQLanguage.toUpperCase()}`,
                           );
                         }}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: "#2563eb",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          textDecoration: "underline",
-                        }}
+                        className="track-builder-reset-btn"
                       >
-                        ↺ Reset Template
+                        Reset Template
                       </button>
                     </div>
                     <textarea
@@ -5070,24 +4888,9 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       value={curQStarter}
                       onChange={(e) => setCurQStarter(e.target.value)}
                       spellCheck={false}
-                      style={{
-                        width: "100%",
-                        padding: "10px 14px",
-                        borderRadius: "8px",
-                        border: "1px solid #334155",
-                        backgroundColor: "#0f172a",
-                        color: "#4ade80",
-                        fontSize: "12px",
-                        fontFamily:
-                          '"Fira Code", Consolas, Monaco, "Courier New", monospace',
-                        lineHeight: 1.5,
-                        tabSize: 4,
-                        outline: "none",
-                      }}
+                      className="track-builder-code-editor"
                     />
                   </div>
-
-                  {/* Sample Input & Expected Output sections REMOVED as requested */}
 
                   <div
                     style={{
@@ -5099,15 +4902,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                     <button
                       type="button"
                       onClick={handleAddQuestionToManual}
-                      className="btn-primary"
-                      style={{
-                        padding: "8px 18px",
-                        fontSize: "12.5px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        borderRadius: "8px",
-                      }}
+                      className="track-builder-add-btn"
                     >
                       <PlusIcon />
                       <span>Add Problem to Assessment</span>
@@ -5118,27 +4913,18 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
             </div>
 
             {/* Modal Actions */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                borderTop: "1px solid #e2e8f0",
-                paddingTop: "16px",
-              }}
-            >
-              <span style={{ fontSize: "12px", color: "#64748b" }}>
+            <div className="track-builder-footer">
+              <span className="track-builder-footer-info">
                 Problems Configured: <strong>{manualQuestions.length}</strong>
               </span>
-              <div style={{ display: "flex", gap: "10px" }}>
+              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                 <button
                   type="button"
                   onClick={() => {
                     setIsManualModalOpen(false);
                     setEditingAssessment(null);
                   }}
-                  className="btn-secondary"
-                  style={{ padding: "8px 16px", fontSize: "13px" }}
+                  className="track-builder-btn-secondary"
                 >
                   Cancel
                 </button>
@@ -5149,8 +4935,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       type="button"
                       onClick={() => handleSaveManualAssessment(false)}
                       disabled={isSavingManual}
-                      className="btn-secondary"
-                      style={{ padding: "8px 16px", fontSize: "13px" }}
+                      className="track-builder-btn-secondary"
                     >
                       {isSavingManual ? "Saving..." : "Save Draft"}
                     </button>
@@ -5159,15 +4944,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         type="button"
                         onClick={() => handleSaveManualAssessment(true)}
                         disabled={isSavingManual}
-                        className="btn-primary"
-                        style={{
-                          padding: "8px 20px",
-                          fontSize: "13px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                          background: "#00b074",
-                        }}
+                        className="track-builder-btn-primary"
                       >
                         <CheckIcon />
                         <span>
@@ -5181,14 +4958,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                         type="button"
                         onClick={() => handleSaveManualAssessment(false)}
                         disabled={isSavingManual}
-                        className="btn-primary"
-                        style={{
-                          padding: "8px 20px",
-                          fontSize: "13px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
+                        className="track-builder-btn-primary"
                       >
                         <CheckIcon />
                         <span>
@@ -5203,8 +4973,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       type="button"
                       onClick={() => handleSaveManualAssessment(false)}
                       disabled={isSavingManual}
-                      className="btn-secondary"
-                      style={{ padding: "8px 16px", fontSize: "13px" }}
+                      className="track-builder-btn-secondary"
                     >
                       {isSavingManual ? "Saving..." : "Save as Draft"}
                     </button>
@@ -5212,14 +4981,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                       type="button"
                       onClick={() => handleSaveManualAssessment(true)}
                       disabled={isSavingManual}
-                      className="btn-primary"
-                      style={{
-                        padding: "8px 20px",
-                        fontSize: "13px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                      }}
+                      className="track-builder-btn-primary"
                     >
                       <CheckIcon />
                       <span>
@@ -5436,842 +5198,20 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           MODAL: MANUAL CANDIDATE CODE REVIEW & MARKS
           ========================================================= */}
       {reviewingSubmission && (
-        <div
-          className="popup-backdrop"
-          style={{ zIndex: 1240 }}
-          onClick={() => setReviewingSubmission(null)}
-        >
-          <div
-            className="popup-card"
-            style={{
-              maxWidth: "880px",
-              width: "100%",
-              padding: "24px",
-              borderRadius: "16px",
-              maxHeight: "92vh",
-              overflowY: "auto",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                borderBottom: "1px solid #e2e8f0",
-                paddingBottom: "16px",
-                marginBottom: "20px",
-              }}
-            >
-              <div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginBottom: "4px",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      padding: "2px 8px",
-                      borderRadius: "4px",
-                      background: "#eff6ff",
-                      color: "#1d4ed8",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Candidate Code Review
-                  </span>
-                  {reviewingSubmission.status === "Graded" ||
-                  reviewingSubmission.status === "Passed" ? (
-                    <span
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        padding: "2px 8px",
-                        borderRadius: "4px",
-                        background: "#ecfdf5",
-                        color: "#047857",
-                      }}
-                    >
-                      Graded ({reviewingSubmission.examScore}%)
-                    </span>
-                  ) : (
-                    <span
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        padding: "2px 8px",
-                        borderRadius: "4px",
-                        background: "#fffbeb",
-                        color: "#b45309",
-                      }}
-                    >
-                      Pending Manual Evaluation
-                    </span>
-                  )}
-                </div>
-                <h3
-                  style={{
-                    fontSize: "19px",
-                    fontWeight: 800,
-                    color: "#0f172a",
-                    margin: "0 0 4px 0",
-                  }}
-                >
-                  {reviewingSubmission.candidateName || "Candidate Submission"}
-                </h3>
-                <p style={{ fontSize: "12.5px", color: "#64748b", margin: 0 }}>
-                  Email: <strong>{reviewingSubmission.candidateEmail}</strong> •
-                  Assessment:{" "}
-                  <strong>{reviewingSubmission.assessmentTitle}</strong>
-                  {reviewingSubmission.submittedAt &&
-                    ` • Submitted: ${new Date(reviewingSubmission.submittedAt).toLocaleString()}`}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setReviewingSubmission(null)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "#94a3b8",
-                  cursor: "pointer",
-                  padding: "4px",
-                }}
-              >
-                <XIcon />
-              </button>
-            </div>
-
-            {/* Proctor Alert */}
-            {reviewingSubmission.proctorSummary?.tabSwitches > 0 ? (
-              <div
-                style={{
-                  background: "#fef2f2",
-                  border: "1px solid #fecaca",
-                  borderRadius: "10px",
-                  padding: "12px 16px",
-                  marginBottom: "20px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                }}
-              >
-                <span style={{ fontSize: "16px" }}>⚠️</span>
-                <div style={{ fontSize: "12.5px", color: "#991b1b" }}>
-                  <strong>Proctor Warning:</strong> The candidate switched
-                  browser tabs / windows{" "}
-                  <strong>
-                    {reviewingSubmission.proctorSummary.tabSwitches} times
-                  </strong>{" "}
-                  during the exam session.
-                </div>
-              </div>
-            ) : (
-              <div
-                style={{
-                  background: "#f0fdf4",
-                  border: "1px solid #bbf7d0",
-                  borderRadius: "10px",
-                  padding: "10px 14px",
-                  marginBottom: "20px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                <ShieldCheckIcon />
-                <span
-                  style={{
-                    fontSize: "12.5px",
-                    color: "#166534",
-                    fontWeight: 500,
-                  }}
-                >
-                  Proctor Clean: Zero browser tab switches or window blurs
-                  detected during examination.
-                </span>
-              </div>
-            )}
-
-            {/* Answers List */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "20px",
-                marginBottom: "24px",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "14px",
-                  fontWeight: 700,
-                  color: "#0f172a",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <span>
-                  Submitted Code Solutions (
-                  {reviewingSubmission.answers?.length || 0} Questions)
-                </span>
-                <span
-                  style={{
-                    fontSize: "12px",
-                    color: "#64748b",
-                    fontWeight: 400,
-                  }}
-                >
-                  Review candidate code and assign question score
-                </span>
-              </div>
-
-              {(!reviewingSubmission.answers ||
-                reviewingSubmission.answers.length === 0) && (
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "30px",
-                    color: "#94a3b8",
-                    fontSize: "13px",
-                    background: "#f8fafc",
-                    borderRadius: "10px",
-                  }}
-                >
-                  No answer entries found for this submission.
-                </div>
-              )}
-
-              {reviewingSubmission.answers?.map((ans, idx) => {
-                const qEval = questionEvaluations[ans.questionId] || {
-                  isCorrect: false,
-                  pointsEarned: 0,
-                  notes: "",
-                };
-                const currentTemplate = assessments.find(
-                  (a) => a.id === reviewingSubmission.assessmentId,
-                );
-                const questionDef = currentTemplate?.finalQuestions?.find(
-                  (q) => q.id === ans.questionId,
-                );
-
-                return (
-                  <div
-                    key={ans.questionId || idx}
-                    style={{
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "12px",
-                      overflow: "hidden",
-                      background: "#ffffff",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                    }}
-                  >
-                    {/* Question Header */}
-                    <div
-                      style={{
-                        background: "#f8fafc",
-                        padding: "12px 16px",
-                        borderBottom: "1px solid #e2e8f0",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            background: "#0f172a",
-                            color: "#ffffff",
-                            fontSize: "11px",
-                            fontWeight: 700,
-                            padding: "2px 8px",
-                            borderRadius: "4px",
-                          }}
-                        >
-                          Q{idx + 1}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: "13.5px",
-                            fontWeight: 700,
-                            color: "#0f172a",
-                          }}
-                        >
-                          {questionDef?.title || `Coding Question #${idx + 1}`}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: "11px",
-                            padding: "2px 8px",
-                            borderRadius: "12px",
-                            background: "#e0e7ff",
-                            color: "#3730a3",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {ans.language || questionDef?.language || "Code"}
-                        </span>
-                        {questionDef?.difficulty && (
-                          <span
-                            style={{
-                              fontSize: "11px",
-                              padding: "2px 8px",
-                              borderRadius: "12px",
-                              background: "#f1f5f9",
-                              color: "#475569",
-                            }}
-                          >
-                            {questionDef.difficulty}
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: "12px", color: "#64748b" }}>
-                        Max Weight:{" "}
-                        <strong>{questionDef?.points || 100} pts</strong>
-                      </div>
-                    </div>
-
-                    {/* Question Problem Statement Rendered Cleanly for HR Review */}
-                    {questionDef?.problemStatement && (
-                      <div
-                        style={{
-                          padding: "16px 20px",
-                          background: "#fcfcfd",
-                          borderBottom: "1px solid #e2e8f0",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            marginBottom: "12px",
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontSize: "11px",
-                              fontWeight: 800,
-                              color: "#475569",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.04em",
-                            }}
-                          >
-                            Problem Specification & Guidelines
-                          </span>
-                        </div>
-                        <ProblemStatementViewer
-                          content={questionDef.problemStatement}
-                          theme="light"
-                          compact={true}
-                        />
-                      </div>
-                    )}
-
-                    {/* Candidate Typed Code */}
-                    <div
-                      style={{ padding: "14px 16px", background: "#0f172a" }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          marginBottom: "6px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            color: "#94a3b8",
-                            fontSize: "11px",
-                            fontFamily: "monospace",
-                          }}
-                        >
-                          CANDIDATE TYPED CODE ({ans.language || "text"}):
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText(
-                              ans.submittedCode || "",
-                            );
-                            showToast("✓ Code copied to clipboard");
-                          }}
-                          style={{
-                            background: "#1e293b",
-                            border: "1px solid #334155",
-                            color: "#94a3b8",
-                            borderRadius: "4px",
-                            padding: "2px 8px",
-                            fontSize: "11px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Copy
-                        </button>
-                      </div>
-                      <pre
-                        style={{
-                          color: "#f8fafc",
-                          background: "#020617",
-                          padding: "12px",
-                          borderRadius: "6px",
-                          fontSize: "12.5px",
-                          fontFamily:
-                            'Consolas, Monaco, "Courier New", monospace',
-                          margin: 0,
-                          maxHeight: "260px",
-                          overflowY: "auto",
-                          whiteSpace: "pre-wrap",
-                          wordBreak: "break-word",
-                          lineHeight: "1.5",
-                        }}
-                      >
-                        {ans.submittedCode ||
-                          "// No code submitted for this question."}
-                      </pre>
-                    </div>
-
-                    {/* Evaluator Controls for this question */}
-                    <div
-                      style={{
-                        padding: "14px 16px",
-                        background: "#f8fafc",
-                        borderTop: "1px solid #e2e8f0",
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: "16px",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "14px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "12px",
-                            fontWeight: 700,
-                            color: "#334155",
-                          }}
-                        >
-                          Solution Verdict:
-                        </span>
-                        <label
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "5px",
-                            fontSize: "12.5px",
-                            cursor: "pointer",
-                            color: qEval.isCorrect ? "#15803d" : "#475569",
-                            fontWeight: qEval.isCorrect ? 700 : 400,
-                          }}
-                        >
-                          <input
-                            type="radio"
-                            name={`verdict_${ans.questionId}`}
-                            checked={qEval.isCorrect}
-                            onChange={() => {
-                              const maxPts = questionDef?.points || 100;
-                              setQuestionEvaluations((prev) => ({
-                                ...prev,
-                                [ans.questionId]: {
-                                  ...qEval,
-                                  isCorrect: true,
-                                  pointsEarned: maxPts,
-                                },
-                              }));
-                            }}
-                          />
-                          Correct
-                        </label>
-                        <label
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "5px",
-                            fontSize: "12.5px",
-                            cursor: "pointer",
-                            color: !qEval.isCorrect ? "#b91c1c" : "#475569",
-                            fontWeight: !qEval.isCorrect ? 700 : 400,
-                          }}
-                        >
-                          <input
-                            type="radio"
-                            name={`verdict_${ans.questionId}`}
-                            checked={!qEval.isCorrect}
-                            onChange={() => {
-                              setQuestionEvaluations((prev) => ({
-                                ...prev,
-                                [ans.questionId]: {
-                                  ...qEval,
-                                  isCorrect: false,
-                                  pointsEarned: 0,
-                                },
-                              }));
-                            }}
-                          />
-                          Incorrect / Incomplete
-                        </label>
-                      </div>
-
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "12px",
-                            fontWeight: 700,
-                            color: "#334155",
-                          }}
-                        >
-                          Marks Awarded:
-                        </span>
-                        <input
-                          type="number"
-                          min={0}
-                          max={questionDef?.points || 100}
-                          value={qEval.pointsEarned}
-                          onChange={(e) => {
-                            const val = Math.max(
-                              0,
-                              Math.min(
-                                questionDef?.points || 100,
-                                Number(e.target.value),
-                              ),
-                            );
-                            setQuestionEvaluations((prev) => ({
-                              ...prev,
-                              [ans.questionId]: {
-                                ...qEval,
-                                pointsEarned: val,
-                                isCorrect: val > 0,
-                              },
-                            }));
-                          }}
-                          style={{
-                            width: "70px",
-                            padding: "5px 8px",
-                            borderRadius: "6px",
-                            border: "1px solid #cbd5e1",
-                            fontSize: "12.5px",
-                            fontWeight: 700,
-                            textAlign: "center",
-                          }}
-                        />
-                        <span style={{ fontSize: "12px", color: "#64748b" }}>
-                          / {questionDef?.points || 100} pts
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Overall Evaluation Summary Card */}
-            <div
-              style={{
-                background: "#f8fafc",
-                border: "1px solid #cbd5e1",
-                borderRadius: "12px",
-                padding: "18px",
-                marginBottom: "20px",
-              }}
-            >
-              <h4
-                style={{
-                  fontSize: "14px",
-                  fontWeight: 700,
-                  color: "#0f172a",
-                  margin: "0 0 14px 0",
-                }}
-              >
-                Overall Assessment Scoring & Decision
-              </h4>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 2fr",
-                  gap: "16px",
-                  marginBottom: "16px",
-                }}
-              >
-                <div>
-                  <label
-                    style={{
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      color: "#334155",
-                      display: "block",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    Total Exam Score (0 - 100%):
-                  </label>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                  >
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={reviewExamScore}
-                      onChange={(e) =>
-                        setReviewExamScore(Number(e.target.value))
-                      }
-                      style={{
-                        width: "100px",
-                        padding: "8px 12px",
-                        borderRadius: "8px",
-                        border: "1px solid #cbd5e1",
-                        fontSize: "15px",
-                        fontWeight: 800,
-                        textAlign: "center",
-                        color: "#0f172a",
-                      }}
-                    />
-                    <span
-                      style={{
-                        fontSize: "14px",
-                        fontWeight: 700,
-                        color: "#64748b",
-                      }}
-                    >
-                      %
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const totalAwarded = Object.values(
-                          questionEvaluations,
-                        ).reduce((sum, q) => sum + (q.pointsEarned || 0), 0);
-                        const totalPossible =
-                          reviewingSubmission.answers?.reduce((sum, a) => {
-                            const currentTemplate = assessments.find(
-                              (t) => t.id === reviewingSubmission.assessmentId,
-                            );
-                            const qDef = currentTemplate?.finalQuestions?.find(
-                              (q) => q.id === a.questionId,
-                            );
-                            return sum + (qDef?.points || 100);
-                          }, 0) || 100;
-                        const pct = Math.round(
-                          (totalAwarded / (totalPossible || 1)) * 100,
-                        );
-                        setReviewExamScore(Math.min(100, Math.max(0, pct)));
-                        showToast(
-                          `Calculated score: ${pct}% based on question points.`,
-                        );
-                      }}
-                      style={{
-                        background: "#e2e8f0",
-                        border: "none",
-                        padding: "8px 10px",
-                        borderRadius: "6px",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        color: "#334155",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Auto-sum Questions
-                    </button>
-                  </div>
-                  <span
-                    style={{
-                      fontSize: "11.5px",
-                      color: "#64748b",
-                      marginTop: "4px",
-                      display: "block",
-                    }}
-                  >
-                    Passing Threshold: {reviewingSubmission.passingThreshold}%
-                  </span>
-                </div>
-
-                <div>
-                  <label
-                    style={{
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      color: "#334155",
-                      display: "block",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    Reviewer Feedback / Comments for Candidate:
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={reviewFeedback}
-                    onChange={(e) => setReviewFeedback(e.target.value)}
-                    placeholder="Provide constructive feedback on coding style, algorithm efficiency, and architecture..."
-                    style={{
-                      width: "100%",
-                      padding: "8px 12px",
-                      borderRadius: "8px",
-                      border: "1px solid #cbd5e1",
-                      fontSize: "12.5px",
-                      fontFamily: "inherit",
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* ⭐ Select Candidate for Technical Interview Checkbox */}
-              <div
-                style={{
-                  background: reviewIsSelectedForInterview
-                    ? "#ecfdf5"
-                    : "#ffffff",
-                  border: reviewIsSelectedForInterview
-                    ? "1.5px solid #10b981"
-                    : "1px solid #cbd5e1",
-                  borderRadius: "10px",
-                  padding: "14px 16px",
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
-                onClick={() =>
-                  setReviewIsSelectedForInterview(!reviewIsSelectedForInterview)
-                }
-              >
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    cursor: "pointer",
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={reviewIsSelectedForInterview}
-                    onChange={(e) =>
-                      setReviewIsSelectedForInterview(e.target.checked)
-                    }
-                    style={{ width: "18px", height: "18px", cursor: "pointer" }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  <div>
-                    <div
-                      style={{
-                        fontSize: "13.5px",
-                        fontWeight: 700,
-                        color: reviewIsSelectedForInterview
-                          ? "#065f46"
-                          : "#0f172a",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                      }}
-                    >
-                      <span>⭐ Select Candidate for Technical Interview</span>
-                      {reviewIsSelectedForInterview && (
-                        <span
-                          style={{
-                            fontSize: "11px",
-                            background: "#10b981",
-                            color: "#ffffff",
-                            padding: "2px 8px",
-                            borderRadius: "10px",
-                            fontWeight: 700,
-                          }}
-                        >
-                          SELECTED
-                        </span>
-                      )}
-                    </div>
-                    <p
-                      style={{
-                        fontSize: "12px",
-                        color: reviewIsSelectedForInterview
-                          ? "#047857"
-                          : "#64748b",
-                        margin: "2px 0 0 0",
-                      }}
-                    >
-                      When checked, the candidate will be marked as selected for
-                      an interview, and a prominent celebration notice will
-                      appear on their profile.
-                    </p>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            {/* Modal Actions */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "12px",
-                borderTop: "1px solid #e2e8f0",
-                paddingTop: "16px",
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setReviewingSubmission(null)}
-                className="btn-secondary"
-                style={{ padding: "9px 18px", fontSize: "13px" }}
-                disabled={isSavingReview}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveReview}
-                className="btn-primary"
-                style={{
-                  padding: "9px 22px",
-                  fontSize: "13px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-                disabled={isSavingReview}
-              >
-                {isSavingReview ? (
-                  <>Saving Review...</>
-                ) : (
-                  <>
-                    <CheckIcon />
-                    Save & Publish Grade to Candidate Profile
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+        <CandidateCodeReviewModal
+          submission={reviewingSubmission}
+          assessments={assessments}
+          onClose={() => setReviewingSubmission(null)}
+          onSaveSuccess={() => {
+            setReviewingSubmission(null);
+            loadInterviewSelections();
+            if (selectedJob) {
+              loadJobSubmissions(selectedJob.id);
+              loadJobLeaderboard(selectedJob.id);
+            }
+          }}
+          showToast={showToast}
+        />
       )}
 
       {/* =========================================================

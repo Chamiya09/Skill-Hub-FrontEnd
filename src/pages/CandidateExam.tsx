@@ -16,6 +16,7 @@ import {
   ArrowRightIcon,
 } from '../components/common/Icons';
 import { ProblemStatementViewer } from '../components/assessment';
+import './CandidateExam.css';
 
 // Lazy-load Monaco Editor so it only loads when the assessment screen mounts
 const MonacoEditor = React.lazy(() => import('@monaco-editor/react'));
@@ -626,31 +627,137 @@ export const CandidateExam: React.FC = () => {
       <div
         style={{
           minHeight: '100vh',
-          backgroundColor: '#0f172a',
+          backgroundColor: '#090d16',
           color: '#f8fafc',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           fontFamily: 'Inter, system-ui, sans-serif',
+          padding: '24px',
+          position: 'relative',
+          overflow: 'hidden',
         }}
+        aria-busy="true"
+        aria-label="Initializing Secure Assessment Environment"
       >
+        {/* Ambient background glow */}
         <div
           style={{
-            width: '48px',
-            height: '48px',
+            position: 'absolute',
+            width: '600px',
+            height: '600px',
             borderRadius: '50%',
-            border: '4px solid #334155',
-            borderTopColor: '#3b82f6',
-            animation: 'spin 1s linear infinite',
-            marginBottom: '20px',
+            background: 'radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.04) 40%, transparent 70%)',
+            pointerEvents: 'none',
           }}
         />
-        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>Initializing Secure Assessment Environment...</h2>
-        <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '8px' }}>
-          Loading coding questions, Monaco Editor, and sandboxed runtimes.
-        </p>
+
+        {/* Outer Card Skeleton Container matching Briefing Frame */}
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '720px',
+            backgroundColor: '#111827',
+            borderRadius: '20px',
+            border: '1px solid #1f2937',
+            padding: '36px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+            position: 'relative',
+            zIndex: 1,
+          }}
+          className="animate-pulse"
+        >
+          {/* Top Badge & Header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' }}>
+            <div
+              style={{
+                width: '54px',
+                height: '54px',
+                borderRadius: '14px',
+                backgroundColor: '#1e293b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid #334155',
+              }}
+            >
+              <div
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '50%',
+                  border: '3px solid #334155',
+                  borderTopColor: '#00b074',
+                  animation: 'examPulseSpin 1s linear infinite',
+                }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ width: '160px', height: '18px', backgroundColor: '#1e293b', borderRadius: '999px', marginBottom: '10px' }} />
+              <div style={{ width: '65%', height: '26px', backgroundColor: '#334155', borderRadius: '8px' }} />
+            </div>
+          </div>
+
+          {/* Description line skeleton */}
+          <div style={{ width: '100%', height: '14px', backgroundColor: '#1e293b', borderRadius: '4px', marginBottom: '8px' }} />
+          <div style={{ width: '80%', height: '14px', backgroundColor: '#1e293b', borderRadius: '4px', marginBottom: '28px' }} />
+
+          {/* 2-Column Meta Cards Skeleton */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '28px' }}>
+            <div style={{ backgroundColor: '#1e293b66', border: '1px solid #1f2937', borderRadius: '14px', padding: '18px', display: 'flex', gap: '14px', alignItems: 'center' }}>
+              <div style={{ width: '42px', height: '42px', borderRadius: '10px', backgroundColor: '#1e293b' }} />
+              <div>
+                <div style={{ width: '70px', height: '12px', backgroundColor: '#334155', borderRadius: '4px', marginBottom: '6px' }} />
+                <div style={{ width: '110px', height: '18px', backgroundColor: '#475569', borderRadius: '4px' }} />
+              </div>
+            </div>
+            <div style={{ backgroundColor: '#1e293b66', border: '1px solid #1f2937', borderRadius: '14px', padding: '18px', display: 'flex', gap: '14px', alignItems: 'center' }}>
+              <div style={{ width: '42px', height: '42px', borderRadius: '10px', backgroundColor: '#1e293b' }} />
+              <div>
+                <div style={{ width: '70px', height: '12px', backgroundColor: '#334155', borderRadius: '4px', marginBottom: '6px' }} />
+                <div style={{ width: '110px', height: '18px', backgroundColor: '#475569', borderRadius: '4px' }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Test environment status skeleton indicator */}
+          <div
+            style={{
+              padding: '16px 20px',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(0, 176, 116, 0.06)',
+              border: '1px solid rgba(0, 176, 116, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span
+                style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: '#00b074',
+                  boxShadow: '0 0 10px #00b074',
+                  display: 'inline-block',
+                }}
+              />
+              <span style={{ fontSize: '0.875rem', color: '#e2e8f0', fontWeight: 600 }}>
+                Initializing Secure Assessment Environment...
+              </span>
+            </div>
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Loading Monaco & Runtimes</span>
+          </div>
+        </div>
+
+        <style>{`
+          @keyframes examPulseSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     );
   }
@@ -708,13 +815,15 @@ export const CandidateExam: React.FC = () => {
           <button
             onClick={() => navigate('/candidate/assessments')}
             style={{
-              padding: '10px 24px',
-              borderRadius: '8px',
-              backgroundColor: '#3b82f6',
+              padding: '12px 24px',
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, #059669 0%, #00b074 100%)',
               color: '#ffffff',
-              fontWeight: 600,
+              fontWeight: 700,
               border: 'none',
               cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(0, 176, 116, 0.35)',
+              transition: 'all 0.2s ease',
             }}
           >
             Return to Technical Assessments
@@ -729,131 +838,53 @@ export const CandidateExam: React.FC = () => {
   // =============================================================
   if (phase === 'briefing' && examPaper) {
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          backgroundColor: '#0f172a',
-          color: '#f8fafc',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '32px 16px',
-          fontFamily: 'Inter, system-ui, sans-serif',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '640px',
-            width: '100%',
-            backgroundColor: '#1e293b',
-            border: '1px solid #334155',
-            borderRadius: '16px',
-            padding: '36px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.45)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px' }}>
-            <div
-              style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '8px',
-                backgroundColor: 'rgba(59, 130, 246, 0.12)',
-                border: '1px solid rgba(59, 130, 246, 0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#60a5fa',
-                flexShrink: 0,
-              }}
-            >
+      <div className="exam-briefing-wrapper">
+        <div className="exam-briefing-card">
+          <div className="exam-briefing-header">
+            <div className="exam-briefing-icon-badge">
               <CodeIcon size={22} />
             </div>
-            <div>
-              <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#60a5fa', fontWeight: 700 }}>
-                Candidate Technical Examination
-              </span>
-              <h1 style={{ fontSize: '1.45rem', fontWeight: 700, margin: '2px 0 0', color: '#ffffff', letterSpacing: '-0.01em' }}>
+            <div className="exam-briefing-header-text">
+              <div className="exam-briefing-badge-row">
+                <span className="exam-briefing-category-badge">
+                  Candidate Technical Examination
+                </span>
+              </div>
+              <h1 className="exam-briefing-title">
                 {examPaper.assessmentTitle}
               </h1>
             </div>
           </div>
 
-          <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '24px' }}>
+          <p className="exam-briefing-description">
             You have been invited to complete a technical coding assessment. Your solutions will be evaluated against automated test suites and reviewed by the technical hiring panel.
           </p>
 
           {/* 2-Column Clean Meta Row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', marginBottom: '24px' }}>
-            <div
-              style={{
-                backgroundColor: '#0f172a',
-                border: '1px solid #334155',
-                borderRadius: '10px',
-                padding: '16px 20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '14px',
-              }}
-            >
-              <div
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(148, 163, 184, 0.08)',
-                  border: '1px solid #334155',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#94a3b8',
-                  flexShrink: 0,
-                }}
-              >
+          <div className="exam-briefing-meta-grid">
+            <div className="exam-briefing-meta-card">
+              <div className="exam-briefing-meta-icon">
                 <ClockIcon />
               </div>
               <div>
-                <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                <span className="exam-briefing-meta-label">
                   Duration
                 </span>
-                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f8fafc', marginTop: '2px' }}>
+                <div className="exam-briefing-meta-val">
                   {examPaper.timeLimitMinutes} Minutes
                 </div>
               </div>
             </div>
 
-            <div
-              style={{
-                backgroundColor: '#0f172a',
-                border: '1px solid #334155',
-                borderRadius: '10px',
-                padding: '16px 20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '14px',
-              }}
-            >
-              <div
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(148, 163, 184, 0.08)',
-                  border: '1px solid #334155',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#94a3b8',
-                  flexShrink: 0,
-                }}
-              >
+            <div className="exam-briefing-meta-card">
+              <div className="exam-briefing-meta-icon">
                 <CodeIcon size={18} />
               </div>
               <div>
-                <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                <span className="exam-briefing-meta-label">
                   Challenges
                 </span>
-                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f8fafc', marginTop: '2px' }}>
+                <div className="exam-briefing-meta-val">
                   {examPaper.questions.length} {examPaper.questions.length === 1 ? 'Problem' : 'Problems'}
                 </div>
               </div>
@@ -861,66 +892,41 @@ export const CandidateExam: React.FC = () => {
           </div>
 
           {/* Assessment Protocol */}
-          <div style={{ backgroundColor: '#0f172a80', border: '1px solid #334155', borderRadius: '10px', padding: '18px 20px', marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '0.88rem', fontWeight: 700, color: '#f1f5f9', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShieldCheckIcon /> Assessment Guidelines &amp; Integrity Protocol
+          <div className="exam-briefing-protocol-card">
+            <h3 className="exam-briefing-protocol-title">
+              <span className="exam-briefing-shield-icon"><ShieldCheckIcon /></span>
+              <span>Assessment Guidelines &amp; Integrity Protocol</span>
             </h3>
 
             {/* Prominent One-Attempt Security Warning */}
-            <div
-              style={{
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.35)',
-                borderRadius: '8px',
-                padding: '12px 14px',
-                marginBottom: '14px',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '10px',
-              }}
-            >
-              <div style={{ color: '#ef4444', flexShrink: 0, marginTop: '2px' }}>
+            <div className="exam-briefing-warning-card">
+              <div className="exam-briefing-warning-icon">
                 <AlertTriangleIcon size={18} />
               </div>
-              <div style={{ fontSize: '0.82rem', color: '#fca5a5', lineHeight: 1.5 }}>
-                <strong style={{ color: '#fecaca', display: 'block', marginBottom: '2px' }}>
+              <div className="exam-briefing-warning-content">
+                <strong className="exam-briefing-warning-title">
                   Strict One-Attempt Security Policy:
                 </strong>
                 If you close the browser tab, refresh the page, or navigate back during the active test, the assessment will immediately be terminated and permanently blocked. You cannot retake or resume this assessment once exited.
               </div>
             </div>
 
-            <ul style={{ margin: 0, paddingLeft: '18px', color: '#94a3b8', fontSize: '0.825rem', lineHeight: 1.75 }}>
+            <ul className="exam-briefing-rules-list">
               <li>
-                <strong style={{ color: '#e2e8f0' }}>Tab Switching Monitored:</strong> Navigating between tabs or losing window focus is strictly monitored and recorded in your proctoring audit log.
+                <strong>Tab Switching Monitored:</strong> Navigating between tabs or losing window focus is strictly monitored and recorded in your proctoring audit log.
               </li>
               <li>
-                <strong style={{ color: '#e2e8f0' }}>Timer &amp; Auto-Submit:</strong> The countdown timer starts immediately upon beginning. When time expires, answers submit automatically.
+                <strong>Timer &amp; Auto-Submit:</strong> The countdown timer starts immediately upon beginning. When time expires, answers submit automatically.
               </li>
               <li>
-                <strong style={{ color: '#e2e8f0' }}>Run &amp; Submit:</strong> Use <strong>Run</strong> to test code against sample test cases, and <strong>Submit</strong> when you are ready to finalize.
+                <strong>Run &amp; Submit:</strong> Use <strong>Run</strong> to test code against sample test cases, and <strong>Submit</strong> when you are ready to finalize.
               </li>
             </ul>
           </div>
 
           <button
             onClick={handleStartExam}
-            style={{
-              width: '100%',
-              padding: '14px 20px',
-              borderRadius: '10px',
-              backgroundColor: '#2563eb',
-              color: '#ffffff',
-              fontSize: '0.95rem',
-              fontWeight: 600,
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              transition: 'background-color 0.15s ease',
-            }}
+            className="exam-briefing-start-btn"
           >
             <span>Begin Assessment</span>
             <ArrowRightIcon />
@@ -972,135 +978,71 @@ export const CandidateExam: React.FC = () => {
   // =============================================================
   if (phase === 'completed' && finalResult) {
     const tabInfractions = finalResult.proctorSummary?.tabSwitches ?? tabSwitches;
+    const questionsCount = finalResult.answers?.length || examPaper?.questions?.length || 0;
 
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          backgroundColor: '#0f172a',
-          color: '#f8fafc',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '32px 16px',
-          fontFamily: 'Inter, system-ui, sans-serif',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '620px',
-            width: '100%',
-            backgroundColor: '#1e293b',
-            border: '1px solid #334155',
-            borderRadius: '20px',
-            padding: '44px 36px',
-            textAlign: 'center',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-          }}
-        >
-          <div
-            style={{
-              width: '68px',
-              height: '68px',
-              borderRadius: '50%',
-              backgroundColor: '#10b98120',
-              border: '2px solid #10b98140',
-              color: '#10b981',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px',
-            }}
-          >
+      <div className="exam-briefing-wrapper">
+        <div className="exam-completed-card">
+          <div className="exam-completed-check-badge">
             <CheckIcon />
           </div>
 
-          <span
-            style={{
-              fontSize: '0.75rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              fontWeight: 800,
-              color: '#38bdf8',
-              backgroundColor: '#0369a120',
-              border: '1px solid #0284c740',
-              padding: '4px 12px',
-              borderRadius: '999px',
-              display: 'inline-block',
-              marginBottom: '12px',
-            }}
-          >
-            SUBMISSION COMPLETE • UNDER REVIEW
-          </span>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <span className="exam-completed-status-tag">
+              SUBMISSION COMPLETE • UNDER REVIEW
+            </span>
+          </div>
 
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '6px 0 12px', color: '#ffffff' }}>
+          <h1 className="exam-completed-title">
             {finalResult.assessmentTitle}
           </h1>
 
-          <p style={{ color: '#94a3b8', fontSize: '0.95rem', margin: '0 auto 24px', maxWidth: '480px', lineHeight: 1.6 }}>
+          <p className="exam-completed-subtitle">
             Your code has been securely submitted and stored in the evaluation registry.
           </p>
 
-          <div
-            style={{
-              backgroundColor: '#0f172a',
-              border: '1px solid #334155',
-              borderRadius: '16px',
-              padding: '24px',
-              marginBottom: '24px',
-              textAlign: 'left',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#f59e0b20', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="exam-completed-notice-card">
+            <div className="exam-completed-notice-header">
+              <div className="exam-completed-notice-icon">
                 <ClockIcon />
               </div>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+              <h3 className="exam-completed-notice-title">
                 Results Published in 3–4 Working Days
               </h3>
             </div>
-            <p style={{ color: '#cbd5e1', fontSize: '0.875rem', lineHeight: 1.6, margin: 0 }}>
+            <p className="exam-completed-notice-body">
               Our engineering evaluation panel and hiring team will review your typed code solutions.
               Once finalized, your technical marks, performance scorecard, and technical interview decision will be published directly to your profile.
             </p>
           </div>
 
-          <div
-            style={{
-              backgroundColor: '#0f172a80',
-              border: '1px solid #334155',
-              borderRadius: '12px',
-              padding: '14px 18px',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '12px',
-              marginBottom: '28px',
-              textAlign: 'center',
-            }}
-          >
+          <div className="exam-completed-stats-grid">
             <div>
-              <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', display: 'block' }}>
+              <span className="exam-completed-stat-label">
                 STATUS
               </span>
-              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#f59e0b', marginTop: '4px', display: 'block' }}>
+              <span className="exam-completed-stat-val" style={{ color: '#f59e0b' }}>
                 Under Review
               </span>
             </div>
 
             <div>
-              <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', display: 'block' }}>
+              <span className="exam-completed-stat-label">
                 QUESTIONS SUBMITTED
               </span>
-              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#38bdf8', marginTop: '4px', display: 'block' }}>
-                {finalResult.answers?.length || examPaper?.questions?.length || 0} Problems
+              <span className="exam-completed-stat-val" style={{ color: '#00b074' }}>
+                {questionsCount} {questionsCount === 1 ? 'Problem' : 'Problems'}
               </span>
             </div>
 
             <div>
-              <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', display: 'block' }}>
+              <span className="exam-completed-stat-label">
                 PROCTOR TELEMETRY
               </span>
-              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: tabInfractions === 0 ? '#10b981' : '#f59e0b', marginTop: '4px', display: 'block' }}>
+              <span
+                className="exam-completed-stat-val"
+                style={{ color: tabInfractions === 0 ? '#00b074' : '#f59e0b' }}
+              >
                 {tabInfractions === 0 ? 'Verified Clean (0)' : `${tabInfractions} Alert(s)`}
               </span>
             </div>
@@ -1108,22 +1050,7 @@ export const CandidateExam: React.FC = () => {
 
           <button
             onClick={() => navigate('/candidate/assessments')}
-            style={{
-              width: '100%',
-              padding: '14px 24px',
-              borderRadius: '12px',
-              backgroundColor: '#2563eb',
-              color: '#ffffff',
-              fontWeight: 700,
-              fontSize: '0.95rem',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)',
-            }}
+            className="exam-completed-return-btn"
           >
             <span>Done &amp; Return to Technical Assessments</span>
             <ArrowRightIcon />
@@ -1158,111 +1085,44 @@ export const CandidateExam: React.FC = () => {
       {/* -------------------------------------------------------------
           TOP BAR: TIMER, PROCTORING TELEMETRY & SUBMIT ACTION
           ------------------------------------------------------------- */}
-      <header
-        style={{
-          height: '56px',
-          borderBottom: '1px solid #334155',
-          backgroundColor: '#1e293b',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 18px',
-          flexShrink: 0,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(59, 130, 246, 0.15)',
-              border: '1px solid rgba(59, 130, 246, 0.25)',
-              color: '#60a5fa',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+      <header className="exam-workspace-header">
+        <div className="exam-brand-group">
+          <div className="exam-brand-icon">
             <CodeIcon size={16} />
           </div>
           <div>
-            <span style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+            <span className="exam-brand-tag">
               LIVE CODING ASSESSMENT
             </span>
-            <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div className="exam-brand-title">
               {examPaper.assessmentTitle}
             </div>
           </div>
         </div>
 
         {/* Center: Proctoring Pill & Timer */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              backgroundColor: '#0f172a',
-              border: '1px solid #334155',
-              borderRadius: '20px',
-              padding: '4px 12px',
-              fontSize: '0.75rem',
-              color: '#cbd5e1',
-            }}
-          >
-            <span
-              style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: '#10b981',
-                boxShadow: '0 0 6px #10b981',
-              }}
-            />
+        <div className="exam-status-group">
+          <div className="exam-proctor-pill">
+            <span className="exam-proctor-dot" />
             <span>Proctoring Active</span>
             {tabSwitches > 0 && (
-              <span
-                style={{
-                  backgroundColor: '#ef4444',
-                  color: '#ffffff',
-                  borderRadius: '10px',
-                  padding: '1px 6px',
-                  fontSize: '0.7rem',
-                  fontWeight: 700,
-                  marginLeft: '4px',
-                }}
-              >
+              <span className="exam-proctor-alert-count">
                 {tabSwitches} alert{tabSwitches > 1 ? 's' : ''}
               </span>
             )}
           </div>
 
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              backgroundColor: isTimeCritical ? '#ef444420' : '#0f172a',
-              border: `1px solid ${isTimeCritical ? '#ef4444' : '#334155'}`,
-              borderRadius: '8px',
-              padding: '5px 12px',
-              color: isTimeCritical ? '#ef4444' : '#f8fafc',
-              fontWeight: 700,
-              fontSize: '0.95rem',
-              letterSpacing: '0.05em',
-            }}
-          >
+          <div className={`exam-timer-pill ${isTimeCritical ? 'critical' : ''}`}>
             <ClockIcon />
             <span>{formatTime(remainingSeconds)}</span>
           </div>
         </div>
 
         {/* Right: Question Navigation & Submit CTA */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="exam-header-actions">
           {/* Question Navigator Pills */}
           {examPaper.questions.length > 1 && (
-            <div style={{ display: 'flex', gap: '4px', marginRight: '6px' }}>
+            <div style={{ display: 'flex', gap: '5px', marginRight: '6px' }}>
               {examPaper.questions.map((q, idx) => {
                 const isSelected = idx === currentQIndex;
                 return (
@@ -1273,16 +1133,7 @@ export const CandidateExam: React.FC = () => {
                       setLastRunResult(null);
                       setExecutionError(null);
                     }}
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: '6px',
-                      backgroundColor: isSelected ? '#2563eb' : '#0f172a',
-                      color: isSelected ? '#ffffff' : '#94a3b8',
-                      border: isSelected ? '1px solid #3b82f6' : '1px solid #334155',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
+                    className={`exam-q-pill ${isSelected ? 'active' : ''}`}
                   >
                     Q{idx + 1}
                   </button>
@@ -1293,19 +1144,7 @@ export const CandidateExam: React.FC = () => {
 
           <button
             onClick={() => setShowSubmitModal(true)}
-            style={{
-              padding: '7px 16px',
-              borderRadius: '8px',
-              backgroundColor: '#10b981',
-              color: '#ffffff',
-              fontWeight: 700,
-              fontSize: '0.85rem',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
+            className="exam-submit-header-btn"
           >
             <CheckIcon />
             <span>Submit Exam ({answeredCount}/{examPaper.questions.length})</span>
@@ -1317,22 +1156,11 @@ export const CandidateExam: React.FC = () => {
           PROCTORING ANTI-CHEAT WARNING BANNER
           ------------------------------------------------------------- */}
       {showCheatWarning && (
-        <div
-          style={{
-            backgroundColor: '#ef4444',
-            color: '#ffffff',
-            padding: '10px 20px',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
-            zIndex: 100,
-          }}
-        >
+        <div className="exam-cheat-alert-banner">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <AlertTriangleIcon size={18} />
+            <div style={{ color: '#f87171', display: 'flex', flexShrink: 0 }}>
+              <AlertTriangleIcon size={18} />
+            </div>
             <span>
               <strong>Integrity Alert:</strong> {cheatWarningMessage} Tab switches and window focus losses are permanently
               logged to your candidate proctoring audit log.
@@ -1340,15 +1168,8 @@ export const CandidateExam: React.FC = () => {
           </div>
           <button
             onClick={() => setShowCheatWarning(false)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#ffffff',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              padding: 0,
-            }}
+            className="exam-cheat-close-btn"
+            aria-label="Dismiss alert"
           >
             <XIcon />
           </button>
@@ -1371,70 +1192,33 @@ export const CandidateExam: React.FC = () => {
             PANEL 1: PROBLEM PANEL (LEFT SIDE, ~30% WIDTH, RESIZABLE)
             ========================================================= */}
         <div
-          style={{
-            width: `${leftPanelWidth}%`,
-            height: '100%',
-            overflowY: 'auto',
-            padding: '20px 22px',
-            backgroundColor: '#0b1120',
-            boxSizing: 'border-box',
-            flexShrink: 0,
-          }}
+          className="exam-left-panel"
+          style={{ width: `${leftPanelWidth}%` }}
         >
           {/* Header Badges */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+          <div className="exam-left-panel-badge-row">
             <span
-              style={{
-                backgroundColor:
-                  currentQuestion.difficulty?.toLowerCase() === 'easy'
-                    ? '#10b98120'
-                    : currentQuestion.difficulty?.toLowerCase() === 'hard'
-                    ? '#ef444420'
-                    : '#f59e0b20',
-                color:
-                  currentQuestion.difficulty?.toLowerCase() === 'easy'
-                    ? '#10b981'
-                    : currentQuestion.difficulty?.toLowerCase() === 'hard'
-                    ? '#ef4444'
-                    : '#f59e0b',
-                padding: '3px 8px',
-                borderRadius: '8px',
-                fontSize: '0.72rem',
-                fontWeight: 700,
-              }}
+              className={`exam-diff-badge ${
+                currentQuestion.difficulty?.toLowerCase() === 'easy'
+                  ? 'easy'
+                  : currentQuestion.difficulty?.toLowerCase() === 'hard'
+                  ? 'hard'
+                  : 'medium'
+              }`}
             >
               {currentQuestion.difficulty || 'Medium'}
             </span>
 
-            <span
-              style={{
-                backgroundColor: '#334155',
-                color: '#cbd5e1',
-                padding: '3px 8px',
-                borderRadius: '8px',
-                fontSize: '0.72rem',
-                fontWeight: 600,
-              }}
-            >
+            <span className="exam-points-badge">
               {currentQuestion.points} Points
             </span>
 
-            <span
-              style={{
-                backgroundColor: '#1e293b',
-                color: '#60a5fa',
-                padding: '3px 8px',
-                borderRadius: '8px',
-                fontSize: '0.72rem',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-              }}
-            >
+            <span className="exam-runtime-badge">
               {currentRuntime.label.split(' ')[0]}
             </span>
           </div>
 
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f8fafc', margin: '0 0 14px' }}>
+          <h2 className="exam-problem-heading">
             {currentQuestion.title}
           </h2>
 
@@ -1448,10 +1232,10 @@ export const CandidateExam: React.FC = () => {
 
           {/* Input/Output Format & Constraints (if present in problem or structured) */}
           <div style={{ marginBottom: '22px' }}>
-            <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', margin: '0 0 6px' }}>
+            <h4 className="exam-section-title">
               Execution Constraints
             </h4>
-            <div style={{ backgroundColor: '#1e293b80', border: '1px solid #334155', borderRadius: '8px', padding: '10px 14px', fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.6 }}>
+            <div className="exam-constraints-card">
               <div>• Time Limit: <strong>5.0 seconds</strong> per test case</div>
               <div>• Memory Limit: <strong>256 MB</strong></div>
               <div>• Isolated execution sandbox</div>
@@ -1537,20 +1321,7 @@ export const CandidateExam: React.FC = () => {
         <div
           onMouseDown={handleMouseDownH}
           title="Drag to resize Problem Panel and Code Workspace width"
-          style={{
-            width: '6px',
-            backgroundColor: '#1e293b',
-            cursor: 'col-resize',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10,
-            borderLeft: '1px solid #334155',
-            borderRight: '1px solid #334155',
-            transition: 'background-color 0.15s',
-          }}
-          onMouseOver={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#3b82f6')}
-          onMouseOut={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#1e293b')}
+          className="exam-resizer-h"
         >
           <div style={{ width: '2px', height: '24px', backgroundColor: '#64748b', borderRadius: '1px' }} />
         </div>
@@ -1581,35 +1352,14 @@ export const CandidateExam: React.FC = () => {
             }}
           >
             {/* Code Panel Header Toolbar */}
-            <div
-              style={{
-                height: '42px',
-                backgroundColor: '#1e293b',
-                borderBottom: '1px solid #334155',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0 14px',
-                flexShrink: 0,
-              }}
-            >
+            <div className="exam-code-toolbar">
               {/* Language Selector Dropdown */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600 }}>Language:</span>
+              <div className="exam-toolbar-left">
+                <span className="exam-toolbar-label">Language:</span>
                 <select
                   value={currentLang}
                   onChange={(e) => handleLanguageChange(e.target.value)}
-                  style={{
-                    backgroundColor: '#0f172a',
-                    color: '#f8fafc',
-                    border: '1px solid #334155',
-                    borderRadius: '6px',
-                    padding: '4px 10px',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    outline: 'none',
-                    cursor: 'pointer',
-                  }}
+                  className="exam-toolbar-select"
                 >
                   {SUPPORTED_RUNTIMES.map((rt) => (
                     <option key={rt.id} value={rt.id}>
@@ -1621,41 +1371,20 @@ export const CandidateExam: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleResetStarterCode}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#94a3b8',
-                    fontSize: '0.75rem',
-                    cursor: 'pointer',
-                    textDecoration: 'underline',
-                    padding: '2px 6px',
-                  }}
+                  className="exam-reset-link-btn"
                 >
                   Reset Template
                 </button>
               </div>
 
               {/* Action Buttons: Run & Submit */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="exam-toolbar-right">
                 {/* RUN Button */}
                 <button
                   type="button"
                   onClick={handleRunCode}
                   disabled={isExecuting}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    backgroundColor: isExecuting ? '#334155' : '#0284c7',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '6px',
-                    padding: '6px 14px',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    cursor: isExecuting ? 'not-allowed' : 'pointer',
-                    transition: 'background-color 0.15s',
-                  }}
+                  className="exam-run-btn"
                 >
                   {isExecuting ? (
                     <>
@@ -1664,7 +1393,7 @@ export const CandidateExam: React.FC = () => {
                           width: '12px',
                           height: '12px',
                           borderRadius: '50%',
-                          border: '2px solid #ffffff',
+                          border: '2px solid #34d399',
                           borderTopColor: 'transparent',
                           animation: 'spin 0.8s linear infinite',
                         }}
@@ -1683,20 +1412,7 @@ export const CandidateExam: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowSubmitModal(true)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    backgroundColor: '#10b981',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '6px',
-                    padding: '6px 14px',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    transition: 'background-color 0.15s',
-                  }}
+                  className="exam-submit-btn"
                 >
                   <CheckIcon />
                   <span>Submit</span>
@@ -1760,20 +1476,7 @@ export const CandidateExam: React.FC = () => {
           <div
             onMouseDown={handleMouseDownV}
             title="Drag to resize Code Editor and Output Panel height"
-            style={{
-              height: '6px',
-              backgroundColor: '#1e293b',
-              cursor: 'row-resize',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10,
-              borderTop: '1px solid #334155',
-              borderBottom: '1px solid #334155',
-              transition: 'background-color 0.15s',
-            }}
-            onMouseOver={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#3b82f6')}
-            onMouseOut={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#1e293b')}
+            className="exam-resizer-v"
           >
             <div style={{ height: '2px', width: '24px', backgroundColor: '#64748b', borderRadius: '1px' }} />
           </div>
@@ -1791,46 +1494,22 @@ export const CandidateExam: React.FC = () => {
             }}
           >
             {/* Output Panel Header Tabs */}
-            <div
-              style={{
-                height: '38px',
-                backgroundColor: '#111827',
-                borderBottom: '1px solid #1f2937',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0 14px',
-                flexShrink: 0,
-              }}
-            >
+            <div className="exam-output-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button
                   type="button"
                   onClick={() => setActiveOutputTab('console')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: 'none',
-                    border: 'none',
-                    color: activeOutputTab === 'console' ? '#38bdf8' : '#94a3b8',
-                    borderBottom: activeOutputTab === 'console' ? '2px solid #38bdf8' : '2px solid transparent',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    padding: '8px 10px',
-                    cursor: 'pointer',
-                  }}
+                  className={`exam-output-tab-btn ${activeOutputTab === 'console' ? 'active' : ''}`}
                 >
                   <TerminalIcon />
                   <span>Execution Output</span>
                 </button>
-
               </div>
 
               {/* Execution Time & Exit Code */}
               {lastRunResult && !isExecuting && (
                 <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                  Exit Code: <strong style={{ color: lastRunResult.exitCode === 0 ? '#10b981' : '#f87171' }}>{lastRunResult.exitCode}</strong>
+                  Exit Code: <strong style={{ color: lastRunResult.exitCode === 0 ? '#00b074' : '#f87171' }}>{lastRunResult.exitCode}</strong>
                   {' • '}
                   Time: <strong>{lastRunResult.executionTimeMs}ms</strong>
                 </div>
@@ -1941,7 +1620,7 @@ export const CandidateExam: React.FC = () => {
                   )}
 
                   {/* Runtime Error / Standard Error */}
-                  {lastRunResult.stderr && (
+                  {lastRunResult.stderr && lastRunResult.stderr.trim() !== 'Unknown' && (
                     <div style={{ marginBottom: '14px' }}>
                       <span style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 700, textTransform: 'uppercase' }}>
                         {lastRunResult.exitCode !== 0 ? 'RUNTIME ERROR / STDERR:' : 'STDERR:'}
@@ -1963,8 +1642,8 @@ export const CandidateExam: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Execution Error (if no stderr or compileOutput) */}
-                  {lastRunResult.isError && !lastRunResult.compileOutput && !lastRunResult.stderr && lastRunResult.errorMessage && (
+                  {/* Execution Error (if no stderr, or if stderr was uninformative) */}
+                  {lastRunResult.isError && !lastRunResult.compileOutput && (!lastRunResult.stderr || lastRunResult.stderr.trim() === 'Unknown') && lastRunResult.errorMessage && (
                     <div style={{ marginBottom: '14px' }}>
                       <span style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 700, textTransform: 'uppercase' }}>
                         EXECUTION ERROR:
@@ -2050,7 +1729,8 @@ export const CandidateExam: React.FC = () => {
             position: 'fixed',
             inset: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            backdropFilter: 'blur(4px)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -2058,18 +1738,8 @@ export const CandidateExam: React.FC = () => {
             padding: '16px',
           }}
         >
-          <div
-            style={{
-              maxWidth: '480px',
-              width: '100%',
-              backgroundColor: '#1e293b',
-              border: '1px solid #334155',
-              borderRadius: '16px',
-              padding: '28px',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
-            }}
-          >
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f8fafc', margin: '0 0 12px' }}>
+          <div className="exam-submit-modal-card">
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f8fafc', margin: '0 0 12px' }}>
               Submit Technical Assessment?
             </h3>
             <p style={{ color: '#94a3b8', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 20px' }}>
@@ -2081,8 +1751,9 @@ export const CandidateExam: React.FC = () => {
             {tabSwitches > 0 && (
               <div
                 style={{
-                  backgroundColor: '#ef444420',
-                  border: '1px solid #ef4444',
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderLeft: '3.5px solid #ef4444',
                   borderRadius: '8px',
                   padding: '10px 14px',
                   fontSize: '0.8rem',
@@ -2098,32 +1769,14 @@ export const CandidateExam: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowSubmitModal(false)}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  backgroundColor: '#334155',
-                  color: '#f8fafc',
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
+                className="exam-modal-cancel-btn"
               >
                 Continue Editing
               </button>
               <button
                 type="button"
                 onClick={handleConfirmSubmit}
-                style={{
-                  padding: '8px 18px',
-                  borderRadius: '8px',
-                  backgroundColor: '#10b981',
-                  color: '#ffffff',
-                  fontWeight: 700,
-                  fontSize: '0.875rem',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
+                className="exam-modal-confirm-btn"
               >
                 Confirm &amp; Finalize
               </button>

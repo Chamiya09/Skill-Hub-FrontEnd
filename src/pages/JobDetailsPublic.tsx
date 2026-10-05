@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   jobApplicationsApi,
   publicJobsApi,
+  savedJobsApi,
   type JobDto,
 } from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -34,6 +35,8 @@ export const JobDetailsPublic: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
 
   const [isBookmarked, setIsBookmarked] = useState(false)
+  const [savedJobIds, setSavedJobIds] = useState<string[]>([])
+  const [isSavingBookmark, setIsSavingBookmark] = useState(false)
   const [shareCopied, setShareCopied] = useState(false)
   
   // One-click Digital CV application state
@@ -101,14 +104,93 @@ export const JobDetailsPublic: React.FC = () => {
     checkStatus()
   }, [id, currentUser, isEmployer])
 
+  // Check if job is bookmarked/saved by current candidate
+  useEffect(() => {
+    if (!currentUser || isEmployer) return
+
+    savedJobsApi.getIds()
+      .then((ids) => {
+        setSavedJobIds(ids)
+        if (id && ids.includes(id)) {
+          setIsBookmarked(true)
+        } else {
+          setIsBookmarked(false)
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load saved job IDs:', err)
+      })
+  }, [id, currentUser, isEmployer])
+
+  // Toggle Save/Bookmark for the currently viewed job
+  const handleToggleSave = async () => {
+    if (!id || isEmployer || isSavingBookmark) return
+
+    if (!currentUser) {
+      navigate(`/candidate/login?redirect=/jobs/${id}`)
+      return
+    }
+
+    const willBeSaved = !isBookmarked
+    setIsBookmarked(willBeSaved)
+    setSavedJobIds((prev) =>
+      willBeSaved ? [...prev, id] : prev.filter((item) => item !== id)
+    )
+    setIsSavingBookmark(true)
+
+    try {
+      if (willBeSaved) {
+        await savedJobsApi.save(id)
+      } else {
+        await savedJobsApi.remove(id)
+      }
+    } catch (err: any) {
+      console.error('Failed to update saved job status:', err)
+      // Rollback optimistic state on error
+      setIsBookmarked(!willBeSaved)
+      setSavedJobIds((prev) =>
+        willBeSaved ? prev.filter((item) => item !== id) : [...prev, id]
+      )
+    } finally {
+      setIsSavingBookmark(false)
+    }
+  }
+
+  // Toggle Save/Bookmark for suggested job cards
+  const handleToggleSuggestedBookmark = async (suggestedId: string) => {
+    if (!currentUser) {
+      navigate(`/candidate/login?redirect=/jobs/${id}`)
+      return
+    }
+    if (isEmployer) return
+
+    const wasSaved = savedJobIds.includes(suggestedId)
+    setSavedJobIds((prev) =>
+      wasSaved ? prev.filter((item) => item !== suggestedId) : [...prev, suggestedId]
+    )
+
+    try {
+      if (wasSaved) {
+        await savedJobsApi.remove(suggestedId)
+      } else {
+        await savedJobsApi.save(suggestedId)
+      }
+    } catch (err) {
+      console.error('Failed to update suggested job bookmark:', err)
+      setSavedJobIds((prev) =>
+        wasSaved ? [...prev, suggestedId] : prev.filter((item) => item !== suggestedId)
+      )
+    }
+  }
+
   // Fetch suggested matching jobs
   useEffect(() => {
     const fetchSuggested = async () => {
       try {
         setSuggestedLoading(true)
         const allJobs = await publicJobsApi.getJobs({ limit: 6 })
-        // Filter out current job and pick up to 3 suggested matches
-        const others = allJobs.filter((j) => j.id !== id).slice(0, 3)
+        // Filter out current job and pick up to 2 suggested matches
+        const others = allJobs.filter((j) => j.id !== id).slice(0, 2)
         setSuggestedJobs(others)
       } catch (err) {
         console.error('Error fetching suggested jobs:', err)
@@ -338,26 +420,6 @@ export const JobDetailsPublic: React.FC = () => {
           </div>
         )}
 
-        {/* Back navigation */}
-        <div style={{ marginBottom: '20px' }}>
-          <Link
-            to="/jobs"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              color: '#64748b',
-              fontSize: '14px',
-              fontWeight: 600,
-              textDecoration: 'none',
-              transition: 'color 0.15s ease',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#00b074')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#64748b')}
-          >
-            <span>← Back to Explore Jobs</span>
-          </Link>
-        </div>
 
         {/* ========================================================================= */}
         {/* HERO REQUISITION CARD */}
@@ -550,14 +612,15 @@ export const JobDetailsPublic: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <button
                   type="button"
-                  onClick={() => setIsBookmarked(!isBookmarked)}
+                  onClick={handleToggleSave}
+                  disabled={isSavingBookmark}
                   style={{
                     background: isBookmarked ? '#e6f9f2' : '#ffffff',
-                    border: '1px solid #e2e8f0',
+                    border: isBookmarked ? '1px solid #a7f3d0' : '1px solid #e2e8f0',
                     borderRadius: '12px',
                     padding: '10px 16px',
                     color: isBookmarked ? '#00b074' : '#64748b',
-                    cursor: 'pointer',
+                    cursor: isSavingBookmark ? 'wait' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
@@ -565,9 +628,10 @@ export const JobDetailsPublic: React.FC = () => {
                     fontWeight: 600,
                     transition: 'all 0.2s ease',
                   }}
+                  title={isBookmarked ? 'Saved to bookmarks' : 'Save job'}
                 >
                   <BookmarkIcon filled={isBookmarked} />
-                  <span>{isBookmarked ? 'Saved' : 'Save'}</span>
+                  <span>{isBookmarked ? 'Saved' : 'Save Job'}</span>
                 </button>
 
                 <button
@@ -631,69 +695,6 @@ export const JobDetailsPublic: React.FC = () => {
               >
                 About the Position
               </h2>
-
-              {/* Prominent Application Deadline Banner */}
-              {job.deadline && (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '12px',
-                    padding: '14px 18px',
-                    borderRadius: '12px',
-                    background: isExpired ? '#fef2f2' : '#fffbeb',
-                    border: `1px solid ${isExpired ? '#fecaca' : '#fde68a'}`,
-                    marginBottom: '24px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div
-                      style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        background: isExpired ? '#fee2e2' : '#fef3c7',
-                        color: isExpired ? '#ef4444' : '#d97706',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <ClockIcon />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '11.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px', color: isExpired ? '#b91c1c' : '#92400e' }}>
-                        Application Deadline
-                      </div>
-                      <div style={{ fontSize: '14.5px', fontWeight: 700, color: isExpired ? '#991b1b' : '#78350f', marginTop: '1px' }}>
-                        {new Date(job.deadline).toLocaleDateString('en-US', {
-                          weekday: 'short',
-                          month: 'long',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  <span
-                    style={{
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      padding: '4px 12px',
-                      borderRadius: '9999px',
-                      background: isExpired ? '#ef4444' : '#059669',
-                      color: '#ffffff',
-                    }}
-                  >
-                    {isExpired ? 'Applications Closed' : 'Accepting Applications'}
-                  </span>
-                </div>
-              )}
 
               {/* Render rich HTML safely with prose typography */}
               {job.description ? (
@@ -933,54 +934,7 @@ export const JobDetailsPublic: React.FC = () => {
               </div>
             </div>
 
-            {/* About Company Card */}
-            <div
-              style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '20px',
-                padding: '24px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.02)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                <div
-                  style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '10px',
-                    background: '#d1fae5',
-                    color: '#065f46',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 700,
-                    fontSize: '14px',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {dynamicLogoUrl ? (
-                    <img
-                      src={dynamicLogoUrl}
-                      alt={dynamicCompanyName}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={(e) => {
-                        (e.currentTarget as HTMLElement).style.display = 'none';
-                      }}
-                    />
-                  ) : null}
-                  {!dynamicLogoUrl && companyInitials}
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '14.5px', color: '#0f172a' }}>{dynamicCompanyName}</div>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>Verified Organization</div>
-                </div>
-              </div>
 
-              <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-                {dynamicCompanyName} is actively hiring through Skill Hub's verified technical talent network.
-              </p>
-            </div>
 
           </div>
         </div>
@@ -1063,8 +1017,8 @@ export const JobDetailsPublic: React.FC = () => {
           </div>
 
           {suggestedLoading ? (
-            <div className="suggested-jobs-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-              {Array.from({ length: 3 }).map((_, i) => (
+            <div className="suggested-jobs-grid grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              {Array.from({ length: 2 }).map((_, i) => (
                 <JobCardSkeleton key={i} />
               ))}
             </div>
@@ -1083,11 +1037,14 @@ export const JobDetailsPublic: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="suggested-jobs-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-              {suggestedJobs.map((sJob) => (
+            <div className="suggested-jobs-grid grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              {suggestedJobs.slice(0, 2).map((sJob) => (
                 <JobVacancyCard
                   key={sJob.id}
                   job={sJob}
+                  isBookmarked={savedJobIds.includes(sJob.id)}
+                  onToggleBookmark={handleToggleSuggestedBookmark}
+                  showBookmark={true}
                 />
               ))}
             </div>

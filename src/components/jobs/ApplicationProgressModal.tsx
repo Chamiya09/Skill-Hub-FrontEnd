@@ -6,7 +6,6 @@ import {
   BuildingIcon,
   ClockIcon,
   MapPinIcon,
-  SparkleIcon,
 } from '../common/Icons';
 
 const WrongTickIcon = () => (
@@ -26,23 +25,6 @@ const getApplicationStage = (status?: string | null): number => {
   if (value.includes('shortlist')) return 2;
   if (value.includes('review') || value.includes('screen')) return 1;
   return 0;
-};
-
-const getCopilotMessage = (stage: number, isRejected?: boolean, isSuspended?: boolean): string => {
-  if (isRejected) {
-    return 'Your application was not selected to proceed after the shortlisting review. Thank you for your interest and time.';
-  }
-  if (isSuspended) {
-    return 'Your technical assessment was suspended because the test session rules were not followed (e.g. closing browser tab, refreshing, or leaving the active exam). You cannot retake this assessment.';
-  }
-  return [
-    'Your application is submitted. Keep your Digital CV current while the hiring team begins its review.',
-    'Your profile is being reviewed. Prepare two measurable examples that demonstrate impact in this role.',
-    'You made the shortlist. A technical assessment may be dispatched by the hiring committee.',
-    'Your technical assessment has been sent by HR. Head to Technical Assessments to take your coding challenge.',
-    'Your interview stage is active. Rehearse concise STAR responses and questions for the hiring team.',
-    'Congratulations! You have been officially hired for this role! Welcome aboard and prepare for your onboarding journey.',
-  ][stage];
 };
 
 interface ApplicationProgressModalProps {
@@ -151,10 +133,6 @@ export const ApplicationProgressModal: React.FC<ApplicationProgressModalProps> =
             })}
           </div>
 
-          <div className="application-copilot">
-            <span className="application-copilot-icon"><SparkleIcon /></span>
-            <div><strong>AI COPILOT INSIGHT</strong><p>{getCopilotMessage(currentStage, isRejected, isSuspended)}</p></div>
-          </div>
         </div>
 
         <footer className="progress-modal-actions">

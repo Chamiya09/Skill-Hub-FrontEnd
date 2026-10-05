@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { AuthSplitLayout } from '../components/common/AuthSplitLayout';
 import {
-  SparkleIcon,
   ShieldCheckIcon,
   CheckIcon,
   ArrowRightIcon,
@@ -72,11 +72,14 @@ export const CandidateRegister: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // If already authenticated, redirect
+  // If already authenticated, redirect to appropriate role dashboard
   useEffect(() => {
     if (!authLoading && isAuthenticated && currentUser) {
-      if (currentUser.role?.toUpperCase() === 'CANDIDATE') {
-        navigate('/candidate/profile', { replace: true });
+      const role = currentUser.role?.toLowerCase();
+      if (role === 'admin' || role === 'super_admin') {
+        navigate('/skillhub-secure-admin/dashboard', { replace: true });
+      } else if (role === 'candidate') {
+        navigate('/candidate/dashboard', { replace: true });
       } else {
         navigate('/dashboard', { replace: true });
       }
@@ -180,24 +183,14 @@ export const CandidateRegister: React.FC = () => {
   };
 
   return (
-    <div className="auth-viewport-wrapper">
-      <div className="auth-card-premium auth-card-wizard">
-        {/* Top Navigation & Brand Header */}
-        <div className="auth-top-nav">
-          <Link to="/" className="auth-back-link">
-            <ArrowLeftIcon />
-            <span>Back to Home</span>
-          </Link>
-          <Link to="/" className="auth-brand-mark">
-            <div className="logo-icon-wrap" style={{ width: '30px', height: '30px', borderRadius: '8px' }}>
-              <SparkleIcon />
-            </div>
-            <span className="brand-name">
-              Skill<span>Hub</span>
-            </span>
-          </Link>
-        </div>
-
+    <AuthSplitLayout
+      portalType="candidate"
+      eyebrow="JOIN THE VERIFIED TALENT NETWORK"
+      quote="Your skills speak louder than any resume ever could."
+      description="Complete verified assessments, prove your engineering depth, and get matched with top tech companies actively hiring."
+      transitioning={Boolean(successMessage)}
+    >
+      <div className="auth-form-card auth-card-wizard animate-in fade-in duration-300">
         {/* Header Title Section */}
         <div className="auth-header">
           <div className="badge-tag" style={{ display: 'inline-flex', marginBottom: '8px' }}>
@@ -640,6 +633,6 @@ export const CandidateRegister: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </AuthSplitLayout>
   );
 };

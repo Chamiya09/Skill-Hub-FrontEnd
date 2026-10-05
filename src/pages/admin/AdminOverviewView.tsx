@@ -302,28 +302,13 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
                 <tbody>
                   {isLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
-                      <TableRowSkeleton key={i} cols={5} hasAvatar />
+                      <TableRowSkeleton key={i} cols={5} />
                     ))
                   ) : topCompanies.length > 0 ? (
                     topCompanies.map((comp) => (
                       <tr key={comp.id}>
                         <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <img
-                              src={comp.logo}
-                              alt={comp.name}
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src =
-                                  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80';
-                              }}
-                              style={{
-                                width: 30,
-                                height: 30,
-                                borderRadius: 8,
-                                objectFit: 'cover',
-                                border: '1px solid #dce7e2',
-                              }}
-                            />
+                          <div>
                             <div className="overview-role">
                               <strong>{comp.name}</strong>
                               <small>{comp.location}</small>

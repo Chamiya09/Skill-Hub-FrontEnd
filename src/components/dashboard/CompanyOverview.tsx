@@ -52,7 +52,7 @@ export const CompanyOverview: React.FC<CompanyOverviewProps> = ({
 
       <header className="overview-heading">
         <div><span className="overview-kicker"><SparkleIcon /> TALENT INTELLIGENCE</span>
-          <h1>Company Overview</h1><p>{companyName} candidate velocity and hiring signals at a glance.</p></div>
+          <h1><b>Company Overview</b></h1><p>{companyName} candidate velocity and hiring signals at a glance.</p></div>
         <button type="button" className="overview-primary-action" onClick={onOpenVacancies}>Manage Vacancies</button>
       </header>
 

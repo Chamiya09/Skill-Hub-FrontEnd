@@ -264,8 +264,29 @@ export const PublicCompanyProfile: React.FC = () => {
         </div>
 
         {/* Top Horizontal Box Details Row */}
-        <div className="public-company-hero-details">
-          <div className="public-company-meta-items">
+        <div
+          className="public-company-hero-details"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            flexWrap: 'wrap',
+            paddingTop: '18px',
+            borderTop: '1px solid #f1f5f9',
+            width: '100%',
+          }}
+        >
+          <div
+            className="public-company-meta-items"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              flexWrap: 'wrap',
+            }}
+          >
             {primaryLocation && (
               <div className="public-hero-meta-pill" title="Headquarters">
                 <MapPinIcon />
@@ -378,15 +399,34 @@ export const PublicCompanyProfile: React.FC = () => {
       </header>
 
       {/* =========================================================
-          2. TWO-COLUMN GRID LAYOUT (Main Content Left & Details Card Right)
+          2. CONTENT LAYOUT (About Us & Open Positions)
           ========================================================= */}
-      <div className="public-company-grid-layout">
-        {/* =========================================================
-            LEFT COLUMN (Approx. 2/3 Width): About Us & Open Positions
-            ========================================================= */}
-        <main className="public-company-main-col">
+      <div
+        className="public-company-grid-layout"
+        style={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '24px',
+        }}
+      >
+        <main
+          className="public-company-main-col"
+          style={{
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '24px',
+          }}
+        >
           {/* About Company Card */}
-          <section className="public-about-card">
+          <section
+            className="public-about-card"
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+            }}
+          >
             <div className="public-about-header">
               <div>
                 <h2>About {company.companyName}</h2>
@@ -497,7 +537,15 @@ export const PublicCompanyProfile: React.FC = () => {
               </div>
             ) : (
               <>
-                <div className="public-vacancies-grid">
+                <div
+                  className="public-vacancies-grid"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                    gap: '20px',
+                    width: '100%',
+                  }}
+                >
                   {displayedJobs.map((job) => (
                     <JobVacancyCard
                       key={job.id}

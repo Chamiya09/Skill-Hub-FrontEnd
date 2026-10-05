@@ -12038,16 +12038,18 @@ select.w-full {
 .public-company-hero-details {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 16px;
   flex-wrap: wrap;
   padding-top: 18px;
   border-top: 1px solid #f1f5f9;
+  width: 100%;
 }
 
 .public-company-meta-items {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   flex-wrap: wrap;
 }

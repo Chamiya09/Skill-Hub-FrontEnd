@@ -23,7 +23,7 @@ const INITIAL_MOCK_CANDIDATES: AdminCandidateDto[] = [
   {
     id: 'cand-001',
     name: 'Alex Rivera',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+    avatar: '',
     role: 'Senior Full-Stack Engineer',
     email: 'alex.rivera@example.com',
     topSkills: ['React', 'TypeScript', 'Node.js', '.NET 8', 'PostgreSQL'],
@@ -34,7 +34,7 @@ const INITIAL_MOCK_CANDIDATES: AdminCandidateDto[] = [
   {
     id: 'cand-002',
     name: 'Dr. Samantha Chen',
-    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=120&auto=format&fit=crop&q=80',
+    avatar: '',
     role: 'Lead AI / ML Researcher',
     email: 'samantha.chen@mllabs.ai',
     topSkills: ['Python', 'PyTorch', 'LLMs', 'Groq', 'FastAPI'],
@@ -45,7 +45,7 @@ const INITIAL_MOCK_CANDIDATES: AdminCandidateDto[] = [
   {
     id: 'cand-003',
     name: 'Marcus Vance',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
+    avatar: '',
     role: 'Staff DevOps & Cloud Architect',
     email: 'marcus.vance@cloudarch.dev',
     topSkills: ['Kubernetes', 'AWS', 'Terraform', 'Docker', 'CI/CD'],
@@ -56,7 +56,7 @@ const INITIAL_MOCK_CANDIDATES: AdminCandidateDto[] = [
   {
     id: 'cand-004',
     name: 'Elena Rostova',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80',
+    avatar: '',
     role: 'Staff Security Engineer',
     email: 'elena.rostova@cybershield.io',
     topSkills: ['OAuth2', 'Zero Trust', 'Pen Testing', 'Go', 'Rust'],
@@ -67,7 +67,7 @@ const INITIAL_MOCK_CANDIDATES: AdminCandidateDto[] = [
   {
     id: 'cand-005',
     name: 'David Okafor',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80',
+    avatar: '',
     role: 'Senior Frontend Architect',
     email: 'david.okafor@frontendhub.org',
     topSkills: ['Vue.js', 'Next.js', 'Tailwind CSS', 'GraphQL'],
@@ -78,7 +78,7 @@ const INITIAL_MOCK_CANDIDATES: AdminCandidateDto[] = [
   {
     id: 'cand-006',
     name: 'Clara Oswald',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80',
+    avatar: '',
     role: 'Junior Data Scientist',
     email: 'clara.oswald@analytics.co',
     topSkills: ['SQL', 'Pandas', 'Tableau', 'R'],
@@ -267,7 +267,6 @@ export const CandidatesView: React.FC = () => {
                 <th scope="col" className="px-6 py-4">Candidate Name</th>
                 <th scope="col" className="px-6 py-4">Email Address</th>
                 <th scope="col" className="px-6 py-4">Top Skills</th>
-                <th scope="col" className="px-6 py-4 text-center">Profile Strength</th>
                 <th scope="col" className="px-6 py-4 text-center">Account Status</th>
                 <th scope="col" className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -275,11 +274,11 @@ export const CandidatesView: React.FC = () => {
             <tbody className="divide-y divide-slate-200 bg-white">
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
-                  <TableRowSkeleton key={i} cols={6} hasAvatar />
+                  <TableRowSkeleton key={i} cols={5} />
                 ))
               ) : filteredCandidates.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-medium">
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
                     No candidates found matching "{searchQuery}"
                   </td>
                 </tr>
@@ -289,28 +288,9 @@ export const CandidatesView: React.FC = () => {
                     key={candidate.id}
                     className="hover:bg-slate-50/75 transition-colors duration-150"
                   >
-                    {/* 1. Candidate Name (Circular avatar placeholder) */}
+                    {/* 1. Candidate Name */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3.5">
-                        <div className="relative w-10 h-10 rounded-full overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 flex items-center justify-center text-slate-600 font-bold text-xs shadow-sm">
-                          {candidate.avatar ? (
-                            <img
-                              src={candidate.avatar}
-                              alt={candidate.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
-                          ) : (
-                            candidate.name
-                              .split(' ')
-                              .map((n) => n[0])
-                              .join('')
-                              .slice(0, 2)
-                              .toUpperCase()
-                          )}
-                        </div>
+                      <div>
                         <div>
                           <div className="font-semibold text-slate-900 text-sm flex items-center gap-1.5">
                             <span>{candidate.name}</span>
@@ -346,23 +326,7 @@ export const CandidatesView: React.FC = () => {
                       </div>
                     </td>
 
-                    {/* 4. Profile Strength (% percentage display) */}
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <div className="inline-flex flex-col items-center gap-1">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <Sparkles size={11} className="text-emerald-600" />
-                          <span>{candidate.aiMatchAverage}%</span>
-                        </span>
-                        <div className="w-16 bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-200/60">
-                          <div
-                            className="bg-emerald-500 h-1.5 rounded-full transition-all duration-300"
-                            style={{ width: `${Math.min(candidate.aiMatchAverage, 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* 5. Account Status (Active / Suspended Green/Red pill badges) */}
+                    {/* 4. Account Status (Active / Suspended Green/Red pill badges) */}
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       {candidate.status === 'Active' ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 ring-1 ring-inset ring-emerald-600/20">
@@ -377,7 +341,7 @@ export const CandidatesView: React.FC = () => {
                       )}
                     </td>
 
-                    {/* 6. Actions ("View", "Suspend/Activate" toggle) */}
+                    {/* 5. Actions ("View", "Suspend/Activate" toggle) */}
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="inline-flex items-center justify-end gap-2">
                         {/* View Button */}
@@ -456,14 +420,7 @@ export const CandidatesView: React.FC = () => {
           >
             {/* Header */}
             <div className="flex items-start justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-3.5">
-                <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-100 border-2 border-emerald-500 shadow-xs flex-shrink-0">
-                  <img
-                    src={activeCandidateModal.avatar}
-                    alt={activeCandidateModal.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+              <div>
                 <div>
                   <h3 className="text-lg font-bold text-slate-900">{activeCandidateModal.name}</h3>
                   <p className="text-xs text-slate-500">{activeCandidateModal.role}</p>

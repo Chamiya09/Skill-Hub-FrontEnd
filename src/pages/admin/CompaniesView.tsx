@@ -326,7 +326,7 @@ export const CompaniesView: React.FC = () => {
             <tbody className="divide-y divide-slate-200 bg-white">
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
-                  <TableRowSkeleton key={i} cols={5} hasAvatar />
+                  <TableRowSkeleton key={i} cols={5} />
                 ))
               ) : filteredCompanies.length === 0 ? (
                 <tr>
@@ -340,23 +340,9 @@ export const CompaniesView: React.FC = () => {
                     key={company.id}
                     className="hover:bg-slate-50/75 transition-colors duration-150"
                   >
-                    {/* 1. Company Name (With circular avatar/logo placeholder) */}
+                    {/* 1. Company Name */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3.5">
-                        <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 flex items-center justify-center text-slate-700 font-bold text-xs shadow-xs">
-                          {company.logo ? (
-                            <img
-                              src={company.logo}
-                              alt={company.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
-                          ) : (
-                            company.name.slice(0, 2).toUpperCase()
-                          )}
-                        </div>
+                      <div>
                         <div>
                           <div className="font-semibold text-slate-900 text-sm flex items-center gap-2">
                             <span>{company.name}</span>

@@ -38,6 +38,7 @@ import {
   DEFAULT_HOLIDAY_CALENDAR,
 } from '../services/googleCalendarService';
 import { AiInterviewSchedulerModal } from '../components/AiInterviewSchedulerModal';
+import { CalendarSkeleton, SkeletonStatValue } from '../components/common/SkeletonCard';
 import './MonthlyPlannerFull.css';
 import './CreativeCalendar.css';
 
@@ -198,7 +199,7 @@ export const MonthlyPlanner: React.FC = () => {
 
   // Events state
   const [events, setEvents] = useState<EventResponseDto[]>([]);
-  const [, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Toast notification state
@@ -777,7 +778,7 @@ export const MonthlyPlanner: React.FC = () => {
             <div className="summary-icon"><CalendarDays size={22} /></div>
             <div>
               <span>Total events</span>
-              <strong>{events.length}</strong>
+              <strong>{loading ? <SkeletonStatValue width="40px" /> : events.length}</strong>
               <small>{currentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} schedule</small>
             </div>
           </article>
@@ -785,7 +786,7 @@ export const MonthlyPlanner: React.FC = () => {
             <div className="summary-icon"><Sparkles size={22} /></div>
             <div>
               <span>Interviews & Pipeline</span>
-              <strong>{interviewCount}</strong>
+              <strong>{loading ? <SkeletonStatValue width="40px" /> : interviewCount}</strong>
               <small>Technical evaluations</small>
             </div>
           </article>
@@ -793,7 +794,7 @@ export const MonthlyPlanner: React.FC = () => {
             <div className="summary-icon"><Globe size={22} /></div>
             <div>
               <span>{currentCalendarOption.code} Holidays</span>
-              <strong>{holidaysEnabled ? holidays.length : 0}</strong>
+              <strong>{loading ? <SkeletonStatValue width="40px" /> : (holidaysEnabled ? holidays.length : 0)}</strong>
               <small>{holidaysEnabled ? `${currentCalendarOption.country} synced` : 'Sync disabled'}</small>
             </div>
           </article>
@@ -801,7 +802,7 @@ export const MonthlyPlanner: React.FC = () => {
             <div className="summary-icon"><Building2 size={22} /></div>
             <div>
               <span>Active departments</span>
-              <strong>{activeDepartments.length}</strong>
+              <strong>{loading ? <SkeletonStatValue width="40px" /> : activeDepartments.length}</strong>
               <small>{vacancies.length} job requisitions</small>
             </div>
           </article>
@@ -899,7 +900,11 @@ export const MonthlyPlanner: React.FC = () => {
           </div>
           <div className="planner-filter-heading-meta">
             <span className="filter-result-count">
-              {filteredEvents.length} of {events.length} events shown
+              {loading ? (
+                <span className="animate-pulse" style={{ display: 'inline-block', width: '90px', height: '14px', background: '#cbd5e1', borderRadius: '4px' }} />
+              ) : (
+                `${filteredEvents.length} of ${events.length} events shown`
+              )}
             </span>
             {holidaysEnabled && (
               <span className="filter-holiday-count">
@@ -917,28 +922,28 @@ export const MonthlyPlanner: React.FC = () => {
               className={`tab-btn ${eventTypeFilter === 'All' ? 'active' : ''}`}
               onClick={() => setEventTypeFilter('All')}
             >
-              All Events ({events.length})
+              All Events ({loading ? '...' : events.length})
             </button>
             <button
               type="button"
               className={`tab-btn ${eventTypeFilter === 'Interviews' ? 'active' : ''}`}
               onClick={() => setEventTypeFilter('Interviews')}
             >
-              Interviews ({interviewCount})
+              Interviews ({loading ? '...' : interviewCount})
             </button>
             <button
               type="button"
               className={`tab-btn ${eventTypeFilter === 'General' ? 'active' : ''}`}
               onClick={() => setEventTypeFilter('General')}
             >
-              General / Meetings ({generalCount})
+              General / Meetings ({loading ? '...' : generalCount})
             </button>
             <button
               type="button"
               className={`tab-btn ${eventTypeFilter === 'Holidays' ? 'active' : ''}`}
               onClick={() => setEventTypeFilter('Holidays')}
             >
-              {currentCalendarOption.flag} Holidays ({holidays.length})
+              {currentCalendarOption.flag} Holidays ({loading ? '...' : holidays.length})
             </button>
           </div>
 
@@ -1130,6 +1135,9 @@ export const MonthlyPlanner: React.FC = () => {
           </div>
 
           {/* Unified Creative Calendar Grid: Day Headers & Date Cells in ONE 7-column CSS Grid */}
+          {loading ? (
+            <CalendarSkeleton />
+          ) : (
           <div className="creative-calendar-grid">
             {/* Row 1: Day of Week Headers */}
             {DAYS_OF_WEEK.map((day, idx) => {
@@ -1271,6 +1279,7 @@ export const MonthlyPlanner: React.FC = () => {
               );
             })}
           </div>
+          )}
         </div>
       </div>
 

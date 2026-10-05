@@ -53,7 +53,15 @@ export const CompanyOverview: React.FC<CompanyOverviewProps> = ({
 
       <header className="overview-heading">
         <div><span className="overview-kicker"><SparkleIcon /> TALENT INTELLIGENCE</span>
-          <h1><b>Company Overview</b></h1><p>{companyName} candidate velocity and hiring signals at a glance.</p></div>
+          <h1><b>Company Overview</b></h1>
+          <p>
+            {loading && !companyName ? (
+              <span className="animate-pulse" style={{ display: 'inline-block', width: '280px', height: '14px', background: '#cbd5e1', borderRadius: '4px' }} />
+            ) : (
+              `${companyName} candidate velocity and hiring signals at a glance.`
+            )}
+          </p>
+        </div>
         <button type="button" className="overview-primary-action" onClick={onOpenVacancies}>Manage Vacancies</button>
       </header>
 
@@ -99,9 +107,7 @@ export const CompanyOverview: React.FC<CompanyOverviewProps> = ({
                 </thead>
                 <tbody>
                   {loading ? (
-                    Array.from({ length: 4 }).map((_, i) => (
-                      <TableRowSkeleton key={i} cols={4} hasAvatar />
-                    ))
+                    <TableRowSkeleton cols={4} rows={4} hasAvatar />
                   ) : topMatches.length > 0 ? (
                     topMatches.map((candidate, index) => {
                       const initials = candidate.candidateName
@@ -167,9 +173,7 @@ export const CompanyOverview: React.FC<CompanyOverviewProps> = ({
                 </thead>
                 <tbody>
                   {loading ? (
-                    Array.from({ length: 4 }).map((_, i) => (
-                      <TableRowSkeleton key={i} cols={4} hasAvatar />
-                    ))
+                    <TableRowSkeleton cols={4} rows={4} hasAvatar />
                   ) : vacancyMetrics.length > 0 ? (
                     vacancyMetrics.map((job) => (
                       <tr key={job.jobId}>

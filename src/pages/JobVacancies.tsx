@@ -16,7 +16,7 @@ import { Briefcase } from 'lucide-react';
 import { JobFormModal, type JobFormData } from '../components/jobs/JobFormModal';
 import { CandidatesListModal } from '../components/candidates/CandidatesListModal';
 import { jobsApi, type JobDto } from '../services/api';
-import { TableRowSkeleton } from '../components/common/SkeletonCard';
+import { TableRowSkeleton, SkeletonStatValue } from '../components/common/SkeletonCard';
 import './JobVacanciesFull.css';
 
 export interface JobVacancyItem {
@@ -291,7 +291,7 @@ export const JobVacancies = () => {
             <div className="summary-icon"><Briefcase size={22} /></div>
             <div>
               <span>Total vacancies</span>
-              <strong>{vacancies.length}</strong>
+              <strong>{isLoading ? <SkeletonStatValue width="40px" /> : vacancies.length}</strong>
               <small>All corporate positions</small>
             </div>
           </article>
@@ -299,7 +299,7 @@ export const JobVacancies = () => {
             <div className="summary-icon"><SparkleIcon /></div>
             <div>
               <span>Active positions</span>
-              <strong>{activeCount}</strong>
+              <strong>{isLoading ? <SkeletonStatValue width="40px" /> : activeCount}</strong>
               <small>Open for applications</small>
             </div>
           </article>
@@ -307,7 +307,7 @@ export const JobVacancies = () => {
             <div className="summary-icon"><ClockIcon /></div>
             <div>
               <span>Draft & Closed</span>
-              <strong>{draftCount + closedCount}</strong>
+              <strong>{isLoading ? <SkeletonStatValue width="40px" /> : (draftCount + closedCount)}</strong>
               <small>{draftCount} draft • {closedCount} closed</small>
             </div>
           </article>
@@ -315,7 +315,7 @@ export const JobVacancies = () => {
             <div className="summary-icon"><UsersIcon /></div>
             <div>
               <span>Total applicants</span>
-              <strong>{totalApplicants}</strong>
+              <strong>{isLoading ? <SkeletonStatValue width="40px" /> : totalApplicants}</strong>
               <small>Candidates in pipeline</small>
             </div>
           </article>
@@ -333,7 +333,11 @@ export const JobVacancies = () => {
             <h2>Find and manage positions</h2>
           </div>
           <span className="filter-result-count">
-            {filteredVacancies.length} of {vacancies.length} shown
+            {isLoading ? (
+              <span className="animate-pulse" style={{ display: 'inline-block', width: '90px', height: '14px', background: '#cbd5e1', borderRadius: '4px' }} />
+            ) : (
+              `${filteredVacancies.length} of ${vacancies.length} shown`
+            )}
           </span>
         </div>
 
@@ -345,28 +349,28 @@ export const JobVacancies = () => {
               className={`tab-btn ${statusFilter === 'All' ? 'active' : ''}`}
               onClick={() => setStatusFilter('All')}
             >
-              All Vacancies ({vacancies.length})
+              All Vacancies ({isLoading ? '...' : vacancies.length})
             </button>
             <button
               type="button"
               className={`tab-btn ${statusFilter === 'Active' ? 'active' : ''}`}
               onClick={() => setStatusFilter('Active')}
             >
-              Active ({activeCount})
+              Active ({isLoading ? '...' : activeCount})
             </button>
             <button
               type="button"
               className={`tab-btn ${statusFilter === 'Draft' ? 'active' : ''}`}
               onClick={() => setStatusFilter('Draft')}
             >
-              Draft ({draftCount})
+              Draft ({isLoading ? '...' : draftCount})
             </button>
             <button
               type="button"
               className={`tab-btn ${statusFilter === 'Closed' ? 'active' : ''}`}
               onClick={() => setStatusFilter('Closed')}
             >
-              Closed ({closedCount})
+              Closed ({isLoading ? '...' : closedCount})
             </button>
           </div>
 
@@ -483,9 +487,7 @@ export const JobVacancies = () => {
             </thead>
             <tbody>
               {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRowSkeleton key={i} cols={6} hasAvatar />
-                ))
+                <TableRowSkeleton cols={6} rows={5} hasAvatar />
               ) : filteredVacancies.length > 0 ? (
                 filteredVacancies.map((job) => (
                   <tr key={job.id} className="vacancies-table-row">

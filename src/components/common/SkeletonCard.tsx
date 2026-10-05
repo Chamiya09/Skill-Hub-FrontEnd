@@ -221,4 +221,47 @@ export const SkeletonGrid: React.FC<SkeletonCardProps> = ({ count = 6, variant =
   )
 }
 
+export const CalendarSkeleton: React.FC = () => {
+  const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+  return (
+    <div className="creative-calendar-grid animate-pulse" style={{ opacity: 0.9 }}>
+      {days.map((day) => (
+        <div
+          key={day}
+          className="creative-weekday-cell"
+          style={{ height: '38px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <span style={{ width: '34px', height: '12px', background: '#cbd5e1', borderRadius: '4px', display: 'inline-block' }} />
+        </div>
+      ))}
+      {Array.from({ length: 35 }).map((_, i) => (
+        <div
+          key={i}
+          className="creative-date-cell"
+          style={{
+            minHeight: '115px',
+            background: '#ffffff',
+            border: '1px solid #f1f5f9',
+            padding: '10px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#e2e8f0', display: 'inline-block' }} />
+            {i % 4 === 0 && <span style={{ width: '38px', height: '10px', borderRadius: '4px', background: '#f1f5f9' }} />}
+          </div>
+          {i % 2 === 0 && (
+            <div style={{ width: '88%', height: '22px', borderRadius: '6px', background: '#e2e8f0', marginTop: '4px' }} />
+          )}
+          {i % 3 === 0 && (
+            <div style={{ width: '70%', height: '20px', borderRadius: '6px', background: '#f1f5f9' }} />
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default SkeletonGrid

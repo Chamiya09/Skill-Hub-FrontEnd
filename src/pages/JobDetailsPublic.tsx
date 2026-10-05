@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   jobApplicationsApi,
   publicJobsApi,
+  savedJobsApi,
   type JobDto,
 } from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -34,6 +35,8 @@ export const JobDetailsPublic: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
 
   const [isBookmarked, setIsBookmarked] = useState(false)
+  const [savedJobIds, setSavedJobIds] = useState<string[]>([])
+  const [isSavingBookmark, setIsSavingBookmark] = useState(false)
   const [shareCopied, setShareCopied] = useState(false)
   
   // One-click Digital CV application state
@@ -100,6 +103,85 @@ export const JobDetailsPublic: React.FC = () => {
 
     checkStatus()
   }, [id, currentUser, isEmployer])
+
+  // Check if job is bookmarked/saved by current candidate
+  useEffect(() => {
+    if (!currentUser || isEmployer) return
+
+    savedJobsApi.getIds()
+      .then((ids) => {
+        setSavedJobIds(ids)
+        if (id && ids.includes(id)) {
+          setIsBookmarked(true)
+        } else {
+          setIsBookmarked(false)
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load saved job IDs:', err)
+      })
+  }, [id, currentUser, isEmployer])
+
+  // Toggle Save/Bookmark for the currently viewed job
+  const handleToggleSave = async () => {
+    if (!id || isEmployer || isSavingBookmark) return
+
+    if (!currentUser) {
+      navigate(`/candidate/login?redirect=/jobs/${id}`)
+      return
+    }
+
+    const willBeSaved = !isBookmarked
+    setIsBookmarked(willBeSaved)
+    setSavedJobIds((prev) =>
+      willBeSaved ? [...prev, id] : prev.filter((item) => item !== id)
+    )
+    setIsSavingBookmark(true)
+
+    try {
+      if (willBeSaved) {
+        await savedJobsApi.save(id)
+      } else {
+        await savedJobsApi.remove(id)
+      }
+    } catch (err: any) {
+      console.error('Failed to update saved job status:', err)
+      // Rollback optimistic state on error
+      setIsBookmarked(!willBeSaved)
+      setSavedJobIds((prev) =>
+        willBeSaved ? prev.filter((item) => item !== id) : [...prev, id]
+      )
+    } finally {
+      setIsSavingBookmark(false)
+    }
+  }
+
+  // Toggle Save/Bookmark for suggested job cards
+  const handleToggleSuggestedBookmark = async (suggestedId: string) => {
+    if (!currentUser) {
+      navigate(`/candidate/login?redirect=/jobs/${id}`)
+      return
+    }
+    if (isEmployer) return
+
+    const wasSaved = savedJobIds.includes(suggestedId)
+    setSavedJobIds((prev) =>
+      wasSaved ? prev.filter((item) => item !== suggestedId) : [...prev, suggestedId]
+    )
+
+    try {
+      if (wasSaved) {
+        await savedJobsApi.remove(suggestedId)
+      } else {
+        await savedJobsApi.save(suggestedId)
+      }
+    } catch (err) {
+      console.error('Failed to update suggested job bookmark:', err)
+      setSavedJobIds((prev) =>
+        wasSaved ? [...prev, suggestedId] : prev.filter((item) => item !== suggestedId)
+      )
+    }
+  }
 
   // Fetch suggested matching jobs
   useEffect(() => {
@@ -550,14 +632,15 @@ export const JobDetailsPublic: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <button
                   type="button"
-                  onClick={() => setIsBookmarked(!isBookmarked)}
+                  onClick={handleToggleSave}
+                  disabled={isSavingBookmark}
                   style={{
                     background: isBookmarked ? '#e6f9f2' : '#ffffff',
-                    border: '1px solid #e2e8f0',
+                    border: isBookmarked ? '1px solid #a7f3d0' : '1px solid #e2e8f0',
                     borderRadius: '12px',
                     padding: '10px 16px',
                     color: isBookmarked ? '#00b074' : '#64748b',
-                    cursor: 'pointer',
+                    cursor: isSavingBookmark ? 'wait' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
@@ -565,9 +648,10 @@ export const JobDetailsPublic: React.FC = () => {
                     fontWeight: 600,
                     transition: 'all 0.2s ease',
                   }}
+                  title={isBookmarked ? 'Saved to bookmarks' : 'Save job'}
                 >
                   <BookmarkIcon filled={isBookmarked} />
-                  <span>{isBookmarked ? 'Saved' : 'Save'}</span>
+                  <span>{isBookmarked ? 'Saved' : 'Save Job'}</span>
                 </button>
 
                 <button
@@ -978,6 +1062,9 @@ export const JobDetailsPublic: React.FC = () => {
                 <JobVacancyCard
                   key={sJob.id}
                   job={sJob}
+                  isBookmarked={savedJobIds.includes(sJob.id)}
+                  onToggleBookmark={handleToggleSuggestedBookmark}
+                  showBookmark={true}
                 />
               ))}
             </div>

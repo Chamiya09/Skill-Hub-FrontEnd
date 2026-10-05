@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { publicJobsApi, type JobDto } from '../services/api'
+import { publicJobsApi, savedJobsApi, type JobDto } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import { JobVacancyCard } from '../components/jobs/JobVacancyCard'
 import { SkeletonGrid } from '../components/common/SkeletonCard'
 import {
@@ -16,6 +17,7 @@ import './Home.css'
 
 export const Home = () => {
   const navigate = useNavigate()
+  const { currentUser } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [jobs, setJobs] = useState<JobDto[]>([])
   const [loading, setLoading] = useState(true)
@@ -46,10 +48,40 @@ export const Home = () => {
 
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([])
 
-  const toggleBookmark = (id: string) => {
+  // Sync saved bookmarks from database for logged in candidates
+  useEffect(() => {
+    if (!currentUser) return
+    const isCandidate = currentUser.role?.toLowerCase() === 'candidate'
+    if (!isCandidate) return
+
+    savedJobsApi.getIds()
+      .then(setBookmarkedIds)
+      .catch((err) => console.warn('Could not load saved job IDs on home:', err))
+  }, [currentUser])
+
+  const toggleBookmark = async (id: string) => {
+    if (!currentUser) {
+      navigate('/candidate/login?redirect=/')
+      return
+    }
+
+    const wasSaved = bookmarkedIds.includes(id)
     setBookmarkedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      wasSaved ? prev.filter((item) => item !== id) : [...prev, id]
     )
+
+    try {
+      if (wasSaved) {
+        await savedJobsApi.remove(id)
+      } else {
+        await savedJobsApi.save(id)
+      }
+    } catch (err) {
+      console.error('Failed to update saved job status:', err)
+      setBookmarkedIds((prev) =>
+        wasSaved ? [...new Set([...prev, id])] : prev.filter((item) => item !== id)
+      )
+    }
   }
 
   return (

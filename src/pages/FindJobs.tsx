@@ -83,6 +83,10 @@ export const FindJobs = () => {
   }, [jobs])
 
   const toggleBookmark = async (id: string) => {
+    if (!currentUser) {
+      navigate('/candidate/login?redirect=/jobs')
+      return
+    }
     if (!isCandidate) return
 
     const wasSaved = bookmarkedIds.includes(id)

@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   companyProfileApi,
+  savedJobsApi,
   type CompanyProfileDto,
   type JobDto,
 } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { JobVacancyCard } from '../components/jobs/JobVacancyCard';
 import { SkeletonGrid } from '../components/common/SkeletonCard';
 import {
@@ -30,6 +32,8 @@ import {
 
 export const PublicCompanyProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
   const [company, setCompany] = useState<CompanyProfileDto | null>(null);
   const [jobs, setJobs] = useState<JobDto[]>([]);
@@ -40,6 +44,17 @@ export const PublicCompanyProfile: React.FC = () => {
   const [selectedDept, setSelectedDept] = useState<string>('ALL');
   const [showAllJobs, setShowAllJobs] = useState<boolean>(false);
   const [logoError, setLogoError] = useState<boolean>(false);
+
+  // Sync saved bookmarks from database
+  useEffect(() => {
+    if (!currentUser) return;
+    const isCandidate = currentUser.role?.toLowerCase() === 'candidate';
+    if (!isCandidate) return;
+
+    savedJobsApi.getIds()
+      .then(setBookmarkedIds)
+      .catch((err) => console.warn('Could not load saved job IDs:', err));
+  }, [currentUser]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -88,10 +103,30 @@ export const PublicCompanyProfile: React.FC = () => {
     };
   }, [id]);
 
-  const toggleBookmark = (jobId: string) => {
+  const toggleBookmark = async (jobId: string) => {
+    if (!currentUser) {
+      navigate(`/candidate/login?redirect=/company/${id}`);
+      return;
+    }
+
+    const wasSaved = bookmarkedIds.includes(jobId);
     setBookmarkedIds((prev) =>
-      prev.includes(jobId) ? prev.filter((i) => i !== jobId) : [...prev, jobId]
+      wasSaved ? prev.filter((i) => i !== jobId) : [...prev, jobId]
     );
+
+    try {
+      if (wasSaved) {
+        await savedJobsApi.remove(jobId);
+      } else {
+        await savedJobsApi.save(jobId);
+      }
+    } catch (err) {
+      console.error('Failed to update saved job status:', err);
+      // Revert optimistic update
+      setBookmarkedIds((prev) =>
+        wasSaved ? [...new Set([...prev, jobId])] : prev.filter((i) => i !== jobId)
+      );
+    }
   };
 
   // Strict Frontend Filter: ensure ONLY jobs matching this specific company's ID or exact company name are displayed

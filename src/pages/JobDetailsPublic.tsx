@@ -870,54 +870,7 @@ export const JobDetailsPublic: React.FC = () => {
               </div>
             </div>
 
-            {/* About Company Card */}
-            <div
-              style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '20px',
-                padding: '24px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.02)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                <div
-                  style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '10px',
-                    background: '#d1fae5',
-                    color: '#065f46',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 700,
-                    fontSize: '14px',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {dynamicLogoUrl ? (
-                    <img
-                      src={dynamicLogoUrl}
-                      alt={dynamicCompanyName}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={(e) => {
-                        (e.currentTarget as HTMLElement).style.display = 'none';
-                      }}
-                    />
-                  ) : null}
-                  {!dynamicLogoUrl && companyInitials}
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '14.5px', color: '#0f172a' }}>{dynamicCompanyName}</div>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>Verified Organization</div>
-                </div>
-              </div>
 
-              <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-                {dynamicCompanyName} is actively hiring through Skill Hub's verified technical talent network.
-              </p>
-            </div>
 
           </div>
         </div>

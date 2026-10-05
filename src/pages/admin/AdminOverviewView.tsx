@@ -81,11 +81,6 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
     ? Math.round((totalPlacementsCount / totalCandidatesCount) * 100)
     : 0;
 
-  // Sorted list samples for panels
-  const topCandidates = [...candidates]
-    .sort((a, b) => b.aiMatchAverage - a.aiMatchAverage)
-    .slice(0, 5);
-
   const topCompanies = [...companies]
     .sort((a, b) => (b.activeJobPosts + b.totalHires) - (a.activeJobPosts + a.totalHires))
     .slice(0, 5);
@@ -166,113 +161,8 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
 
       {/* 3. DUAL-COLUMN CONTENT GRID */}
       <div className="overview-content-grid">
-        {/* 3.1 LEFT MAIN COLUMN: TOP CANDIDATES & ACTIVE EMPLOYERS */}
+        {/* 3.1 LEFT MAIN COLUMN: ACTIVE EMPLOYERS */}
         <div className="overview-main-column">
-          {/* Top AI Verified Talent Panel */}
-          <section className="overview-panel">
-            <div className="overview-panel-heading">
-              <div>
-                <h2>Top AI Talent Matches</h2>
-                <p>Leading benchmark assessment scores across verified candidates</p>
-              </div>
-              <button
-                type="button"
-                className="overview-text-action"
-                onClick={() => onNavigateTab('candidates')}
-              >
-                View all candidates ({totalCandidatesCount}) →
-              </button>
-            </div>
-            <div className="overview-table-scroll">
-              <table className="overview-table">
-                <thead>
-                  <tr>
-                    <th>Candidate</th>
-                    <th>Verified Skills</th>
-                    <th>AI Match Score</th>
-                    <th style={{ textAlign: 'right' }}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    Array.from({ length: 5 }).map((_, i) => (
-                      <TableRowSkeleton key={i} cols={4} hasAvatar />
-                    ))
-                  ) : topCandidates.length > 0 ? (
-                    topCandidates.map((candidate, index) => {
-                      const initials = candidate.name
-                        .split(' ')
-                        .map((p) => p[0])
-                        .join('')
-                        .slice(0, 2)
-                        .toUpperCase();
-
-                      return (
-                        <tr key={candidate.id}>
-                          <td>
-                            <div className="overview-candidate">
-                              <span>{initials || 'CD'}</span>
-                              <div>
-                                <strong>{candidate.name}</strong>
-                                <small>
-                                  {candidate.role ? `${candidate.role} • ${candidate.location}` : `Rank #${index + 1} • ${candidate.location}`}
-                                </small>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                              {candidate.topSkills.slice(0, 2).map((skill) => (
-                                <span
-                                  key={skill}
-                                  style={{
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    background: '#f1f5f9',
-                                    color: '#334155',
-                                    padding: '2px 6px',
-                                    borderRadius: 4,
-                                  }}
-                                >
-                                  {skill}
-                                </span>
-                              ))}
-                              {candidate.topSkills.length > 2 && (
-                                <span style={{ fontSize: 10, color: '#94a3b8' }}>
-                                  +{candidate.topSkills.length - 2}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td>
-                            <b className="overview-score">
-                              {candidate.aiMatchAverage}% Match
-                            </b>
-                          </td>
-                          <td style={{ textAlign: 'right' }}>
-                            <button
-                              type="button"
-                              className="overview-ghost-action"
-                              onClick={() => onNavigateTab('candidates')}
-                            >
-                              Inspect Candidate
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan={4} className="overview-empty">
-                        No candidate profiles registered yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
           {/* Active Enterprise Employers Panel */}
           <section className="overview-panel">
             <div className="overview-panel-heading">

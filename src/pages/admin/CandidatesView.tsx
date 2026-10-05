@@ -8,10 +8,8 @@ import {
   CheckCircle2,
   ShieldAlert,
   X,
-  Sparkles,
   Mail,
   MapPin,
-  TrendingUp,
 } from 'lucide-react';
 import '../../pages/TechnicalAssessmentsFull.css';
 import '../../pages/admin/AdminDashboard.css';
@@ -152,9 +150,6 @@ export const CandidatesView: React.FC = () => {
   const totalCandidatesCount = candidates.length;
   const activeCount = candidates.filter((c) => c.status === 'Active').length;
   const suspendedCount = candidates.filter((c) => c.status === 'Suspended').length;
-  const avgStrength = candidates.length
-    ? Math.round(candidates.reduce((sum, c) => sum + (c.aiMatchAverage || 0), 0) / candidates.length)
-    : 0;
 
   return (
     <div className="flex flex-col gap-6 w-full font-sans antialiased text-slate-800">
@@ -185,14 +180,6 @@ export const CandidatesView: React.FC = () => {
               <span>Total Candidates</span>
               <strong>{isLoading ? <SkeletonStatValue width="55px" /> : totalCandidatesCount}</strong>
               <small>{isLoading ? <SkeletonStatLabel width="140px" /> : 'Registered candidate profiles'}</small>
-            </div>
-          </article>
-          <article className="pipeline-summary-card summary-ready">
-            <div className="summary-icon"><TrendingUp size={20} /></div>
-            <div>
-              <span>Avg Profile Strength</span>
-              <strong>{isLoading ? <SkeletonStatValue width="50px" /> : `${avgStrength}%`}</strong>
-              <small>{isLoading ? <SkeletonStatLabel width="115px" /> : 'Across verified skills'}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-active">
@@ -450,15 +437,6 @@ export const CandidatesView: React.FC = () => {
                   Location
                 </span>
                 <span className="font-medium text-slate-900">{activeCandidateModal.location}</span>
-              </div>
-              <div className="flex justify-between items-center py-1.5 border-b border-slate-50">
-                <span className="text-slate-500 flex items-center gap-1.5">
-                  <Sparkles size={14} className="text-emerald-500" />
-                  Profile Strength
-                </span>
-                <span className="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 text-xs">
-                  {activeCandidateModal.aiMatchAverage}% Benchmark
-                </span>
               </div>
               <div className="flex justify-between items-center py-1.5 border-b border-slate-50">
                 <span className="text-slate-500">Account Authorization</span>

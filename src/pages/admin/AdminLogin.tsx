@@ -59,11 +59,6 @@ export const AdminLogin: React.FC = () => {
     }
   };
 
-  const handleFillDemoAdmin = () => {
-    setEmail('admin@skillhub.internal');
-    setPassword('SkillHub@Admin2026');
-  };
-
   return (
     <AuthSplitLayout
       eyebrow="PLATFORM OPERATIONS"
@@ -144,20 +139,6 @@ export const AdminLogin: React.FC = () => {
           </button>
         </form>
 
-        {/* Quick Credentials Helper for Evaluation / Testing */}
-        <div className="admin-login-hint">
-          <div className="admin-hint-header">
-            <span>Development Master Credentials</span>
-            <button
-              type="button"
-              onClick={handleFillDemoAdmin}
-              className="admin-hint-fill-btn"
-            >
-              Auto-Fill
-            </button>
-          </div>
-          <code>admin@skillhub.internal / SkillHub@Admin2026</code>
-        </div>
       </div>
     </AuthSplitLayout>
   );

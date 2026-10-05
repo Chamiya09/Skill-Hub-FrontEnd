@@ -248,24 +248,24 @@ export const CandidatesView: React.FC = () => {
 
         {/* Data Table */}
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-            <thead className="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-xs">
+          <table className="min-w-full divide-y divide-slate-200 text-left text-sm company-table">
+            <thead className="bg-[#f8fafc] border-b border-slate-200">
               <tr>
-                <th scope="col" className="px-6 py-4">Candidate Name</th>
-                <th scope="col" className="px-6 py-4">Email Address</th>
-                <th scope="col" className="px-6 py-4">Top Skills</th>
-                <th scope="col" className="px-6 py-4 text-center">Account Status</th>
-                <th scope="col" className="px-6 py-4 text-right">Actions</th>
+                <th scope="col" className="px-6 py-3.5 text-[11.5px] font-extrabold uppercase tracking-[0.5px] text-slate-500">Candidate Name</th>
+                <th scope="col" className="px-6 py-3.5 text-[11.5px] font-extrabold uppercase tracking-[0.5px] text-slate-500">Email Address</th>
+                <th scope="col" className="px-6 py-3.5 text-[11.5px] font-extrabold uppercase tracking-[0.5px] text-slate-500">Top Skills</th>
+                <th scope="col" className="px-6 py-3.5 text-center text-[11.5px] font-extrabold uppercase tracking-[0.5px] text-slate-500">Account Status</th>
+                <th scope="col" className="px-6 py-3.5 text-right text-[11.5px] font-extrabold uppercase tracking-[0.5px] text-slate-500">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
+            <tbody className="divide-y divide-slate-100 bg-white">
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <TableRowSkeleton key={i} cols={5} />
                 ))
               ) : filteredCandidates.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium text-[13.5px]">
                     No candidates found matching "{searchQuery}"
                   </td>
                 </tr>
@@ -273,16 +273,16 @@ export const CandidatesView: React.FC = () => {
                 filteredCandidates.map((candidate) => (
                   <tr
                     key={candidate.id}
-                    className="hover:bg-slate-50/75 transition-colors duration-150"
+                    className="hover:bg-[#fbfcfe] transition-colors duration-150"
                   >
                     {/* 1. Candidate Name */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div>
-                          <div className="font-semibold text-slate-900 text-sm flex items-center gap-1.5">
-                            <span>{candidate.name}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[14.5px] font-bold text-slate-900 tracking-[-0.2px] hover:text-[#00b074] transition-colors">{candidate.name}</span>
                           </div>
-                          <div className="text-xs text-slate-500 mt-0.5">
+                          <div className="text-[12px] font-medium text-slate-500 mt-0.5">
                             {candidate.role || 'Full-Stack Candidate'}
                           </div>
                         </div>
@@ -290,7 +290,7 @@ export const CandidatesView: React.FC = () => {
                     </td>
 
                     {/* 2. Email Address */}
-                    <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-mono text-xs">
+                    <td className="px-6 py-4 whitespace-nowrap text-[13px] font-medium text-slate-600 font-sans">
                       {candidate.email}
                     </td>
 
@@ -300,13 +300,13 @@ export const CandidatesView: React.FC = () => {
                         {candidate.topSkills.slice(0, 4).map((skill) => (
                           <span
                             key={skill}
-                            className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200/70 transition-colors"
+                            className="inline-flex items-center px-2 py-0.5 rounded-md text-[11.5px] font-semibold bg-slate-100 text-slate-700 border border-slate-200/80 hover:bg-slate-200/70 transition-colors"
                           >
                             {skill}
                           </span>
                         ))}
                         {candidate.topSkills.length > 4 && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11.5px] font-bold bg-[#e6f9f2] text-[#009663] border border-[#b7eedc]">
                             +{candidate.topSkills.length - 4}
                           </span>
                         )}
@@ -316,13 +316,13 @@ export const CandidatesView: React.FC = () => {
                     {/* 4. Account Status (Active / Suspended Green/Red pill badges) */}
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       {candidate.status === 'Active' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 ring-1 ring-inset ring-emerald-600/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold bg-[#e6f9f2] text-[#009663] border border-[#b7eedc]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#00b074] shadow-[0_0_0_2px_rgba(0,176,116,0.25)]" />
                           Active
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 ring-1 ring-inset ring-rose-600/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold bg-[#fef2f2] text-[#dc2626] border border-[#fecaca]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] shadow-[0_0_0_2px_rgba(239,68,68,0.25)]" />
                           Suspended
                         </span>
                       )}
@@ -335,7 +335,7 @@ export const CandidatesView: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setActiveCandidateModal(candidate)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold shadow-xs transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-[12px] font-semibold shadow-xs transition-colors"
                           title="View profile details"
                         >
                           <Eye size={13} className="text-slate-500" />
@@ -346,7 +346,7 @@ export const CandidatesView: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => toggleCandidateStatus(candidate.id)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border shadow-xs ${
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors border shadow-xs ${
                             candidate.status === 'Active'
                               ? 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100/80'
                               : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100/80'
@@ -375,14 +375,14 @@ export const CandidatesView: React.FC = () => {
         </div>
 
         {/* Table Footer: Summary telemetry */}
-        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+        <div className="px-6 py-3.5 bg-[#f8fafc] border-t border-slate-200 flex items-center justify-between text-[12px] font-medium text-slate-500">
           <span>
             {isLoading ? (
               <span className="inline-block w-44 h-3.5 bg-slate-200 animate-pulse rounded" />
             ) : (
               <>
-                Showing <strong className="text-slate-900 font-semibold">{filteredCandidates.length}</strong> of{' '}
-                <strong className="text-slate-900 font-semibold">{candidates.length}</strong> candidate profiles
+                Showing <strong className="text-slate-900 font-bold">{filteredCandidates.length}</strong> of{' '}
+                <strong className="text-slate-900 font-bold">{candidates.length}</strong> candidate profiles
               </>
             )}
           </span>
@@ -409,8 +409,8 @@ export const CandidatesView: React.FC = () => {
             <div className="flex items-start justify-between border-b border-slate-100 pb-4">
               <div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900">{activeCandidateModal.name}</h3>
-                  <p className="text-xs text-slate-500">{activeCandidateModal.role}</p>
+                  <h3 className="text-base font-bold text-slate-900">{activeCandidateModal.name}</h3>
+                  <p className="text-[12px] font-medium text-slate-500">{activeCandidateModal.role}</p>
                 </div>
               </div>
               <button
@@ -423,20 +423,20 @@ export const CandidatesView: React.FC = () => {
             </div>
 
             {/* Profile Metrics */}
-            <div className="space-y-3 text-sm">
+            <div className="space-y-3 text-[13px]">
               <div className="flex justify-between items-center py-1.5 border-b border-slate-50">
-                <span className="text-slate-500 flex items-center gap-1.5">
+                <span className="text-slate-500 flex items-center gap-1.5 font-medium text-[12.5px]">
                   <Mail size={14} className="text-slate-400" />
                   Email
                 </span>
-                <span className="font-mono text-xs font-semibold text-slate-900">{activeCandidateModal.email}</span>
+                <span className="font-sans text-[13px] font-semibold text-slate-900">{activeCandidateModal.email}</span>
               </div>
               <div className="flex justify-between items-center py-1.5 border-b border-slate-50">
-                <span className="text-slate-500 flex items-center gap-1.5">
+                <span className="text-slate-500 flex items-center gap-1.5 font-medium text-[12.5px]">
                   <MapPin size={14} className="text-slate-400" />
                   Location
                 </span>
-                <span className="font-medium text-slate-900">{activeCandidateModal.location}</span>
+                <span className="font-medium text-slate-900 text-[13px]">{activeCandidateModal.location}</span>
               </div>
               <div className="flex justify-between items-center py-1.5 border-b border-slate-50">
                 <span className="text-slate-500">Account Authorization</span>

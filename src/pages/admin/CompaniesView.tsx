@@ -313,24 +313,24 @@ export const CompaniesView: React.FC = () => {
 
         {/* Data Table */}
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-            <thead className="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-xs">
+          <table className="min-w-full divide-y divide-slate-200 text-left text-sm company-table">
+            <thead className="bg-[#f8fafc] border-b border-slate-200">
               <tr>
-                <th scope="col" className="px-6 py-4">Company Name</th>
-                <th scope="col" className="px-6 py-4">HR Contact Email</th>
-                <th scope="col" className="px-6 py-4 text-center">Active Job Posts</th>
-                <th scope="col" className="px-6 py-4 text-center">Account Status</th>
-                <th scope="col" className="px-6 py-4 text-right">Actions</th>
+                <th scope="col" className="px-6 py-3.5 text-[11.5px] font-extrabold uppercase tracking-[0.5px] text-slate-500">Company Name</th>
+                <th scope="col" className="px-6 py-3.5 text-[11.5px] font-extrabold uppercase tracking-[0.5px] text-slate-500">HR Contact Email</th>
+                <th scope="col" className="px-6 py-3.5 text-center text-[11.5px] font-extrabold uppercase tracking-[0.5px] text-slate-500">Active Job Posts</th>
+                <th scope="col" className="px-6 py-3.5 text-center text-[11.5px] font-extrabold uppercase tracking-[0.5px] text-slate-500">Account Status</th>
+                <th scope="col" className="px-6 py-3.5 text-right text-[11.5px] font-extrabold uppercase tracking-[0.5px] text-slate-500">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
+            <tbody className="divide-y divide-slate-100 bg-white">
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <TableRowSkeleton key={i} cols={5} />
                 ))
               ) : filteredCompanies.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium text-[13.5px]">
                     No companies found matching "{searchQuery}"
                   </td>
                 </tr>
@@ -338,34 +338,36 @@ export const CompaniesView: React.FC = () => {
                 filteredCompanies.map((company) => (
                   <tr
                     key={company.id}
-                    className="hover:bg-slate-50/75 transition-colors duration-150"
+                    className="hover:bg-[#fbfcfe] transition-colors duration-150"
                   >
                     {/* 1. Company Name */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div>
-                          <div className="font-semibold text-slate-900 text-sm flex items-center gap-2">
-                            <span>{company.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[14.5px] font-bold text-slate-900 tracking-[-0.2px] hover:text-[#00b074] transition-colors">{company.name}</span>
                             <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
                               {company.tier || 'Enterprise'}
                             </span>
                           </div>
-                          <div className="text-xs text-slate-500 mt-0.5">
-                            {company.industry} • {company.location}
+                          <div className="text-[12px] font-medium text-slate-500 mt-0.5 flex items-center gap-1.5">
+                            <span>{company.industry}</span>
+                            <span className="text-slate-300">•</span>
+                            <span>{company.location}</span>
                           </div>
                         </div>
                       </div>
                     </td>
 
                     {/* 2. HR Contact Email */}
-                    <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-mono text-xs">
+                    <td className="px-6 py-4 whitespace-nowrap text-[13px] font-medium text-slate-600 font-sans">
                       {company.contactEmail}
                     </td>
 
                     {/* 3. Active Job Posts (Integer count badge) */}
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 ring-1 ring-inset ring-blue-600/20">
-                        <Briefcase size={12} className="text-blue-600" />
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold bg-[#eff6ff] text-[#1d4ed8] border border-[#bfdbfe]">
+                        <Briefcase size={12} className="text-[#2563eb]" />
                         <span>{company.activeJobPosts} Active</span>
                       </span>
                     </td>
@@ -373,13 +375,13 @@ export const CompaniesView: React.FC = () => {
                     {/* 4. Account Status (Active / Suspended Green/Red pill badges) */}
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       {company.status === 'Active' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 ring-1 ring-inset ring-emerald-600/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold bg-[#e6f9f2] text-[#009663] border border-[#b7eedc]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#00b074] shadow-[0_0_0_2px_rgba(0,176,116,0.25)]" />
                           Active
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 ring-1 ring-inset ring-rose-600/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold bg-[#fef2f2] text-[#dc2626] border border-[#fecaca]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] shadow-[0_0_0_2px_rgba(239,68,68,0.25)]" />
                           Suspended
                         </span>
                       )}
@@ -392,7 +394,7 @@ export const CompaniesView: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setViewJobsModalCompany(company)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold shadow-xs transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-[12px] font-semibold shadow-xs transition-colors"
                           title="Inspect active job postings"
                         >
                           <Briefcase size={13} className="text-slate-500" />
@@ -403,7 +405,7 @@ export const CompaniesView: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => toggleCompanyStatus(company.id)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border shadow-xs ${
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors border shadow-xs ${
                             company.status === 'Active'
                               ? 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100/80'
                               : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100/80'
@@ -432,14 +434,14 @@ export const CompaniesView: React.FC = () => {
         </div>
 
         {/* Table Footer */}
-        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+        <div className="px-6 py-3.5 bg-[#f8fafc] border-t border-slate-200 flex items-center justify-between text-[12px] font-medium text-slate-500">
           <span>
             {isLoading ? (
               <span className="inline-block w-44 h-3.5 bg-slate-200 animate-pulse rounded" />
             ) : (
               <>
-                Showing <strong className="text-slate-900 font-semibold">{filteredCompanies.length}</strong> of{' '}
-                <strong className="text-slate-900 font-semibold">{companies.length}</strong> registered employers
+                Showing <strong className="text-slate-900 font-bold">{filteredCompanies.length}</strong> of{' '}
+                <strong className="text-slate-900 font-bold">{companies.length}</strong> registered employers
               </>
             )}
           </span>
@@ -466,15 +468,15 @@ export const CompaniesView: React.FC = () => {
             <div className="flex items-start justify-between border-b border-slate-100 pb-4">
               <div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                     {viewJobsModalCompany.name}
-                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                    <span className="text-[11.5px] px-2.5 py-0.5 rounded-full font-bold bg-[#eff6ff] text-[#1d4ed8] border border-[#bfdbfe]">
                       {viewJobsModalCompany.activeJobPosts} Active Postings
                     </span>
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
+                  <p className="text-[12px] font-medium text-slate-500 mt-0.5 flex items-center gap-2">
                     <span>{viewJobsModalCompany.industry}</span>
-                    <span>•</span>
+                    <span className="text-slate-300">•</span>
                     <span className="flex items-center gap-1"><MapPin size={11} /> {viewJobsModalCompany.location}</span>
                   </p>
                 </div>
@@ -489,10 +491,10 @@ export const CompaniesView: React.FC = () => {
             </div>
 
             {/* Quick Metadata */}
-            <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+            <div className="grid grid-cols-2 gap-3 text-[12px] bg-slate-50 p-3 rounded-xl border border-slate-200/60">
               <div className="flex items-center gap-2 text-slate-600">
                 <Mail size={13} className="text-slate-400" />
-                <span>HR: <strong className="text-slate-800 font-mono">{viewJobsModalCompany.contactEmail}</strong></span>
+                <span>HR: <strong className="text-slate-800 font-sans font-medium">{viewJobsModalCompany.contactEmail}</strong></span>
               </div>
               <div className="flex items-center gap-2 text-slate-600 justify-end">
                 <a
@@ -509,7 +511,7 @@ export const CompaniesView: React.FC = () => {
 
             {/* Jobs List */}
             <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              <h4 className="text-[11px] font-extrabold uppercase tracking-[0.5px] text-slate-500">
                 Live Campaign Requisitions
               </h4>
               {viewJobsModalCompany.activeJobPosts === 0 ? (
@@ -540,17 +542,17 @@ export const CompaniesView: React.FC = () => {
                     className="p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white transition-colors flex items-center justify-between"
                   >
                     <div>
-                      <div className="font-semibold text-slate-900 text-sm">{job.title}</div>
-                      <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
-                        <span className="font-medium text-slate-700">{job.department}</span>
-                        <span>•</span>
+                      <div className="font-bold text-slate-900 text-[14px]">{job.title}</div>
+                      <div className="text-[12px] text-slate-500 flex items-center gap-2 mt-0.5 font-medium">
+                        <span className="font-semibold text-slate-700">{job.department}</span>
+                        <span className="text-slate-300">•</span>
                         <span>{job.type}</span>
-                        <span>•</span>
+                        <span className="text-slate-300">•</span>
                         <span className="flex items-center gap-1"><Calendar size={11} /> {job.postedDate}</span>
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md border border-emerald-200">
+                      <span className="inline-flex items-center gap-1 text-[11.5px] font-bold bg-[#e6f9f2] text-[#009663] px-2.5 py-1 rounded-md border border-[#b7eedc]">
                         {job.applicants} Applicants
                       </span>
                     </div>

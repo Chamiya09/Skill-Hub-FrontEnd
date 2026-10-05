@@ -294,24 +294,24 @@ export const InquiriesView: React.FC = () => {
 
         {/* Data Table */}
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-            <thead className="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-xs">
+          <table className="min-w-full divide-y divide-slate-200 text-left text-sm company-table">
+            <thead className="bg-[#f8fafc] border-b border-slate-200">
               <tr>
-                <th scope="col" className="px-6 py-4">Sender Details</th>
-                <th scope="col" className="px-6 py-4">Subject</th>
-                <th scope="col" className="px-6 py-4 text-center">Date Received</th>
-                <th scope="col" className="px-6 py-4 text-center">Status</th>
-                <th scope="col" className="px-6 py-4 text-right">Actions</th>
+                <th scope="col" className="px-6 py-3.5 text-[11.5px] font-extrabold uppercase tracking-[0.5px] text-slate-500">Sender Details</th>
+                <th scope="col" className="px-6 py-3.5 text-[11.5px] font-extrabold uppercase tracking-[0.5px] text-slate-500">Subject</th>
+                <th scope="col" className="px-6 py-3.5 text-center text-[11.5px] font-extrabold uppercase tracking-[0.5px] text-slate-500">Date Received</th>
+                <th scope="col" className="px-6 py-3.5 text-center text-[11.5px] font-extrabold uppercase tracking-[0.5px] text-slate-500">Status</th>
+                <th scope="col" className="px-6 py-3.5 text-right text-[11.5px] font-extrabold uppercase tracking-[0.5px] text-slate-500">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
+            <tbody className="divide-y divide-slate-100 bg-white">
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <TableRowSkeleton key={i} cols={5} hasAvatar />
                 ))
               ) : filteredInquiries.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium text-[13.5px]">
                     No inquiries found matching "{searchQuery}"
                   </td>
                 </tr>
@@ -319,7 +319,7 @@ export const InquiriesView: React.FC = () => {
                 filteredInquiries.map((inq) => (
                   <tr
                     key={inq.id}
-                    className="hover:bg-slate-50/75 transition-colors duration-150"
+                    className="hover:bg-[#fbfcfe] transition-colors duration-150"
                   >
                     {/* 1. Sender Details (Display Name + Candidate/Company indicator) */}
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -342,8 +342,8 @@ export const InquiriesView: React.FC = () => {
                           )}
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-900 text-sm flex items-center gap-2">
-                            <span>{inq.sender}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[14.5px] font-bold text-slate-900 tracking-[-0.2px] hover:text-[#00b074] transition-colors">{inq.sender}</span>
                             {/* Candidate or Company Indicator Pill */}
                             <span
                               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
@@ -357,8 +357,14 @@ export const InquiriesView: React.FC = () => {
                               {inq.senderType}
                             </span>
                           </div>
-                          <div className="text-xs text-slate-500 font-mono mt-0.5">
-                            {inq.email} {inq.organization && `• ${inq.organization}`}
+                          <div className="text-[12px] font-medium text-slate-500 mt-0.5 font-sans flex items-center gap-1.5">
+                            <span>{inq.email}</span>
+                            {inq.organization && (
+                              <>
+                                <span className="text-slate-300">•</span>
+                                <span>{inq.organization}</span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -368,19 +374,19 @@ export const InquiriesView: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="max-w-xs md:max-w-md">
                         <p
-                          className="font-medium text-slate-900 text-sm truncate"
+                          className="font-bold text-slate-900 text-[13.5px] tracking-[-0.15px] truncate"
                           title={inq.subject}
                         >
                           {inq.subject}
                         </p>
-                        <p className="text-xs text-slate-500 truncate mt-0.5">
+                        <p className="text-[12px] font-medium text-slate-500 truncate mt-0.5">
                           {inq.message}
                         </p>
                       </div>
                     </td>
 
                     {/* 3. Date Received ('MMM DD, YYYY') */}
-                    <td className="px-6 py-4 whitespace-nowrap text-center text-xs text-slate-600 font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-[12.5px] text-slate-600 font-semibold font-sans">
                       <span className="inline-flex items-center gap-1.5">
                         <Calendar size={12} className="text-slate-400" />
                         <span>{inq.date}</span>
@@ -390,20 +396,20 @@ export const InquiriesView: React.FC = () => {
                     {/* 4. Status (New / Read / Resolved — Blue/Gray/Green pill badges) */}
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       {inq.status === 'New' && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 ring-1 ring-inset ring-blue-600/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold bg-[#eff6ff] text-[#1d4ed8] border border-[#bfdbfe]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#2563eb] shadow-[0_0_0_2px_rgba(37,99,235,0.25)]" />
                           New
                         </span>
                       )}
                       {inq.status === 'Read' && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 ring-1 ring-inset ring-slate-600/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shadow-[0_0_0_2px_rgba(148,163,184,0.25)]" />
                           Read
                         </span>
                       )}
                       {inq.status === 'Resolved' && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 ring-1 ring-inset ring-emerald-600/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold bg-[#e6f9f2] text-[#009663] border border-[#b7eedc]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#00b074] shadow-[0_0_0_2px_rgba(0,176,116,0.25)]" />
                           Resolved
                         </span>
                       )}
@@ -416,7 +422,7 @@ export const InquiriesView: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleReadInquiry(inq)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold shadow-xs transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-[12px] font-semibold shadow-xs transition-colors"
                           title="Open and read inquiry"
                         >
                           <Eye size={13} className="text-slate-500" />
@@ -427,7 +433,7 @@ export const InquiriesView: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => toggleResolved(inq.id)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border shadow-xs ${
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors border shadow-xs ${
                             inq.status === 'Resolved'
                               ? 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
                               : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100/80'
@@ -456,14 +462,14 @@ export const InquiriesView: React.FC = () => {
         </div>
 
         {/* Table Footer */}
-        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+        <div className="px-6 py-3.5 bg-[#f8fafc] border-t border-slate-200 flex items-center justify-between text-[12px] font-medium text-slate-500">
           <span>
             {isLoading ? (
               <span className="inline-block w-40 h-3.5 bg-slate-200 animate-pulse rounded" />
             ) : (
               <>
-                Showing <strong className="text-slate-900 font-semibold">{filteredInquiries.length}</strong> of{' '}
-                <strong className="text-slate-900 font-semibold">{inquiries.length}</strong> inquiries
+                Showing <strong className="text-slate-900 font-bold">{filteredInquiries.length}</strong> of{' '}
+                <strong className="text-slate-900 font-bold">{inquiries.length}</strong> inquiries
               </>
             )}
           </span>
@@ -507,10 +513,10 @@ export const InquiriesView: React.FC = () => {
                   )}
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900">{activeMessageModal.sender}</h3>
-                  <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
-                    <span className="font-mono text-slate-700">{activeMessageModal.email}</span>
-                    <span>•</span>
+                  <h3 className="text-base font-bold text-slate-900">{activeMessageModal.sender}</h3>
+                  <div className="text-[12px] text-slate-500 flex items-center gap-2 mt-0.5 font-medium">
+                    <span className="font-sans text-slate-700">{activeMessageModal.email}</span>
+                    <span className="text-slate-300">•</span>
                     <span className="font-semibold text-slate-600">{activeMessageModal.senderType}</span>
                   </div>
                 </div>
@@ -526,13 +532,13 @@ export const InquiriesView: React.FC = () => {
 
             {/* Inquiry Content */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+              <div className="flex items-center justify-between text-[12px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                 <span className="flex items-center gap-1.5 font-medium">
                   <Calendar size={13} className="text-slate-400" />
                   Received: <strong className="text-slate-700">{activeMessageModal.date}</strong>
                 </span>
                 <span
-                  className={`px-2 py-0.5 rounded-full font-semibold ${
+                  className={`px-2 py-0.5 rounded-full font-bold text-[11px] ${
                     activeMessageModal.status === 'Resolved'
                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                       : activeMessageModal.status === 'Read'
@@ -545,8 +551,8 @@ export const InquiriesView: React.FC = () => {
               </div>
 
               <div>
-                <h4 className="text-sm font-bold text-slate-900 mb-1">{activeMessageModal.subject}</h4>
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
+                <h4 className="text-[14px] font-bold text-slate-900 mb-1">{activeMessageModal.subject}</h4>
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-slate-700 text-[13px] leading-relaxed whitespace-pre-wrap font-sans">
                   {activeMessageModal.message}
                 </div>
               </div>

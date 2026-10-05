@@ -2084,83 +2084,204 @@
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 
-/* Company-Side Badges & Status Pills */
-.badge-active-pill {
+/* ==========================================================================
+   COMPANY-SIDE BADGES & STATUS PILLS (UNIFIED WITH ATS PORTAL)
+   ========================================================================== */
+.badge-pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
+  gap: 6px;
+  padding: 3.5px 10px;
   border-radius: 9999px;
-  font-size: 11.5px;
-  font-weight: 750;
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
-  color: #047857;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
-.badge-suspended-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  border-radius: 9999px;
-  font-size: 11.5px;
-  font-weight: 750;
+.badge-active-pill,
+.badge-active {
+  background: #e6f9f2;
+  color: #009663;
+  border: 1px solid #b7eedc;
+}
+
+.badge-suspended-pill,
+.badge-suspended {
   background: #fef2f2;
-  border: 1px solid #fecaca;
   color: #dc2626;
+  border: 1px solid #fecaca;
 }
 
-/* Company-Side Table Container */
+.badge-info-pill,
+.badge-blue {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.badge-neutral-pill,
+.badge-gray {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.badge-dot-green {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00b074;
+  box-shadow: 0 0 0 2px rgba(0, 176, 116, 0.25);
+  flex-shrink: 0;
+}
+
+.badge-dot-red {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+  flex-shrink: 0;
+}
+
+.badge-dot-blue {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+  flex-shrink: 0;
+}
+
+.badge-dot-gray {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #64748b;
+  box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.25);
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   COMPANY-SIDE TABLE CONTAINER & TEXT STYLING
+   Directly harmonized with Company Vacancies, Applicants, and Overview Tables
+   ========================================================================== */
 .company-table-card {
   width: 100%;
   background: #ffffff;
-  border: 1px solid #dce7e2;
-  border-radius: 18px;
-  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.035);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
   overflow: hidden;
 }
 
-.company-table {
+.company-table,
+.admin-data-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
   font-size: 13.5px;
 }
 
-.company-table thead tr {
+.company-table thead tr,
+.admin-data-table thead tr {
   background: #f8fafc;
   border-bottom: 1px solid #e2e8f0;
 }
 
-.company-table th {
+.company-table th,
+.admin-data-table th {
   padding: 14px 24px;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 800;
   color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.5px;
 }
 
-.company-table td {
+.company-table td,
+.admin-data-table td {
   padding: 16px 24px;
   border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+  font-size: 13.5px;
+  color: #334155;
   transition: background 0.15s ease;
 }
 
-.company-table tbody tr:hover {
-  background: #fcfdfd;
+.company-table tbody tr:hover,
+.admin-data-table tbody tr:hover {
+  background: #fbfcfe;
 }
 
-.company-table-footer {
-  padding: 12px 24px;
+.company-table-footer,
+.admin-table-footer {
+  padding: 14px 24px;
   background: #f8fafc;
-  border-top: 1px solid #edf2f7;
+  border-top: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 12.5px;
+  font-size: 12px;
+  font-weight: 500;
   color: #64748b;
+}
+
+/* Typography tokens matching Company Side */
+.table-entity-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.2px;
+  line-height: 1.35;
+}
+
+.table-entity-subtitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.table-cell-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  font-family: inherit;
+}
+
+/* Harmonize Admin Overview View table with Company Side */
+.company-overview .overview-table th {
+  padding: 13px 18px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.company-overview .overview-table td {
+  padding: 15px 18px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 13.5px;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.company-overview .overview-role strong {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.2px;
+}
+
+.company-overview .overview-role small {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: 2px;
 }
 
 /* ==========================================================================

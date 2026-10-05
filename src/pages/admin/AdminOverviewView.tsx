@@ -206,23 +206,23 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
                           </div>
                         </td>
                         <td>
-                          <span style={{ fontSize: 11.5, color: '#475569' }}>
+                          <span style={{ fontSize: 13, fontWeight: 500, color: '#475569' }}>
                             {comp.industry}
                           </span>
                         </td>
                         <td>
-                          <span style={{ fontWeight: 700, color: '#1d4ed8' }}>
+                          <span className="badge-pill badge-blue">
                             {comp.activeJobPosts} Vacancies
                           </span>
                         </td>
                         <td>
-                          <span style={{ fontWeight: 700, color: '#008e60' }}>
+                          <span className="badge-pill badge-active">
                             {comp.totalHires} Hires
                           </span>
                         </td>
                         <td>
-                          <span className="overview-status">
-                            <i />
+                          <span className={`badge-pill ${comp.status === 'Active' ? 'badge-active' : 'badge-suspended-pill'}`}>
+                            <span className={comp.status === 'Active' ? 'badge-dot-green' : 'badge-dot-red'} />
                             {comp.status}
                           </span>
                         </td>

@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { SleekSpinner } from './SkeletonCard';
+import { SparkleIcon } from './Icons';
 import { SuspendedAccountModal } from './SuspendedAccountModal';
+import './ProtectedRoute.css';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -34,16 +35,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   if (isLoading) {
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#f8fafc',
-        }}
-      >
-        <SleekSpinner size="lg" text="Verifying session credentials..." />
+      <div className="session-loading-screen" role="status" aria-live="polite">
+        <div className="session-loading-mark" aria-hidden="true">
+          <span className="session-loading-ring" />
+          <span className="session-loading-sparkle"><SparkleIcon /></span>
+        </div>
+        <span className="session-loading-message">Loading your applications...</span>
       </div>
     );
   }

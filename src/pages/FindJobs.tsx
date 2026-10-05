@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { publicJobsApi, savedJobsApi, type JobDto } from '../services/api'
 import { JobVacancyCard } from '../components/jobs/JobVacancyCard'
 import { SkeletonGrid } from '../components/common/SkeletonCard'
@@ -14,6 +14,7 @@ import {
 
 export const FindJobs = () => {
   const { currentUser } = useAuth()
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const initialSearch = searchParams.get('search') || ''
 

@@ -2584,6 +2584,16 @@ export interface AdminCandidateDto {
   aiMatchAverage: number;
   status: 'Active' | 'Suspended';
   location: string;
+  phone?: string;
+  experienceYears?: number | string;
+  education?: string;
+  joinedDate?: string;
+  lastActive?: string;
+  assessmentsCompleted?: number;
+  portfolioUrl?: string;
+  githubUrl?: string;
+  linkedinUrl?: string;
+  bio?: string;
 }
 
 export interface AdminCompanyDto {
@@ -2599,6 +2609,11 @@ export interface AdminCompanyDto {
   tier: 'Enterprise' | 'Startup' | 'ScaleUp';
   location: string;
   joinedDate: string;
+  description?: string;
+  companySize?: string;
+  phone?: string;
+  headquarters?: string;
+  verifiedBadge?: boolean;
 }
 
 export interface AdminInquiryDto {
@@ -2612,6 +2627,10 @@ export interface AdminInquiryDto {
   date: string;
   status: 'New' | 'Read' | 'Resolved';
   priority: 'High' | 'Normal';
+  category?: string;
+  phone?: string;
+  deviceInfo?: string;
+  resolutionNotes?: string;
 }
 
 export interface CreateInquiryPayload {

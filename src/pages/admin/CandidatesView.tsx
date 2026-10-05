@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   ShieldAlert,
   X,
-  Sparkles,
   Mail,
   MapPin,
 } from 'lucide-react';
@@ -438,15 +437,6 @@ export const CandidatesView: React.FC = () => {
                   Location
                 </span>
                 <span className="font-medium text-slate-900">{activeCandidateModal.location}</span>
-              </div>
-              <div className="flex justify-between items-center py-1.5 border-b border-slate-50">
-                <span className="text-slate-500 flex items-center gap-1.5">
-                  <Sparkles size={14} className="text-emerald-500" />
-                  Profile Strength
-                </span>
-                <span className="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 text-xs">
-                  {activeCandidateModal.aiMatchAverage}% Benchmark
-                </span>
               </div>
               <div className="flex justify-between items-center py-1.5 border-b border-slate-50">
                 <span className="text-slate-500">Account Authorization</span>

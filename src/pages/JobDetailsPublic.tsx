@@ -107,8 +107,8 @@ export const JobDetailsPublic: React.FC = () => {
       try {
         setSuggestedLoading(true)
         const allJobs = await publicJobsApi.getJobs({ limit: 6 })
-        // Filter out current job and pick up to 3 suggested matches
-        const others = allJobs.filter((j) => j.id !== id).slice(0, 3)
+        // Filter out current job and pick up to 2 suggested matches
+        const others = allJobs.filter((j) => j.id !== id).slice(0, 2)
         setSuggestedJobs(others)
       } catch (err) {
         console.error('Error fetching suggested jobs:', err)
@@ -632,69 +632,6 @@ export const JobDetailsPublic: React.FC = () => {
                 About the Position
               </h2>
 
-              {/* Prominent Application Deadline Banner */}
-              {job.deadline && (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '12px',
-                    padding: '14px 18px',
-                    borderRadius: '12px',
-                    background: isExpired ? '#fef2f2' : '#fffbeb',
-                    border: `1px solid ${isExpired ? '#fecaca' : '#fde68a'}`,
-                    marginBottom: '24px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div
-                      style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        background: isExpired ? '#fee2e2' : '#fef3c7',
-                        color: isExpired ? '#ef4444' : '#d97706',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <ClockIcon />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '11.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px', color: isExpired ? '#b91c1c' : '#92400e' }}>
-                        Application Deadline
-                      </div>
-                      <div style={{ fontSize: '14.5px', fontWeight: 700, color: isExpired ? '#991b1b' : '#78350f', marginTop: '1px' }}>
-                        {new Date(job.deadline).toLocaleDateString('en-US', {
-                          weekday: 'short',
-                          month: 'long',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  <span
-                    style={{
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      padding: '4px 12px',
-                      borderRadius: '9999px',
-                      background: isExpired ? '#ef4444' : '#059669',
-                      color: '#ffffff',
-                    }}
-                  >
-                    {isExpired ? 'Applications Closed' : 'Accepting Applications'}
-                  </span>
-                </div>
-              )}
-
               {/* Render rich HTML safely with prose typography */}
               {job.description ? (
                 <div
@@ -1063,8 +1000,8 @@ export const JobDetailsPublic: React.FC = () => {
           </div>
 
           {suggestedLoading ? (
-            <div className="suggested-jobs-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-              {Array.from({ length: 3 }).map((_, i) => (
+            <div className="suggested-jobs-grid grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              {Array.from({ length: 2 }).map((_, i) => (
                 <JobCardSkeleton key={i} />
               ))}
             </div>
@@ -1083,8 +1020,8 @@ export const JobDetailsPublic: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="suggested-jobs-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-              {suggestedJobs.map((sJob) => (
+            <div className="suggested-jobs-grid grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              {suggestedJobs.slice(0, 2).map((sJob) => (
                 <JobVacancyCard
                   key={sJob.id}
                   job={sJob}

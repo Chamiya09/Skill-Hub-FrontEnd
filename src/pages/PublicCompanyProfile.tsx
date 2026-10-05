@@ -24,6 +24,8 @@ import {
   BriefcaseIcon,
   ArrowRightIcon,
   SparkleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
 } from '../components/common/Icons';
 
 export const PublicCompanyProfile: React.FC = () => {
@@ -35,6 +37,8 @@ export const PublicCompanyProfile: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedDept, setSelectedDept] = useState<string>('ALL');
+  const [showAllJobs, setShowAllJobs] = useState<boolean>(false);
   const [logoError, setLogoError] = useState<boolean>(false);
 
   useEffect(() => {
@@ -110,19 +114,45 @@ export const PublicCompanyProfile: React.FC = () => {
     });
   }, [jobs, company]);
 
-  // Filter company's jobs by search term (title, department, location, tags)
-  const filteredJobs = useMemo(() => {
-    if (!searchQuery.trim()) return companyJobs;
-    const q = searchQuery.toLowerCase().trim();
-    return companyJobs.filter((job) => {
-      const inTitle = job.title.toLowerCase().includes(q);
-      const inDept = job.department.toLowerCase().includes(q);
-      const inLoc = job.location.toLowerCase().includes(q);
-      const inType = job.employmentType.toLowerCase().includes(q);
-      const inTags = job.tags ? job.tags.some((t) => t.toLowerCase().includes(q)) : false;
-      return inTitle || inDept || inLoc || inType || inTags;
+  // Extract unique departments for dynamic quick filters
+  const departments = useMemo(() => {
+    const depts = new Set<string>();
+    companyJobs.forEach((job) => {
+      if (job.department && job.department.trim()) {
+        depts.add(job.department.trim());
+      }
     });
-  }, [companyJobs, searchQuery]);
+    return Array.from(depts);
+  }, [companyJobs]);
+
+  // Filter company's jobs by search term and selected department
+  const filteredJobs = useMemo(() => {
+    let result = companyJobs;
+
+    if (selectedDept !== 'ALL') {
+      result = result.filter(
+        (job) => (job.department || '').toLowerCase().trim() === selectedDept.toLowerCase().trim()
+      );
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter((job) => {
+        const inTitle = job.title?.toLowerCase().includes(q);
+        const inDept = job.department?.toLowerCase().includes(q);
+        const inLoc = job.location?.toLowerCase().includes(q);
+        const inType = job.employmentType?.toLowerCase().includes(q);
+        const inTags = job.tags ? job.tags.some((t) => t.toLowerCase().includes(q)) : false;
+        return inTitle || inDept || inLoc || inType || inTags;
+      });
+    }
+
+    return result;
+  }, [companyJobs, selectedDept, searchQuery]);
+
+  const INITIAL_VISIBLE_COUNT = 4;
+  const isFiltering = searchQuery.trim().length > 0 || selectedDept !== 'ALL';
+  const displayedJobs = isFiltering || showAllJobs ? filteredJobs : filteredJobs.slice(0, INITIAL_VISIBLE_COUNT);
 
   const companyInitials =
     (company?.companyName || 'CO')
@@ -295,6 +325,36 @@ export const PublicCompanyProfile: React.FC = () => {
               )}
             </div>
 
+            {/* Department Quick Filter Tabs */}
+            {departments.length >= 2 && (
+              <div className="public-jobs-dept-tabs">
+                <button
+                  type="button"
+                  className={`public-jobs-dept-chip ${selectedDept === 'ALL' ? 'active' : ''}`}
+                  onClick={() => setSelectedDept('ALL')}
+                >
+                  <span>All Roles</span>
+                  <span className="public-jobs-dept-count">{companyJobs.length}</span>
+                </button>
+                {departments.map((dept) => {
+                  const count = companyJobs.filter(
+                    (j) => (j.department || '').toLowerCase().trim() === dept.toLowerCase().trim()
+                  ).length;
+                  return (
+                    <button
+                      key={dept}
+                      type="button"
+                      className={`public-jobs-dept-chip ${selectedDept.toLowerCase() === dept.toLowerCase() ? 'active' : ''}`}
+                      onClick={() => setSelectedDept(dept)}
+                    >
+                      <span>{dept}</span>
+                      <span className="public-jobs-dept-count">{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {/* Reused Unified JobVacancyCard Components */}
             {filteredJobs.length === 0 ? (
               <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '48px 24px', textAlign: 'center' }}>
@@ -321,17 +381,46 @@ export const PublicCompanyProfile: React.FC = () => {
                 )}
               </div>
             ) : (
-              <div className="public-vacancies-grid">
-                {filteredJobs.map((job) => (
-                  <JobVacancyCard
-                    key={job.id}
-                    job={job}
-                    isBookmarked={bookmarkedIds.includes(job.id)}
-                    onToggleBookmark={toggleBookmark}
-                    showBookmark={true}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="public-vacancies-grid">
+                  {displayedJobs.map((job) => (
+                    <JobVacancyCard
+                      key={job.id}
+                      job={job}
+                      isBookmarked={bookmarkedIds.includes(job.id)}
+                      onToggleBookmark={toggleBookmark}
+                      showBookmark={true}
+                    />
+                  ))}
+                </div>
+
+                {/* Progressive Show More / Show Less Controls */}
+                {!isFiltering && filteredJobs.length > INITIAL_VISIBLE_COUNT && (
+                  <div className="public-jobs-load-more">
+                    <span className="public-jobs-count-hint">
+                      Showing {displayedJobs.length} of {filteredJobs.length} open positions
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowAllJobs((prev) => !prev)}
+                      className="btn-show-more-jobs"
+                    >
+                      {showAllJobs ? (
+                        <>
+                          <span>Show Less</span>
+                          <ChevronUpIcon />
+                        </>
+                      ) : (
+                        <>
+                          <span>View All {filteredJobs.length} Positions</span>
+                          <span className="remaining-badge">+{filteredJobs.length - INITIAL_VISIBLE_COUNT} more</span>
+                          <ChevronDownIcon />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </section>
         </main>

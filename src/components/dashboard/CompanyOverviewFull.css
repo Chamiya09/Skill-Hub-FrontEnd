@@ -122,27 +122,36 @@
   background: linear-gradient(180deg, #ffffff, #fbfdfc);
 }
 
-.company-overview .overview-panel-heading h2 { font-size: 15px; }
-.company-overview .overview-panel-heading p { margin-top: 4px; font-size: 10.5px; }
-.company-overview .overview-live-badge { padding: 6px 10px; border: 1px solid #a7f3d0; }
-.company-overview .overview-table th { padding: 12px 18px; background: #f8fbfa; }
-.company-overview .overview-table td { padding: 15px 18px; border-top-color: #edf2f0; font-size: 11.5px; }
-.company-overview .overview-candidate > span { width: 38px; height: 38px; }
+.company-overview .overview-panel-heading h2 { font-size: 16px; }
+.company-overview .overview-panel-heading p { margin-top: 4px; font-size: 12px; }
+.company-overview .overview-live-badge { padding: 6px 10px; border: 1px solid #a7f3d0; font-size: 10px; }
+.company-overview .overview-table th { padding: 12px 18px; background: #f8fbfa; font-size: 10.5px; }
+.company-overview .overview-table td { padding: 15px 18px; border-top-color: #edf2f0; font-size: 13px; }
+.company-overview .overview-candidate > span { width: 38px; height: 38px; font-size: 11px; }
 .company-overview .overview-candidate strong,
-.company-overview .overview-role strong { font-size: 11.5px; }
-.company-overview .overview-score { padding: 6px 9px; background: linear-gradient(135deg, #00b074, #008f60); }
+.company-overview .overview-role strong { font-size: 14px; }
+.company-overview .overview-candidate small,
+.company-overview .overview-role small { font-size: 11.5px; }
+.company-overview .overview-score { padding: 6px 9px; background: linear-gradient(135deg, #00b074, #008f60); font-size: 10.5px; }
+.company-overview .overview-ghost-action { font-size: 10.5px; }
+.company-overview .overview-status { font-size: 10.5px; }
+.company-overview .overview-text-action { font-size: 11.5px; }
 
 .company-overview .overview-funnel { padding: 21px 21px 10px; gap: 15px; }
+.company-overview .funnel-stage-label { font-size: 12px; }
 .company-overview .funnel-track { height: 8px; }
+.company-overview .funnel-stage small { font-size: 9.5px; }
 .company-overview .funnel-summary { margin: 10px 21px 0; padding: 14px; }
 .company-overview .funnel-summary strong { font-size: 21px; }
+.company-overview .funnel-summary span { font-size: 10.5px; }
 
 .company-overview .ai-alert { margin: 15px 16px 0; padding: 14px; gap: 11px; }
 .company-overview .ai-alert > i { width: 32px; height: 32px; }
 .company-overview .ai-alert > i svg { width: 15px; height: 15px; color: #00a36c; }
-.company-overview .ai-alert strong { font-size: 11px; }
-.company-overview .ai-alert p { font-size: 9.5px; }
-.company-overview .activity-link { margin: 15px 16px 0; padding: 11px 13px; }
+.company-overview .ai-alert strong { font-size: 12px; }
+.company-overview .ai-alert p { font-size: 11px; }
+.company-overview .ai-alert small { font-size: 9.5px; }
+.company-overview .activity-link { margin: 15px 16px 0; padding: 11px 13px; font-size: 11.5px; }
 
 @media (min-width: 1700px) {
   .company-overview .overview-content-grid { grid-template-columns: minmax(0, 2.2fr) minmax(360px, .8fr); }

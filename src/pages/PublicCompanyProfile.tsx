@@ -220,45 +220,160 @@ export const PublicCompanyProfile: React.FC = () => {
   return (
     <div className="public-company-container">
       {/* =========================================================
-          1. CLEAN TOP HEADER (Strictly Brand Logo, Name, Verified Badge & Positions Count)
+          1. TOP HORIZONTAL HERO (Brand Identity & Consolidated Details)
           ========================================================= */}
       <header className="public-company-hero">
-        <div className="public-company-identity-stack">
-          {/* Company Logo / Initials Avatar */}
-          <div className="public-company-logo-badge">
-            {company.logoUrl && !logoError ? (
-              <img
-                src={company.logoUrl}
-                alt={`${company.companyName} Logo`}
-                onError={() => setLogoError(true)}
-              />
-            ) : (
-              <span className="public-company-logo-initials">{companyInitials}</span>
-            )}
+        <div className="public-company-hero-top">
+          <div className="public-company-identity-stack">
+            {/* Company Logo / Initials Avatar */}
+            <div className="public-company-logo-badge">
+              {company.logoUrl && !logoError ? (
+                <img
+                  src={company.logoUrl}
+                  alt={`${company.companyName} Logo`}
+                  onError={() => setLogoError(true)}
+                />
+              ) : (
+                <span className="public-company-logo-initials">{companyInitials}</span>
+              )}
+            </div>
+
+            {/* Identity Title & Verified Tag */}
+            <div className="public-company-title-box">
+              <div className="public-company-title-row">
+                <h1 className="public-company-name">{company.companyName}</h1>
+                <span className="public-company-verified-tag">
+                  <CheckIcon />
+                  <span>Verified Employer</span>
+                </span>
+              </div>
+              <p className="public-company-tagline">
+                Official Employer & Engineering Recruitment Hub on Skill Hub
+              </p>
+            </div>
           </div>
 
-          {/* Identity Title & Verified Tag */}
-          <div className="public-company-title-box">
-            <div className="public-company-title-row">
-              <h1 className="public-company-name">{company.companyName}</h1>
-              <span className="public-company-verified-tag">
-                <CheckIcon />
-                <span>Verified Employer</span>
-              </span>
+          {/* Right Header Stats Tag */}
+          <div className="public-positions-badge">
+            <span className="public-positions-badge-label">Active Requisitions</span>
+            <div className="public-positions-badge-pill">
+              <BriefcaseIcon />
+              <span>{companyJobs.length} Open {companyJobs.length === 1 ? 'Position' : 'Positions'}</span>
             </div>
-            <p className="public-company-tagline">
-              Official Employer & Engineering Recruitment Hub on Skill Hub
-            </p>
           </div>
         </div>
 
-        {/* Right Header Stats Tag */}
-        <div className="public-positions-badge">
-          <span className="public-positions-badge-label">Active Requisitions</span>
-          <div className="public-positions-badge-pill">
-            <BriefcaseIcon />
-            <span>{companyJobs.length} Open {companyJobs.length === 1 ? 'Position' : 'Positions'}</span>
+        {/* Top Horizontal Box Details Row */}
+        <div className="public-company-hero-details">
+          <div className="public-company-meta-items">
+            {primaryLocation && (
+              <div className="public-hero-meta-pill" title="Headquarters">
+                <MapPinIcon />
+                <span>{primaryLocation}</span>
+              </div>
+            )}
+
+            {company.industry && (
+              <div className="public-hero-meta-pill" title="Industry">
+                <BuildingIcon />
+                <span>{company.industry}</span>
+              </div>
+            )}
+
+            {company.companySize && (
+              <div className="public-hero-meta-pill" title="Company Size">
+                <UsersIcon />
+                <span>{company.companySize}</span>
+              </div>
+            )}
+
+            {company.foundedYear && (
+              <div className="public-hero-meta-pill" title="Founded Year">
+                <CalendarIcon />
+                <span>Founded {company.foundedYear}</span>
+              </div>
+            )}
+
+            {websiteHref && (
+              <a
+                href={websiteHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="public-hero-meta-link"
+                title="Official Website"
+              >
+                <GlobeIcon />
+                <span>{websiteDisplay}</span>
+                <ExternalLinkIcon />
+              </a>
+            )}
+
+            {company.contactEmail && (
+              <a
+                href={`mailto:${company.contactEmail}`}
+                className="public-hero-meta-link"
+                title="Official Email"
+              >
+                <MailIcon />
+                <span>{company.contactEmail}</span>
+              </a>
+            )}
+
+            {company.phone && (
+              <a
+                href={`tel:${company.phone}`}
+                className="public-hero-meta-link"
+                title="Phone Number"
+              >
+                <PhoneIcon />
+                <span>{company.phone}</span>
+              </a>
+            )}
           </div>
+
+          {/* Social Channels */}
+          {(company.linkedinUrl || company.twitterUrl || company.githubUrl) && (
+            <div className="public-hero-social-links">
+              {company.linkedinUrl && (
+                <a
+                  href={company.linkedinUrl.startsWith('http') ? company.linkedinUrl : `https://${company.linkedinUrl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="public-hero-social-btn"
+                  title="LinkedIn"
+                >
+                  <span style={{ color: '#0a66c2' }}><LinkedInIcon /></span>
+                  <span>LinkedIn</span>
+                </a>
+              )}
+
+              {company.twitterUrl && (
+                <a
+                  href={company.twitterUrl.startsWith('http') ? company.twitterUrl : `https://${company.twitterUrl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="public-hero-social-btn"
+                  title="Twitter / X"
+                >
+                  <span style={{ color: '#0f172a' }}><TwitterIcon /></span>
+                  <span>Twitter</span>
+                </a>
+              )}
+
+              {company.githubUrl && (
+                <a
+                  href={company.githubUrl.startsWith('http') ? company.githubUrl : `https://${company.githubUrl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="public-hero-social-btn"
+                  title="GitHub"
+                >
+                  <span style={{ color: '#24292f' }}><GitHubIcon /></span>
+                  <span>GitHub</span>
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
@@ -425,184 +540,7 @@ export const PublicCompanyProfile: React.FC = () => {
           </section>
         </main>
 
-        {/* =========================================================
-            RIGHT COLUMN (Approx. 1/3 Width): Single Consolidated Details Card
-            ========================================================= */}
-        <aside className="public-company-sidebar-col">
-          <div className="public-sidebar-card">
-            <div className="public-sidebar-header">
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e6f9f2', color: '#00b074', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <BuildingIcon />
-              </div>
-              <h3>Company Details & Links</h3>
-            </div>
 
-            {/* Consolidated Details List (Single Source of Truth) */}
-            <div className="public-sidebar-details-list">
-              {/* Headquarters Location */}
-              <div className="public-sidebar-item">
-                <div className="public-sidebar-icon">
-                  <MapPinIcon />
-                </div>
-                <div className="public-sidebar-info">
-                  <span className="public-sidebar-label">Headquarters</span>
-                  <span className="public-sidebar-value">{primaryLocation}</span>
-                </div>
-              </div>
-
-              {/* Industry */}
-              {company.industry && (
-                <div className="public-sidebar-item">
-                  <div className="public-sidebar-icon">
-                    <BuildingIcon />
-                  </div>
-                  <div className="public-sidebar-info">
-                    <span className="public-sidebar-label">Industry</span>
-                    <span className="public-sidebar-value">{company.industry}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Company Size */}
-              {company.companySize && (
-                <div className="public-sidebar-item">
-                  <div className="public-sidebar-icon">
-                    <UsersIcon />
-                  </div>
-                  <div className="public-sidebar-info">
-                    <span className="public-sidebar-label">Company Size</span>
-                    <span className="public-sidebar-value">{company.companySize}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Founded Year */}
-              {company.foundedYear && (
-                <div className="public-sidebar-item">
-                  <div className="public-sidebar-icon">
-                    <CalendarIcon />
-                  </div>
-                  <div className="public-sidebar-info">
-                    <span className="public-sidebar-label">Founded</span>
-                    <span className="public-sidebar-value">{company.foundedYear}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Official Website Link */}
-              {websiteHref && (
-                <div className="public-sidebar-item">
-                  <div className="public-sidebar-icon">
-                    <GlobeIcon />
-                  </div>
-                  <div className="public-sidebar-info">
-                    <span className="public-sidebar-label">Official Website</span>
-                    <a
-                      href={websiteHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="public-sidebar-link"
-                    >
-                      <span>{websiteDisplay}</span>
-                      <ExternalLinkIcon />
-                    </a>
-                  </div>
-                </div>
-              )}
-
-              {/* Official Email */}
-              {company.contactEmail && (
-                <div className="public-sidebar-item">
-                  <div className="public-sidebar-icon">
-                    <MailIcon />
-                  </div>
-                  <div className="public-sidebar-info">
-                    <span className="public-sidebar-label">Official Email</span>
-                    <a
-                      href={`mailto:${company.contactEmail}`}
-                      className="public-sidebar-link"
-                    >
-                      <span>{company.contactEmail}</span>
-                    </a>
-                  </div>
-                </div>
-              )}
-
-              {/* Phone Number */}
-              {company.phone && (
-                <div className="public-sidebar-item">
-                  <div className="public-sidebar-icon">
-                    <PhoneIcon />
-                  </div>
-                  <div className="public-sidebar-info">
-                    <span className="public-sidebar-label">Phone Number</span>
-                    <a
-                      href={`tel:${company.phone}`}
-                      className="public-sidebar-link"
-                    >
-                      <span>{company.phone}</span>
-                    </a>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Social Media Channels */}
-            {(company.linkedinUrl || company.twitterUrl || company.githubUrl) && (
-              <div style={{ paddingTop: '18px', borderTop: '1px solid #f1f5f9' }}>
-                <span className="public-sidebar-label" style={{ display: 'block', marginBottom: '10px' }}>
-                  Social Channels
-                </span>
-                <div className="public-social-grid">
-                  {company.linkedinUrl && (
-                    <a
-                      href={company.linkedinUrl.startsWith('http') ? company.linkedinUrl : `https://${company.linkedinUrl}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="public-social-btn"
-                    >
-                      <div className="public-social-btn-inner">
-                        <span style={{ color: '#0a66c2' }}><LinkedInIcon /></span>
-                        <span>LinkedIn</span>
-                      </div>
-                      <ExternalLinkIcon />
-                    </a>
-                  )}
-
-                  {company.twitterUrl && (
-                    <a
-                      href={company.twitterUrl.startsWith('http') ? company.twitterUrl : `https://${company.twitterUrl}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="public-social-btn"
-                    >
-                      <div className="public-social-btn-inner">
-                        <span style={{ color: '#0f172a' }}><TwitterIcon /></span>
-                        <span>Twitter / X</span>
-                      </div>
-                      <ExternalLinkIcon />
-                    </a>
-                  )}
-
-                  {company.githubUrl && (
-                    <a
-                      href={company.githubUrl.startsWith('http') ? company.githubUrl : `https://${company.githubUrl}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="public-social-btn"
-                    >
-                      <div className="public-social-btn-inner">
-                        <span style={{ color: '#24292f' }}><GitHubIcon /></span>
-                        <span>GitHub</span>
-                      </div>
-                      <ExternalLinkIcon />
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </aside>
       </div>
     </div>
   );

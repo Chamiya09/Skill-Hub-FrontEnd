@@ -12023,10 +12023,111 @@ select.w-full {
   margin-bottom: 24px;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
   display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.public-company-hero-top {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
   flex-wrap: wrap;
+}
+
+.public-company-hero-details {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 18px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.public-company-meta-items {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.public-hero-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 6px 13px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  transition: all 0.2s ease;
+}
+
+.public-hero-meta-pill svg {
+  color: #00b074;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.public-hero-meta-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 6px 13px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #009663;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.public-hero-meta-link svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.public-hero-meta-link:hover {
+  background: #e6f9f2;
+  border-color: #b7eedc;
+  color: #00754a;
+  transform: translateY(-1px);
+}
+
+.public-hero-social-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.public-hero-social-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.public-hero-social-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  transform: translateY(-1px);
 }
 
 .public-company-identity-stack {
@@ -12150,23 +12251,15 @@ select.w-full {
    TWO-COLUMN GRID LAYOUT
    ========================================================= */
 .public-company-grid-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 24px;
-  align-items: start;
-}
-
-@media (max-width: 1024px) {
-  .public-company-grid-layout {
-    grid-template-columns: 1fr;
-  }
+  display: block;
+  width: 100%;
 }
 
 .public-company-main-col {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  min-width: 0;
+  width: 100%;
 }
 
 .public-company-sidebar-col {

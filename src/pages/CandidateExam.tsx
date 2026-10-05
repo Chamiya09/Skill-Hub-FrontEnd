@@ -1514,7 +1514,7 @@ export const CandidateExam: React.FC = () => {
                   )}
 
                   {/* Runtime Error / Standard Error */}
-                  {lastRunResult.stderr && (
+                  {lastRunResult.stderr && lastRunResult.stderr.trim() !== 'Unknown' && (
                     <div style={{ marginBottom: '14px' }}>
                       <span style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 700, textTransform: 'uppercase' }}>
                         {lastRunResult.exitCode !== 0 ? 'RUNTIME ERROR / STDERR:' : 'STDERR:'}
@@ -1536,8 +1536,8 @@ export const CandidateExam: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Execution Error (if no stderr or compileOutput) */}
-                  {lastRunResult.isError && !lastRunResult.compileOutput && !lastRunResult.stderr && lastRunResult.errorMessage && (
+                  {/* Execution Error (if no stderr, or if stderr was uninformative) */}
+                  {lastRunResult.isError && !lastRunResult.compileOutput && (!lastRunResult.stderr || lastRunResult.stderr.trim() === 'Unknown') && lastRunResult.errorMessage && (
                     <div style={{ marginBottom: '14px' }}>
                       <span style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 700, textTransform: 'uppercase' }}>
                         EXECUTION ERROR:

@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Lock, Mail, ArrowRight, AlertCircle, KeyRound } from 'lucide-react';
+import {
+  Shield,
+  Lock,
+  Mail,
+  ArrowRight,
+  AlertTriangle,
+  KeyRound,
+  Eye,
+  EyeOff,
+  Zap,
+  ShieldCheck,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { adminApi, authStorage } from '../../services/api';
 import { AuthSplitLayout } from '../../components/common/AuthSplitLayout';
@@ -12,6 +23,7 @@ export const AdminLogin: React.FC = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -25,11 +37,12 @@ export const AdminLogin: React.FC = () => {
   if (authLoading) {
     return (
       <AuthSplitLayout
-        eyebrow="PLATFORM OPERATIONS"
+        portalType="admin"
+        eyebrow="PLATFORM OPERATIONS & GOVERNANCE"
         quote="Clarity is the beginning of better decisions."
         description="A considered view of the platform helps protect the people and opportunities within it."
       >
-        <div className="admin-login-card auth-split-form admin-login-loading">
+        <div className="auth-form-card text-center p-8 text-emerald-700 font-bold text-sm">
           Verifying security authorization...
         </div>
       </AuthSplitLayout>
@@ -59,42 +72,66 @@ export const AdminLogin: React.FC = () => {
     }
   };
 
+  const handleQuickDemoFill = () => {
+    setEmail('admin@skillhub.com');
+    setPassword('admin123');
+    setErrorMessage(null);
+  };
+
   return (
     <AuthSplitLayout
-      eyebrow="PLATFORM OPERATIONS"
-      quote="Clarity is the beginning of better decisions."
-      description="A considered view of the platform helps protect the people and opportunities within it."
+      portalType="admin"
+      eyebrow="RESTRICTED MASTER CONTROL GATEWAY"
+      quote="Securing the platform with zero-trust integrity."
+      description="Real-time infrastructure monitoring, candidate proctoring audit streams, and corporate directory governance."
     >
-      <div className="admin-login-card">
+      <div className="auth-form-card animate-in fade-in duration-300">
         {/* Top Header Badge */}
-        <div className="admin-login-header">
-          <div className="admin-login-icon-badge">
-            <Shield size={28} color="#00b074" />
+        <div className="mb-6">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-900 text-emerald-400 border border-slate-700 mb-3 shadow-2xs">
+            <ShieldCheck size={13} className="text-emerald-400" />
+            <span>RESTRICTED ACCESS • SUPER ADMIN</span>
           </div>
-          <div className="admin-login-security-tag">
-            <Lock size={12} />
-            <span>Restricted Gateway • Super Admin</span>
-          </div>
-          <h1 className="admin-login-title">Skill Hub Master Console</h1>
-          <p className="admin-login-subtitle">
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            Skill Hub Master Console
+          </h1>
+          <p className="text-[13.5px] text-slate-500 font-medium mt-1">
             Enterprise system monitoring, platform audit logs & global user governance.
           </p>
         </div>
 
+        {/* Quick Demo Credentials Autofill Chip */}
+        <button
+          type="button"
+          onClick={handleQuickDemoFill}
+          className="demo-autofill-btn"
+          title="Click to automatically populate Super Admin credentials"
+        >
+          <Zap size={13} className="text-emerald-600" />
+          <span>Quick Demo: Super Admin Credentials</span>
+        </button>
+
         {/* Error Alert */}
         {errorMessage && (
-          <div className="admin-login-alert">
-            <AlertCircle size={16} />
+          <div className="p-3 mb-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+            <AlertTriangle size={15} className="flex-shrink-0" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {/* Login Form */}
-        <form onSubmit={handleSubmit} className="admin-login-form">
-          <div className="admin-form-group">
-            <label htmlFor="admin-email">Admin Identity / Email</label>
-            <div className="admin-input-wrapper">
-              <Mail size={16} className="admin-input-icon" />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              htmlFor="admin-email"
+              className="block text-[12.5px] font-bold text-slate-700 mb-1.5"
+            >
+              Admin Identity / Email
+            </label>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                <Mail size={16} />
+              </span>
               <input
                 id="admin-email"
                 type="email"
@@ -103,42 +140,62 @@ export const AdminLogin: React.FC = () => {
                 placeholder="admin@skillhub.internal"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13.5px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-sans"
               />
             </div>
           </div>
 
-          <div className="admin-form-group">
-            <label htmlFor="admin-password">Master Security Key / Password</label>
-            <div className="admin-input-wrapper">
-              <KeyRound size={16} className="admin-input-icon" />
+          <div>
+            <label
+              htmlFor="admin-password"
+              className="block text-[12.5px] font-bold text-slate-700 mb-1.5"
+            >
+              Master Security Key / Password
+            </label>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                <KeyRound size={16} />
+              </span>
               <input
                 id="admin-password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 autoComplete="current-password"
                 placeholder="••••••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13.5px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-sans"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="admin-login-submit-btn"
+            className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all transform active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
           >
             {isLoading ? (
               <span>Authenticating Session...</span>
             ) : (
               <>
-                <span>Access Admin Console</span>
-                <ArrowRight size={16} />
+                <span>Access Master Console</span>
+                <ArrowRight size={15} className="text-emerald-400" />
               </>
             )}
           </button>
         </form>
 
+        <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-center text-center text-[12px] text-slate-400 font-medium">
+          <span>Encrypted Session • IP & Device Telemetry Logged</span>
+        </div>
       </div>
     </AuthSplitLayout>
   );

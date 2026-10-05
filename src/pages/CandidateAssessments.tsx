@@ -405,29 +405,29 @@ export const CandidateAssessments: React.FC = () => {
                     <div className="company-logo-pill">{companyInitials}</div>
                     <div>
                       <span className="card-company-name">{item.companyName || 'Verified Employer'}</span>
-                      <h3 className="card-job-title">{item.jobTitle}</h3>
+                      <h3 className="card-job-title" title={item.jobTitle}>{item.jobTitle}</h3>
                     </div>
                   </div>
 
                   {/* Status Pill */}
                   {isBlocked ? (
-                    <span className="status-pill status-blocked" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca' }}>
+                    <span className="status-pill status-blocked">
                       <XIcon />
                       <span>Cannot Retake</span>
                     </span>
                   ) : isExpired ? (
-                    <span className="status-pill" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca' }}>
+                    <span className="status-pill status-blocked">
                       <XIcon />
                       <span>Expired</span>
                     </span>
                   ) : isUnderReview ? (
-                    <span className="status-pill" style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }}>
+                    <span className="status-pill status-review">
                       <ClockIcon />
                       <span>Under Review</span>
                     </span>
                   ) : isGraded ? (
                     item.isSelectedForInterview ? (
-                      <span className="status-pill" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', fontWeight: 800 }}>
+                      <span className="status-pill status-selected">
                         <TrophyIcon />
                         <span>Interview Selected ({item.examScore}%)</span>
                       </span>
@@ -457,7 +457,10 @@ export const CandidateAssessments: React.FC = () => {
 
                 {/* Track Title */}
                 <div className="card-track-box">
-                  <span className="track-label">CODING CHALLENGE TRACK</span>
+                  <span className="track-label">
+                    <CodeIcon />
+                    <span>CODING CHALLENGE TRACK</span>
+                  </span>
                   <h4 className="track-title">{item.assessmentTitle}</h4>
                 </div>
 
@@ -485,45 +488,44 @@ export const CandidateAssessments: React.FC = () => {
                 )}
 
                 {isGraded && !item.isSelectedForInterview && (
-                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span>Technical Score: <strong>{item.examScore}%</strong></span>
+                  <div className="assessment-score-bar">
+                    <div className="score-bar-metric">
+                      <span className="score-bar-label">Score:</span>
+                      <strong className={`score-bar-val ${item.isPassed ? 'passed' : 'failed'}`}>{item.examScore}%</strong>
+                    </div>
                     {item.reviewerFeedback ? (
-                      <span style={{ color: '#64748b', fontStyle: 'italic', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.reviewerFeedback}>
+                      <span className="reviewer-feedback-preview" title={item.reviewerFeedback}>
                         "{item.reviewerFeedback}"
                       </span>
                     ) : (
-                      <span style={{ color: item.isPassed ? '#059669' : '#64748b', fontWeight: 600 }}>
+                      <span className={`benchmark-pill ${item.isPassed ? 'passed' : 'below'}`}>
                         {item.isPassed ? 'Passed Benchmark' : 'Below Benchmark'}
                       </span>
                     )}
                   </div>
                 )}
 
-                {/* Specs / Meta Details */}
+                {/* Specs / Meta Details Grid */}
                 <div className="card-specs-row">
-                  <div className="spec-badge">
-                    <ClockIcon />
-                    <span>{item.timeLimitMinutes} mins</span>
+                  <div className="spec-badge spec-badge-time" title="Assessment Duration">
+                    <span className="spec-icon-wrap"><ClockIcon /></span>
+                    <span className="spec-text">{item.timeLimitMinutes} mins</span>
                   </div>
-                  <div className="spec-badge">
-                    <CodeIcon />
-                    <span>{item.questionCount} {item.questionCount === 1 ? 'Problem' : 'Problems'}</span>
+                  <div className="spec-badge spec-badge-problems" title="Problem Count">
+                    <span className="spec-icon-wrap"><CodeIcon /></span>
+                    <span className="spec-text">{item.questionCount} {item.questionCount === 1 ? 'Problem' : 'Problems'}</span>
                   </div>
-                  <div className="spec-badge">
-                    <ShieldCheckIcon />
-                    <span>Pass: {item.passingThreshold}%</span>
+                  <div className="spec-badge spec-badge-pass" title="Passing Benchmark">
+                    <span className="spec-icon-wrap"><ShieldCheckIcon /></span>
+                    <span className="spec-text">Pass: {item.passingThreshold}%</span>
                   </div>
                   {item.expiresAt && (
                     <div
-                      className="spec-badge"
-                      style={
-                        isExpired
-                          ? { color: '#ef4444', borderColor: '#fecaca', background: '#fff5f5' }
-                          : undefined
-                      }
+                      className={`spec-badge spec-badge-deadline ${isExpired ? 'is-expired' : ''}`}
+                      title={isExpired ? 'Assessment Expired' : 'Submission Deadline'}
                     >
-                      <ClockIcon />
-                      <span>
+                      <span className="spec-icon-wrap"><ClockIcon /></span>
+                      <span className="spec-text">
                         {isExpired ? 'Expired' : 'Deadline'}:{' '}
                         {new Date(item.expiresAt).toLocaleDateString('en-US', {
                           month: 'short',
@@ -539,7 +541,9 @@ export const CandidateAssessments: React.FC = () => {
                 {/* Card Footer: Date & Action CTA */}
                 <div className="card-footer-row">
                   <div className="card-timeline-info">
-                    <span className="timeline-lbl">{isCompleted ? 'Submitted' : isBlocked ? 'Blocked' : isExpired ? 'Expired' : 'Assigned'}</span>
+                    <span className="timeline-lbl">
+                      {isCompleted ? 'Submitted' : isBlocked ? 'Blocked' : isExpired ? 'Expired' : 'Assigned'}
+                    </span>
                     <span className="timeline-date">
                       {isExpired && item.expiresAt
                         ? new Date(item.expiresAt).toLocaleDateString('en-US', {
@@ -559,6 +563,7 @@ export const CandidateAssessments: React.FC = () => {
                         onClick={() => handleOpenScorecard(item.submissionId)}
                       >
                         <span>{isUnderReview ? 'Check Status' : 'View Scorecard'}</span>
+                        <ArrowRightIcon />
                       </button>
                     ) : isBlocked ? (
                       <button
@@ -573,16 +578,11 @@ export const CandidateAssessments: React.FC = () => {
                     ) : isExpired ? (
                       <button
                         type="button"
-                        className="btn-start-exam"
-                        style={{
-                          background: '#f1f5f9',
-                          color: '#94a3b8',
-                          border: '1px solid #e2e8f0',
-                          cursor: 'not-allowed',
-                        }}
+                        className="btn-start-exam btn-expired"
                         disabled
                         title="The deadline for this assessment has passed."
                       >
+                        <ClockIcon />
                         <span>Expired</span>
                       </button>
                     ) : (
@@ -595,7 +595,6 @@ export const CandidateAssessments: React.FC = () => {
                         <span>Start Assessment</span>
                       </button>
                     )}
-
                   </div>
                 </div>
               </div>

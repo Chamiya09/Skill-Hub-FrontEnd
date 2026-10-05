@@ -13,7 +13,7 @@ import {
   GeneratingGuideModal,
   ReviewStudyGuideModal,
 } from '../components/interview-prep';
-import { CandidateLoadingIndicator } from '../components/common/CandidateLoadingIndicator';
+import { JobCardSkeleton, SkeletonStatValue } from '../components/common/SkeletonCard';
 import { BookOpen, BriefcaseBusiness, CheckCircle2, Clock, Search, Sparkles, X } from 'lucide-react';
 import './CandidateInterviewPrep.css';
 
@@ -289,19 +289,19 @@ export const CandidateInterviewPrep: React.FC = () => {
         <div className="prep-summary-grid">
           <article className="prep-summary-card summary-applications">
             <div className="prep-summary-icon"><BriefcaseBusiness /></div>
-            <div><span>Total applications</span><strong>{applications.length}</strong><small>Tracked candidate roles</small></div>
+            <div><span>Total applications</span><strong>{isLoadingApps ? <SkeletonStatValue width="40px" /> : applications.length}</strong><small>Tracked candidate roles</small></div>
           </article>
           <article className="prep-summary-card summary-eligible">
             <div className="prep-summary-icon"><Sparkles /></div>
-            <div><span>Interview roles</span><strong>{eligibleApplications.length}</strong><small>Eligible for preparation</small></div>
+            <div><span>Interview roles</span><strong>{isLoadingApps ? <SkeletonStatValue width="40px" /> : eligibleApplications.length}</strong><small>Eligible for preparation</small></div>
           </article>
           <article className="prep-summary-card summary-ready">
             <div className="prep-summary-icon"><CheckCircle2 /></div>
-            <div><span>Guides ready</span><strong>{readyGuidesCount}</strong><small>Available to study</small></div>
+            <div><span>Guides ready</span><strong>{isLoadingApps ? <SkeletonStatValue width="40px" /> : readyGuidesCount}</strong><small>Available to study</small></div>
           </article>
           <article className="prep-summary-card summary-awaiting">
             <div className="prep-summary-icon"><Clock /></div>
-            <div><span>Awaiting guide</span><strong>{awaitingGuidesCount}</strong><small>Ready for generation</small></div>
+            <div><span>Awaiting guide</span><strong>{isLoadingApps ? <SkeletonStatValue width="40px" /> : awaitingGuidesCount}</strong><small>Ready for generation</small></div>
           </article>
         </div>
       </section>
@@ -313,19 +313,25 @@ export const CandidateInterviewPrep: React.FC = () => {
             <span>Preparation workspace</span>
             <h2>Find your interview guides</h2>
           </div>
-          <strong>{filteredEligibleApplications.length} of {eligibleApplications.length} shown</strong>
+          <strong>
+            {isLoadingApps ? (
+              <span className="animate-pulse" style={{ display: 'inline-block', width: '90px', height: '14px', background: '#cbd5e1', borderRadius: '4px' }} />
+            ) : (
+              `${filteredEligibleApplications.length} of ${eligibleApplications.length} shown`
+            )}
+          </strong>
         </div>
 
         <div className="prep-filter-toolbar">
           <div className="prep-filter-tabs" role="group" aria-label="Filter guides by readiness">
             <button type="button" className={guideFilter === 'all' ? 'active' : ''} onClick={() => setGuideFilter('all')}>
-              All roles ({eligibleApplications.length})
+              All roles ({isLoadingApps ? '...' : eligibleApplications.length})
             </button>
             <button type="button" className={guideFilter === 'ready' ? 'active' : ''} onClick={() => setGuideFilter('ready')}>
-              Guide ready ({readyGuidesCount})
+              Guide ready ({isLoadingApps ? '...' : readyGuidesCount})
             </button>
             <button type="button" className={guideFilter === 'not-ready' ? 'active' : ''} onClick={() => setGuideFilter('not-ready')}>
-              Needs guide ({awaitingGuidesCount})
+              Needs guide ({isLoadingApps ? '...' : awaitingGuidesCount})
             </button>
           </div>
 
@@ -384,10 +390,19 @@ export const CandidateInterviewPrep: React.FC = () => {
 
       {/* 2. Initial Loading State */}
       {isLoadingApps ? (
-        <div className="prep-loading-state-card" aria-live="polite">
-          <CandidateLoadingIndicator />
-          <p>Checking eligible interview applications...</p>
-        </div>
+        <section className="eligible-jobs-section">
+          <div className="eligible-jobs-header">
+            <div>
+              <h2 className="eligible-jobs-title">Upcoming Interview Roles</h2>
+              <p className="eligible-jobs-subtitle">Loading eligible interview applications and preparation guides...</p>
+            </div>
+          </div>
+          <div className="eligible-jobs-grid">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <JobCardSkeleton key={idx} />
+            ))}
+          </div>
+        </section>
       ) : (
         <>
           {/* 3. Eligible Applications Grid (Status is strictly 'Interview') */}

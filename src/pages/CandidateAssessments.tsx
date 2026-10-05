@@ -16,7 +16,7 @@ import {
   ArrowRightIcon,
   SearchIcon,
 } from '../components/common/Icons';
-import { CandidateLoadingIndicator } from '../components/common/CandidateLoadingIndicator';
+import { JobCardSkeleton, SkeletonStatValue } from '../components/common/SkeletonCard';
 import './CandidateAssessments.css';
 
 // SVG Icon for Code / Technical assessment
@@ -214,19 +214,19 @@ export const CandidateAssessments: React.FC = () => {
         <div className="assessment-summary-grid">
           <article className="assessment-summary-card summary-total">
             <div className="summary-icon"><CodeIcon /></div>
-            <div><span>Total assessments</span><strong>{assessments.length}</strong><small>All assigned challenges</small></div>
+            <div><span>Total assessments</span><strong>{isLoading ? <SkeletonStatValue width="40px" /> : assessments.length}</strong><small>All assigned challenges</small></div>
           </article>
           <article className="assessment-summary-card summary-action">
             <div className="summary-icon"><ClockIcon /></div>
-            <div><span>Action required</span><strong>{pendingCount}</strong><small>Ready to start</small></div>
+            <div><span>Action required</span><strong>{isLoading ? <SkeletonStatValue width="40px" /> : pendingCount}</strong><small>Ready to start</small></div>
           </article>
           <article className="assessment-summary-card summary-complete">
             <div className="summary-icon"><CheckIcon /></div>
-            <div><span>Completed</span><strong>{completedCount}</strong><small>Submitted challenges</small></div>
+            <div><span>Completed</span><strong>{isLoading ? <SkeletonStatValue width="40px" /> : completedCount}</strong><small>Submitted challenges</small></div>
           </article>
           <article className="assessment-summary-card summary-score">
             <div className="summary-icon"><TrophyIcon /></div>
-            <div><span>Average score</span><strong>{averageScore}%</strong><small>{gradedAssessments.length ? `${gradedAssessments.length} graded result${gradedAssessments.length === 1 ? '' : 's'}` : 'No graded results yet'}</small></div>
+            <div><span>Average score</span><strong>{isLoading ? <SkeletonStatValue width="40px" /> : `${averageScore}%`}</strong><small>{gradedAssessments.length ? `${gradedAssessments.length} graded result${gradedAssessments.length === 1 ? '' : 's'}` : 'No graded results yet'}</small></div>
           </article>
         </div>
       </section>
@@ -238,7 +238,13 @@ export const CandidateAssessments: React.FC = () => {
             <span className="filter-eyebrow">Assessment workspace</span>
             <h2>Find your assessments</h2>
           </div>
-          <span className="filter-result-count">{filteredAssessments.length} of {assessments.length} shown</span>
+          <span className="filter-result-count">
+            {isLoading ? (
+              <span className="animate-pulse" style={{ display: 'inline-block', width: '90px', height: '14px', background: '#cbd5e1', borderRadius: '4px' }} />
+            ) : (
+              `${filteredAssessments.length} of ${assessments.length} shown`
+            )}
+          </span>
         </div>
 
         <div className="assessments-toolbar">
@@ -248,21 +254,21 @@ export const CandidateAssessments: React.FC = () => {
             className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
             onClick={() => setActiveTab('all')}
           >
-            All Assessments ({assessments.length})
+            All Assessments ({isLoading ? '...' : assessments.length})
           </button>
           <button
             type="button"
             className={`tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
             onClick={() => setActiveTab('pending')}
           >
-            Action Required ({pendingCount})
+            Action Required ({isLoading ? '...' : pendingCount})
           </button>
           <button
             type="button"
             className={`tab-btn ${activeTab === 'completed' ? 'active' : ''}`}
             onClick={() => setActiveTab('completed')}
           >
-            Completed ({completedCount})
+            Completed ({isLoading ? '...' : completedCount})
           </button>
           {expiredCount > 0 && (
             <button
@@ -270,7 +276,7 @@ export const CandidateAssessments: React.FC = () => {
               className={`tab-btn ${activeTab === 'expired' ? 'active' : ''}`}
               onClick={() => setActiveTab('expired')}
             >
-              Expired ({expiredCount})
+              Expired ({isLoading ? '...' : expiredCount})
             </button>
           )}
         </div>
@@ -332,9 +338,10 @@ export const CandidateAssessments: React.FC = () => {
 
       {/* 3. Main Assessment Cards Grid */}
       {isLoading ? (
-        <div className="assessments-state-card">
-          <CandidateLoadingIndicator />
-          <p>Loading your technical assessments...</p>
+        <div className="assessments-grid">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <JobCardSkeleton key={i} />
+          ))}
         </div>
       ) : filteredAssessments.length === 0 ? (
         <div className="assessments-state-card assessments-empty">
@@ -611,9 +618,15 @@ export const CandidateAssessments: React.FC = () => {
             </button>
 
             {scorecardLoading ? (
-              <div className="scorecard-loading-state">
-                <div className="assessments-spinner" />
-                <p>Retrieving technical scorecard &amp; evaluation report...</p>
+              <div className="scorecard-loading-state animate-pulse" style={{ padding: '32px 16px' }}>
+                <div style={{ width: '60%', height: '24px', borderRadius: '6px', background: '#cbd5e1', margin: '0 auto 16px' }} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
+                  <div style={{ height: '70px', borderRadius: '12px', background: '#f1f5f9' }} />
+                  <div style={{ height: '70px', borderRadius: '12px', background: '#f1f5f9' }} />
+                  <div style={{ height: '70px', borderRadius: '12px', background: '#f1f5f9' }} />
+                </div>
+                <div style={{ height: '140px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', marginBottom: '16px' }} />
+                <p style={{ color: '#64748b', fontSize: '13px', textAlign: 'center' }}>Retrieving technical scorecard &amp; evaluation report...</p>
               </div>
             ) : scorecardError ? (
               <div className="scorecard-error-state">

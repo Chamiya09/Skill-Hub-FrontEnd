@@ -627,31 +627,137 @@ export const CandidateExam: React.FC = () => {
       <div
         style={{
           minHeight: '100vh',
-          backgroundColor: '#0f172a',
+          backgroundColor: '#090d16',
           color: '#f8fafc',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           fontFamily: 'Inter, system-ui, sans-serif',
+          padding: '24px',
+          position: 'relative',
+          overflow: 'hidden',
         }}
+        aria-busy="true"
+        aria-label="Initializing Secure Assessment Environment"
       >
+        {/* Ambient background glow */}
         <div
           style={{
-            width: '48px',
-            height: '48px',
+            position: 'absolute',
+            width: '600px',
+            height: '600px',
             borderRadius: '50%',
-            border: '4px solid #334155',
-            borderTopColor: '#3b82f6',
-            animation: 'spin 1s linear infinite',
-            marginBottom: '20px',
+            background: 'radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.04) 40%, transparent 70%)',
+            pointerEvents: 'none',
           }}
         />
-        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>Initializing Secure Assessment Environment...</h2>
-        <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '8px' }}>
-          Loading coding questions, Monaco Editor, and sandboxed runtimes.
-        </p>
+
+        {/* Outer Card Skeleton Container matching Briefing Frame */}
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '720px',
+            backgroundColor: '#111827',
+            borderRadius: '20px',
+            border: '1px solid #1f2937',
+            padding: '36px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+            position: 'relative',
+            zIndex: 1,
+          }}
+          className="animate-pulse"
+        >
+          {/* Top Badge & Header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' }}>
+            <div
+              style={{
+                width: '54px',
+                height: '54px',
+                borderRadius: '14px',
+                backgroundColor: '#1e293b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid #334155',
+              }}
+            >
+              <div
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '50%',
+                  border: '3px solid #334155',
+                  borderTopColor: '#00b074',
+                  animation: 'examPulseSpin 1s linear infinite',
+                }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ width: '160px', height: '18px', backgroundColor: '#1e293b', borderRadius: '999px', marginBottom: '10px' }} />
+              <div style={{ width: '65%', height: '26px', backgroundColor: '#334155', borderRadius: '8px' }} />
+            </div>
+          </div>
+
+          {/* Description line skeleton */}
+          <div style={{ width: '100%', height: '14px', backgroundColor: '#1e293b', borderRadius: '4px', marginBottom: '8px' }} />
+          <div style={{ width: '80%', height: '14px', backgroundColor: '#1e293b', borderRadius: '4px', marginBottom: '28px' }} />
+
+          {/* 2-Column Meta Cards Skeleton */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '28px' }}>
+            <div style={{ backgroundColor: '#1e293b66', border: '1px solid #1f2937', borderRadius: '14px', padding: '18px', display: 'flex', gap: '14px', alignItems: 'center' }}>
+              <div style={{ width: '42px', height: '42px', borderRadius: '10px', backgroundColor: '#1e293b' }} />
+              <div>
+                <div style={{ width: '70px', height: '12px', backgroundColor: '#334155', borderRadius: '4px', marginBottom: '6px' }} />
+                <div style={{ width: '110px', height: '18px', backgroundColor: '#475569', borderRadius: '4px' }} />
+              </div>
+            </div>
+            <div style={{ backgroundColor: '#1e293b66', border: '1px solid #1f2937', borderRadius: '14px', padding: '18px', display: 'flex', gap: '14px', alignItems: 'center' }}>
+              <div style={{ width: '42px', height: '42px', borderRadius: '10px', backgroundColor: '#1e293b' }} />
+              <div>
+                <div style={{ width: '70px', height: '12px', backgroundColor: '#334155', borderRadius: '4px', marginBottom: '6px' }} />
+                <div style={{ width: '110px', height: '18px', backgroundColor: '#475569', borderRadius: '4px' }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Test environment status skeleton indicator */}
+          <div
+            style={{
+              padding: '16px 20px',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(0, 176, 116, 0.06)',
+              border: '1px solid rgba(0, 176, 116, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span
+                style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: '#00b074',
+                  boxShadow: '0 0 10px #00b074',
+                  display: 'inline-block',
+                }}
+              />
+              <span style={{ fontSize: '0.875rem', color: '#e2e8f0', fontWeight: 600 }}>
+                Initializing Secure Assessment Environment...
+              </span>
+            </div>
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Loading Monaco & Runtimes</span>
+          </div>
+        </div>
+
+        <style>{`
+          @keyframes examPulseSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     );
   }

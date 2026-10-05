@@ -7,7 +7,7 @@ import {
   MapPinIcon,
   SearchIcon,
 } from '../components/common/Icons';
-import { CandidateLoadingIndicator } from '../components/common/CandidateLoadingIndicator';
+import { TableRowSkeleton } from '../components/common/SkeletonCard';
 import './CandidateSavedJobs.css';
 
 const BookmarkIcon: React.FC = () => (
@@ -74,8 +74,26 @@ export const CandidateSavedJobs: React.FC = () => {
         <button type="button" onClick={() => void loadSavedJobs()}>Retry</button></div>}
 
       {isLoading ? (
-        <div className="saved-jobs-state" aria-live="polite">
-          <CandidateLoadingIndicator /><p>Loading your saved opportunities...</p>
+        <div className="saved-jobs-table-card">
+          <div className="saved-jobs-summary">
+            <span className="animate-pulse" style={{ display: 'inline-block', width: '130px', height: '14px', background: '#cbd5e1', borderRadius: '4px' }} />
+          </div>
+          <div className="saved-jobs-table-scroll">
+            <table className="saved-jobs-table">
+              <thead>
+                <tr>
+                  <th>Position &amp; Company</th>
+                  <th>Location &amp; Type</th>
+                  <th>Experience</th>
+                  <th>Date Saved</th>
+                  <th><span className="saved-sr-only">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <TableRowSkeleton cols={5} rows={5} hasAvatar />
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : savedJobs.length === 0 ? (
         <div className="saved-jobs-state saved-jobs-empty">

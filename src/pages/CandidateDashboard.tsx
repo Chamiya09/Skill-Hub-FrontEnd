@@ -22,7 +22,7 @@ import {
   eventsApi,
   type CandidateInterviewDto,
 } from '../services/api';
-import { CandidateLoadingIndicator } from '../components/common/CandidateLoadingIndicator';
+import { SkeletonStatValue } from '../components/common/SkeletonCard';
 import './CandidateDashboard.css';
 
 type InterviewFilter = 'all' | 'upcoming' | 'completed';
@@ -166,19 +166,19 @@ export function CandidateDashboard() {
         <div className="interview-summary-grid">
           <article className="interview-summary-card summary-total">
             <div className="interview-summary-icon"><CalendarCheck2 /></div>
-            <div><span>Total interviews</span><strong>{interviews.length}</strong><small>All confirmed sessions</small></div>
+            <div><span>Total interviews</span><strong>{loadingInterviews ? <SkeletonStatValue width="40px" /> : interviews.length}</strong><small>All confirmed sessions</small></div>
           </article>
           <article className="interview-summary-card summary-upcoming">
             <div className="interview-summary-icon"><Clock /></div>
-            <div><span>Upcoming</span><strong>{upcomingInterviewsCount}</strong><small>Sessions to attend</small></div>
+            <div><span>Upcoming</span><strong>{loadingInterviews ? <SkeletonStatValue width="40px" /> : upcomingInterviewsCount}</strong><small>Sessions to attend</small></div>
           </article>
           <article className="interview-summary-card summary-online">
             <div className="interview-summary-icon"><Video /></div>
-            <div><span>Online</span><strong>{onlineInterviewsCount}</strong><small>Remote interview rooms</small></div>
+            <div><span>Online</span><strong>{loadingInterviews ? <SkeletonStatValue width="40px" /> : onlineInterviewsCount}</strong><small>Remote interview rooms</small></div>
           </article>
           <article className="interview-summary-card summary-completed">
             <div className="interview-summary-icon"><Trophy /></div>
-            <div><span>Completed</span><strong>{completedInterviewsCount}</strong><small>Finished or hired</small></div>
+            <div><span>Completed</span><strong>{loadingInterviews ? <SkeletonStatValue width="40px" /> : completedInterviewsCount}</strong><small>Finished or hired</small></div>
           </article>
         </div>
       </section>
@@ -191,7 +191,13 @@ export function CandidateDashboard() {
               <h3>Find your interviews</h3>
             </div>
             <div className="interviews-filter-summary-actions">
-              <strong>{filteredInterviews.length} of {interviews.length} shown</strong>
+              <strong>
+                {loadingInterviews ? (
+                  <span className="animate-pulse" style={{ display: 'inline-block', width: '90px', height: '14px', background: '#cbd5e1', borderRadius: '4px' }} />
+                ) : (
+                  `${filteredInterviews.length} of ${interviews.length} shown`
+                )}
+              </strong>
               <button
                 type="button"
                 onClick={fetchMyInterviews}
@@ -208,9 +214,9 @@ export function CandidateDashboard() {
           <div className="interviews-filter-toolbar">
             <div className="interviews-filter-tabs" role="group" aria-label="Filter interviews by status">
             {([
-              ['all', `All (${interviews.length})`],
-              ['upcoming', `Upcoming (${upcomingInterviewsCount})`],
-              ['completed', `Completed (${completedInterviewsCount})`],
+              ['all', `All (${loadingInterviews ? '...' : interviews.length})`],
+              ['upcoming', `Upcoming (${loadingInterviews ? '...' : upcomingInterviewsCount})`],
+              ['completed', `Completed (${loadingInterviews ? '...' : completedInterviewsCount})`],
             ] as Array<[InterviewFilter, string]>).map(([value, label]) => (
               <button
                 key={value}
@@ -275,11 +281,38 @@ export function CandidateDashboard() {
 
       {/* 3. Interview Results */}
       {loadingInterviews ? (
-          <div className="interviews-loading-wrap">
-            <CandidateLoadingIndicator />
-            <p>Checking for scheduled interviews...</p>
-          </div>
-        ) : interviewsError ? (
+        <div className="interviews-cards-grid">
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <div
+              key={idx}
+              className="scheduled-interview-card animate-pulse"
+              style={{
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '18px',
+                padding: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ width: '130px', height: '26px', borderRadius: '9999px', background: '#e2e8f0' }} />
+                <span style={{ width: '80px', height: '22px', borderRadius: '9999px', background: '#f1f5f9' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ width: '70%', height: '20px', borderRadius: '6px', background: '#cbd5e1' }} />
+                <div style={{ width: '45%', height: '14px', borderRadius: '4px', background: '#e2e8f0' }} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={{ height: '52px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #f1f5f9' }} />
+                <div style={{ height: '52px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #f1f5f9' }} />
+              </div>
+              <div style={{ height: '42px', borderRadius: '10px', background: '#f1f5f9', marginTop: 'auto' }} />
+            </div>
+          ))}
+        </div>
+      ) : interviewsError ? (
           <div className="py-8 px-6 rounded-xl bg-rose-50 border border-rose-200 text-center my-4">
             <p className="text-sm text-rose-700 font-semibold mb-2">{interviewsError}</p>
             <button

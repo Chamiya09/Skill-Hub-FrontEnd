@@ -10,7 +10,6 @@ import {
   StudyFocusAreaCard,
   StudyDisclaimerFooter,
 } from '../components/interview-prep';
-import { CandidateLoadingIndicator } from '../components/common/CandidateLoadingIndicator';
 import { TargetIcon } from '../components/common/Icons';
 import './CandidateStudyDashboard.css';
 
@@ -204,18 +203,92 @@ export const CandidateStudyDashboard: React.FC = () => {
     }
   };
 
-  // Loading State
+  // Loading State with rich skeleton layout
   if (isLoading) {
     return (
-      <div className="study-dashboard-page">
-        <div className="study-loading-card">
-          <CandidateLoadingIndicator />
-          <h2 className="study-loading-title">
-            Loading Interview Preparation Guidelines...
-          </h2>
-          <p className="study-loading-subtitle">
-            Retrieving interview roles, theoretical foundations, and practical implementation guidelines.
-          </p>
+      <div className="study-dashboard-page" aria-busy="true" aria-label="Loading interview preparation guide">
+        {/* Top selector banner skeleton */}
+        <section className="study-guide-dashboard animate-pulse">
+          <div className="study-guide-dashboard-heading">
+            <div style={{ width: '100%' }}>
+              <div style={{ width: 180, height: 14, background: '#e2e8f0', borderRadius: 6, marginBottom: 12 }} />
+              <div style={{ width: '40%', height: 28, background: '#cbd5e1', borderRadius: 8, marginBottom: 8 }} />
+              <div style={{ width: '60%', height: 16, background: '#e2e8f0', borderRadius: 6 }} />
+            </div>
+          </div>
+          <div className="study-guide-filter-surface" style={{ pointerEvents: 'none' }}>
+            <div className="study-guide-filter-copy">
+              <div style={{ width: 90, height: 12, background: '#e2e8f0', borderRadius: 4, marginBottom: 6 }} />
+              <div style={{ width: 220, height: 18, background: '#cbd5e1', borderRadius: 6, marginBottom: 6 }} />
+              <div style={{ width: 160, height: 12, background: '#e2e8f0', borderRadius: 4 }} />
+            </div>
+            <div style={{ width: 200, height: 42, background: '#e2e8f0', borderRadius: 10 }} />
+          </div>
+        </section>
+
+        {/* Header Hero Banner Skeleton */}
+        <div style={{ background: '#fff', border: '1px solid #dce7e3', borderRadius: 18, padding: 24 }} className="animate-pulse">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
+            <div>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                <div style={{ width: 90, height: 22, background: '#dcfce7', borderRadius: 999 }} />
+                <div style={{ width: 110, height: 22, background: '#e0e7ff', borderRadius: 999 }} />
+              </div>
+              <div style={{ width: 340, height: 32, background: '#cbd5e1', borderRadius: 8, marginBottom: 10 }} />
+              <div style={{ width: 200, height: 18, background: '#e2e8f0', borderRadius: 6 }} />
+            </div>
+            <div style={{ width: 140, height: 40, background: '#f1f5f9', borderRadius: 10 }} />
+          </div>
+          <div style={{ display: 'flex', gap: 12, borderTop: '1px solid #f1f5f9', paddingTop: 16 }}>
+            <div style={{ width: 120, height: 26, background: '#f1f5f9', borderRadius: 6 }} />
+            <div style={{ width: 150, height: 26, background: '#f1f5f9', borderRadius: 6 }} />
+            <div style={{ width: 110, height: 26, background: '#f1f5f9', borderRadius: 6 }} />
+          </div>
+        </div>
+
+        {/* View Switcher Pill Bar Skeleton */}
+        <div className="study-sections-switcher-bar animate-pulse" style={{ pointerEvents: 'none' }}>
+          <div className="switcher-label-group">
+            <div style={{ width: 100, height: 14, background: '#cbd5e1', borderRadius: 4 }} />
+          </div>
+          <div className="switcher-buttons-cluster">
+            <div style={{ width: 110, height: 34, background: '#00b074', opacity: 0.3, borderRadius: 20 }} />
+            <div style={{ width: 110, height: 34, background: '#e2e8f0', borderRadius: 20 }} />
+            <div style={{ width: 110, height: 34, background: '#e2e8f0', borderRadius: 20 }} />
+            <div style={{ width: 110, height: 34, background: '#e2e8f0', borderRadius: 20 }} />
+          </div>
+        </div>
+
+        {/* Detailed Focus Area Skeletons */}
+        <div style={{ display: 'grid', gap: 20 }} className="animate-pulse">
+          {[1, 2].map((i) => (
+            <div key={i} style={{ background: '#fff', border: '1px solid #dce7e3', borderRadius: 18, padding: 24 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 36, height: 36, background: '#ecfdf5', borderRadius: 10 }} />
+                  <div>
+                    <div style={{ width: 220, height: 20, background: '#cbd5e1', borderRadius: 6, marginBottom: 6 }} />
+                    <div style={{ width: 140, height: 14, background: '#e2e8f0', borderRadius: 4 }} />
+                  </div>
+                </div>
+                <div style={{ width: 80, height: 26, background: '#f1f5f9', borderRadius: 6 }} />
+              </div>
+
+              <div style={{ display: 'grid', gap: 14, marginTop: 16 }}>
+                <div style={{ background: '#f8fafc', border: '1px solid #edf2f7', borderRadius: 12, padding: 18 }}>
+                  <div style={{ width: '70%', height: 16, background: '#cbd5e1', borderRadius: 6, marginBottom: 12 }} />
+                  <div style={{ width: '95%', height: 14, background: '#e2e8f0', borderRadius: 4, marginBottom: 8 }} />
+                  <div style={{ width: '85%', height: 14, background: '#e2e8f0', borderRadius: 4, marginBottom: 14 }} />
+                  <div style={{ width: '100%', height: 60, background: '#1e293b12', borderRadius: 8 }} />
+                </div>
+                <div style={{ background: '#f8fafc', border: '1px solid #edf2f7', borderRadius: 12, padding: 18 }}>
+                  <div style={{ width: '60%', height: 16, background: '#cbd5e1', borderRadius: 6, marginBottom: 12 }} />
+                  <div style={{ width: '90%', height: 14, background: '#e2e8f0', borderRadius: 4, marginBottom: 8 }} />
+                  <div style={{ width: '80%', height: 14, background: '#e2e8f0', borderRadius: 4 }} />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );

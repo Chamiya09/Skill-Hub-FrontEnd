@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { AuthSplitLayout } from '../components/common/AuthSplitLayout';
 import {
-  SparkleIcon,
   ShieldCheckIcon,
   CheckIcon,
   ArrowRightIcon,

@@ -4,15 +4,12 @@ import {
   Sparkles,
   ShieldCheck,
   CheckCircle2,
-  Users,
   Award,
-  Building2,
   Briefcase,
   TrendingUp,
   Star,
   Activity,
   Shield,
-  Layers,
   Zap,
 } from 'lucide-react';
 import './AuthCreativeShowcase.css';

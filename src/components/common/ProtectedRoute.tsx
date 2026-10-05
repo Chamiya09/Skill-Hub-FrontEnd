@@ -81,6 +81,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     });
 
     if (!isAuthorized) {
+      if (redirectPath) {
+        return <Navigate to={redirectPath} replace />;
+      }
       if (isAdminUser) {
         return <Navigate to="/skillhub-secure-admin/dashboard" replace />;
       }

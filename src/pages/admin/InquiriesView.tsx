@@ -7,9 +7,6 @@ import {
   CheckCircle2,
   X,
   Mail,
-  User,
-  Building2,
-  HelpCircle,
   Clock,
   RotateCcw,
   Calendar,
@@ -141,6 +138,23 @@ const INITIAL_MOCK_INQUIRIES: AdminInquiryDto[] = [
     category: 'API Integration & HRMS Sync',
   },
 ];
+
+const getSenderInitials = (name: string) => {
+  if (!name) return 'IN';
+  const clean = name.trim();
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (words.length === 1) return clean.slice(0, 2).toUpperCase();
+  if (words[0].length >= 2 && words[0].length <= 3 && words[0] === words[0].toUpperCase()) {
+    return words[0];
+  }
+  return (
+    words
+      .slice(0, 2)
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase() || 'IN'
+  );
+};
 
 export const InquiriesView: React.FC = () => {
   const [inquiries, setInquiries] = useState<AdminInquiryDto[]>(INITIAL_MOCK_INQUIRIES);
@@ -382,23 +396,25 @@ export const InquiriesView: React.FC = () => {
                     {/* 1. Sender Details (Display Name + Candidate/Company indicator) */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <div
-                          className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold ${
-                            inq.senderType === 'Company'
-                              ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                              : inq.senderType === 'Candidate'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : 'bg-slate-100 text-slate-600 border border-slate-200'
-                          }`}
-                        >
-                          {inq.senderType === 'Company' ? (
-                            <Building2 size={16} />
-                          ) : inq.senderType === 'Candidate' ? (
-                            <User size={16} />
-                          ) : (
-                            <HelpCircle size={16} />
-                          )}
-                        </div>
+                        {inq.senderType === 'Candidate' ? (
+                          <div className="relative flex-shrink-0">
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#00b074] to-[#008759] text-white flex items-center justify-center text-xs font-bold shadow-2xs border-2 border-white ring-1 ring-emerald-500/20 select-none">
+                              {getSenderInitials(inq.sender)}
+                            </div>
+                            <div
+                              className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white"
+                              title="Verified Candidate"
+                            />
+                          </div>
+                        ) : inq.senderType === 'Company' ? (
+                          <div className="w-9 h-9 rounded-xl bg-[#e6f9f2] border border-[#b7eedc] text-[#008759] flex items-center justify-center flex-shrink-0 text-xs font-black shadow-2xs select-none">
+                            {getSenderInitials(inq.sender)}
+                          </div>
+                        ) : (
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center flex-shrink-0 text-xs font-black shadow-2xs border border-emerald-500/20 select-none">
+                            {getSenderInitials(inq.sender)}
+                          </div>
+                        )}
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="text-[14.5px] font-bold text-slate-900 tracking-[-0.2px] hover:text-[#00b074] transition-colors">{inq.sender}</span>
@@ -583,7 +599,7 @@ export const InquiriesView: React.FC = () => {
               onClick={(e) => e.stopPropagation()}
             >
               {/* 1. Skill Hub Corporate Emerald Banner */}
-              <div className="relative h-20 bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-600 px-6 py-3.5 flex items-start justify-between flex-shrink-0">
+              <div className="relative h-24 bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-700 px-6 py-3.5 flex items-start justify-between flex-shrink-0">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white/15 text-white backdrop-blur-md border border-white/20 shadow-xs">
                   <LifeBuoy size={13} className="text-emerald-200" />
                   <span>Support Communications Desk • Ticket Dispatch</span>
@@ -599,57 +615,63 @@ export const InquiriesView: React.FC = () => {
               </div>
 
               {/* 2. Hero Overlapping Header */}
-              <div className="px-6 pt-0 pb-3.5 border-b border-slate-100 flex-shrink-0">
-                <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 -mt-9 mb-2.5">
-                  <div className="flex items-end gap-3.5">
-                    {/* Sender Icon Box */}
-                    <div className="w-16 h-16 rounded-2xl border-4 border-white shadow-md overflow-hidden flex-shrink-0 flex items-center justify-center bg-white">
-                      <div
-                        className={`w-full h-full flex items-center justify-center text-white ${
-                          activeMessageModal.senderType === 'Company'
-                            ? 'bg-gradient-to-br from-indigo-500 to-indigo-700'
-                            : activeMessageModal.senderType === 'Candidate'
-                            ? 'bg-gradient-to-br from-emerald-500 to-teal-700'
-                            : 'bg-gradient-to-br from-amber-500 to-orange-600'
-                        }`}
-                      >
-                        {activeMessageModal.senderType === 'Company' ? (
-                          <Building2 size={24} />
-                        ) : activeMessageModal.senderType === 'Candidate' ? (
-                          <User size={24} />
-                        ) : (
-                          <HelpCircle size={24} />
-                        )}
-                      </div>
+              <div className="px-6 pt-0 pb-4 border-b border-slate-100 flex-shrink-0 relative z-10 bg-white">
+                <div className="flex flex-row items-start justify-between gap-4">
+                  {/* Left: Icon + Identity block */}
+                  <div className="flex items-start gap-4 min-w-0">
+                    {/* Sender Icon Box with isolated negative margin */}
+                    <div className="-mt-11 relative z-20 flex-shrink-0">
+                      {activeMessageModal.senderType === 'Candidate' ? (
+                        /* Candidate CV Profile Circular Avatar */
+                        <div className="w-20 h-20 rounded-full border-4 border-white shadow-xl bg-gradient-to-br from-[#00b074] to-[#008759] text-white flex items-center justify-center font-black text-2xl select-none ring-1 ring-emerald-500/20 relative">
+                          {getSenderInitials(activeMessageModal.sender)}
+                          <div
+                            className="absolute bottom-0.5 right-0.5 w-4.5 h-4.5 rounded-full bg-emerald-500 border-2 border-white shadow-xs"
+                            title="Candidate Clearance"
+                          />
+                        </div>
+                      ) : activeMessageModal.senderType === 'Company' ? (
+                        /* Corporate Employer Squircle Avatar */
+                        <div className="w-20 h-20 rounded-2xl border-4 border-white shadow-xl bg-[#e6f9f2] ring-1 ring-[#b7eedc] text-[#008759] overflow-hidden flex items-center justify-center select-none font-black text-2xl tracking-tight">
+                          {getSenderInitials(activeMessageModal.sender)}
+                        </div>
+                      ) : (
+                        /* Platform Guest Visitor (e.g. Chamod Ekanayaka) */
+                        <div className="w-20 h-20 rounded-2xl border-4 border-white shadow-xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-700 text-white overflow-hidden flex items-center justify-center select-none font-black text-2xl ring-1 ring-emerald-500/20 shadow-emerald-900/10">
+                          {getSenderInitials(activeMessageModal.sender)}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Sender Identity & Badges */}
-                    <div>
-                      <div className="flex items-center flex-wrap gap-2">
-                        <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                    {/* Sender Identity & Badges - completely in the clean white card space */}
+                    <div className="min-w-0 pt-1.5 pb-0.5">
+                      {/* Row 1: Name + Status badge */}
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <h3 className="text-xl font-black text-slate-900 tracking-tight leading-tight">
                           {activeMessageModal.sender}
                         </h3>
                         {/* Status Badge */}
                         {isResolved ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#e6f9f2] text-[#009663] border border-[#b7eedc]">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#00b074] shadow-[0_0_0_2px_rgba(0,176,116,0.25)]" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-bold bg-[#e6f9f2] text-[#009663] border border-[#b7eedc] whitespace-nowrap flex-shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#00b074] shadow-[0_0_0_2px_rgba(0,176,116,0.25)] flex-shrink-0" />
                             Resolved
                           </span>
                         ) : activeMessageModal.status === 'Read' ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-bold bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap flex-shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 flex-shrink-0" />
                             Read
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-bold bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap flex-shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse flex-shrink-0" />
                             New Requisition
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[12.5px] font-semibold text-emerald-700">
+                      {/* Row 2: Org + Sender type subtitle */}
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <span className="text-[13px] font-semibold text-emerald-700 leading-snug">
                           {activeMessageModal.organization ||
                             (activeMessageModal.senderType === 'Company'
                               ? 'Corporate Employer Partner'
@@ -657,22 +679,27 @@ export const InquiriesView: React.FC = () => {
                               ? 'Verified Talent Profile'
                               : 'Platform Guest Visitor')}
                         </span>
-                        <span className="text-slate-300">•</span>
-                        <span className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider">
+                        <span className="text-slate-300 leading-none select-none">•</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200/80">
                           {activeMessageModal.senderType}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Ticket Reference Code */}
-                  <span className="font-mono text-[11.5px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 tracking-wide">
-                    {ticketId}
-                  </span>
+                  {/* Ticket Reference Code — on the right, aligned cleanly with pt-1.5 */}
+                  <div className="pt-1.5 flex-shrink-0">
+                    <span
+                      className="font-mono text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-50 text-slate-600 border border-slate-200 tracking-wide whitespace-nowrap inline-block shadow-2xs max-w-[190px] truncate"
+                      title={ticketId}
+                    >
+                      {ticketId}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Sub-meta quick strip */}
-                <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-[12px] font-medium text-slate-500 pt-1">
+                <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-[12px] font-medium text-slate-500 pt-2.5 border-t border-slate-100/70 mt-3">
                   <span className="inline-flex items-center gap-1.5">
                     <Mail size={13} className="text-slate-400" />
                     <span className="text-slate-700 font-sans">{activeMessageModal.email}</span>

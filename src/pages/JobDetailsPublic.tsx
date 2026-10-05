@@ -420,26 +420,6 @@ export const JobDetailsPublic: React.FC = () => {
           </div>
         )}
 
-        {/* Back navigation */}
-        <div style={{ marginBottom: '20px' }}>
-          <Link
-            to="/jobs"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              color: '#64748b',
-              fontSize: '14px',
-              fontWeight: 600,
-              textDecoration: 'none',
-              transition: 'color 0.15s ease',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#00b074')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#64748b')}
-          >
-            <span>← Back to Explore Jobs</span>
-          </Link>
-        </div>
 
         {/* ========================================================================= */}
         {/* HERO REQUISITION CARD */}

@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Shield,
-  Lock,
   Mail,
   ArrowRight,
   AlertTriangle,
   KeyRound,
   Eye,
   EyeOff,
-  Zap,
   ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -72,12 +69,6 @@ export const AdminLogin: React.FC = () => {
     }
   };
 
-  const handleQuickDemoFill = () => {
-    setEmail('admin@skillhub.com');
-    setPassword('admin123');
-    setErrorMessage(null);
-  };
-
   return (
     <AuthSplitLayout
       portalType="admin"
@@ -99,17 +90,6 @@ export const AdminLogin: React.FC = () => {
             Enterprise system monitoring, platform audit logs & global user governance.
           </p>
         </div>
-
-        {/* Quick Demo Credentials Autofill Chip */}
-        <button
-          type="button"
-          onClick={handleQuickDemoFill}
-          className="demo-autofill-btn"
-          title="Click to automatically populate Super Admin credentials"
-        >
-          <Zap size={13} className="text-emerald-600" />
-          <span>Quick Demo: Super Admin Credentials</span>
-        </button>
 
         {/* Error Alert */}
         {errorMessage && (

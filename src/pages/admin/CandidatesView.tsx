@@ -22,6 +22,19 @@ import {
   Copy,
   Check,
 } from 'lucide-react';
+
+// Inline brand SVG icons (Github & Linkedin not in lucide-react)
+const GithubIcon = ({ size = 13 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+  </svg>
+);
+
+const LinkedinIcon = ({ size = 13 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+  </svg>
+);
 import '../../pages/TechnicalAssessmentsFull.css';
 import '../../pages/admin/AdminDashboard.css';
 import { adminApi, type AdminCandidateDto } from '../../services/api';
@@ -69,7 +82,7 @@ const INITIAL_MOCK_CANDIDATES: AdminCandidateDto[] = [
   {
     id: 'cand-001',
     name: 'Alex Rivera',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&auto=format&fit=crop&q=80',
+    avatar: '',
     role: 'Senior Full-Stack Engineer',
     email: 'alex.rivera@example.com',
     topSkills: ['React', 'TypeScript', 'Node.js', '.NET 8', 'PostgreSQL'],
@@ -90,7 +103,7 @@ const INITIAL_MOCK_CANDIDATES: AdminCandidateDto[] = [
   {
     id: 'cand-002',
     name: 'Dr. Samantha Chen',
-    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=160&auto=format&fit=crop&q=80',
+    avatar: '',
     role: 'Lead AI / ML Researcher',
     email: 'samantha.chen@mllabs.ai',
     topSkills: ['Python', 'PyTorch', 'LLMs', 'Groq', 'FastAPI'],
@@ -111,7 +124,7 @@ const INITIAL_MOCK_CANDIDATES: AdminCandidateDto[] = [
   {
     id: 'cand-003',
     name: 'Marcus Vance',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80',
+    avatar: '',
     role: 'Staff DevOps & Cloud Architect',
     email: 'marcus.vance@cloudarch.dev',
     topSkills: ['Kubernetes', 'AWS', 'Terraform', 'Docker', 'CI/CD'],
@@ -132,7 +145,7 @@ const INITIAL_MOCK_CANDIDATES: AdminCandidateDto[] = [
   {
     id: 'cand-004',
     name: 'Elena Rostova',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=160&auto=format&fit=crop&q=80',
+    avatar: '',
     role: 'Staff Security Engineer',
     email: 'elena.rostova@cybershield.io',
     topSkills: ['OAuth2', 'Zero Trust', 'Pen Testing', 'Go', 'Rust'],
@@ -153,7 +166,7 @@ const INITIAL_MOCK_CANDIDATES: AdminCandidateDto[] = [
   {
     id: 'cand-005',
     name: 'David Okafor',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160&auto=format&fit=crop&q=80',
+    avatar: '',
     role: 'Senior Frontend Architect',
     email: 'david.okafor@frontendhub.org',
     topSkills: ['Vue.js', 'Next.js', 'Tailwind CSS', 'GraphQL'],
@@ -174,7 +187,7 @@ const INITIAL_MOCK_CANDIDATES: AdminCandidateDto[] = [
   {
     id: 'cand-006',
     name: 'Clara Oswald',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=160&auto=format&fit=crop&q=80',
+    avatar: '',
     role: 'Junior Data Scientist',
     email: 'clara.oswald@analytics.co',
     topSkills: ['SQL', 'Pandas', 'Tableau', 'R'],
@@ -213,7 +226,11 @@ export const CandidatesView: React.FC = () => {
       setIsLoading(true);
       const data = await adminApi.getCandidates();
       if (Array.isArray(data) && data.length > 0) {
-        setCandidates(data);
+        const normalized = data.map((c) => ({
+          ...c,
+          avatar: c.avatar && !c.avatar.includes('unsplash.com') ? c.avatar : '',
+        }));
+        setCandidates(normalized);
       } else {
         setCandidates(INITIAL_MOCK_CANDIDATES);
       }
@@ -392,7 +409,32 @@ export const CandidatesView: React.FC = () => {
                   >
                     {/* 1. Candidate Name */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
+                      <div className="flex items-center gap-3">
+                        <div className="relative flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00b074] to-[#008759] text-white border-2 border-white shadow-xs ring-1 ring-emerald-500/20 flex items-center justify-center font-bold text-xs select-none">
+                            {candidate.avatar && !candidate.avatar.includes('unsplash.com') ? (
+                              <img
+                                src={candidate.avatar}
+                                alt={candidate.name}
+                                className="w-full h-full object-cover rounded-full"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  if (e.currentTarget.parentElement) {
+                                    e.currentTarget.parentElement.innerText = candidate.name.split(' ').filter(Boolean).map((n) => n[0]).slice(0, 2).join('').toUpperCase() || 'CV';
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <span>
+                                {candidate.name.split(' ').filter(Boolean).map((n) => n[0]).slice(0, 2).join('').toUpperCase() || 'CV'}
+                              </span>
+                            )}
+                          </div>
+                          <div
+                            className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white"
+                            title="Verified Talent"
+                          />
+                        </div>
                         <div>
                           <div className="flex items-center gap-1.5">
                             <span className="text-[14.5px] font-bold text-slate-900 tracking-[-0.2px] hover:text-[#00b074] transition-colors">{candidate.name}</span>
@@ -432,12 +474,12 @@ export const CandidatesView: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       {candidate.status === 'Active' ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold bg-[#e6f9f2] text-[#009663] border border-[#b7eedc]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#00b074] shadow-[0_0_0_2px_rgba(0,176,116,0.25)]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#00b074] shadow-[0_0_0_2px_rgba(0,176,116,0.25)] flex-shrink-0 self-center" />
                           Active
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold bg-[#fef2f2] text-[#dc2626] border border-[#fecaca]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] shadow-[0_0_0_2px_rgba(239,68,68,0.25)]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] shadow-[0_0_0_2px_rgba(239,68,68,0.25)] flex-shrink-0 self-center" />
                           Suspended
                         </span>
                       )}
@@ -552,64 +594,83 @@ export const CandidatesView: React.FC = () => {
               </div>
 
               {/* 2. Hero Overlapping Profile Header */}
-              <div className="px-6 pt-0 pb-4 border-b border-slate-100">
-                <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 -mt-10 mb-3">
-                  <div className="flex items-end gap-3.5">
-                    {/* Avatar */}
-                    <div className="w-20 h-20 rounded-2xl border-4 border-white shadow-md bg-white overflow-hidden flex-shrink-0 flex items-center justify-center">
-                      {activeCandidateModal.avatar ? (
-                        <img
-                          src={activeCandidateModal.avatar}
-                          alt={activeCandidateModal.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            e.currentTarget.parentElement?.classList.add('bg-gradient-to-br', 'from-emerald-600', 'to-teal-700', 'text-white');
-                            if (e.currentTarget.parentElement) {
-                              e.currentTarget.parentElement.innerText = initials;
-                            }
-                          }}
+              <div className="px-6 pt-0 pb-4 border-b border-slate-100 relative z-10 bg-white">
+                <div className="flex flex-row items-start justify-between gap-4">
+                  {/* Left: Avatar + Name block */}
+                  <div className="flex items-start gap-4 min-w-0">
+                    {/* Avatar with isolated negative margin */}
+                    <div className="-mt-11 relative z-20 flex-shrink-0">
+                      {/* Candidate CV Profile Circular Avatar with Online Status Dot */}
+                      <div className="w-20 h-20 rounded-full border-4 border-white shadow-xl bg-gradient-to-br from-[#00b074] to-[#008759] text-white flex items-center justify-center font-black text-2xl select-none ring-1 ring-emerald-500/20 relative">
+                        {activeCandidateModal.avatar && !activeCandidateModal.avatar.includes('unsplash.com') ? (
+                          <img
+                            src={activeCandidateModal.avatar}
+                            alt={activeCandidateModal.name}
+                            className="w-full h-full object-cover rounded-full"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              if (e.currentTarget.parentElement) {
+                                e.currentTarget.parentElement.innerText = initials;
+                              }
+                            }}
+                          />
+                        ) : (
+                          <span>{initials}</span>
+                        )}
+                        <div
+                          className="absolute bottom-0.5 right-0.5 w-4.5 h-4.5 rounded-full bg-emerald-500 border-2 border-white shadow-xs"
+                          title="Online & Ready for Interviews"
                         />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center text-2xl font-black">
-                          {initials}
-                        </div>
-                      )}
+                      </div>
                     </div>
 
-                    {/* Primary Name & Role */}
-                    <div>
-                      <div className="flex items-center flex-wrap gap-2.5">
-                        <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                    {/* Primary Name & Role - completely in clean white space */}
+                    <div className="min-w-0 pt-1.5 pb-0.5">
+                      {/* Row 1: Name + Status pill */}
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <h3 className="text-xl font-black text-slate-900 tracking-tight leading-tight">
                           {activeCandidateModal.name}
                         </h3>
                         {/* Account Status Pill */}
                         {activeCandidateModal.status === 'Active' ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-bold bg-[#e6f9f2] text-[#009663] border border-[#b7eedc]">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#00b074] shadow-[0_0_0_2px_rgba(0,176,116,0.25)]" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-bold bg-[#e6f9f2] text-[#009663] border border-[#b7eedc] whitespace-nowrap flex-shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#00b074] shadow-[0_0_0_2px_rgba(0,176,116,0.25)] flex-shrink-0" />
                             Active Account
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-bold bg-[#fef2f2] text-[#dc2626] border border-[#fecaca]">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] shadow-[0_0_0_2px_rgba(239,68,68,0.25)]" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-bold bg-[#fef2f2] text-[#dc2626] border border-[#fecaca] whitespace-nowrap flex-shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] shadow-[0_0_0_2px_rgba(239,68,68,0.25)] flex-shrink-0" />
                             Suspended
                           </span>
                         )}
                       </div>
-                      <p className="text-[13.5px] font-semibold text-emerald-700 mt-0.5">
-                        {activeCandidateModal.role}
-                      </p>
+
+                      {/* Row 2: Role subtitle */}
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <span className="text-[13px] font-semibold text-emerald-700 leading-snug">
+                          {activeCandidateModal.role}
+                        </span>
+                        <span className="text-slate-300 leading-none select-none">•</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200/80">
+                          Candidate
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* ID Tag */}
-                  <span className="font-mono text-[11.5px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 border border-slate-200">
-                    ID: {activeCandidateModal.id}
-                  </span>
+                  {/* ID Tag — right side, aligned cleanly */}
+                  <div className="pt-1.5 flex-shrink-0">
+                    <span
+                      className="font-mono text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-50 text-slate-600 border border-slate-200 whitespace-nowrap inline-block shadow-2xs max-w-[170px] truncate"
+                      title={`ID: ${activeCandidateModal.id}`}
+                    >
+                      ID: {activeCandidateModal.id}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Sub-meta row: Location, Experience, Joined Date */}
-                <div className="flex items-center flex-wrap gap-x-4 gap-y-1.5 text-[12px] font-medium text-slate-500 pt-1">
+                <div className="flex items-center flex-wrap gap-x-4 gap-y-1.5 text-[12px] font-medium text-slate-500 pt-2.5 border-t border-slate-100/70 mt-3">
                   <span className="inline-flex items-center gap-1.5">
                     <MapPin size={13} className="text-slate-400" />
                     <span>{activeCandidateModal.location}</span>
@@ -771,7 +832,7 @@ export const CandidatesView: React.FC = () => {
                       rel="noreferrer"
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors shadow-2xs"
                     >
-                      <Github size={13} />
+                      <GithubIcon size={13} />
                       <span>GitHub Profile</span>
                       <ExternalLink size={11} className="text-slate-400" />
                     </a>
@@ -781,7 +842,7 @@ export const CandidatesView: React.FC = () => {
                       rel="noreferrer"
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors shadow-2xs"
                     >
-                      <Linkedin size={13} className="text-[#0a66c2]" />
+                      <span className="text-[#0a66c2]"><LinkedinIcon size={13} /></span>
                       <span>LinkedIn Profile</span>
                       <ExternalLink size={11} className="text-slate-400" />
                     </a>

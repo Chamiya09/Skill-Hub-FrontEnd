@@ -19,11 +19,9 @@ import {
   ShieldCheck,
   Users,
   Award,
-  Sparkles,
   Send,
   FileText,
   Building,
-  Phone,
 } from 'lucide-react';
 import '../../pages/TechnicalAssessmentsFull.css';
 import '../../pages/admin/AdminDashboard.css';
@@ -36,7 +34,7 @@ const INITIAL_MOCK_COMPANIES: AdminCompanyDto[] = [
   {
     id: 'comp-001',
     name: 'Stripe Technologies Inc.',
-    logo: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80',
+    logo: '',
     industry: 'FinTech & Payments Infrastructure',
     contactEmail: 'talent-recruiting@stripe.com',
     website: 'https://stripe.com',
@@ -54,7 +52,7 @@ const INITIAL_MOCK_COMPANIES: AdminCompanyDto[] = [
   {
     id: 'comp-002',
     name: 'Anthropic Compute Labs',
-    logo: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=120&auto=format&fit=crop&q=80',
+    logo: '',
     industry: 'Artificial Intelligence & Safety',
     contactEmail: 'careers@anthropic.com',
     website: 'https://anthropic.com',
@@ -72,7 +70,7 @@ const INITIAL_MOCK_COMPANIES: AdminCompanyDto[] = [
   {
     id: 'comp-003',
     name: 'Linear Systems Inc.',
-    logo: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=120&auto=format&fit=crop&q=80',
+    logo: '',
     industry: 'Engineering DevTools & Productivity',
     contactEmail: 'hiring@linear.app',
     website: 'https://linear.app',
@@ -90,7 +88,7 @@ const INITIAL_MOCK_COMPANIES: AdminCompanyDto[] = [
   {
     id: 'comp-004',
     name: 'Databricks Cloud Analytics',
-    logo: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=120&auto=format&fit=crop&q=80',
+    logo: '',
     industry: 'Data Engineering & Lakehouse',
     contactEmail: 'talent-ops@databricks.com',
     website: 'https://databricks.com',
@@ -108,7 +106,7 @@ const INITIAL_MOCK_COMPANIES: AdminCompanyDto[] = [
   {
     id: 'comp-005',
     name: 'Nexus Quantum Software',
-    logo: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=120&auto=format&fit=crop&q=80',
+    logo: '',
     industry: 'Quantum Simulation & Cloud',
     contactEmail: 'hr-compliance@nexusquantum.io',
     website: 'https://nexusquantum.io',
@@ -126,7 +124,7 @@ const INITIAL_MOCK_COMPANIES: AdminCompanyDto[] = [
   {
     id: 'comp-006',
     name: 'AeroDynamics Propulsion',
-    logo: 'https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?w=120&auto=format&fit=crop&q=80',
+    logo: '',
     industry: 'Aerospace Engineering',
     contactEmail: 'recruitment@aerodynamics.io',
     website: 'https://aerodynamics.io',
@@ -182,13 +180,18 @@ const getCompanySize = (c: AdminCompanyDto) => {
 };
 
 const getCompanyInitials = (name: string) => {
+  if (!name) return 'CO';
+  const clean = name.trim();
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (words.length === 1) return clean.slice(0, 3).toUpperCase();
+  if (words[0].length >= 2 && words[0].length <= 3 && words[0] === words[0].toUpperCase()) {
+    return words[0];
+  }
   return (
-    name
-      .split(' ')
-      .filter(Boolean)
+    words
+      .slice(0, 2)
       .map((n) => n[0])
       .join('')
-      .substring(0, 2)
       .toUpperCase() || 'CO'
   );
 };
@@ -212,9 +215,10 @@ export const CompaniesView: React.FC = () => {
       setIsLoading(true);
       const data = await adminApi.getCompanies();
       if (Array.isArray(data) && data.length > 0) {
-        // Normalize any legacy status
+        // Normalize any legacy status and strip unsplash placeholders
         const normalized = data.map((c) => ({
           ...c,
+          logo: c.logo && !c.logo.includes('unsplash.com') ? c.logo : '',
           status: (c.status === 'Active' ? 'Active' : 'Suspended') as 'Active' | 'Suspended',
         }));
         setCompanies(normalized);
@@ -410,7 +414,24 @@ export const CompaniesView: React.FC = () => {
                   >
                     {/* 1. Company Name */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-[#e6f9f2] border border-[#b7eedc] text-[#008759] font-black text-sm flex items-center justify-center shadow-xs flex-shrink-0 select-none overflow-hidden">
+                          {company.logo && !company.logo.includes('unsplash.com') ? (
+                            <img
+                              src={company.logo}
+                              alt={company.name}
+                              className="w-full h-full object-contain p-1"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                if (e.currentTarget.parentElement) {
+                                  e.currentTarget.parentElement.innerText = getCompanyInitials(company.name);
+                                }
+                              }}
+                            />
+                          ) : (
+                            <span>{getCompanyInitials(company.name)}</span>
+                          )}
+                        </div>
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="text-[14.5px] font-bold text-slate-900 tracking-[-0.2px] hover:text-[#00b074] transition-colors">{company.name}</span>
@@ -444,12 +465,12 @@ export const CompaniesView: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       {company.status === 'Active' ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold bg-[#e6f9f2] text-[#009663] border border-[#b7eedc]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#00b074] shadow-[0_0_0_2px_rgba(0,176,116,0.25)]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#00b074] shadow-[0_0_0_2px_rgba(0,176,116,0.25)] flex-shrink-0 self-center" />
                           Active
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold bg-[#fef2f2] text-[#dc2626] border border-[#fecaca]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] shadow-[0_0_0_2px_rgba(239,68,68,0.25)]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] shadow-[0_0_0_2px_rgba(239,68,68,0.25)] flex-shrink-0 self-center" />
                           Suspended
                         </span>
                       )}
@@ -572,77 +593,94 @@ export const CompaniesView: React.FC = () => {
               </div>
 
               {/* 2. Hero Overlapping Profile Header */}
-              <div className="px-6 pt-0 pb-4 border-b border-slate-100 flex-shrink-0">
-                <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 -mt-10 mb-3">
-                  <div className="flex items-end gap-3.5">
-                    {/* Company Logo Box */}
-                    <div className="w-20 h-20 rounded-2xl border-4 border-white shadow-md bg-white overflow-hidden flex-shrink-0 flex items-center justify-center p-1">
-                      {activeCompanyModal.logo ? (
-                        <img
-                          src={activeCompanyModal.logo}
-                          alt={activeCompanyModal.name}
-                          className="w-full h-full object-cover rounded-xl"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            e.currentTarget.parentElement?.classList.add('bg-gradient-to-br', 'from-emerald-600', 'to-teal-700', 'text-white');
-                            if (e.currentTarget.parentElement) {
-                              e.currentTarget.parentElement.innerText = initials;
-                            }
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center text-2xl font-black rounded-xl">
-                          {initials}
-                        </div>
-                      )}
+              <div className="px-6 pt-0 pb-4 border-b border-slate-100 flex-shrink-0 relative z-10 bg-white">
+                <div className="flex flex-row items-start justify-between gap-4">
+                  {/* Left: Logo + Name block */}
+                  <div className="flex items-start gap-4 min-w-0">
+                    {/* Company Logo Box with isolated negative margin */}
+                    <div className="-mt-11 relative z-20 flex-shrink-0">
+                      <div className="w-20 h-20 rounded-2xl border-4 border-white shadow-xl bg-[#e6f9f2] ring-1 ring-[#b7eedc] text-[#008759] overflow-hidden flex items-center justify-center select-none">
+                        {activeCompanyModal.logo && !activeCompanyModal.logo.includes('unsplash.com') ? (
+                          <img
+                            src={activeCompanyModal.logo}
+                            alt={activeCompanyModal.name}
+                            className="w-full h-full object-contain p-2.5"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              if (e.currentTarget.parentElement) {
+                                e.currentTarget.parentElement.innerText = initials;
+                              }
+                            }}
+                          />
+                        ) : (
+                          <span className="text-2xl font-black text-[#008759] tracking-tight">
+                            {initials}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Company Name & Badges */}
-                    <div>
-                      <div className="flex items-center flex-wrap gap-2.5">
-                        <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                    {/* Company Name & Badges - completely in clean white space */}
+                    <div className="min-w-0 pt-1.5 pb-0.5">
+                      {/* Row 1: Name + Status pill */}
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <h3 className="text-xl font-black text-slate-900 tracking-tight leading-tight">
                           {activeCompanyModal.name}
                         </h3>
                         {/* Account Status Pill */}
                         {activeCompanyModal.status === 'Active' ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-bold bg-[#e6f9f2] text-[#009663] border border-[#b7eedc]">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#00b074] shadow-[0_0_0_2px_rgba(0,176,116,0.25)]" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-bold bg-[#e6f9f2] text-[#009663] border border-[#b7eedc] whitespace-nowrap flex-shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#00b074] shadow-[0_0_0_2px_rgba(0,176,116,0.25)] flex-shrink-0" />
                             Active Partner
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-bold bg-[#fef2f2] text-[#dc2626] border border-[#fecaca]">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] shadow-[0_0_0_2px_rgba(239,68,68,0.25)]" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11.5px] font-bold bg-[#fef2f2] text-[#dc2626] border border-[#fecaca] whitespace-nowrap flex-shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] shadow-[0_0_0_2px_rgba(239,68,68,0.25)] flex-shrink-0" />
                             Suspended
                           </span>
                         )}
-                        {/* Tier Pill */}
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                            activeCompanyModal.tier === 'Enterprise'
-                              ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                              : activeCompanyModal.tier === 'ScaleUp'
-                              ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                              : 'bg-teal-50 text-teal-700 border border-teal-200'
-                          }`}
-                        >
-                          <Award size={11} />
-                          {activeCompanyModal.tier} Tier
+                      </div>
+
+                      {/* Row 2: Tier pill + Industry subtitle */}
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        {activeCompanyModal.tier && (
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold whitespace-nowrap flex-shrink-0 ${
+                              activeCompanyModal.tier === 'Enterprise'
+                                ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                : activeCompanyModal.tier === 'ScaleUp'
+                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                : 'bg-teal-50 text-teal-700 border border-teal-200'
+                            }`}
+                          >
+                            <Award size={11} className="flex-shrink-0" />
+                            <span className="max-w-[140px] truncate">{activeCompanyModal.tier}</span>
+                          </span>
+                        )}
+                        <span className="text-[13px] font-semibold text-emerald-700 leading-snug">
+                          {activeCompanyModal.industry}
+                        </span>
+                        <span className="text-slate-300 leading-none select-none">•</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200/80">
+                          Company
                         </span>
                       </div>
-                      <p className="text-[13.5px] font-semibold text-emerald-700 mt-0.5">
-                        {activeCompanyModal.industry}
-                      </p>
                     </div>
                   </div>
 
-                  {/* ID Tag */}
-                  <span className="font-mono text-[11.5px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 border border-slate-200">
-                    ID: {activeCompanyModal.id}
-                  </span>
+                  {/* ID Tag — right side, aligned cleanly */}
+                  <div className="pt-1.5 flex-shrink-0">
+                    <span
+                      className="font-mono text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-50 text-slate-600 border border-slate-200 whitespace-nowrap inline-block shadow-2xs max-w-[170px] truncate"
+                      title={`ID: ${activeCompanyModal.id}`}
+                    >
+                      ID: {activeCompanyModal.id}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Sub-meta row: Location, Website, Joined Date */}
-                <div className="flex items-center flex-wrap gap-x-4 gap-y-1.5 text-[12px] font-medium text-slate-500 pt-1">
+                <div className="flex items-center flex-wrap gap-x-4 gap-y-1.5 text-[12px] font-medium text-slate-500 pt-2.5 border-t border-slate-100/70 mt-3">
                   <span className="inline-flex items-center gap-1.5">
                     <MapPin size={13} className="text-slate-400" />
                     <span>{activeCompanyModal.location}</span>
@@ -653,17 +691,17 @@ export const CompaniesView: React.FC = () => {
                     <a
                       href={activeCompanyModal.website}
                       target="_blank"
-                      rel="noreferrer"
-                      className="text-emerald-700 hover:underline flex items-center gap-1 font-semibold"
+                      rel="noopener noreferrer"
+                      className="text-slate-600 hover:text-emerald-700 transition-colors inline-flex items-center gap-1 underline underline-offset-2 decoration-slate-300 hover:decoration-emerald-500"
                     >
                       <span>{activeCompanyModal.website.replace(/^https?:\/\//, '')}</span>
-                      <ExternalLink size={10} />
+                      <ExternalLink size={10} className="text-slate-400" />
                     </a>
                   </span>
                   <span className="text-slate-300">•</span>
                   <span className="inline-flex items-center gap-1.5">
                     <Calendar size={13} className="text-slate-400" />
-                    <span>Partner Since {activeCompanyModal.joinedDate}</span>
+                    <span>Partner since {activeCompanyModal.joinedDate}</span>
                   </span>
                 </div>
               </div>
@@ -698,9 +736,9 @@ export const CompaniesView: React.FC = () => {
                     <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
                       <Building size={18} />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Company Size</div>
-                      <div className="text-xs font-bold text-slate-900 truncate" title={size}>{size}</div>
+                      <div className="text-[11px] font-bold text-slate-900 leading-tight" title={size}>{size}</div>
                     </div>
                   </div>
 

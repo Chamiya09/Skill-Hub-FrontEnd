@@ -7,10 +7,8 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
-  Zap,
   CheckCircle2,
   AlertTriangle,
-  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AuthSplitLayout } from '../components/common/AuthSplitLayout';
@@ -60,12 +58,6 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleQuickDemoFill = () => {
-    setEmail('talent-recruiting@stripe.com');
-    setPassword('password123');
-    setErrorMessage(null);
-  };
-
   return (
     <AuthSplitLayout
       portalType="company"
@@ -88,17 +80,6 @@ export const Login: React.FC = () => {
             Access your talent pipelines, automated technical assessments, and active requisitions.
           </p>
         </div>
-
-        {/* Quick Demo Credentials Autofill Chip */}
-        <button
-          type="button"
-          onClick={handleQuickDemoFill}
-          className="demo-autofill-btn"
-          title="Click to automatically populate testing credentials"
-        >
-          <Zap size={13} className="text-emerald-600" />
-          <span>Quick Demo: Stripe Employer Account</span>
-        </button>
 
         {/* Alerts */}
         {errorMessage && (
@@ -215,9 +196,12 @@ export const Login: React.FC = () => {
             </Link>
           </p>
 
-          <div className="auth-role-switcher w-full">
-            <span>Are you a software engineer looking for jobs?</span>
-            <Link to="/candidate-login" className="inline-flex items-center gap-1 font-bold">
+          <div className="auth-role-switcher w-full flex items-center justify-center gap-1.5 flex-wrap text-[12.5px] text-slate-500">
+            <span>Are you a job seeker?</span>
+            <Link
+              to="/candidate-login"
+              className="text-emerald-700 hover:text-emerald-800 font-bold inline-flex items-center gap-1 whitespace-nowrap hover:underline"
+            >
               <span>Candidate Sign In</span>
               <ArrowRight size={12} />
             </Link>

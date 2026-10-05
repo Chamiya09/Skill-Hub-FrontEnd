@@ -7,11 +7,8 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
-  Zap,
   CheckCircle2,
   AlertTriangle,
-  Sparkles,
-  Award,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AuthSplitLayout } from '../components/common/AuthSplitLayout';
@@ -74,12 +71,6 @@ export const CandidateLogin: React.FC = () => {
     }
   };
 
-  const handleQuickDemoFill = () => {
-    setEmail('sarah.jenkins@gmail.com');
-    setPassword('candidate123');
-    setErrorMessage(null);
-  };
-
   return (
     <AuthSplitLayout
       portalType="candidate"
@@ -102,17 +93,6 @@ export const CandidateLogin: React.FC = () => {
             Track applications, take proctored assessments, and accept direct employer invitations.
           </p>
         </div>
-
-        {/* Quick Demo Credentials Autofill Chip */}
-        <button
-          type="button"
-          onClick={handleQuickDemoFill}
-          className="demo-autofill-btn"
-          title="Click to automatically populate candidate testing credentials"
-        >
-          <Zap size={13} className="text-emerald-600" />
-          <span>Quick Demo: Sarah Jenkins (Staff Candidate)</span>
-        </button>
 
         {/* Alerts */}
         {errorMessage && (
@@ -229,9 +209,12 @@ export const CandidateLogin: React.FC = () => {
             </Link>
           </p>
 
-          <div className="auth-role-switcher w-full">
-            <span>Hiring software engineering talent?</span>
-            <Link to="/company-login" className="inline-flex items-center gap-1 font-bold">
+          <div className="auth-role-switcher w-full flex items-center justify-center gap-1.5 flex-wrap text-[12.5px] text-slate-500">
+            <span>Hiring tech talent?</span>
+            <Link
+              to="/company-login"
+              className="text-emerald-700 hover:text-emerald-800 font-bold inline-flex items-center gap-1 whitespace-nowrap hover:underline"
+            >
               <span>Employer Sign In</span>
               <ArrowRight size={12} />
             </Link>

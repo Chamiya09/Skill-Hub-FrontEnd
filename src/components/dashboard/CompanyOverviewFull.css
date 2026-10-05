@@ -43,7 +43,7 @@
 
 .company-overview .overview-heading h1 {
   margin: 10px 0 0;
-  font-size: clamp(27px, 2.2vw, 36px);
+  font-size: clamp(15px, 2.2vw, 20px);
 }
 
 .company-overview .overview-heading p {

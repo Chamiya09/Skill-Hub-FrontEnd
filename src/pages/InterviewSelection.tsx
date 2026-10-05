@@ -32,7 +32,7 @@ import {
   type JobDto,
   type EventResponseDto,
 } from '../services/api';
-import { TableRowSkeleton } from '../components/common/SkeletonCard';
+import { TableRowSkeleton, SkeletonStatValue, SkeletonStatLabel } from '../components/common/SkeletonCard';
 import { AiInterviewSchedulerModal } from '../components/AiInterviewSchedulerModal';
 import './InterviewSelectionFull.css';
 
@@ -729,8 +729,8 @@ export const InterviewSelection: React.FC = () => {
             </div>
             <div>
               <span>Total Shortlisted</span>
-              <strong>{totalSelected}</strong>
-              <small>Candidates from exams</small>
+              <strong>{isLoading ? <SkeletonStatValue width="45px" /> : totalSelected}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="120px" /> : 'Candidates from exams'}</small>
             </div>
           </article>
 
@@ -740,9 +740,13 @@ export const InterviewSelection: React.FC = () => {
             </div>
             <div>
               <span>Ready / Scheduled</span>
-              <strong>{scheduledCount}</strong>
+              <strong>{isLoading ? <SkeletonStatValue width="40px" /> : scheduledCount}</strong>
               <small>
-                {scheduledOnlineCount} online • {scheduledPhysicalCount} physical
+                {isLoading ? (
+                  <SkeletonStatLabel width="140px" />
+                ) : (
+                  `${scheduledOnlineCount} online • ${scheduledPhysicalCount} physical`
+                )}
               </small>
             </div>
           </article>
@@ -753,8 +757,8 @@ export const InterviewSelection: React.FC = () => {
             </div>
             <div>
               <span>Awaiting Scheduling</span>
-              <strong>{pendingCount}</strong>
-              <small>Awaiting interview slot</small>
+              <strong>{isLoading ? <SkeletonStatValue width="40px" /> : pendingCount}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="125px" /> : 'Awaiting interview slot'}</small>
             </div>
           </article>
 
@@ -764,8 +768,8 @@ export const InterviewSelection: React.FC = () => {
             </div>
             <div>
               <span>Hired Finalists</span>
-              <strong>{hiredCount}</strong>
-              <small>Offers extended & placed</small>
+              <strong>{isLoading ? <SkeletonStatValue width="40px" /> : hiredCount}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="130px" /> : 'Offers extended & placed'}</small>
             </div>
           </article>
         </div>
@@ -1127,7 +1131,7 @@ export const InterviewSelection: React.FC = () => {
             <tbody>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <TableRowSkeleton key={i} cols={7} />
+                  <TableRowSkeleton key={i} cols={7} hasAvatar />
                 ))
               ) : filteredSelections.length > 0 ? (
                 filteredSelections.map((sub) => {

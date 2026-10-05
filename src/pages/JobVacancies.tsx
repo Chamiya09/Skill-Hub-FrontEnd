@@ -484,7 +484,7 @@ export const JobVacancies = () => {
             <tbody>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <TableRowSkeleton key={i} cols={6} />
+                  <TableRowSkeleton key={i} cols={6} hasAvatar />
                 ))
               ) : filteredVacancies.length > 0 ? (
                 filteredVacancies.map((job) => (

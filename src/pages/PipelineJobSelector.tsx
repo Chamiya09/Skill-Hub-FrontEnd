@@ -15,7 +15,7 @@ import {
   XIcon,
 } from '../components/common/Icons';
 import { Briefcase } from 'lucide-react';
-import { SkeletonGrid } from '../components/common/SkeletonCard';
+import { SkeletonGrid, SkeletonStatValue, SkeletonStatLabel } from '../components/common/SkeletonCard';
 import './PipelineJobSelectorFull.css';
 
 interface PipelineJobSelectorProps {
@@ -197,32 +197,32 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
             <div className="summary-icon"><Briefcase size={22} /></div>
             <div>
               <span>Total Requisitions</span>
-              <strong>{publishedJobs.length}</strong>
-              <small>All published roles</small>
+              <strong>{loading ? <SkeletonStatValue width="45px" /> : publishedJobs.length}</strong>
+              <small>{loading ? <SkeletonStatLabel width="115px" /> : 'All published roles'}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-ready">
             <div className="summary-icon"><SparkleIcon /></div>
             <div>
               <span>Screening Ready</span>
-              <strong>{closedCount}</strong>
-              <small>Closed & ready for AI run</small>
+              <strong>{loading ? <SkeletonStatValue width="40px" /> : closedCount}</strong>
+              <small>{loading ? <SkeletonStatLabel width="130px" /> : 'Closed & ready for AI run'}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-active">
             <div className="summary-icon"><ClockIcon /></div>
             <div>
               <span>Collecting Applicants</span>
-              <strong>{activeCount}</strong>
-              <small>Active talent sourcing</small>
+              <strong>{loading ? <SkeletonStatValue width="40px" /> : activeCount}</strong>
+              <small>{loading ? <SkeletonStatLabel width="120px" /> : 'Active talent sourcing'}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-applicants">
             <div className="summary-icon"><UsersIcon /></div>
             <div>
               <span>Total Applicants</span>
-              <strong>{totalApplicantsCount}</strong>
-              <small>Candidates in pipeline</small>
+              <strong>{loading ? <SkeletonStatValue width="45px" /> : totalApplicantsCount}</strong>
+              <small>{loading ? <SkeletonStatLabel width="125px" /> : 'Candidates in pipeline'}</small>
             </div>
           </article>
         </div>

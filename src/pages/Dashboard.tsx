@@ -787,7 +787,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
                         </thead>
                         <tbody>
                           {Array.from({ length: 4 }).map((_, i) => (
-                            <TableRowSkeleton key={i} cols={4} />
+                            <TableRowSkeleton key={i} cols={4} hasAvatar />
                           ))}
                         </tbody>
                       </table>

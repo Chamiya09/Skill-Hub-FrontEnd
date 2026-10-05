@@ -26,7 +26,7 @@ import {
   PhoneIcon,
   UserCheckIcon,
 } from '../components/common/Icons';
-import { SkeletonGrid } from '../components/common/SkeletonCard';
+import { SkeletonGrid, SkeletonStatValue, SkeletonStatLabel } from '../components/common/SkeletonCard';
 import './PipelineJobSelectorFull.css';
 
 // Clipboard / Assessment Icon
@@ -408,32 +408,32 @@ export const HiringPipeline: React.FC = () => {
             <div className="summary-icon"><BriefcaseIcon /></div>
             <div>
               <span>Total Requisitions</span>
-              <strong>{publishedJobs.length}</strong>
-              <small>Published hiring campaigns</small>
+              <strong>{loading ? <SkeletonStatValue width="45px" /> : publishedJobs.length}</strong>
+              <small>{loading ? <SkeletonStatLabel width="125px" /> : 'Published hiring campaigns'}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-ready">
             <div className="summary-icon"><SparkleIcon /></div>
             <div>
               <span>Shortlisted Talent</span>
-              <strong>{totalShortlistedCount}</strong>
-              <small>Passed AI benchmark</small>
+              <strong>{loading ? <SkeletonStatValue width="40px" /> : totalShortlistedCount}</strong>
+              <small>{loading ? <SkeletonStatLabel width="115px" /> : 'Passed AI benchmark'}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-active">
             <div className="summary-icon"><ClockIcon /></div>
             <div>
               <span>Active Openings</span>
-              <strong>{activeCount}</strong>
-              <small>Open for applications</small>
+              <strong>{loading ? <SkeletonStatValue width="40px" /> : activeCount}</strong>
+              <small>{loading ? <SkeletonStatLabel width="110px" /> : 'Open for applications'}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-applicants">
             <div className="summary-icon"><UsersIcon /></div>
             <div>
               <span>Total Candidates</span>
-              <strong>{totalApplicantsCount}</strong>
-              <small>Applicants in pipeline</small>
+              <strong>{loading ? <SkeletonStatValue width="45px" /> : totalApplicantsCount}</strong>
+              <small>{loading ? <SkeletonStatLabel width="120px" /> : 'Applicants in pipeline'}</small>
             </div>
           </article>
         </div>
@@ -815,11 +815,29 @@ export const HiringPipeline: React.FC = () => {
               }}
             >
               {loadingApplicants ? (
-                <div style={{ padding: '48px 0', textAlign: 'center' }}>
-                  <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                  <p style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
-                    Loading shortlisted talent from database...
-                  </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="animate-pulse"
+                      style={{
+                        background: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '16px',
+                        padding: '16px 20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                      }}
+                    >
+                      <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#cbd5e1', flexShrink: 0 }} />
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <div style={{ width: '40%', height: 16, borderRadius: 4, background: '#cbd5e1' }} />
+                        <div style={{ width: '60%', height: 12, borderRadius: 4, background: '#e2e8f0' }} />
+                      </div>
+                      <div style={{ width: 80, height: 32, borderRadius: 8, background: '#e2e8f0' }} />
+                    </div>
+                  ))}
                 </div>
               ) : filteredModalCandidates.length === 0 ? (
                 <div

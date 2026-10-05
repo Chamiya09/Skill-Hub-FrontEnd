@@ -16,6 +16,7 @@ import {
 import '../../pages/TechnicalAssessmentsFull.css';
 import '../../pages/admin/AdminDashboard.css';
 import { adminApi, authStorage, type AdminCompanyDto } from '../../services/api';
+import { TableRowSkeleton, SkeletonStatValue, SkeletonStatLabel } from '../../components/common/SkeletonCard';
 
 // Comprehensive mock companies reflecting required columns and states
 // Note: No manual approval workflow; accounts are Active or Suspended.
@@ -234,32 +235,32 @@ export const CompaniesView: React.FC = () => {
             <div className="summary-icon"><Building2 size={20} /></div>
             <div>
               <span>Total Companies</span>
-              <strong>{isLoading ? '...' : totalCompaniesCount}</strong>
-              <small>Registered employer accounts</small>
+              <strong>{isLoading ? <SkeletonStatValue width="55px" /> : totalCompaniesCount}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="135px" /> : 'Registered employer accounts'}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-ready">
             <div className="summary-icon"><Briefcase size={20} /></div>
             <div>
               <span>Active Job Posts</span>
-              <strong>{isLoading ? '...' : totalActiveJobs}</strong>
-              <small>Live hiring requisitions</small>
+              <strong>{isLoading ? <SkeletonStatValue width="45px" /> : totalActiveJobs}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="120px" /> : 'Live hiring requisitions'}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-active">
             <div className="summary-icon"><CheckCircle2 size={20} /></div>
             <div>
               <span>Active Accounts</span>
-              <strong>{isLoading ? '...' : activeCount}</strong>
-              <small>Operating normally</small>
+              <strong>{isLoading ? <SkeletonStatValue width="45px" /> : activeCount}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="110px" /> : 'Operating normally'}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-applicants">
             <div className="summary-icon"><ShieldAlert size={20} /></div>
             <div>
               <span>Suspended Accounts</span>
-              <strong>{isLoading ? '...' : suspendedCount}</strong>
-              <small>Restricted posting access</small>
+              <strong>{isLoading ? <SkeletonStatValue width="40px" /> : suspendedCount}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="130px" /> : 'Restricted posting access'}</small>
             </div>
           </article>
         </div>
@@ -324,14 +325,9 @@ export const CompaniesView: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
               {isLoading ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                    <div className="inline-flex items-center gap-3 font-semibold text-slate-600">
-                      <span className="pipeline-dashboard-live"><span /></span>
-                      Loading registered companies...
-                    </div>
-                  </td>
-                </tr>
+                Array.from({ length: 6 }).map((_, i) => (
+                  <TableRowSkeleton key={i} cols={5} hasAvatar />
+                ))
               ) : filteredCompanies.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
@@ -452,8 +448,14 @@ export const CompaniesView: React.FC = () => {
         {/* Table Footer */}
         <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
           <span>
-            Showing <strong className="text-slate-900 font-semibold">{filteredCompanies.length}</strong> of{' '}
-            <strong className="text-slate-900 font-semibold">{companies.length}</strong> registered employers
+            {isLoading ? (
+              <span className="inline-block w-44 h-3.5 bg-slate-200 animate-pulse rounded" />
+            ) : (
+              <>
+                Showing <strong className="text-slate-900 font-semibold">{filteredCompanies.length}</strong> of{' '}
+                <strong className="text-slate-900 font-semibold">{companies.length}</strong> registered employers
+              </>
+            )}
           </span>
           <span className="inline-flex items-center gap-1.5 font-medium">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />

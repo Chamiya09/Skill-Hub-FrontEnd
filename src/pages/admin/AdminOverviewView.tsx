@@ -21,6 +21,7 @@ import '../../pages/TechnicalAssessmentsFull.css';
 import '../../components/dashboard/CompanyOverview.css';
 import '../../components/dashboard/CompanyOverviewFull.css';
 import './AdminDashboard.css';
+import { TableRowSkeleton, SkeletonStatValue, SkeletonStatLabel } from '../../components/common/SkeletonCard';
 
 interface AdminOverviewViewProps {
   onNavigateTab: (tab: AdminTab) => void;
@@ -132,32 +133,32 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
             <div className="summary-icon"><Users size={20} /></div>
             <div>
               <span>Total Candidates</span>
-              <strong>{isLoading ? '...' : totalCandidatesCount}</strong>
-              <small>{highMatchCount} AI verified talent profiles</small>
+              <strong>{isLoading ? <SkeletonStatValue width="55px" /> : totalCandidatesCount}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="145px" /> : `${highMatchCount} AI verified talent profiles`}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-ready">
             <div className="summary-icon"><Building2 size={20} /></div>
             <div>
               <span>Verified Employers</span>
-              <strong>{isLoading ? '...' : totalCompaniesCount}</strong>
-              <small>{activeCompaniesCount} active corporate accounts</small>
+              <strong>{isLoading ? <SkeletonStatValue width="50px" /> : totalCompaniesCount}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="150px" /> : `${activeCompaniesCount} active corporate accounts`}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-active">
             <div className="summary-icon"><Briefcase size={20} /></div>
             <div>
               <span>Live Job Vacancies</span>
-              <strong>{isLoading ? '...' : totalActiveJobs}</strong>
-              <small>{totalPlacementsCount} placements completed</small>
+              <strong>{isLoading ? <SkeletonStatValue width="45px" /> : totalActiveJobs}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="145px" /> : `${totalPlacementsCount} placements completed`}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-applicants">
             <div className="summary-icon"><Inbox size={20} /></div>
             <div>
               <span>Pending Inquiries</span>
-              <strong>{isLoading ? '...' : pendingInquiriesCount}</strong>
-              <small>{inquiries.length} universal contact submissions</small>
+              <strong>{isLoading ? <SkeletonStatValue width="40px" /> : pendingInquiriesCount}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="160px" /> : `${inquiries.length} universal contact submissions`}</small>
             </div>
           </article>
         </div>
@@ -193,69 +194,74 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
                   </tr>
                 </thead>
                 <tbody>
-                  {topCandidates.map((candidate, index) => {
-                    const initials = candidate.name
-                      .split(' ')
-                      .map((p) => p[0])
-                      .join('')
-                      .slice(0, 2)
-                      .toUpperCase();
+                  {isLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRowSkeleton key={i} cols={4} hasAvatar />
+                    ))
+                  ) : topCandidates.length > 0 ? (
+                    topCandidates.map((candidate, index) => {
+                      const initials = candidate.name
+                        .split(' ')
+                        .map((p) => p[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase();
 
-                    return (
-                      <tr key={candidate.id}>
-                        <td>
-                          <div className="overview-candidate">
-                            <span>{initials || 'CD'}</span>
-                            <div>
-                              <strong>{candidate.name}</strong>
-                              <small>
-                                {candidate.role ? `${candidate.role} • ${candidate.location}` : `Rank #${index + 1} • ${candidate.location}`}
-                              </small>
+                      return (
+                        <tr key={candidate.id}>
+                          <td>
+                            <div className="overview-candidate">
+                              <span>{initials || 'CD'}</span>
+                              <div>
+                                <strong>{candidate.name}</strong>
+                                <small>
+                                  {candidate.role ? `${candidate.role} • ${candidate.location}` : `Rank #${index + 1} • ${candidate.location}`}
+                                </small>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                            {candidate.topSkills.slice(0, 2).map((skill) => (
-                              <span
-                                key={skill}
-                                style={{
-                                  fontSize: 10,
-                                  fontWeight: 700,
-                                  background: '#f1f5f9',
-                                  color: '#334155',
-                                  padding: '2px 6px',
-                                  borderRadius: 4,
-                                }}
-                              >
-                                {skill}
-                              </span>
-                            ))}
-                            {candidate.topSkills.length > 2 && (
-                              <span style={{ fontSize: 10, color: '#94a3b8' }}>
-                                +{candidate.topSkills.length - 2}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <b className="overview-score">
-                            {candidate.aiMatchAverage}% Match
-                          </b>
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <button
-                            type="button"
-                            className="overview-ghost-action"
-                            onClick={() => onNavigateTab('candidates')}
-                          >
-                            Inspect Candidate
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {!isLoading && topCandidates.length === 0 && (
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                              {candidate.topSkills.slice(0, 2).map((skill) => (
+                                <span
+                                  key={skill}
+                                  style={{
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    background: '#f1f5f9',
+                                    color: '#334155',
+                                    padding: '2px 6px',
+                                    borderRadius: 4,
+                                  }}
+                                >
+                                  {skill}
+                                </span>
+                              ))}
+                              {candidate.topSkills.length > 2 && (
+                                <span style={{ fontSize: 10, color: '#94a3b8' }}>
+                                  +{candidate.topSkills.length - 2}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td>
+                            <b className="overview-score">
+                              {candidate.aiMatchAverage}% Match
+                            </b>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <button
+                              type="button"
+                              className="overview-ghost-action"
+                              onClick={() => onNavigateTab('candidates')}
+                            >
+                              Inspect Candidate
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
                     <tr>
                       <td colSpan={4} className="overview-empty">
                         No candidate profiles registered yet.
@@ -294,55 +300,60 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
                   </tr>
                 </thead>
                 <tbody>
-                  {topCompanies.map((comp) => (
-                    <tr key={comp.id}>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <img
-                            src={comp.logo}
-                            alt={comp.name}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src =
-                                'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80';
-                            }}
-                            style={{
-                              width: 30,
-                              height: 30,
-                              borderRadius: 8,
-                              objectFit: 'cover',
-                              border: '1px solid #dce7e2',
-                            }}
-                          />
-                          <div className="overview-role">
-                            <strong>{comp.name}</strong>
-                            <small>{comp.location}</small>
+                  {isLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRowSkeleton key={i} cols={5} hasAvatar />
+                    ))
+                  ) : topCompanies.length > 0 ? (
+                    topCompanies.map((comp) => (
+                      <tr key={comp.id}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <img
+                              src={comp.logo}
+                              alt={comp.name}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src =
+                                  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80';
+                              }}
+                              style={{
+                                width: 30,
+                                height: 30,
+                                borderRadius: 8,
+                                objectFit: 'cover',
+                                border: '1px solid #dce7e2',
+                              }}
+                            />
+                            <div className="overview-role">
+                              <strong>{comp.name}</strong>
+                              <small>{comp.location}</small>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span style={{ fontSize: 11.5, color: '#475569' }}>
-                          {comp.industry}
-                        </span>
-                      </td>
-                      <td>
-                        <span style={{ fontWeight: 700, color: '#1d4ed8' }}>
-                          {comp.activeJobPosts} Vacancies
-                        </span>
-                      </td>
-                      <td>
-                        <span style={{ fontWeight: 700, color: '#008e60' }}>
-                          {comp.totalHires} Hires
-                        </span>
-                      </td>
-                      <td>
-                        <span className="overview-status">
-                          <i />
-                          {comp.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                  {!isLoading && topCompanies.length === 0 && (
+                        </td>
+                        <td>
+                          <span style={{ fontSize: 11.5, color: '#475569' }}>
+                            {comp.industry}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 700, color: '#1d4ed8' }}>
+                            {comp.activeJobPosts} Vacancies
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 700, color: '#008e60' }}>
+                            {comp.totalHires} Hires
+                          </span>
+                        </td>
+                        <td>
+                          <span className="overview-status">
+                            <i />
+                            {comp.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
                     <tr>
                       <td colSpan={5} className="overview-empty">
                         No enterprise companies registered yet.
@@ -367,32 +378,46 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
               <Activity size={18} color="#059669" />
             </div>
             <div className="overview-funnel">
-              {funnel.map((stage, index) => (
-                <div className="funnel-stage" key={stage.label}>
-                  <div className="funnel-stage-label">
-                    <span>{stage.label}</span>
-                    <strong>{stage.value}</strong>
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, idx) => (
+                  <div className="funnel-stage animate-pulse" key={idx} style={{ opacity: 0.75 }}>
+                    <div className="funnel-stage-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <span style={{ display: 'inline-block', width: 110, height: 13, background: '#cbd5e1', borderRadius: 4 }} />
+                      <span style={{ display: 'inline-block', width: 32, height: 13, background: '#e2e8f0', borderRadius: 4 }} />
+                    </div>
+                    <div className="funnel-track" style={{ background: '#f1f5f9' }}>
+                      <span style={{ width: `${85 - idx * 20}%`, background: '#cbd5e1' }} />
+                    </div>
                   </div>
-                  <div className="funnel-track">
-                    <span
-                      style={{
-                        width: `${Math.round((stage.value / funnelMaximum) * 100)}%`,
-                      }}
-                    />
+                ))
+              ) : (
+                funnel.map((stage, index) => (
+                  <div className="funnel-stage" key={stage.label}>
+                    <div className="funnel-stage-label">
+                      <span>{stage.label}</span>
+                      <strong>{stage.value}</strong>
+                    </div>
+                    <div className="funnel-track">
+                      <span
+                        style={{
+                          width: `${Math.round((stage.value / funnelMaximum) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                    {index < funnel.length - 1 && (
+                      <small>
+                        {stage.value > 0
+                          ? Math.round((funnel[index + 1].value / stage.value) * 100)
+                          : 0}
+                        % advance
+                      </small>
+                    )}
                   </div>
-                  {index < funnel.length - 1 && (
-                    <small>
-                      {stage.value > 0
-                        ? Math.round((funnel[index + 1].value / stage.value) * 100)
-                        : 0}
-                      % advance
-                    </small>
-                  )}
-                </div>
-              ))}
+                ))
+              )}
             </div>
             <div className="funnel-summary">
-              <strong>{placementRate}%</strong>
+              <strong>{isLoading ? <SkeletonStatValue width="45px" height="20px" /> : `${placementRate}%`}</strong>
               <span>Talent pool to hired placement rate</span>
             </div>
           </section>
@@ -409,7 +434,30 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
               </span>
             </div>
 
-            {recentInquiries.length > 0 ? (
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="animate-pulse"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '12px 14px',
+                    borderRadius: 12,
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    marginBottom: 10,
+                  }}
+                >
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: '#cbd5e1', flexShrink: 0 }} />
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ width: '55%', height: 13, borderRadius: 4, background: '#cbd5e1' }} />
+                    <div style={{ width: '85%', height: 11, borderRadius: 4, background: '#e2e8f0' }} />
+                  </div>
+                </div>
+              ))
+            ) : recentInquiries.length > 0 ? (
               recentInquiries.map((inq) => (
                 <div
                   key={inq.id}

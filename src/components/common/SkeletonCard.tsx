@@ -78,24 +78,82 @@ export const JobCardSkeleton: React.FC<{ className?: string }> = ({ className = 
   )
 }
 
-export const TableRowSkeleton: React.FC<{ cols?: number }> = ({ cols = 5 }) => {
+export const TableRowSkeleton: React.FC<{ cols?: number; rows?: number; hasAvatar?: boolean }> = ({
+  cols = 5,
+  rows = 1,
+  hasAvatar = false,
+}) => {
   return (
-    <tr className="animate-pulse" style={{ borderBottom: '1px solid #f1f5f9' }}>
-      {Array.from({ length: cols }).map((_, i) => (
-        <td key={i} style={{ padding: '16px 20px' }}>
-          <div
-            style={{
-              height: '14px',
-              borderRadius: '6px',
-              background: i === 0 ? '#cbd5e1' : '#e2e8f0',
-              width: i === 0 ? '70%' : i === cols - 1 ? '40%' : '55%',
-            }}
-          />
-        </td>
+    <>
+      {Array.from({ length: rows }).map((_, r) => (
+        <tr key={r} className="animate-pulse" style={{ borderBottom: '1px solid #f1f5f9' }}>
+          {Array.from({ length: cols }).map((_, i) => (
+            <td key={i} style={{ padding: '16px 20px' }}>
+              {i === 0 && hasAvatar ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div
+                    style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '10px',
+                      background: '#cbd5e1',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ width: '70%', height: '14px', borderRadius: '4px', background: '#cbd5e1' }} />
+                    <div style={{ width: '45%', height: '11px', borderRadius: '4px', background: '#e2e8f0' }} />
+                  </div>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    height: '14px',
+                    borderRadius: '6px',
+                    background: i === 0 ? '#cbd5e1' : '#e2e8f0',
+                    width: i === 0 ? '70%' : i === cols - 1 ? '40%' : '55%',
+                  }}
+                />
+              )}
+            </td>
+          ))}
+        </tr>
       ))}
-    </tr>
+    </>
   )
 }
+
+export const SkeletonStatValue: React.FC<{ width?: string | number; height?: string | number }> = ({
+  width = '64px',
+  height = '24px',
+}) => (
+  <span
+    className="animate-pulse"
+    style={{
+      display: 'inline-block',
+      width,
+      height,
+      borderRadius: '6px',
+      background: '#cbd5e1',
+      verticalAlign: 'middle',
+    }}
+  />
+)
+
+export const SkeletonStatLabel: React.FC<{ width?: string | number }> = ({ width = '110px' }) => (
+  <span
+    className="animate-pulse"
+    style={{
+      display: 'inline-block',
+      width,
+      height: '12px',
+      borderRadius: '4px',
+      background: '#e2e8f0',
+      verticalAlign: 'middle',
+      marginTop: '4px',
+    }}
+  />
+)
 
 export const MetricCardSkeleton: React.FC = () => {
   return (

@@ -17,6 +17,7 @@ import {
 import '../../pages/TechnicalAssessmentsFull.css';
 import '../../pages/admin/AdminDashboard.css';
 import { adminApi, type AdminInquiryDto } from '../../services/api';
+import { TableRowSkeleton, SkeletonStatValue, SkeletonStatLabel } from '../../components/common/SkeletonCard';
 
 // Comprehensive mock dataset reflecting required columns, dates ('MMM DD, YYYY'), and statuses
 const INITIAL_MOCK_INQUIRIES: AdminInquiryDto[] = [
@@ -201,32 +202,32 @@ export const InquiriesView: React.FC = () => {
             <div className="summary-icon"><Inbox size={20} /></div>
             <div>
               <span>Total Inquiries</span>
-              <strong>{isLoading ? '...' : totalInquiriesCount}</strong>
-              <small>Submissions received</small>
+              <strong>{isLoading ? <SkeletonStatValue width="55px" /> : totalInquiriesCount}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="125px" /> : 'Submissions received'}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-ready">
             <div className="summary-icon"><Clock size={20} /></div>
             <div>
               <span>New Submissions</span>
-              <strong>{isLoading ? '...' : newCount}</strong>
-              <small>Awaiting review</small>
+              <strong>{isLoading ? <SkeletonStatValue width="45px" /> : newCount}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="100px" /> : 'Awaiting review'}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-active">
             <div className="summary-icon"><Mail size={20} /></div>
             <div>
               <span>Read / In Review</span>
-              <strong>{isLoading ? '...' : readCount}</strong>
-              <small>Under investigation</small>
+              <strong>{isLoading ? <SkeletonStatValue width="45px" /> : readCount}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="115px" /> : 'Under investigation'}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-applicants">
             <div className="summary-icon"><CheckCircle2 size={20} /></div>
             <div>
               <span>Resolved Cases</span>
-              <strong>{isLoading ? '...' : resolvedCount}</strong>
-              <small>Successfully resolved</small>
+              <strong>{isLoading ? <SkeletonStatValue width="40px" /> : resolvedCount}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="125px" /> : 'Successfully resolved'}</small>
             </div>
           </article>
         </div>
@@ -305,14 +306,9 @@ export const InquiriesView: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
               {isLoading ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                    <div className="inline-flex items-center gap-3 font-semibold text-slate-600">
-                      <span className="pipeline-dashboard-live"><span /></span>
-                      Loading communications inquiries...
-                    </div>
-                  </td>
-                </tr>
+                Array.from({ length: 6 }).map((_, i) => (
+                  <TableRowSkeleton key={i} cols={5} hasAvatar />
+                ))
               ) : filteredInquiries.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
@@ -462,8 +458,14 @@ export const InquiriesView: React.FC = () => {
         {/* Table Footer */}
         <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
           <span>
-            Showing <strong className="text-slate-900 font-semibold">{filteredInquiries.length}</strong> of{' '}
-            <strong className="text-slate-900 font-semibold">{inquiries.length}</strong> inquiries
+            {isLoading ? (
+              <span className="inline-block w-40 h-3.5 bg-slate-200 animate-pulse rounded" />
+            ) : (
+              <>
+                Showing <strong className="text-slate-900 font-semibold">{filteredInquiries.length}</strong> of{' '}
+                <strong className="text-slate-900 font-semibold">{inquiries.length}</strong> inquiries
+              </>
+            )}
           </span>
           <span className="inline-flex items-center gap-1.5 font-medium">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />

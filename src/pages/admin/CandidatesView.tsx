@@ -16,6 +16,7 @@ import {
 import '../../pages/TechnicalAssessmentsFull.css';
 import '../../pages/admin/AdminDashboard.css';
 import { adminApi, type AdminCandidateDto } from '../../services/api';
+import { TableRowSkeleton, SkeletonStatValue, SkeletonStatLabel } from '../../components/common/SkeletonCard';
 
 // Comprehensive mock candidates reflecting required columns and states
 const INITIAL_MOCK_CANDIDATES: AdminCandidateDto[] = [
@@ -182,32 +183,32 @@ export const CandidatesView: React.FC = () => {
             <div className="summary-icon"><Users size={20} /></div>
             <div>
               <span>Total Candidates</span>
-              <strong>{isLoading ? '...' : totalCandidatesCount}</strong>
-              <small>Registered candidate profiles</small>
+              <strong>{isLoading ? <SkeletonStatValue width="55px" /> : totalCandidatesCount}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="140px" /> : 'Registered candidate profiles'}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-ready">
             <div className="summary-icon"><TrendingUp size={20} /></div>
             <div>
               <span>Avg Profile Strength</span>
-              <strong>{isLoading ? '...' : `${avgStrength}%`}</strong>
-              <small>Across verified skills</small>
+              <strong>{isLoading ? <SkeletonStatValue width="50px" /> : `${avgStrength}%`}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="115px" /> : 'Across verified skills'}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-active">
             <div className="summary-icon"><CheckCircle2 size={20} /></div>
             <div>
               <span>Active Accounts</span>
-              <strong>{isLoading ? '...' : activeCount}</strong>
-              <small>Authorized talent in pool</small>
+              <strong>{isLoading ? <SkeletonStatValue width="45px" /> : activeCount}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="120px" /> : 'Authorized talent in pool'}</small>
             </div>
           </article>
           <article className="pipeline-summary-card summary-applicants">
             <div className="summary-icon"><ShieldAlert size={20} /></div>
             <div>
               <span>Suspended Accounts</span>
-              <strong>{isLoading ? '...' : suspendedCount}</strong>
-              <small>Restricted access</small>
+              <strong>{isLoading ? <SkeletonStatValue width="40px" /> : suspendedCount}</strong>
+              <small>{isLoading ? <SkeletonStatLabel width="105px" /> : 'Restricted access'}</small>
             </div>
           </article>
         </div>
@@ -273,14 +274,9 @@ export const CandidatesView: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
               {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                    <div className="inline-flex items-center gap-3 font-semibold text-slate-600">
-                      <span className="pipeline-dashboard-live"><span /></span>
-                      Loading candidate talent records...
-                    </div>
-                  </td>
-                </tr>
+                Array.from({ length: 6 }).map((_, i) => (
+                  <TableRowSkeleton key={i} cols={6} hasAvatar />
+                ))
               ) : filteredCandidates.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-medium">
@@ -430,8 +426,14 @@ export const CandidatesView: React.FC = () => {
         {/* Table Footer: Summary telemetry */}
         <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
           <span>
-            Showing <strong className="text-slate-900 font-semibold">{filteredCandidates.length}</strong> of{' '}
-            <strong className="text-slate-900 font-semibold">{candidates.length}</strong> candidate profiles
+            {isLoading ? (
+              <span className="inline-block w-44 h-3.5 bg-slate-200 animate-pulse rounded" />
+            ) : (
+              <>
+                Showing <strong className="text-slate-900 font-semibold">{filteredCandidates.length}</strong> of{' '}
+                <strong className="text-slate-900 font-semibold">{candidates.length}</strong> candidate profiles
+              </>
+            )}
           </span>
           <span className="inline-flex items-center gap-1.5 font-medium">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />

@@ -46,6 +46,7 @@ import {
 import { ProblemStatementViewer, CandidateCodeReviewModal } from "../components/assessment";
 import { AiInterviewSchedulerModal } from "../components/AiInterviewSchedulerModal";
 import { InterviewSelection } from "./InterviewSelection";
+import { TableRowSkeleton, JobCardSkeleton, SkeletonStatValue } from "../components/common/SkeletonCard";
 import "./TechnicalAssessmentsFull.css";
 
 const LANGUAGE_STARTER_TEMPLATES: Record<string, string> = {
@@ -122,7 +123,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   // 1. Requisition selection state
   const [jobs, setJobs] = useState<JobDto[]>([]);
   const [selectedJob, setSelectedJob] = useState<JobDto | null>(null);
-  const [, setLoadingJobs] = useState<boolean>(true);
+  const [loadingJobs, setLoadingJobs] = useState<boolean>(true);
 
   // 2. Active Section: 'templates' vs 'performance-hub' vs 'interview-selection'
   const isInterviewSelection = activeSection === "interview-selection";
@@ -150,7 +151,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
   // 3. Assessments state
   const [assessments, setAssessments] = useState<AssessmentResponseDto[]>([]);
-  const [loadingAssessments, setLoadingAssessments] = useState<boolean>(false);
+  const [loadingAssessments, setLoadingAssessments] = useState<boolean>(true);
   const [trackStatusFilter, setTrackStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
   const [trackSearchQuery, setTrackSearchQuery] = useState<string>('');
   const [trackSortBy, setTrackSortBy] = useState<'submissions' | 'newest' | 'threshold' | 'title'>('submissions');
@@ -214,7 +215,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
   // 4. Submissions state
   const [submissions, setSubmissions] = useState<SubmissionDetailDto[]>([]);
-  const [loadingSubmissions, setLoadingSubmissions] = useState<boolean>(false);
+  const [loadingSubmissions, setLoadingSubmissions] = useState<boolean>(true);
   const [submissionFilter, setSubmissionFilter] = useState<
     "all" | "pending" | "graded" | "interview"
   >("all");
@@ -277,7 +278,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
   // 6. Leaderboard state
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntryDto[]>([]);
-  const [loadingLeaderboard, setLoadingLeaderboard] = useState<boolean>(false);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState<boolean>(true);
 
   const filteredLeaderboard = useMemo(() => {
     if (!leaderboardSearch.trim()) return leaderboard;
@@ -294,7 +295,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     SubmissionDetailDto[]
   >([]);
   const [loadingInterviewSelections, setLoadingInterviewSelections] =
-    useState<boolean>(false);
+    useState<boolean>(true);
   const [interviewJobFilter, setInterviewJobFilter] = useState<string>("all");
   const [interviewSearch, setInterviewSearch] = useState<string>("");
   const [interviewScoreFilter, setInterviewScoreFilter] = useState<
@@ -455,9 +456,18 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
             "skillhub_active_job_requisition_id",
             active[0].id,
           );
+        } else {
+          setLoadingAssessments(false);
+          setLoadingSubmissions(false);
+          setLoadingLeaderboard(false);
+          setLoadingInterviewSelections(false);
         }
       } catch (err) {
         console.error("Failed to load jobs:", err);
+        setLoadingAssessments(false);
+        setLoadingSubmissions(false);
+        setLoadingLeaderboard(false);
+        setLoadingInterviewSelections(false);
       } finally {
         setLoadingJobs(false);
       }
@@ -468,6 +478,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   // Fetch assessments and leaderboard whenever selected job changes
 
   const loadJobLeaderboard = useCallback(async (jobId: string) => {
+    setLoadingLeaderboard(true);
     try {
       const res = await assessmentsApi.getLeaderboard(jobId);
       setLeaderboard(res || []);
@@ -480,6 +491,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   }, []);
 
   const loadJobSubmissions = useCallback(async (jobId: string) => {
+    setLoadingSubmissions(true);
     try {
       const res = await assessmentsApi.getSubmissionsByJob(jobId);
       setSubmissions(res || []);
@@ -1047,6 +1059,10 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
     let isMounted = true;
 
     const fetchAll = async () => {
+      setLoadingAssessments(true);
+      setLoadingSubmissions(true);
+      setLoadingLeaderboard(true);
+      setLoadingInterviewSelections(true);
       try {
         const [assessmentsData, submissionsData, leaderboardData, interviewData] =
           await Promise.all([
@@ -1370,9 +1386,13 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               </label>
               <select
                 value={selectedJob?.id || ""}
+                disabled={loadingJobs}
                 onChange={(e) => {
                   const j = jobs.find((item) => item.id === e.target.value);
                   if (j) {
+                    setLoadingAssessments(true);
+                    setLoadingSubmissions(true);
+                    setLoadingLeaderboard(true);
                     setSelectedJob(j);
                     sessionStorage.setItem(
                       "skillhub_active_job_requisition_id",
@@ -1446,7 +1466,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               <div className="summary-icon"><BriefcaseIcon /></div>
               <div>
                 <span>Total Tracks</span>
-                <strong>{assessments.length}</strong>
+                <strong>{loadingAssessments ? <SkeletonStatValue width="40px" /> : assessments.length}</strong>
                 <small>Configured coding challenges</small>
               </div>
             </article>
@@ -1454,7 +1474,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               <div className="summary-icon"><CheckCircle2 size={20} /></div>
               <div>
                 <span>Published Tracks</span>
-                <strong>{publishedTracksCount}</strong>
+                <strong>{loadingAssessments ? <SkeletonStatValue width="40px" /> : publishedTracksCount}</strong>
                 <small>Active for candidates</small>
               </div>
             </article>
@@ -1462,7 +1482,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               <div className="summary-icon"><Pencil size={18} /></div>
               <div>
                 <span>Draft Assessments</span>
-                <strong>{draftTracksCount}</strong>
+                <strong>{loadingAssessments ? <SkeletonStatValue width="40px" /> : draftTracksCount}</strong>
                 <small>Work-in-progress challenges</small>
               </div>
             </article>
@@ -1470,7 +1490,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               <div className="summary-icon"><Users size={20} /></div>
               <div>
                 <span>Candidates Evaluated</span>
-                <strong>{totalCandidatesEvaluated}</strong>
+                <strong>{loadingAssessments ? <SkeletonStatValue width="40px" /> : totalCandidatesEvaluated}</strong>
                 <small>Submissions processed</small>
               </div>
             </article>
@@ -1639,7 +1659,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               <div className="summary-icon"><Users size={20} /></div>
               <div>
                 <span>Total Submissions</span>
-                <strong>{submissions.length}</strong>
+                <strong>{loadingSubmissions ? <SkeletonStatValue width="40px" /> : submissions.length}</strong>
                 <small>Received candidate exams</small>
               </div>
             </article>
@@ -1647,7 +1667,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               <div className="summary-icon"><ClockIcon /></div>
               <div>
                 <span>Awaiting Review</span>
-                <strong>{pendingSubmissionsCount}</strong>
+                <strong>{loadingSubmissions ? <SkeletonStatValue width="40px" /> : pendingSubmissionsCount}</strong>
                 <small>Needs code evaluation</small>
               </div>
             </article>
@@ -1655,7 +1675,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               <div className="summary-icon"><CheckCircle2 size={20} /></div>
               <div>
                 <span>Graded Submissions</span>
-                <strong>{gradedSubmissionsCount}</strong>
+                <strong>{loadingSubmissions ? <SkeletonStatValue width="40px" /> : gradedSubmissionsCount}</strong>
                 <small>Completed evaluations</small>
               </div>
             </article>
@@ -1663,7 +1683,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               <div className="summary-icon"><TrophyIcon /></div>
               <div>
                 <span>Interview Selected</span>
-                <strong>{interviewSelectedCount}</strong>
+                <strong>{loadingSubmissions ? <SkeletonStatValue width="40px" /> : interviewSelectedCount}</strong>
                 <small>Promoted for interview</small>
               </div>
             </article>
@@ -1837,10 +1857,10 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
         <div className="assessment-workspace">
           {/* Templates Grid */}
           {loadingAssessments ? (
-            <div
-              style={{ textAlign: "center", padding: "40px", color: "#64748b" }}
-            >
-              Loading assessment tracks...
+            <div className="assessment-templates-grid">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <JobCardSkeleton key={i} />
+              ))}
             </div>
           ) : assessments.length === 0 ? (
             <div
@@ -2136,14 +2156,48 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           {/* Submissions Table / Empty State */}
           {loadingSubmissions ? (
             <div
+              className="performance-table-shell"
               style={{
-                textAlign: "center",
-                padding: "48px",
-                color: "#64748b",
-                fontSize: "13.5px",
+                background: "#ffffff",
+                borderRadius: "16px",
+                border: "1px solid #e2e8f0",
+                overflow: "hidden",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
               }}
             >
-              Loading candidate submissions...
+              <div style={{ overflowX: "auto" }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    textAlign: "left",
+                    fontSize: "13px",
+                  }}
+                >
+                  <thead>
+                    <tr
+                      style={{
+                        background: "#f8fafc",
+                        borderBottom: "1px solid #e2e8f0",
+                        color: "#475569",
+                        fontWeight: 700,
+                      }}
+                    >
+                      <th style={{ padding: "14px 18px" }}>Candidate</th>
+                      <th style={{ padding: "14px 18px" }}>Assessment Track</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Submitted Date</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Proctor Telemetry</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Status</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Exam Marks</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Interview Status</th>
+                      <th style={{ padding: "14px 18px", textAlign: "right" }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <TableRowSkeleton cols={8} rows={5} hasAvatar />
+                  </tbody>
+                </table>
+              </div>
             </div>
           ) : (
             (() => {
@@ -2666,9 +2720,48 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
 
           {loadingLeaderboard ? (
             <div
-              style={{ textAlign: "center", padding: "40px", color: "#64748b" }}
+              className="performance-table-shell performance-leaderboard-table"
+              style={{
+                background: "#ffffff",
+                borderRadius: "16px",
+                border: "1px solid #e2e8f0",
+                overflow: "hidden",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+              }}
             >
-              Loading candidate leaderboard...
+              <div style={{ overflowX: "auto" }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    textAlign: "left",
+                    fontSize: "13px",
+                  }}
+                >
+                  <thead>
+                    <tr
+                      style={{
+                        background: "#f8fafc",
+                        borderBottom: "1px solid #e2e8f0",
+                        color: "#475569",
+                        fontWeight: 700,
+                      }}
+                    >
+                      <th style={{ padding: "14px 18px", width: "70px" }}>Rank</th>
+                      <th style={{ padding: "14px 18px" }}>Candidate</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>CV Match</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Technical Exam</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Final Score</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Proctor Telemetry</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Status</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Student 3 Eligibility</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <TableRowSkeleton cols={8} rows={5} hasAvatar />
+                  </tbody>
+                </table>
+              </div>
             </div>
           ) : leaderboard.length === 0 ? (
             <div
@@ -3520,28 +3613,49 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
           {/* Table or Empty State */}
           {loadingInterviewSelections ? (
             <div
+              className="interview-selection-table-shell"
               style={{
-                textAlign: "center",
-                padding: "60px 20px",
-                color: "#64748b",
-                fontSize: "13.5px",
                 background: "#ffffff",
                 borderRadius: "16px",
                 border: "1px solid #e2e8f0",
+                overflow: "hidden",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
               }}
             >
-              <div
-                style={{
-                  width: "32px",
-                  height: "32px",
-                  border: "3px solid #7c3aed",
-                  borderTopColor: "transparent",
-                  borderRadius: "50%",
-                  animation: "spin 0.8s linear infinite",
-                  margin: "0 auto 12px auto",
-                }}
-              />
-              Loading candidate interview selections...
+              <div style={{ overflowX: "auto" }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    textAlign: "left",
+                    fontSize: "13px",
+                  }}
+                >
+                  <thead>
+                    <tr
+                      style={{
+                        background: "#f8fafc",
+                        borderBottom: "1px solid #e2e8f0",
+                        color: "#475569",
+                        fontWeight: 700,
+                      }}
+                    >
+                      <th style={{ padding: "14px 18px" }}>Candidate</th>
+                      <th style={{ padding: "14px 18px" }}>Job Requisition &amp; Dept</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Selected Date</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Interview Status</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Delivery Mode</th>
+                      <th style={{ padding: "14px 18px", textAlign: "left" }}>Location</th>
+                      <th style={{ padding: "14px 18px", textAlign: "left" }}>Meeting Link</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Connect for Interview</th>
+                      <th style={{ padding: "14px 18px", textAlign: "center" }}>Interview Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <TableRowSkeleton cols={9} rows={5} hasAvatar />
+                  </tbody>
+                </table>
+              </div>
             </div>
           ) : (
             (() => {

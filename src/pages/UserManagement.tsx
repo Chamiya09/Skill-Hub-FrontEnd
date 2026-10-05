@@ -10,7 +10,7 @@ import {
   BuildingIcon,
   ShieldCheckIcon,
 } from '../components/common/Icons';
-import { TableRowSkeleton } from '../components/common/SkeletonCard';
+import { TableRowSkeleton, SkeletonStatValue } from '../components/common/SkeletonCard';
 
 // Trash / Direct Delete Icon
 const TrashIcon = () => (
@@ -135,7 +135,7 @@ export const UserManagement = () => {
 
         <div className="usermgmt-stat-box">
           <div className="stat-label-sm">Active Team Members</div>
-          <div className="stat-value-lg">{users.length}</div>
+          <div className="stat-value-lg">{loading ? <SkeletonStatValue width="40px" height="24px" /> : users.length}</div>
         </div>
       </div>
 
@@ -200,7 +200,7 @@ export const UserManagement = () => {
             <tbody>
               {loading ? (
                 Array.from({ length: 4 }).map((_, i) => (
-                  <TableRowSkeleton key={i} cols={5} />
+                  <TableRowSkeleton key={i} cols={5} hasAvatar />
                 ))
               ) : filteredUsers.length === 0 ? (
                 <tr>

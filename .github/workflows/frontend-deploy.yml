@@ -41,10 +41,10 @@ jobs:
 
       # 4. Deploy production bundle to Azure Web App strictly using Publish Profile (Zero Azure CLI / Service Principal required)
       - name: Deploy to Azure Web App via Publish Profile
-        uses: azure/webapps-deploy@v2
+        uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE || secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
           package: ./dist
 
 

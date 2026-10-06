@@ -1,75 +1,94 @@
-# React + TypeScript + Vite
+# Skill Hub — Frontend Web Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[![CI/CD Frontend](https://github.com/Chamiya09/Skill-Hub-FrontEnd/actions/workflows/frontend-deploy.yml/badge.svg)](https://github.com/Chamiya09/Skill-Hub-FrontEnd/actions)
+[![React](https://img.shields.io/badge/React-19.x-blue.svg)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-6.x-646CFF.svg)](https://vitejs.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+[![Azure App Service](https://img.shields.io/badge/Azure-App%20Service-0078D4.svg)](https://app-skillhub-frontend.azurewebsites.net)
 
-Currently, two official plugins are available:
+The modern, responsive Single-Page Application (SPA) for **Skill Hub**, an enterprise AI-driven Applicant Tracking System (ATS) and talent marketplace. This client portal provides distinct role-based experiences for Job Seekers (Candidates), Recruiters/Companies, and Super Administrators.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## 🌟 Component Overview & Responsibilities
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Candidate Portal:** Vacancy discovery, digital resume builder, technical assessment coding IDE (Monaco Editor), real-time application tracking, and interview slot booking.
+- **Employer / HR Dashboard:** Job vacancy authoring, applicant scoring & candidate shortlisting, AI semantic gap radar, and monthly interview planner.
+- **Admin Console:** System-wide audit logs, user management, and platform metrics monitoring.
+- **Production URL:** [https://app-skillhub-frontend.azurewebsites.net](https://app-skillhub-frontend.azurewebsites.net)
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🛠️ Technology Stack & Core Dependencies
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **Core Library:** React 19 with TypeScript
+- **Build Tooling & Bundler:** Vite (with ESBuild & TypeScript compiler `tsc`)
+- **Routing:** React Router DOM v6 (HTML5 History API with SPA fallback)
+- **Code Editor IDE:** `@monaco-editor/react` (for in-browser candidate coding assessments)
+- **Rich Text Editing:** `react-quill-new` & `dompurify` (sanitized job description authoring)
+- **Icons & UI Utilities:** `lucide-react`
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 📋 Prerequisites
 
+Ensure the following runtimes are installed locally:
+- **Node.js:** `v20.x LTS` (or higher)
+- **Package Manager:** `npm` (v10+)
+- **Git**
+
+---
+
+## 🚀 Quickstart & Local Setup
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/Chamiya09/Skill-Hub-FrontEnd.git
+cd Skill-Hub-FrontEnd
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+### 2. Configure Environment Variables
+Create a `.env` file in the root directory:
+```bash
+cp .env.example .env
 ```
+Populate `.env` with your backend API endpoint:
+```env
+# Backend API URL
+VITE_API_BASE_URL=<ENTER_BACKEND_API_URL> # e.g. http://localhost:5155/api
+```
+
+### 3. Install Dependencies
+```bash
+npm install
+```
+
+### 4. Run Development Server
+```bash
+npm run dev
+```
+The application will launch at `http://localhost:5173`.
+
+---
+
+## 🧪 Available Scripts
+
+| Command | Action |
+| :--- | :--- |
+| `npm run dev` | Starts Vite local development server with Hot Module Replacement (HMR). |
+| `npm run build` | Executes `tsc -b` type checking and generates production bundle in `./dist`. |
+| `npm run preview` | Spins up a local web server to preview the production build output. |
+| `npm run lint` | Runs ESLint across all `.ts` and `.tsx` source files. |
+
+---
+
+## ☁️ Deployment & CI/CD Pipeline
+
+The frontend is continuously delivered via **GitHub Actions** to **Azure App Service (Linux)**.
+
+- **Pipeline File:** `.github/workflows/frontend-deploy.yml`
+- **Deployment Strategy:** 
+  1. Automated clean install (`npm ci`) and compilation (`npm run build`).
+  2. Artifact packaged into a deployment bundle.
+  3. Deployed via `azure/webapps-deploy@v3` using the repository secret `AZURE_WEBAPP_PUBLISH_PROFILE`.
+- **SPA Routing Resilience:** Deployed with PM2 and `serve -s dist -l 8080`, redirecting non-asset deep links (e.g. `/candidate/interviews`) back to `index.html` to eliminate 404 errors.

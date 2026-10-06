@@ -1,0 +1,50 @@
+name: Build & Deploy Frontend to Azure Web App
+
+on:
+  push:
+    branches: ["main", "dev"]
+  workflow_dispatch:
+
+# Prevent concurrent builds from racing and deploying out-of-order bundles
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20.x'
+  AZURE_WEBAPP_NAME: 'app-skillhub-frontend' # Replace with your Azure Web App name or use ${{ secrets.AZURE_WEBAPP_NAME }}
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy Frontend
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      # 1. Checkout repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Node.js runtime with npm dependency caching
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      # 3. Clean install dependencies and build production React bundle
+      - name: Install dependencies and build React app
+        run: |
+          npm ci
+          npm run build
+
+      # 4. Deploy production bundle to Azure Web App strictly using Publish Profile (Zero Azure CLI / Service Principal required)
+      - name: Deploy to Azure Web App via Publish Profile
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./dist
+
+

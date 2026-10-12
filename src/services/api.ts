@@ -566,33 +566,46 @@ export const companyProfileApi = {
 
     // Save to local storage for persistence under both ID and name
     const companyId = updated.id || 'current';
-    localStorage.setItem(this.getProfileKey(companyId), JSON.stringify(updated));
-    localStorage.setItem(this.getProfileKey('current'), JSON.stringify(updated));
-    if (payload.companyName) {
-      localStorage.setItem(this.getProfileKey(encodeURIComponent(payload.companyName)), JSON.stringify(updated));
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(this.getProfileKey(companyId), JSON.stringify(updated));
+        localStorage.setItem(this.getProfileKey('current'), JSON.stringify(updated));
+        const cacheName = updated.companyName || payload.companyName;
+        if (cacheName) {
+          localStorage.setItem(this.getProfileKey(encodeURIComponent(cacheName)), JSON.stringify(updated));
+        }
+      } catch (err) {
+        console.warn('LocalStorage save failed:', err);
+      }
     }
 
     // Overwrite and sync user object in auth storage
     const user = authStorage.getUser();
     if (user) {
+      const resolvedAdminName = (updated.adminName || payload.adminName || user.adminName || user.fullName || '').trim();
+      const resolvedCompanyName = (updated.companyName || payload.companyName || user.companyName || '').trim();
+      const resolvedEmail = (updated.contactEmail || payload.contactEmail || user.contactEmail || user.email || '').trim();
+
       const updatedUser: UserDto = {
         ...user,
-        companyName: payload.companyName || user.companyName,
-        adminName: payload.adminName !== undefined ? payload.adminName : (user.adminName || user.fullName),
-        fullName: payload.adminName !== undefined ? payload.adminName : user.fullName,
-        email: payload.contactEmail || user.email,
-        contactEmail: payload.contactEmail !== undefined ? payload.contactEmail : user.contactEmail,
-        phone: payload.phone !== undefined ? payload.phone : user.phone,
-        companySize: payload.companySize !== undefined ? payload.companySize : user.companySize,
-        foundedYear: payload.foundedYear !== undefined ? payload.foundedYear : user.foundedYear,
-        logoUrl: payload.logoUrl !== undefined ? payload.logoUrl : user.logoUrl,
-        website: payload.website !== undefined ? payload.website : user.website,
-        linkedinUrl: payload.linkedinUrl !== undefined ? payload.linkedinUrl : user.linkedinUrl,
-        twitterUrl: payload.twitterUrl !== undefined ? payload.twitterUrl : user.twitterUrl,
-        githubUrl: payload.githubUrl !== undefined ? payload.githubUrl : user.githubUrl,
-        location: payload.location !== undefined ? payload.location : user.location,
-        industry: payload.industry !== undefined ? payload.industry : user.industry,
-        about: payload.about !== undefined ? payload.about : user.about,
+        companyId: user.companyId || (updated.id !== 'current' ? updated.id : undefined) || undefined,
+        companyName: resolvedCompanyName || user.companyName,
+        adminName: resolvedAdminName || user.adminName || user.fullName,
+        fullName: resolvedAdminName || user.fullName || resolvedCompanyName || 'Company Admin',
+        email: resolvedEmail || user.email,
+        contactEmail: resolvedEmail || user.contactEmail || user.email,
+        phone: updated.phone !== undefined ? updated.phone : user.phone,
+        companySize: updated.companySize !== undefined ? updated.companySize : user.companySize,
+        foundedYear: updated.foundedYear !== undefined ? updated.foundedYear : user.foundedYear,
+        logoUrl: updated.logoUrl !== undefined ? updated.logoUrl : user.logoUrl,
+        website: updated.website !== undefined ? updated.website : user.website,
+        linkedinUrl: updated.linkedinUrl !== undefined ? updated.linkedinUrl : user.linkedinUrl,
+        twitterUrl: updated.twitterUrl !== undefined ? updated.twitterUrl : user.twitterUrl,
+        githubUrl: updated.githubUrl !== undefined ? updated.githubUrl : user.githubUrl,
+        location: updated.location !== undefined ? updated.location : user.location,
+        industry: updated.industry !== undefined ? updated.industry : user.industry,
+        about: updated.about !== undefined ? updated.about : user.about,
+        updatedAt: updated.updatedAt || new Date().toISOString(),
       };
       authStorage.setUser(updatedUser);
     }

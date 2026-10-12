@@ -12,7 +12,10 @@ concurrency:
 
 env:
   NODE_VERSION: '20.x'
-  AZURE_WEBAPP_NAME: 'app-skillhub-frontend' # Replace with your Azure Web App name or use ${{ secrets.AZURE_WEBAPP_NAME }}
+  AZURE_WEBAPP_NAME: 'app-skillhub-frontend'
+  AZURE_CLIENT_ID: 'ac0d5ccf-2cdc-4e0e-80fb-9ecb3c860d57'
+  AZURE_TENANT_ID: '44e3cf94-19c9-4e32-96c3-14f5bf01391a'
+  AZURE_SUBSCRIPTION_ID: '81a9b607-84ed-41c1-b95e-f9e8961416c1'
 
 jobs:
   build-and-deploy:
@@ -20,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write # Required for passwordless Azure OIDC authentication
 
     steps:
       # 1. Checkout repository code
@@ -39,12 +43,20 @@ jobs:
           npm ci
           npm run build
 
-      # 4. Deploy production bundle to Azure Web App strictly using Publish Profile (Zero Azure CLI / Service Principal required)
-      - name: Deploy to Azure Web App via Publish Profile
+      # 4. Authenticate to Azure via OpenID Connect (OIDC) using Managed Identity
+      - name: Log in to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID || env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID || env.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID || env.AZURE_SUBSCRIPTION_ID }}
+
+      # 5. Deploy production bundle to Azure Web App using active Azure login session
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE || secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
           package: ./dist
+
 
 

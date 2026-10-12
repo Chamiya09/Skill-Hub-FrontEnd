@@ -2006,6 +2006,7 @@ export const InterviewSelection: React.FC = () => {
         isOpen={isAiInterviewSchedulerModalOpen}
         onClose={() => setIsAiInterviewSchedulerModalOpen(false)}
         availableJobs={jobs}
+        initialJobVacancyId={jobFilter !== 'all' ? jobFilter : undefined}
         onSuccess={(msg) => {
           showToast(msg || 'AI Interview scheduling completed successfully!');
           fetchData();

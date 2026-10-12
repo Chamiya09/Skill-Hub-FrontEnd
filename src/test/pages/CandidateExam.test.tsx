@@ -9,10 +9,13 @@ vi.mock('@monaco-editor/react', () => ({
   default: ({ value, onChange }: { value: string; onChange: (value: string) => void }) =>
     <textarea aria-label="Code editor" value={value} onChange={(event) => onChange(event.target.value)} />,
 }))
-vi.mock('../../services/api', () => ({ assessmentsApi: {
-  getExamPaper: vi.fn(), startExam: vi.fn(), saveDraft: vi.fn(), submitExam: vi.fn(),
-  runCode: vi.fn(), logProctorEvent: vi.fn(), blockAssessment: vi.fn(),
-} }))
+vi.mock('../../services/api', () => ({
+  API_BASE_URL: 'http://localhost:5155/api',
+  assessmentsApi: {
+    getExamPaper: vi.fn(), startExam: vi.fn(), saveDraft: vi.fn(), submitExam: vi.fn(),
+    runCode: vi.fn(), logProctorEvent: vi.fn(), blockAssessment: vi.fn(),
+  },
+}))
 
 const questions: CandidateCodingQuestionDto[] = [
   { id: 'q-1', title: 'Sum numbers', problemStatement: 'Return the sum.', language: 'javascript', difficulty: 'Easy', starterCode: 'function sum() {}', sampleTestCases: [], points: 50, order: 1 },

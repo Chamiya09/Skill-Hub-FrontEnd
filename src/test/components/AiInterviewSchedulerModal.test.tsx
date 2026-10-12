@@ -346,5 +346,44 @@ describe('AI Interview Scheduler Modal - Unified Proposal Table Path', () => {
     const approveBtn = screen.getByRole('button', { name: /Approve & Confirm/i })
     expect(approveBtn).toBeDisabled()
   })
+
+  it('TC210 enables Generate Clash-Free Schedule when candidate has status Selected/Pending without a booked appointment', async () => {
+    // A candidate who was Selected for Technical Interview (status: 'Selected', isSelectedForInterview: true, no scheduledEventId)
+    const selectedForInterviewCand: SubmissionDetailDto = {
+      ...pendingSubmission,
+      id: 'sub-3',
+      candidateId: 'cand-dinusara',
+      candidateName: 'Dinusara Nethmal',
+      candidateEmail: 'dinusara@gmail.com',
+      status: 'Selected',
+      isSelectedForInterview: true,
+      scheduledEventId: undefined,
+      scheduledDate: undefined,
+      scheduledTime: undefined,
+    }
+
+    vi.mocked(assessmentsApi.getInterviewSelections).mockResolvedValueOnce([selectedForInterviewCand])
+    vi.mocked(eventsApi.getEvents).mockResolvedValueOnce([])
+
+    render(
+      <AiInterviewSchedulerModal
+        isOpen={true}
+        onClose={vi.fn()}
+        availableJobs={mockJobs}
+        initialJobVacancyId="job-101"
+      />
+    )
+
+    // The Generate Clash-Free Schedule button MUST be enabled (not blocked)
+    const generateBtn = await screen.findByRole('button', { name: /Generate Clash-Free Schedule/i })
+    expect(generateBtn).toBeEnabled()
+    expect(generateBtn).not.toHaveClass('is-blocked')
+
+    // Helper text should show 1 candidate pending schedule
+    expect(screen.getByText(/1 candidate pending schedule/i)).toBeInTheDocument()
+
+    // Blocked alert banner should NOT be present
+    expect(screen.queryByTestId('ai-scheduler-blocked-banner')).not.toBeInTheDocument()
+  })
 })
 

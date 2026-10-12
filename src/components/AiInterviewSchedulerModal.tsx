@@ -14,6 +14,7 @@ import {
   type JobDto,
   eventsApi,
   jobsApi,
+  assessmentsApi,
   type ScheduleProposalResponseDto,
   type ConfirmInterviewScheduleDto,
 } from '../services/api';
@@ -83,6 +84,9 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
   >({});
   const [commonMeetingLinkInput, setCommonMeetingLinkInput] = useState<string>('');
   const [commonLocationInput, setCommonLocationInput] = useState<string>('');
+  const [pendingCandidateIds, setPendingCandidateIds] = useState<string[]>([]);
+  const [pendingCandidatesCount, setPendingCandidatesCount] = useState<number | null>(null);
+
   // Live count derived from HR's manual checkbox selections
   const liveScheduledCount = selectedProposedSlotIds.length;
   const liveUnscheduledCount = scheduleProposal
@@ -144,7 +148,43 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
     };
   }, [isOpen, availableJobs, initialJobVacancyId]);
 
+  // Fetch and strictly filter un-scheduled candidates for the chosen requisition
+  useEffect(() => {
+    let ignore = false;
+    if (isOpen && selectedVacancyId) {
+      assessmentsApi
+        .getInterviewSelections(selectedVacancyId)
+        .then((selections) => {
+          if (ignore) return;
+          // Strictly filter out candidates who are already 'Selected' or 'Scheduled', or already have an event or are 'Hired'
+          const unScheduled = (selections || []).filter(
+            (s) =>
+              !s.isHired &&
+              s.status !== 'Hired' &&
+              !s.scheduledEventId &&
+              s.status !== 'Ready for Interview' &&
+              s.status !== 'Scheduled' &&
+              s.status !== 'Selected' &&
+              !s.status?.toLowerCase().includes('ready')
+          );
+          setPendingCandidateIds(unScheduled.map((s) => s.candidateId));
+          setPendingCandidatesCount(unScheduled.length);
+        })
+        .catch((err) => {
+          if (ignore) return;
+          console.warn('Could not fetch candidate selections for vacancy:', err);
+          setPendingCandidateIds([]);
+          setPendingCandidatesCount(null);
+        });
+    } else if (!isOpen) {
+      setPendingCandidateIds([]);
+      setPendingCandidatesCount(null);
+    }
 
+    return () => {
+      ignore = true;
+    };
+  }, [isOpen, selectedVacancyId]);
 
   if (!isOpen) return null;
 
@@ -167,6 +207,7 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
         workingHoursStart: aiWorkStart,
         workingHoursEnd: aiWorkEnd,
         bufferMinutes: aiBuffer,
+        candidateIds: pendingCandidateIds.length > 0 ? pendingCandidateIds : undefined,
       });
 
       setScheduleProposal(proposal);
@@ -184,12 +225,6 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
         };
       });
       setSlotConfigs(initialConfigs);
-
-      if (proposal.proposedSlots.length === 0) {
-        setAiSchedulerError(
-          'No candidate interview slots could be generated. Ensure candidates are shortlisted or selected for interview for this role.'
-        );
-      }
     } catch (err: unknown) {
       console.error('Failed to generate interview schedule proposal:', err);
       const msg = err instanceof Error ? err.message : 'Failed to generate interview schedule with AI Agent.';
@@ -412,7 +447,19 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                 )}
               </select>
               <p className="ai-scheduler-field-helper">
-                The AI agent will fetch candidates in &quot;Interview Selection&quot; (or Shortlisted) for this requisition.
+                The AI agent evaluates only pending, un-scheduled candidates for this requisition.
+                {pendingCandidatesCount !== null && (
+                  <span
+                    style={{
+                      color: pendingCandidatesCount > 0 ? '#059669' : '#b45309',
+                      fontWeight: 700,
+                      marginLeft: '6px',
+                    }}
+                  >
+                    • {pendingCandidatesCount} candidate{pendingCandidatesCount === 1 ? '' : 's'} pending schedule
+                    {pendingCandidatesCount === 0 && ' (All candidates already scheduled)'}
+                  </span>
+                )}
               </p>
             </div>
 
@@ -621,8 +668,22 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
               </ul>
             </div>
 
-            {/* Proposed Slots Table */}
-            <div>
+            {/* If all candidates are already 'Selected' or 'Scheduled' (filtered list is empty), display clean empty state instead of table */}
+            {scheduleProposal.proposedSlots.length === 0 && scheduleProposal.unscheduledCandidates.length === 0 ? (
+              <div className="ai-scheduler-empty-card" data-testid="ai-scheduler-empty-state">
+                <div className="ai-scheduler-empty-icon-wrapper">
+                  <CheckCircle2 size={36} color="#059669" />
+                </div>
+                <h3 className="ai-scheduler-empty-title">
+                  All candidates have been scheduled. There are no new candidates to process at this time.
+                </h3>
+                <p className="ai-scheduler-empty-description">
+                  Every shortlisted candidate for this requisition already has a confirmed interview appointment or has been processed. No additional time slots are required.
+                </p>
+              </div>
+            ) : (
+              /* Proposed Slots Table */
+              <div>
               <div className="ai-proposal-toolbar" style={{ marginBottom: '12px' }}>
                 {/* Left side: Bulk Apply Tools (Link & Location) */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -969,25 +1030,11 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                       </tr>
                     ))}
 
-                    {/* Empty State if All Lists Empty */}
-                    {scheduleProposal.proposedSlots.length === 0 &&
-                      scheduleProposal.unscheduledCandidates.length === 0 && (
-                        <tr>
-                          <td colSpan={8} style={{ textAlign: 'center', padding: '24px 16px', color: '#64748b' }}>
-                            <CheckCircle2 size={24} color="#059669" style={{ margin: '0 auto 8px' }} />
-                            <div style={{ fontWeight: 700, color: '#0f172a' }}>
-                              All candidates for this vacancy already have scheduled interviews.
-                            </div>
-                            <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                              Zero pending candidates require new interview slots.
-                            </div>
-                          </td>
-                        </tr>
-                      )}
                   </tbody>
                 </table>
               </div>
             </div>
+            )}
 
             {/* Review Action Buttons */}
             <div className="ai-proposal-footer">
@@ -1014,7 +1061,16 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                   type="button"
                   className="ai-proposal-btn-confirm"
                   onClick={handleConfirmSchedule}
-                  disabled={isConfirmingSchedule || selectedProposedSlotIds.length === 0}
+                  disabled={
+                    isConfirmingSchedule ||
+                    selectedProposedSlotIds.length === 0 ||
+                    scheduleProposal.proposedSlots.length === 0
+                  }
+                  title={
+                    scheduleProposal.proposedSlots.length === 0
+                      ? 'All candidates have already been scheduled'
+                      : undefined
+                  }
                 >
                   {isConfirmingSchedule ? (
                     <>

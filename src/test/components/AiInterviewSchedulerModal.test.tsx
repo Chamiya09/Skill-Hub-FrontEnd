@@ -181,4 +181,59 @@ describe('AI Interview Scheduler Modal - Unified Proposal Table Path', () => {
     expect(within(table).getByText('Empty')).toBeInTheDocument()
     expect(within(table).getAllByText('Not Scheduled').length).toBe(2)
   })
+
+  it('TC207 verifies that when all candidates are already Selected or Scheduled, it shows a clear empty state message and disables Approve & Confirm', async () => {
+    const user = userEvent.setup()
+    const allScheduledProposal: ScheduleProposalResponseDto = {
+      jobVacancyId: 'job-101',
+      jobTitle: 'Senior Full Stack Engineer',
+      proposedSlots: [],
+      unscheduledCandidates: [],
+      summary: {
+        totalCandidates: 0,
+        scheduledCount: 0,
+        unscheduledCount: 0,
+        originalDateRange: '2026-10-18 to 2026-10-22',
+        effectiveDateRange: '2026-10-18 to 2026-10-22',
+        forwardDaysExtended: 0,
+        tracksUtilized: 1,
+        assumptionsMade: ['All candidates have been scheduled. There are no new candidates to process at this time.'],
+        aiValidationNotes: ['Zero pending candidates require new interview slots.'],
+      },
+      isDraft: true,
+    }
+
+    vi.mocked(eventsApi.generateInterviewSchedule).mockResolvedValueOnce(allScheduledProposal)
+
+    render(
+      <AiInterviewSchedulerModal
+        isOpen={true}
+        onClose={vi.fn()}
+        availableJobs={mockJobs}
+        initialJobVacancyId="job-101"
+      />
+    )
+
+    const generateBtn = screen.getByRole('button', { name: /Generate Clash-Free Schedule/i })
+    await user.click(generateBtn)
+
+    // View B: Proposal review path
+    // 1. Clean 3 metric cards are shown
+    expect(await screen.findByText('Candidates')).toBeInTheDocument()
+
+    // 2. Table is NOT displayed (Requirement 3: do NOT display an empty table)
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+
+    // 3. User-friendly empty state message is displayed in empty card
+    const emptyCard = screen.getByTestId('ai-scheduler-empty-state')
+    expect(emptyCard).toBeInTheDocument()
+    expect(
+      within(emptyCard).getByText('All candidates have been scheduled. There are no new candidates to process at this time.')
+    ).toBeInTheDocument()
+
+    // 4. "Approve & Confirm" button is DISABLED
+    const approveBtn = screen.getByRole('button', { name: /Approve & Confirm/i })
+    expect(approveBtn).toBeDisabled()
+  })
 })
+

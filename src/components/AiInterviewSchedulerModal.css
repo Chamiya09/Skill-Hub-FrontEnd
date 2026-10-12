@@ -507,6 +507,51 @@
   box-shadow: 0 4px 8px rgba(15, 118, 110, 0.3);
 }
 
+/* Empty State When All Candidates are Already Scheduled */
+.ai-scheduler-empty-card {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1.5px dashed #a7f3d0;
+  border-radius: 16px;
+  padding: 36px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 8px 0 16px 0;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.04);
+}
+
+.ai-scheduler-empty-icon-wrapper {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #d1fae5;
+  border: 2px solid #a7f3d0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 10px rgba(5, 150, 105, 0.12);
+}
+
+.ai-scheduler-empty-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #065f46;
+  margin: 0 0 8px 0;
+  max-width: 520px;
+  line-height: 1.45;
+}
+
+.ai-scheduler-empty-description {
+  font-size: 13px;
+  color: #047857;
+  max-width: 540px;
+  margin: 0;
+  line-height: 1.55;
+}
+
 /* Proposed Slots Table */
 .ai-slots-table-shell {
   max-height: 360px;

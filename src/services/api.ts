@@ -2480,6 +2480,7 @@ export interface GenerateScheduleRequestDto {
   workingHoursStart?: string;
   workingHoursEnd?: string;
   bufferMinutes?: number;
+  candidateIds?: string[];
 }
 
 export interface ProposedSlotDto {

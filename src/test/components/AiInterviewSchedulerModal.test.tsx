@@ -19,6 +19,7 @@ vi.mock('../../services/api', () => ({
     getJobs: vi.fn(),
   },
   eventsApi: {
+    getEvents: vi.fn(),
     generateInterviewSchedule: vi.fn(),
     confirmInterviewSchedule: vi.fn(),
   },
@@ -61,6 +62,31 @@ const scheduledSubmission: SubmissionDetailDto = {
   scheduledMeetingMode: 'Online',
   scheduledLocation: 'https://meet.google.com/test-room',
   isSelectedForInterview: true,
+  answers: [],
+  proctorSummary: { tabSwitches: 0, windowBlurs: 0, events: [] },
+}
+
+const pendingSubmission: SubmissionDetailDto = {
+  id: 'sub-2',
+  assessmentId: 'asm-1',
+  assessmentTitle: 'Fullstack Test',
+  candidateId: 'cand-2',
+  candidateName: 'Nimali Silva',
+  candidateEmail: 'nimali@test.lk',
+  applicationId: 'app-2',
+  jobVacancyId: 'job-101',
+  jobTitle: 'Senior Full Stack Engineer',
+  examScore: 85,
+  cvScore: 80,
+  finalWeightedScore: 83,
+  passingThreshold: 60,
+  status: 'Pending',
+  scheduledEventId: undefined,
+  scheduledDate: undefined,
+  scheduledTime: undefined,
+  scheduledMeetingMode: undefined,
+  scheduledLocation: undefined,
+  isSelectedForInterview: false,
   answers: [],
   proctorSummary: { tabSwitches: 0, windowBlurs: 0, events: [] },
 }
@@ -119,7 +145,8 @@ const mockProposal: ScheduleProposalResponseDto = {
 
 beforeEach(() => {
   vi.mocked(jobsApi.getJobs).mockReset().mockResolvedValue(mockJobs)
-  vi.mocked(assessmentsApi.getInterviewSelections).mockReset().mockResolvedValue([scheduledSubmission])
+  vi.mocked(assessmentsApi.getInterviewSelections).mockReset().mockResolvedValue([scheduledSubmission, pendingSubmission])
+  vi.mocked(eventsApi.getEvents).mockReset().mockResolvedValue([])
   vi.mocked(eventsApi.generateInterviewSchedule).mockReset().mockResolvedValue(mockProposal)
 })
 
@@ -154,7 +181,7 @@ describe('AI Interview Scheduler Modal - Unified Proposal Table Path', () => {
     )
 
     // Submit form in View A to generate proposal
-    const generateBtn = screen.getByRole('button', { name: /Generate Clash-Free Schedule/i })
+    const generateBtn = await screen.findByRole('button', { name: /Generate Clash-Free Schedule/i })
     await user.click(generateBtn)
 
     // View B: Proposal review path
@@ -214,7 +241,7 @@ describe('AI Interview Scheduler Modal - Unified Proposal Table Path', () => {
       />
     )
 
-    const generateBtn = screen.getByRole('button', { name: /Generate Clash-Free Schedule/i })
+    const generateBtn = await screen.findByRole('button', { name: /Generate Clash-Free Schedule/i })
     await user.click(generateBtn)
 
     // View B: Proposal review path
@@ -232,6 +259,90 @@ describe('AI Interview Scheduler Modal - Unified Proposal Table Path', () => {
     ).toBeInTheDocument()
 
     // 4. "Approve & Confirm" button is DISABLED
+    const approveBtn = screen.getByRole('button', { name: /Approve & Confirm/i })
+    expect(approveBtn).toBeDisabled()
+  })
+
+  it('TC208 blocks the Generate Clash-Free Schedule button in View A when all candidates are already scheduled', async () => {
+    // Only return already scheduled candidate (no pending candidates)
+    vi.mocked(assessmentsApi.getInterviewSelections).mockResolvedValueOnce([scheduledSubmission])
+    vi.mocked(eventsApi.getEvents).mockResolvedValueOnce([
+      {
+        id: 'event-999',
+        candidateId: 'cand-1',
+        title: 'Interview: Kasun Perera',
+        eventDate: '2026-10-18',
+        eventTime: '10:00 - 10:30',
+      } as any,
+    ])
+
+    render(
+      <AiInterviewSchedulerModal
+        isOpen={true}
+        onClose={vi.fn()}
+        availableJobs={mockJobs}
+        initialJobVacancyId="job-101"
+      />
+    )
+
+    // Blocked alert banner is displayed in View A
+    expect(await screen.findByTestId('ai-scheduler-blocked-banner')).toBeInTheDocument()
+    expect(screen.getByText('All Candidates Already Scheduled')).toBeInTheDocument()
+
+    // The Generate Clash-Free Schedule button is disabled and blocked
+    const generateBtn = screen.getByRole('button', { name: /Scheduling Blocked/i })
+    expect(generateBtn).toBeDisabled()
+    expect(generateBtn).toHaveClass('is-blocked')
+  })
+
+  it('TC209 empties the proposal table in View B and displays empty state when proposal candidates are already scheduled', async () => {
+    const user = userEvent.setup()
+    // Proposal returns already-scheduled candidate Kasun Perera (cand-1)
+    const proposalWithScheduledCand: ScheduleProposalResponseDto = {
+      ...mockProposal,
+      proposedSlots: [
+        {
+          slotId: 'slot-1',
+          candidateId: 'cand-1',
+          candidateName: 'Kasun Perera',
+          candidateEmail: 'kasun@test.lk',
+          date: '2026-10-19',
+          startTime: '09:00',
+          endTime: '09:30',
+          trackNumber: 1,
+          trackName: 'Track 1',
+          isExtendedSearch: false,
+        },
+      ],
+      unscheduledCandidates: [],
+    }
+
+    vi.mocked(eventsApi.generateInterviewSchedule).mockResolvedValueOnce(proposalWithScheduledCand)
+
+    render(
+      <AiInterviewSchedulerModal
+        isOpen={true}
+        onClose={vi.fn()}
+        availableJobs={mockJobs}
+        initialJobVacancyId="job-101"
+      />
+    )
+
+    const generateBtn = await screen.findByRole('button', { name: /Generate Clash-Free Schedule/i })
+    await user.click(generateBtn)
+
+    // View B: Because cand-1 is already scheduled, table must be emptied
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    expect(screen.queryByText('Kasun Perera')).not.toBeInTheDocument()
+
+    // Empty state card is displayed instead
+    const emptyCard = screen.getByTestId('ai-scheduler-empty-state')
+    expect(emptyCard).toBeInTheDocument()
+    expect(
+      within(emptyCard).getByText('All candidates have been scheduled. There are no new candidates to process at this time.')
+    ).toBeInTheDocument()
+
+    // Approve & Confirm button is disabled
     const approveBtn = screen.getByRole('button', { name: /Approve & Confirm/i })
     expect(approveBtn).toBeDisabled()
   })

@@ -2300,5 +2300,117 @@
   animation: pulse 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+/* ==========================================================================
+   ADMIN PORTAL - COMPREHENSIVE RESPONSIVE DESIGN (MOBILE & TABLET)
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .pipeline-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 
+@media (max-width: 768px) {
+  .dashboard-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    transform: translateX(-100%);
+    box-shadow: 4px 0 25px rgba(0, 0, 0, 0.15);
+    z-index: 999;
+  }
 
+  .dashboard-sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-close-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .topbar-menu-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .dashboard-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 998;
+  }
+
+  .dashboard-viewport {
+    padding: 16px 12px;
+  }
+
+  .pipeline-summary-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .pipeline-dashboard-card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .pipeline-dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .pipeline-dashboard-header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .admin-company-search-box {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .admin-modal-card {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    padding: 20px 16px !important;
+    border-radius: 16px !important;
+    max-height: 94vh;
+  }
+
+  .admin-login-card {
+    padding: 28px 20px;
+    border-radius: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-login-card {
+    padding: 24px 16px;
+  }
+
+  .admin-login-title {
+    font-size: 20px;
+  }
+
+  .admin-modal-footer {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .admin-modal-footer button {
+    width: 100%;
+    justify-content: center;
+  }
+}

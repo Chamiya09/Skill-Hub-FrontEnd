@@ -17,6 +17,8 @@ import {
   BriefcaseIcon,
   CheckIcon,
   ArrowRightIcon,
+
+
   BookmarkIcon,
   SearchIcon,
   SendIcon,
@@ -508,23 +510,8 @@ export const JobDetailsPublic: React.FC = () => {
                   >
                     {dynamicCompanyName}
                   </Link>
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      background: '#eff6ff',
-                      color: '#2563eb',
-                      border: '1px solid #dbeafe',
-                      fontSize: '11.5px',
-                      fontWeight: 700,
-                      padding: '2px 8px',
-                      borderRadius: '9999px',
-                    }}
-                  >
-                    <CheckIcon /> Verified Employer
-                  </span>
                 </div>
+
 
                 <h1
                   style={{

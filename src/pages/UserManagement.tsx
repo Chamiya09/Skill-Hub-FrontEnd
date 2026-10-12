@@ -145,7 +145,7 @@ export const UserManagement = () => {
 
       {/* Standardized Filter & Search Bar */}
       <div className="filter-card-wrapper" style={{ marginBottom: '24px' }}>
-        <div className="filter-grid-bar" style={{ gridTemplateColumns: '2fr 1.2fr auto' }}>
+        <div className="filter-grid-bar usermgmt-filter-bar">
           <div className="filter-input-group">
             <span style={{ color: '#94a3b8' }}>
               <SearchIcon />

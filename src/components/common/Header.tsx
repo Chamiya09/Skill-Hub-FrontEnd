@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
-import { NavLink, Link, useNavigate } from 'react-router-dom'
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { SparkleIcon, ChevronDownIcon } from './Icons'
+import { SparkleIcon, ChevronDownIcon, MenuIcon, XIcon } from './Icons'
 
 export interface DashboardConfig {
   label: string
@@ -49,9 +49,18 @@ const getDashboardConfig = (role?: string): DashboardConfig => {
 
 export const Header = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { currentUser, logout } = useAuth()
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close mobile menu on route change during render
+  const [prevPathname, setPrevPathname] = useState(location.pathname)
+  if (prevPathname !== location.pathname) {
+    setPrevPathname(location.pathname)
+    setMobileMenuOpen(false)
+  }
 
   // Close dropdown on click outside or Escape key
   useEffect(() => {
@@ -64,10 +73,11 @@ export const Header = () => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setDropdownOpen(false)
+        setMobileMenuOpen(false)
       }
     }
 
-    if (dropdownOpen) {
+    if (dropdownOpen || mobileMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside)
       document.addEventListener('keydown', handleEscape)
     }
@@ -76,7 +86,7 @@ export const Header = () => {
       document.removeEventListener('mousedown', handleClickOutside)
       document.removeEventListener('keydown', handleEscape)
     }
-  }, [dropdownOpen])
+  }, [dropdownOpen, mobileMenuOpen])
 
   const userRole = currentUser?.role?.trim().toLowerCase()
   const dashboardConfig = getDashboardConfig(currentUser?.role)
@@ -332,7 +342,138 @@ export const Header = () => {
             </Link>
           </div>
         )}
+
+        {/* Mobile Hamburger Toggle Button */}
+        <button
+          type="button"
+          className="navbar-mobile-toggle"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label={mobileMenuOpen ? 'Close menu' : 'Open navigation menu'}
+          aria-expanded={mobileMenuOpen}
+        >
+          {mobileMenuOpen ? <XIcon /> : <MenuIcon />}
+        </button>
       </div>
+
+      {/* Mobile Navigation Drawer / Sheet */}
+      {mobileMenuOpen && (
+        <>
+          <div
+            className="navbar-mobile-backdrop"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="navbar-mobile-drawer" role="dialog" aria-modal="true" aria-label="Mobile Navigation">
+            <nav className="navbar-mobile-nav">
+              <NavLink
+                to="/"
+                end
+                className={({ isActive }) => `navbar-mobile-link ${isActive ? 'active' : ''}`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Home
+              </NavLink>
+              <NavLink
+                to="/jobs"
+                className={({ isActive }) => `navbar-mobile-link ${isActive ? 'active' : ''}`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Find Jobs
+              </NavLink>
+              <NavLink
+                to="/about"
+                className={({ isActive }) => `navbar-mobile-link ${isActive ? 'active' : ''}`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                About Us
+              </NavLink>
+              <NavLink
+                to="/contact"
+                className={({ isActive }) => `navbar-mobile-link ${isActive ? 'active' : ''}`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Contact Us
+              </NavLink>
+            </nav>
+
+            <div className="navbar-mobile-auth">
+              {currentUser ? (
+                <>
+                  <div className="navbar-mobile-user-card">
+                    <div className="avatar-circle">
+                      {currentUser.logoUrl ? (
+                        <img
+                          src={currentUser.logoUrl}
+                          alt={displayName}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={(e) => {
+                            ;(e.currentTarget as HTMLElement).style.display = 'none'
+                          }}
+                        />
+                      ) : (
+                        initials
+                      )}
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {displayName}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {currentUser.email}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Link
+                    to={dashboardConfig.route}
+                    className="navbar-mobile-action-btn primary"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <SparkleIcon />
+                    <span>{dashboardConfig.label}</span>
+                  </Link>
+
+                  {userRole === 'candidate' && (
+                    <Link
+                      to="/candidate/profile"
+                      className="navbar-mobile-action-btn secondary"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <SparkleIcon />
+                      <span>My Digital CV</span>
+                    </Link>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="navbar-mobile-action-btn danger"
+                  >
+                    <span>Sign Out</span>
+                  </button>
+                </>
+              ) : (
+                <div className="navbar-mobile-auth-grid">
+                  <Link
+                    to="/candidate-login"
+                    className="navbar-mobile-auth-btn login"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    to="/candidate-register"
+                    className="navbar-mobile-auth-btn signup"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Sign Up
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </header>
   )
 }

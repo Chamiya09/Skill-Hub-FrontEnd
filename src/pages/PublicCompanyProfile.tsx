@@ -21,8 +21,8 @@ import {
   TwitterIcon,
   GitHubIcon,
   ExternalLinkIcon,
-  CheckIcon,
   SearchIcon,
+
   BriefcaseIcon,
   ArrowRightIcon,
   SparkleIcon,
@@ -278,11 +278,8 @@ export const PublicCompanyProfile: React.FC = () => {
             <div className="public-company-title-box">
               <div className="public-company-title-row">
                 <h1 className="public-company-name">{company.companyName}</h1>
-                <span className="public-company-verified-tag">
-                  <CheckIcon />
-                  <span>Verified Employer</span>
-                </span>
               </div>
+
               <p className="public-company-tagline">
                 Official Employer & Engineering Recruitment Hub on Skill Hub
               </p>

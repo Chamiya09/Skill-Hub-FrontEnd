@@ -572,3 +572,36 @@
     align-items: flex-start;
   }
 }
+
+@media (max-width: 768px) {
+  .creative-calendar-shell {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .creative-calendar-grid {
+    min-width: 600px;
+  }
+
+  .creative-cal-nav-cluster {
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .creative-legend-cluster {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .creative-topbar-quick-add {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .creative-calendar-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

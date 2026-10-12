@@ -385,7 +385,7 @@ export const ShortlistedPipelineModal: React.FC<ShortlistedPipelineModalProps> =
             </div>
           ) : activeView === 'kanban' ? (
             /* ================= KANBAN BOARD VIEW ================= */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+            <div className="pipeline-kanban-scroll-wrapper grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
               {PIPELINE_COLUMNS.map((col) => {
                 const colCandidates = candidatesByStage[col.id] || [];
 

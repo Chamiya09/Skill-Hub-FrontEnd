@@ -823,3 +823,58 @@
     align-items: flex-start;
   }
 }
+
+@media (max-width: 560px) {
+  .company-security-hero {
+    padding: 18px 16px;
+  }
+
+  .company-security-hero-chips {
+    width: 100%;
+  }
+
+  .company-security-chip {
+    width: 100%;
+  }
+
+  .comp-security-card {
+    padding: 18px 16px;
+  }
+
+  .comp-2fa-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .comp-2fa-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .comp-session-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .comp-revoke-all-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .comp-actions-row {
+    width: 100%;
+  }
+
+  .comp-btn-save {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .comp-modal-box {
+    padding: 20px 16px;
+    max-width: 95vw;
+  }
+}
+

@@ -562,19 +562,20 @@ export const CandidateAssessments: React.FC = () => {
                         type="button"
                         className="btn-view-scorecard"
                         onClick={() => handleOpenScorecard(item.submissionId)}
+                        title="View assessment evaluation and results"
                       >
-                        <span>{isUnderReview ? 'Check Status' : 'View Scorecard'}</span>
+                        <span>{isUnderReview ? 'Check Status' : 'View Result'}</span>
                         <ArrowRightIcon />
                       </button>
                     ) : isBlocked ? (
                       <button
                         type="button"
-                        className="btn-start-exam btn-cannot-retake"
-                        disabled
-                        title="You cannot retake this assessment because the test session was closed or exited."
+                        className="btn-view-scorecard"
+                        onClick={() => handleOpenScorecard(item.submissionId)}
+                        title="View assessment evaluation and results"
                       >
-                        <XIcon />
-                        <span>Cannot Retake</span>
+                        <span>View Result</span>
+                        <ArrowRightIcon />
                       </button>
                     ) : isExpired ? (
                       <button

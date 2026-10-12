@@ -278,8 +278,8 @@ export const CandidateRegister: React.FC = () => {
                 </div>
               </div>
 
-              {/* First Name & Last Name (2-Column Grid) */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {/* First Name & Last Name (Responsive 2-Column / Mobile Stack Grid) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 wizard-grid-2col">
                 <div className="form-group-item">
                   <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px', display: 'block' }}>
                     First Name <span style={{ color: '#ef4444' }}>*</span>
@@ -576,7 +576,7 @@ export const CandidateRegister: React.FC = () => {
                   id="agreeTerms"
                   checked={agreeTerms}
                   onChange={(e) => setAgreeTerms(e.target.checked)}
-                  style={{ marginTop: '3px', accentColor: '#00b074', cursor: 'pointer' }}
+                  style={{ marginTop: '3px', accentColor: '#00b074', cursor: 'pointer', flexShrink: 0 }}
                 />
                 <label htmlFor="agreeTerms" style={{ fontSize: '12.5px', color: '#64748b', lineHeight: 1.4, cursor: 'pointer' }}>
                   I agree to the{' '}

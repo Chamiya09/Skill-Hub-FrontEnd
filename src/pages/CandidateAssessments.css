@@ -752,6 +752,9 @@
 }
 
 .btn-view-scorecard {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 14px;
   border-radius: 10px;
   border: 1px solid #cbd5e1;

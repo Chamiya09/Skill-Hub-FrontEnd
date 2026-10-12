@@ -139,12 +139,6 @@ export const ApplicationProgressModal: React.FC<ApplicationProgressModalProps> =
           <Link to={`/jobs/${application.jobId}`} className="application-view-link">
             View Job Details <ArrowRightIcon />
           </Link>
-          {!isRejected && !isSuspended && currentStage === 2 && (
-            <Link to={`/candidate/mock-interview?jobId=${application.jobId}`} className="application-smart-action">
-              <span>Practice Mock Interview</span>
-              <ArrowRightIcon />
-            </Link>
-          )}
           {!isRejected && !isSuspended && currentStage === 3 && (
             <Link to="/candidate/assessments" className="application-smart-action">
               <span>Go to Technical Assessments</span>

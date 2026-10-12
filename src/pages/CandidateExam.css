@@ -1068,3 +1068,155 @@
 .exam-completed-return-btn:hover svg {
   transform: translateX(4px);
 }
+
+/* ==========================================================================
+   CANDIDATE EXAM - RESPONSIVE MOBILE & TABLET ADAPTATIONS
+   ========================================================================== */
+
+.exam-mobile-panel-tabs {
+  display: none;
+}
+
+@media (max-width: 840px) {
+  .exam-workspace-header {
+    height: auto;
+    min-height: 52px;
+    padding: 8px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .exam-brand-title {
+    max-width: 140px;
+    font-size: 0.82rem;
+  }
+
+  .exam-brand-tag {
+    display: none;
+  }
+
+  .exam-status-group {
+    gap: 6px;
+  }
+
+  .exam-proctor-pill {
+    padding: 3px 8px;
+    font-size: 0.68rem;
+  }
+
+  .exam-timer-pill {
+    padding: 3px 9px;
+    font-size: 0.82rem;
+  }
+
+  .exam-header-actions {
+    gap: 6px;
+  }
+
+  .exam-submit-header-btn {
+    padding: 5px 12px;
+    font-size: 0.76rem;
+  }
+
+  /* Responsive Panel Tabs Bar */
+  .exam-mobile-panel-tabs {
+    display: flex;
+    width: 100%;
+    background: #0b1120;
+    border-bottom: 1px solid #1e293b;
+    padding: 4px 8px;
+    gap: 6px;
+    z-index: 20;
+    flex-shrink: 0;
+  }
+
+  .exam-mobile-tab-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+    text-align: center;
+  }
+
+  .exam-mobile-tab-btn.active {
+    background: #1e293b;
+    color: #34d399;
+    border-color: #334155;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  /* When mobile problem tab is active */
+  .exam-workspace-container.tab-problem .exam-left-panel {
+    width: 100% !important;
+    display: block !important;
+    height: 100% !important;
+  }
+
+  .exam-workspace-container.tab-problem .exam-resizer-h {
+    display: none !important;
+  }
+
+  .exam-workspace-container.tab-problem .exam-right-column {
+    display: none !important;
+  }
+
+  /* When mobile editor tab is active */
+  .exam-workspace-container.tab-editor .exam-left-panel {
+    display: none !important;
+  }
+
+  .exam-workspace-container.tab-editor .exam-resizer-h {
+    display: none !important;
+  }
+
+  .exam-workspace-container.tab-editor .exam-right-column {
+    display: flex !important;
+    width: 100% !important;
+    height: 100% !important;
+    flex: 1 !important;
+  }
+
+  .exam-code-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 10px;
+    height: auto;
+  }
+
+  .exam-toolbar-left {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .exam-toolbar-select {
+    font-size: 0.75rem;
+  }
+
+  .exam-run-btn {
+    padding: 6px 14px;
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .exam-workspace-header {
+    padding: 6px 8px;
+  }
+  .exam-brand-group .exam-brand-icon {
+    display: none;
+  }
+  .exam-briefing-card {
+    padding: 20px 14px;
+  }
+  .exam-left-panel {
+    padding: 16px 14px;
+  }
+}
+

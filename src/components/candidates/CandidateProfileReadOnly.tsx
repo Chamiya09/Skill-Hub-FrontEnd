@@ -12,6 +12,8 @@ import {
 import {
   SparkleIcon,
   MailIcon,
+
+
   PhoneIcon,
   MapPinIcon,
   BriefcaseIcon,
@@ -219,10 +221,6 @@ export const CandidateProfileReadOnly: React.FC<CandidateProfileReadOnlyProps> =
       {/* Top Bar with Badges & Creative Close Button */}
       <div className="candidate-cv-topbar">
         <div className="candidate-cv-topbar-left">
-          <span className="candidate-cv-verified-badge">
-            <SparkleIcon />
-            <span>Verified Digital CV</span>
-          </span>
           <span className="candidate-cv-id-badge">
             ID: {profileData.id ? profileData.id.substring(0, 8).toUpperCase() : 'N/A'}
           </span>
@@ -230,6 +228,7 @@ export const CandidateProfileReadOnly: React.FC<CandidateProfileReadOnlyProps> =
             • Confidential Employer Profile
           </span>
         </div>
+
 
         {onClose && (
           <button

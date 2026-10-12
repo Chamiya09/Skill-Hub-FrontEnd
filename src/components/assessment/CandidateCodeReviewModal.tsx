@@ -18,7 +18,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Star,
-  Sparkles,
   Copy,
   Clock,
   ShieldCheck,
@@ -103,27 +102,6 @@ export const CandidateCodeReviewModal: React.FC<CandidateCodeReviewModalProps> =
     showToast("✓ Code copied to clipboard");
   };
 
-  const handleAutoSumQuestions = () => {
-    const totalAwarded = Object.values(questionEvaluations).reduce(
-      (sum, q) => sum + (q.pointsEarned || 0),
-      0,
-    );
-    const totalPossible =
-      submission.answers?.reduce((sum, a) => {
-        const currentTemplate = assessments.find(
-          (t) => t.id === submission.assessmentId,
-        );
-        const qDef = currentTemplate?.finalQuestions?.find(
-          (q) => q.id === a.questionId,
-        );
-        return sum + (qDef?.points || 100);
-      }, 0) || 100;
-
-    const pct = Math.round((totalAwarded / (totalPossible || 1)) * 100);
-    const finalPct = Math.min(100, Math.max(0, pct));
-    setReviewExamScore(finalPct);
-    showToast(`Calculated score: ${finalPct}% based on question points.`);
-  };
 
   const handleSaveReview = async () => {
     try {
@@ -608,15 +586,6 @@ export const CandidateCodeReviewModal: React.FC<CandidateCodeReviewModalProps> =
                     />
                     <span className="candidate-review-score-percent">%</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleAutoSumQuestions}
-                    className="candidate-review-autosum-btn"
-                    title="Calculate percentage from question points"
-                  >
-                    <Sparkles size={13} />
-                    <span>Auto-sum Questions</span>
-                  </button>
                 </div>
 
                 <div

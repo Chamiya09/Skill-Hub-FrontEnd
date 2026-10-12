@@ -121,6 +121,8 @@ export const CandidateExam: React.FC = () => {
   const [leftPanelWidth, setLeftPanelWidth] = useState<number>(32);
   // Code editor height in percentage of right column (default: 60%)
   const [codePanelHeight, setCodePanelHeight] = useState<number>(60);
+  // Responsive mobile panel switcher (Problem vs Editor)
+  const [mobileExamTab, setMobileExamTab] = useState<'problem' | 'editor'>('problem');
 
   const isDraggingH = useRef<boolean>(false);
   const isDraggingV = useRef<boolean>(false);
@@ -1185,10 +1187,31 @@ export const CandidateExam: React.FC = () => {
       )}
 
       {/* -------------------------------------------------------------
+          MOBILE VIEWPORT PANEL SWITCHER (TABLETS & PHONES)
+          ------------------------------------------------------------- */}
+      <div className="exam-mobile-panel-tabs">
+        <button
+          type="button"
+          className={`exam-mobile-tab-btn ${mobileExamTab === 'problem' ? 'active' : ''}`}
+          onClick={() => setMobileExamTab('problem')}
+        >
+          Problem Statement
+        </button>
+        <button
+          type="button"
+          className={`exam-mobile-tab-btn ${mobileExamTab === 'editor' ? 'active' : ''}`}
+          onClick={() => setMobileExamTab('editor')}
+        >
+          Code Editor & Tests
+        </button>
+      </div>
+
+      {/* -------------------------------------------------------------
           MAIN 3-PANEL RESIZABLE WORKSPACE
           ------------------------------------------------------------- */}
       <div
         ref={containerRef}
+        className={`exam-workspace-container tab-${mobileExamTab}`}
         style={{
           display: 'flex',
           flex: 1,
@@ -1339,6 +1362,7 @@ export const CandidateExam: React.FC = () => {
             ========================================================= */}
         <div
           ref={rightColRef}
+          className="exam-right-column"
           style={{
             flex: 1,
             display: 'flex',

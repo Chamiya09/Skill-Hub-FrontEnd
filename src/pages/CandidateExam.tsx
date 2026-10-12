@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
+  API_BASE_URL,
   assessmentsApi,
   type StartExamResponseDto,
   type CandidateCodingQuestionDto,
@@ -374,8 +375,7 @@ export const CandidateExam: React.FC = () => {
   useEffect(() => {
     if (phase !== 'in_progress' || !submissionId) return;
 
-    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5155/api';
-    const blockUrl = `${apiBase}/Assessments/take/${submissionId}/block`;
+    const blockUrl = `${API_BASE_URL}/Assessments/take/${submissionId}/block`;
 
     const handleExit = () => {
       if (isSubmittedRef.current) return;

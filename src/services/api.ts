@@ -1,5 +1,10 @@
-// API Base URL - Matches ASP.NET Core port from launchSettings.json (http://localhost:5155)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5155/api';
+// API Base URL - Uses VITE_API_BASE_URL, defaulting to Azure Container Apps in production or localhost in development
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.PROD
+    ? 'https://ca-skillhub-backend.bravebay-18c4a18e.eastasia.azurecontainerapps.io/api'
+    : 'http://localhost:5155/api');
+
 
 export interface UserDto {
   id: string;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usersApi, type UserDto } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -39,35 +39,39 @@ export const UserManagement = () => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch users for the current authenticated company
-  const loadUsers = useCallback(async () => {
-    if (!currentUser || !currentUser.companyId) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setErrorMessage(null);
-      const data = await usersApi.getUsersByCompany(currentUser.companyId);
-      setUsers(data);
-    } catch (err: any) {
-      console.error('Error fetching users:', err);
-      setErrorMessage(err.message || 'Failed to fetch company team members.');
-      setUsers([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentUser]);
-
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       navigate('/login');
       return;
     }
-    if (isAuthenticated) {
-      loadUsers();
+    if (isAuthenticated && currentUser?.companyId) {
+      let ignore = false;
+      usersApi
+        .getUsersByCompany(currentUser.companyId)
+        .then((data) => {
+          if (!ignore) {
+            setUsers(data);
+            setErrorMessage(null);
+          }
+        })
+        .catch((err: unknown) => {
+          if (!ignore) {
+            console.error('Error fetching users:', err);
+            setErrorMessage(err instanceof Error ? err.message : 'Failed to fetch company team members.');
+            setUsers([]);
+          }
+        })
+        .finally(() => {
+          if (!ignore) {
+            setLoading(false);
+          }
+        });
+
+      return () => {
+        ignore = true;
+      };
     }
-  }, [authLoading, isAuthenticated, loadUsers, navigate]);
+  }, [authLoading, isAuthenticated, currentUser?.companyId, navigate]);
 
   // Direct physical deletion handler
   const handleConfirmDirectDelete = async () => {
@@ -85,8 +89,8 @@ export const UserManagement = () => {
       setTimeout(() => {
         setActionSuccess(null);
       }, 4000);
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to delete user.');
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to delete user.');
     } finally {
       setIsDeleting(false);
     }
@@ -141,7 +145,7 @@ export const UserManagement = () => {
 
       {/* Standardized Filter & Search Bar */}
       <div className="filter-card-wrapper" style={{ marginBottom: '24px' }}>
-        <div className="filter-grid-bar" style={{ gridTemplateColumns: '2fr 1.2fr auto' }}>
+        <div className="filter-grid-bar usermgmt-filter-bar">
           <div className="filter-input-group">
             <span style={{ color: '#94a3b8' }}>
               <SearchIcon />

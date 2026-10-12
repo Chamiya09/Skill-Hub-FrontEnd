@@ -379,9 +379,9 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
         forceRefresh: evaluationResult !== null,
       });
       setEvaluationResult(result);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[CvEvaluationPanel] Analysis error:', err);
-      setError(err?.message || 'The AI evaluation pipeline encountered an unexpected error.');
+      setError(err instanceof Error ? err.message : 'The AI evaluation pipeline encountered an unexpected error.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -410,9 +410,9 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
       setEvaluationResult(prev => prev ? { ...prev, approvalStatus: 'Approved' } : null);
       setSuccessMessage(res.message || `${candidateName} has been approved and moved to Shortlist!`);
       onApproved?.(evaluationResult.id);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[CvEvaluationPanel] Approval error:', err);
-      setError(err?.message || 'Failed to save approval decision.');
+      setError(err instanceof Error ? err.message : 'Failed to save approval decision.');
     } finally {
       setIsApproving(false);
     }
@@ -441,9 +441,9 @@ export const CvEvaluationPanel: React.FC<CvEvaluationPanelProps> = ({
       setEvaluationResult(prev => prev ? { ...prev, approvalStatus: 'Rejected' } : null);
       setSuccessMessage(`${candidateName} has been marked as Rejected.`);
       onApproved?.(evaluationResult.id);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[CvEvaluationPanel] Rejection error:', err);
-      setError(err?.message || 'Failed to reject evaluation.');
+      setError(err instanceof Error ? err.message : 'Failed to reject evaluation.');
     } finally {
       setIsApproving(false);
     }

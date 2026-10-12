@@ -21,8 +21,8 @@ import {
   TwitterIcon,
   GitHubIcon,
   ExternalLinkIcon,
-  CheckIcon,
   SearchIcon,
+
   BriefcaseIcon,
   ArrowRightIcon,
   SparkleIcon,
@@ -81,9 +81,10 @@ export const PublicCompanyProfile: React.FC = () => {
         }
         setCompany(data.company);
         setJobs(data.jobs || []);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to load public company profile:', err);
-        setError(err.message || 'Unable to retrieve company information.');
+        const message = err instanceof Error ? err.message : (err as { message?: string })?.message;
+        setError(message || 'Unable to retrieve company information.');
         setCompany(null);
         setJobs([]);
       } finally {
@@ -277,11 +278,8 @@ export const PublicCompanyProfile: React.FC = () => {
             <div className="public-company-title-box">
               <div className="public-company-title-row">
                 <h1 className="public-company-name">{company.companyName}</h1>
-                <span className="public-company-verified-tag">
-                  <CheckIcon />
-                  <span>Verified Employer</span>
-                </span>
               </div>
+
               <p className="public-company-tagline">
                 Official Employer & Engineering Recruitment Hub on Skill Hub
               </p>

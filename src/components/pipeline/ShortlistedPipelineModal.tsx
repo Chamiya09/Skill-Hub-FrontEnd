@@ -88,18 +88,18 @@ export const ShortlistedPipelineModal: React.FC<ShortlistedPipelineModalProps> =
       setSearchQuery('');
 
       const data: JobApplicantDto[] = await jobApplicationsApi.getJobApplicants(job.id);
-
       const mapped: PipelineCandidate[] = (data || []).map((app, idx) => {
-        // Normalize status
         const rawStatus = (app.status || 'Applied').trim();
         let status = 'Applied';
         const lower = rawStatus.toLowerCase();
-        if (lower.includes('hire') || lower.includes('offer') || lower.includes('hired')) status = 'Offered';
-        else if (lower.includes('interview')) status = 'Interview';
-        else if (lower.includes('shortlist') || lower.includes('screen')) status = 'Shortlisted';
-        else status = 'Applied';
+        if (lower.includes('hire') || lower.includes('offer') || lower.includes('hired')) {
+          status = 'Offered';
+        } else if (lower.includes('interview')) {
+          status = 'Interview';
+        } else if (lower.includes('shortlist') || lower.includes('screen')) {
+          status = 'Shortlisted';
+        }
 
-        // Baseline calculated match score
         const skillScore = Math.min(25, (app.skills?.length || 0) * 6);
         const score = Math.min(98, Math.max(65, 75 + skillScore - ((idx * 5) % 12)));
 
@@ -127,19 +127,82 @@ export const ShortlistedPipelineModal: React.FC<ShortlistedPipelineModalProps> =
       });
 
       setCandidates(mapped);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching pipeline applicants:', err);
-      setErrorMessage(err.message || 'Failed to fetch applicants for this requisition.');
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to fetch applicants for this requisition.');
     } finally {
       setIsLoading(false);
     }
-  }, [job?.id]);
+  }, [job]);
 
   useEffect(() => {
-    if (isOpen) {
-      fetchApplicants();
-    }
-  }, [isOpen, fetchApplicants]);
+    if (!isOpen || !job?.id) return;
+    let ignore = false;
+    jobApplicationsApi
+      .getJobApplicants(job.id)
+      .then((data) => {
+        if (ignore) return;
+        const mapped: PipelineCandidate[] = (data || []).map((app, idx) => {
+          const rawStatus = (app.status || 'Applied').trim();
+          let status = 'Applied';
+          const lower = rawStatus.toLowerCase();
+          if (lower.includes('hire') || lower.includes('offer') || lower.includes('hired')) {
+            status = 'Offered';
+          } else if (lower.includes('interview')) {
+            status = 'Interview';
+          } else if (lower.includes('shortlist') || lower.includes('screen')) {
+            status = 'Shortlisted';
+          }
+
+          const skillScore = Math.min(25, (app.skills?.length || 0) * 6);
+          const score = Math.min(98, Math.max(65, 75 + skillScore - ((idx * 5) % 12)));
+
+          return {
+            id: app.id,
+            candidateId: app.candidateId,
+            name: app.candidateName || 'Unnamed Candidate',
+            headline: app.candidateHeadline || 'Candidate Profile',
+            location: app.candidateLocation || 'Location unspecified',
+            email: app.candidateEmail || '',
+            phone: app.candidatePhone || '',
+            appliedDate: app.appliedDate
+              ? new Date(app.appliedDate).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })
+              : 'Recent',
+            status,
+            aiScore: score,
+            skills: app.skills || [],
+            avatarUrl: app.candidateAvatarUrl,
+            avatarBg: getGradientForName(app.candidateName || 'Candidate'),
+          };
+        });
+        setCandidates(mapped);
+      })
+      .catch((err: unknown) => {
+        if (ignore) return;
+        console.error('Error fetching pipeline applicants:', err);
+        setErrorMessage(err instanceof Error ? err.message : 'Failed to fetch applicants for this requisition.');
+      })
+      .finally(() => {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [isOpen, job?.id]);
+
+  const triggerPlaceholderAction = (actionName: string, candidateName: string) => {
+    setNotification(`"${actionName}" initialized for ${candidateName}.`);
+    setTimeout(() => {
+      setNotification(null);
+    }, 4000);
+  };
 
   const handleRemoveFromShortlist = async (candidate: PipelineCandidate) => {
     if (!job) return;
@@ -147,18 +210,9 @@ export const ShortlistedPipelineModal: React.FC<ShortlistedPipelineModalProps> =
       await jobApplicationsApi.removeFromShortlist(job.id, [candidate.candidateId]);
       triggerPlaceholderAction('Unshortlist', candidate.name);
       await fetchApplicants();
-    } catch (err: any) {
-      setErrorMessage(err.message || `Failed to unshortlist ${candidate.name}`);
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : `Failed to unshortlist ${candidate.name}`);
     }
-  };
-
-  if (!isOpen || !job) return null;
-
-  const triggerPlaceholderAction = (actionName: string, candidateName: string) => {
-    setNotification(`"${actionName}" initialized for ${candidateName}.`);
-    setTimeout(() => {
-      setNotification(null);
-    }, 4000);
   };
 
   const filteredCandidates = useMemo(() => {
@@ -191,6 +245,8 @@ export const ShortlistedPipelineModal: React.FC<ShortlistedPipelineModalProps> =
 
     return map;
   }, [filteredCandidates]);
+
+  if (!isOpen || !job) return null;
 
   return (
     <div className="popup-backdrop" onClick={onClose}>
@@ -329,7 +385,7 @@ export const ShortlistedPipelineModal: React.FC<ShortlistedPipelineModalProps> =
             </div>
           ) : activeView === 'kanban' ? (
             /* ================= KANBAN BOARD VIEW ================= */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+            <div className="pipeline-kanban-scroll-wrapper grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
               {PIPELINE_COLUMNS.map((col) => {
                 const colCandidates = candidatesByStage[col.id] || [];
 

@@ -62,7 +62,7 @@
   max-width: 710px;
   margin: 22px 0 18px;
   color: var(--home-ink);
-  font-size: clamp(40px, 5vw, 68px);
+  font-size: clamp(28px, 5vw, 68px);
   font-weight: 850;
   line-height: 1.06;
   letter-spacing: -0.055em;

@@ -864,3 +864,33 @@
     align-items: flex-start;
   }
 }
+
+@media (max-width: 480px) {
+  .settings-dashboard-card {
+    padding: 16px;
+  }
+  .settings-dashboard-header-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .settings-btn-preview,
+  .settings-btn-save-header,
+  .settings-layout-toggle-pill {
+    width: 100%;
+    justify-content: center;
+  }
+  .settings-layout-toggle-btn {
+    flex: 1;
+    justify-content: center;
+  }
+  .settings-bottom-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .settings-save-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+

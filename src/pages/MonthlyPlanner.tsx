@@ -311,8 +311,37 @@ export const MonthlyPlanner: React.FC = () => {
   }, [currentDate, selectedDepartment]);
 
   useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
+    let ignore = false;
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+    const params: { year: number; month: number; department?: string } = {
+      year,
+      month,
+    };
+    if (selectedDepartment) {
+      params.department = selectedDepartment;
+    }
+    eventsApi
+      .getEvents(params)
+      .then((data) => {
+        if (ignore) return;
+        setEvents(data || []);
+      })
+      .catch((err) => {
+        if (ignore) return;
+        console.error('Failed to load events:', err);
+        setErrorMessage('Could not load events from database. Please retry.');
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [currentDate, selectedDepartment]);
 
   // Google Calendar & National Holidays State (Powered by ASP.NET Core Backend)
   const [holidays, setHolidays] = useState<GoogleCalendarHoliday[]>([]);
@@ -353,9 +382,39 @@ export const MonthlyPlanner: React.FC = () => {
   }, [currentDate, selectedCalendarId, holidaysEnabled]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchHolidays();
-  }, [fetchHolidays]);
+    let ignore = false;
+    if (!holidaysEnabled) {
+      return;
+    }
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+    googleCalendarService
+      .fetchHolidays({
+        year,
+        month,
+        calendarId: selectedCalendarId,
+      })
+      .then((data) => {
+        if (ignore) return;
+        setHolidays(data || []);
+      })
+      .catch((err: unknown) => {
+        if (ignore) return;
+        console.warn('Failed to load national holidays:', err);
+        const msg = err instanceof Error ? err.message : 'Failed to fetch national holidays from server.';
+        setHolidaysError(msg);
+        setHolidays([]);
+      })
+      .finally(() => {
+        if (!ignore) {
+          setHolidaysLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [currentDate, selectedCalendarId, holidaysEnabled]);
 
   // Group holidays by date string "YYYY-MM-DD"
   const holidaysByDate = useMemo(() => {

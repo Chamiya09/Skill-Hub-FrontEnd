@@ -70,6 +70,7 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
   onJobUpdated,
 }) => {
   const [currentJob, setCurrentJob] = useState<JobDto | null>(job);
+  const [prevJob, setPrevJob] = useState<JobDto | null>(job);
   const [candidates, setCandidates] = useState<ModalCandidate[]>([]);
   const [isLoadingApplicants, setIsLoadingApplicants] = useState<boolean>(false);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
@@ -85,6 +86,17 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
   const [isProcessingBulk, setIsProcessingBulk] = useState<boolean>(false);
   const [topCount, setTopCount] = useState<number>(5);
   const [aiReportCandidateId, setAiReportCandidateId] = useState<string | null>(null);
+
+  if (job !== prevJob) {
+    setPrevJob(job);
+    setCurrentJob(job);
+    setIsAiAnalyzed(false);
+    setIsAnalyzing(false);
+    setIsTransferred(false);
+    setSelectedCandidateId(null);
+    setSearchQuery('');
+    setErrorMessage(null);
+  }
   
 
   const showToast = (msg: string) => {
@@ -130,9 +142,9 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
       setCandidates(mapped);
       const hasAnalyzed = mapped.some((c) => c.aiScore !== null && c.aiScore !== undefined);
       setIsAiAnalyzed(hasAnalyzed);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error loading applicants for AI screening:', err);
-      setErrorMessage(err.message || 'Failed to fetch applicants for this requisition.');
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to fetch applicants for this requisition.');
     } finally {
       setIsLoadingApplicants(false);
     }
@@ -141,18 +153,57 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
   // Fetch real applicants for the selected job whenever modal opens or job changes
   useEffect(() => {
     if (!isOpen || !job?.id) return;
+    let ignore = false;
+    jobApplicationsApi
+      .getRankedApplicants(job.id)
+      .then((data) => {
+        if (ignore) return;
+        const mapped: ModalCandidate[] = (data || [])
+          .filter((app) => {
+            const st = (app.status || '').toLowerCase();
+            return st !== 'assessment_reviewed' && st !== 'interview';
+          })
+          .map((app) => ({
+            id: app.applicationId,
+            candidateId: app.candidateId,
+            name: app.fullName || 'Unnamed Candidate',
+            headline: app.headline || 'Candidate Profile',
+            email: app.email || '',
+            phone: app.phone || '',
+            location: app.location || 'Location unspecified',
+            appliedDate: app.appliedDate
+              ? new Date(app.appliedDate).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })
+              : 'Recent',
+            isShortlisted: (app.status || '').toLowerCase() === 'shortlisted',
+            aiScore: app.aiMatchScore,
+            skills: app.skills || [],
+            avatarBg: getGradientForName(app.fullName || 'Candidate'),
+            status: app.status || 'Applied',
+          }));
 
-    setCurrentJob(job);
-    setIsAiAnalyzed(false);
-    setIsAnalyzing(false);
-    setIsTransferred(false);
-    setSelectedCandidateId(null);
-    setSelectedCandidateId(null);
-    setSearchQuery('');
-    setErrorMessage(null);
+        setCandidates(mapped);
+        const hasAnalyzed = mapped.some((c) => c.aiScore !== null && c.aiScore !== undefined);
+        setIsAiAnalyzed(hasAnalyzed);
+      })
+      .catch((err: unknown) => {
+        if (ignore) return;
+        console.error('Error loading applicants for AI screening:', err);
+        setErrorMessage(err instanceof Error ? err.message : 'Failed to fetch applicants for this requisition.');
+      })
+      .finally(() => {
+        if (!ignore) {
+          setIsLoadingApplicants(false);
+        }
+      });
 
-    fetchApplicants(job.id);
-  }, [isOpen, job?.id, job?.status]);
+    return () => {
+      ignore = true;
+    };
+  }, [isOpen, job?.id]);
 
   if (!isOpen || !currentJob) return null;
 
@@ -223,8 +274,8 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
       }));
       setIsAiAnalyzed(true);
       showToast('Batch AI Screening Complete! Top candidates shortlisted.');
-    } catch (error: any) {
-      setErrorMessage(error.message || 'The Skill Hu AI screening service is unavailable.');
+    } catch (error: unknown) {
+      setErrorMessage(error instanceof Error ? error.message : 'The Skill Hu AI screening service is unavailable.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -245,8 +296,8 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
       showToast(`✓ ${candidateIdsToShortlist.length} candidate(s) sent to the shortlist.`);
       setSelectedCandidateIds([]);
       await fetchApplicants(currentJob.id); // Refetch from DB to ensure sync
-    } catch (err: any) {
-      showToast(`Failed to shortlist candidates: ${err.message}`);
+    } catch (err: unknown) {
+      showToast(`Failed to shortlist candidates: ${err instanceof Error ? err.message : 'Error'}`);
     } finally {
       setIsProcessingBulk(false);
     }
@@ -265,8 +316,8 @@ export const AIScreeningModal: React.FC<AIScreeningModalProps> = ({
       showToast(`✕ ${candidateIdsToReject.length} candidate(s) rejected.`);
       setSelectedCandidateIds([]);
       await fetchApplicants(currentJob.id); // Refetch from DB to ensure sync
-    } catch (err: any) {
-      showToast(`Failed to reject candidates: ${err.message}`);
+    } catch (err: unknown) {
+      showToast(`Failed to reject candidates: ${err instanceof Error ? err.message : 'Error'}`);
     } finally {
       setIsProcessingBulk(false);
     }

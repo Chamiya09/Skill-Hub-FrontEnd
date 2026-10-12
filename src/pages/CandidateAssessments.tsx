@@ -57,6 +57,7 @@ export const CandidateAssessments: React.FC = () => {
   const [scorecardDetail, setScorecardDetail] = useState<SubmissionDetailDto | null>(null);
   const [scorecardLoading, setScorecardLoading] = useState<boolean>(false);
   const [scorecardError, setScorecardError] = useState<string | null>(null);
+  const [nowTime] = useState(() => Date.now());
 
   useEffect(() => {
     let isMounted = true;
@@ -134,7 +135,7 @@ export const CandidateAssessments: React.FC = () => {
 
   const checkIsExpired = (item: CandidateAssessmentListItemDto) => {
     if (checkIsCompleted(item) || checkIsBlocked(item)) return false;
-    return Boolean(item.isExpired) || (Boolean(item.expiresAt) && new Date(item.expiresAt!).getTime() < Date.now());
+    return Boolean(item.isExpired) || (Boolean(item.expiresAt) && new Date(item.expiresAt!).getTime() < nowTime);
   };
 
   const companyOptions = Array.from(
@@ -561,19 +562,20 @@ export const CandidateAssessments: React.FC = () => {
                         type="button"
                         className="btn-view-scorecard"
                         onClick={() => handleOpenScorecard(item.submissionId)}
+                        title="View assessment evaluation and results"
                       >
-                        <span>{isUnderReview ? 'Check Status' : 'View Scorecard'}</span>
+                        <span>{isUnderReview ? 'Check Status' : 'View Result'}</span>
                         <ArrowRightIcon />
                       </button>
                     ) : isBlocked ? (
                       <button
                         type="button"
-                        className="btn-start-exam btn-cannot-retake"
-                        disabled
-                        title="You cannot retake this assessment because the test session was closed or exited."
+                        className="btn-view-scorecard"
+                        onClick={() => handleOpenScorecard(item.submissionId)}
+                        title="View assessment evaluation and results"
                       >
-                        <XIcon />
-                        <span>Cannot Retake</span>
+                        <span>View Result</span>
+                        <ArrowRightIcon />
                       </button>
                     ) : isExpired ? (
                       <button

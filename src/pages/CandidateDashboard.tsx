@@ -38,6 +38,7 @@ export function CandidateDashboard() {
   const [interviewModeFilter, setInterviewModeFilter] = useState<InterviewModeFilter>('all');
   const [interviewSearch, setInterviewSearch] = useState<string>('');
   const [interviewSort, setInterviewSort] = useState<InterviewSort>('upcoming');
+  const [nowTime] = useState(() => Date.now());
 
   const fetchMyInterviews = useCallback(async () => {
     try {
@@ -55,8 +56,29 @@ export function CandidateDashboard() {
   }, []);
 
   useEffect(() => {
-    fetchMyInterviews();
-  }, [fetchMyInterviews]);
+    let ignore = false;
+    eventsApi
+      .getMyInterviews()
+      .then((data) => {
+        if (ignore) return;
+        setInterviews(data || []);
+      })
+      .catch((err: unknown) => {
+        if (ignore) return;
+        console.warn('Could not load candidate interviews:', err);
+        const msg = err instanceof Error ? err.message : 'Failed to fetch scheduled interviews.';
+        setInterviewsError(msg);
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoadingInterviews(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const handleCopyLink = (textToCopy: string, id: string) => {
     navigator.clipboard.writeText(textToCopy);
@@ -108,7 +130,7 @@ export function CandidateDashboard() {
     if (isCompletedInterview(interview)) return false;
     if (!interview.eventDate) return true;
     const interviewDate = new Date(`${interview.eventDate}T23:59:59`);
-    return !Number.isNaN(interviewDate.getTime()) && interviewDate.getTime() >= Date.now();
+    return !Number.isNaN(interviewDate.getTime()) && interviewDate.getTime() >= nowTime;
   };
 
   const upcomingInterviewsCount = interviews.filter(isUpcomingInterview).length;

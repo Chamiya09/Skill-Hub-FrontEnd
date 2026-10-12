@@ -123,7 +123,7 @@ export const Login: React.FC = () => {
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
               <label
                 htmlFor="loginPassword"
                 className="text-[12.5px] font-bold text-slate-700"

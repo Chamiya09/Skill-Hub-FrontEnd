@@ -129,9 +129,10 @@ export const CandidateStudyDashboard: React.FC = () => {
           }
           setExpandedCards(initialExpanded);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (isMounted) {
-          setError(err?.message || 'Failed to load interview preparation guides.');
+          const message = err instanceof Error ? err.message : (err as { message?: string })?.message;
+          setError(message || 'Failed to load interview preparation guides.');
         }
       } finally {
         if (isMounted) {
@@ -195,9 +196,10 @@ export const CandidateStudyDashboard: React.FC = () => {
         localStorage.removeItem('skillhub_last_guide_id');
         navigate('/candidate/interview-prep', { replace: true });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to delete interview prep guide:', err);
-      setError(err?.message || 'Failed to delete interview preparation guide.');
+      const message = err instanceof Error ? err.message : (err as { message?: string })?.message;
+      setError(message || 'Failed to delete interview preparation guide.');
     } finally {
       setIsDeleting(false);
     }

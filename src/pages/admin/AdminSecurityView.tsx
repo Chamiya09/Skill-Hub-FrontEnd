@@ -84,10 +84,10 @@ export const AdminSecurityView: React.FC = () => {
       setTimeout(() => {
         setSuccessMessage(null);
       }, 5000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Admin password update error:', err);
       setErrorMessage(
-        err.message || 'Failed to update credentials. Please verify your current administrator password.'
+        err instanceof Error ? err.message : 'Failed to update credentials. Please verify your current administrator password.'
       );
     } finally {
       setIsSubmitting(false);

@@ -200,7 +200,7 @@ export const JobApplicantsTable: React.FC<JobApplicantsTableProps> = ({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onSelectCandidate && onSelectCandidate(applicant.candidateId);
+                        onSelectCandidate?.(applicant.candidateId);
                       }}
                       className="job-applicants-view-cv-btn"
                     >

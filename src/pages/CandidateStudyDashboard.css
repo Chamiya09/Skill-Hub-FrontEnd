@@ -2092,3 +2092,28 @@
     min-height: 0;
   }
 }
+
+@media (max-width: 480px) {
+  .study-dropdown-left {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .study-dropdown-banner,
+  .study-hero-banner {
+    padding: 14px 16px;
+  }
+
+  .study-guide-dashboard {
+    padding: 14px;
+  }
+
+  .study-core-section-card {
+    padding: 16px;
+  }
+
+  .study-readiness-checklist-card {
+    padding: 16px;
+  }
+}
+

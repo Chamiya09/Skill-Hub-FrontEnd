@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   candidateCvApi,
   type CertificationDto,
@@ -19,15 +19,20 @@ export const AddCertificationModal: React.FC<AddCertificationModalProps> = ({
   onSuccess,
   initialData,
 }) => {
-  const [title, setTitle] = useState('');
-  const [issuingOrganization, setIssuingOrganization] = useState('');
-  const [issueDate, setIssueDate] = useState('');
-  const [credentialUrl, setCredentialUrl] = useState('');
+  const [title, setTitle] = useState(initialData?.title || '');
+  const [issuingOrganization, setIssuingOrganization] = useState(initialData?.issuingOrganization || '');
+  const [issueDate, setIssueDate] = useState(initialData?.issueDate || '');
+  const [credentialUrl, setCredentialUrl] = useState(initialData?.credentialUrl || '');
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [prevInitialData, setPrevInitialData] = useState(initialData);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
+  if (initialData !== prevInitialData || isOpen !== prevIsOpen) {
+    setPrevInitialData(initialData);
+    setPrevIsOpen(isOpen);
     if (initialData) {
       setTitle(initialData.title || '');
       setIssuingOrganization(initialData.issuingOrganization || '');
@@ -40,7 +45,7 @@ export const AddCertificationModal: React.FC<AddCertificationModalProps> = ({
       setCredentialUrl('');
     }
     setErrorMsg(null);
-  }, [initialData, isOpen]);
+  }
 
   if (!isOpen) return null;
 
@@ -71,9 +76,9 @@ export const AddCertificationModal: React.FC<AddCertificationModalProps> = ({
 
       onSuccess(saved);
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to save certification:', err);
-      setErrorMsg(err.message || 'Unable to save certification. Please try again.');
+      setErrorMsg(err instanceof Error ? err.message : 'Unable to save certification. Please try again.');
     } finally {
       setLoading(false);
     }

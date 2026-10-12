@@ -31,7 +31,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         }
       }
     }
-  }, [location.pathname, isAuthenticated, currentUser?.id]);
+  }, [location.pathname, isAuthenticated, currentUser, refreshProfile]);
 
   if (isLoading) {
     return (
@@ -101,7 +101,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     currentUser && (
       currentUser.isSuspended === true ||
       (currentUser.isSuspended as unknown) === 'true' ||
-      (currentUser as any).status === 'Suspended'
+      ('status' in currentUser && (currentUser as { status?: unknown }).status === 'Suspended')
     )
   );
 

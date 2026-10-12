@@ -11,9 +11,9 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({ children, deferAuthent
   const { isAuthenticated, currentUser, isLoading } = useAuth();
   const [hasCompletedInitialLoad, setHasCompletedInitialLoad] = React.useState(!isLoading);
 
-  React.useEffect(() => {
-    if (!isLoading) setHasCompletedInitialLoad(true);
-  }, [isLoading]);
+  if (!isLoading && !hasCompletedInitialLoad) {
+    setHasCompletedInitialLoad(true);
+  }
 
   if (isLoading && (!deferAuthenticatedRedirect || !hasCompletedInitialLoad)) {
     return null;

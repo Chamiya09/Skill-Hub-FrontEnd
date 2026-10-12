@@ -29,6 +29,8 @@ export const FindJobs = () => {
   const [sortBy, setSortBy] = useState<'recent'>('recent')
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([])
 
+  const [currentTime, setCurrentTime] = useState<number>(0)
+
   // Fetch real public jobs from backend
   const fetchPublicJobs = async () => {
     try {
@@ -36,16 +38,37 @@ export const FindJobs = () => {
       setErrorMessage(null)
       const data = await publicJobsApi.getJobs()
       setJobs(data)
-    } catch (err: any) {
+      setCurrentTime(Date.now())
+    } catch (err: unknown) {
       console.error('Error fetching public jobs:', err)
-      setErrorMessage(err.message || 'Failed to fetch active vacancies.')
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to fetch active vacancies.')
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchPublicJobs()
+    let ignore = false
+    publicJobsApi
+      .getJobs()
+      .then((data) => {
+        if (!ignore) {
+          setJobs(data)
+          setCurrentTime(Date.now())
+          setErrorMessage(null)
+        }
+      })
+      .catch((err: unknown) => {
+        if (!ignore) {
+          console.error('Error fetching public jobs:', err)
+          setErrorMessage(err instanceof Error ? err.message : 'Failed to fetch active vacancies.')
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoading(false)
+        }
+      })
 
     const handleProfileUpdate = () => {
       fetchPublicJobs()
@@ -54,6 +77,7 @@ export const FindJobs = () => {
     window.addEventListener('skillhub_company_profile_updated', handleProfileUpdate)
     window.addEventListener('skillhub_auth_change', handleProfileUpdate)
     return () => {
+      ignore = true
       window.removeEventListener('skillhub_company_profile_updated', handleProfileUpdate)
       window.removeEventListener('skillhub_auth_change', handleProfileUpdate)
     }
@@ -70,12 +94,13 @@ export const FindJobs = () => {
   }, [isCandidate])
 
   // Sync search input if query param changes
-  useEffect(() => {
-    const q = searchParams.get('search')
-    if (q !== null && q !== searchTerm) {
-      setSearchTerm(q)
-    }
-  }, [searchParams])
+  const querySearch = searchParams.get('search') || ''
+  const [prevQuerySearch, setPrevQuerySearch] = useState(querySearch)
+
+  if (querySearch !== prevQuerySearch) {
+    setPrevQuerySearch(querySearch)
+    setSearchTerm(querySearch)
+  }
 
   // Extract dynamic categories from live jobs
   const categories = useMemo(() => {
@@ -134,7 +159,7 @@ export const FindJobs = () => {
           selectedExperience === 'All' ||
           job.experienceLevel.toLowerCase().includes(selectedExperience.toLowerCase())
 
-        const isExpired = Boolean(job.deadline && new Date(job.deadline).getTime() < Date.now())
+        const isExpired = Boolean(job.deadline && currentTime > 0 && new Date(job.deadline).getTime() < currentTime)
         if (isExpired) return false
 
         return matchesSearch && matchesCategory && matchesWorkType && matchesExp
@@ -142,7 +167,7 @@ export const FindJobs = () => {
       .sort((a, b) => {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       })
-  }, [jobs, searchTerm, selectedCategory, selectedWorkType, selectedExperience, sortBy])
+  }, [jobs, searchTerm, selectedCategory, selectedWorkType, selectedExperience, currentTime])
 
   const clearAllFilters = () => {
     setSearchTerm('')
@@ -226,7 +251,7 @@ export const FindJobs = () => {
             </span>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e) => setSortBy(e.target.value as 'recent')}
             >
               <option value="recent">Most Recent</option>
             </select>

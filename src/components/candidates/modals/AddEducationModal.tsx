@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { candidateCvApi, type EducationDto } from '../../../services/api';
 import { XIcon, CheckIcon } from '../../common/Icons';
 
@@ -22,17 +22,22 @@ export const AddEducationModal: React.FC<AddEducationModalProps> = ({
   onSuccess,
   initialData,
 }) => {
-  const [degree, setDegree] = useState('');
-  const [institution, setInstitution] = useState('');
-  const [fieldOfStudy, setFieldOfStudy] = useState('');
-  const [startYear, setStartYear] = useState('');
-  const [endYear, setEndYear] = useState('');
-  const [description, setDescription] = useState('');
+  const [degree, setDegree] = useState(initialData?.degree || '');
+  const [institution, setInstitution] = useState(initialData?.institution || '');
+  const [fieldOfStudy, setFieldOfStudy] = useState(initialData?.fieldOfStudy || '');
+  const [startYear, setStartYear] = useState(initialData?.startYear || '');
+  const [endYear, setEndYear] = useState(initialData?.endYear || '');
+  const [description, setDescription] = useState(initialData?.description || '');
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [prevInitialData, setPrevInitialData] = useState(initialData);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
+  if (initialData !== prevInitialData || isOpen !== prevIsOpen) {
+    setPrevInitialData(initialData);
+    setPrevIsOpen(isOpen);
     if (initialData) {
       setDegree(initialData.degree || '');
       setInstitution(initialData.institution || '');
@@ -49,7 +54,7 @@ export const AddEducationModal: React.FC<AddEducationModalProps> = ({
       setDescription('');
     }
     setErrorMsg(null);
-  }, [initialData, isOpen]);
+  }
 
   if (!isOpen) return null;
 
@@ -82,9 +87,9 @@ export const AddEducationModal: React.FC<AddEducationModalProps> = ({
 
       onSuccess(saved);
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to save education:', err);
-      setErrorMsg(err.message || 'Unable to save education. Please try again.');
+      setErrorMsg(err instanceof Error ? err.message : 'Unable to save education. Please try again.');
     } finally {
       setLoading(false);
     }

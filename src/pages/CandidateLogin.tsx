@@ -61,10 +61,11 @@ export const CandidateLogin: React.FC = () => {
       );
       await new Promise<void>((resolve) => window.setTimeout(resolve, 900));
       navigate('/candidate/profile', { replace: true });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Candidate login error:', err);
+      const message = err instanceof Error ? err.message : (err as { message?: string })?.message;
       setErrorMessage(
-        err.message || 'Authentication failed. Please verify your credentials and try again.'
+        message || 'Authentication failed. Please verify your credentials and try again.'
       );
     } finally {
       setLoading(false);
@@ -136,7 +137,7 @@ export const CandidateLogin: React.FC = () => {
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
               <label
                 htmlFor="candidateLoginPassword"
                 className="text-[12.5px] font-bold text-slate-700"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Inbox,
   Search,
@@ -172,31 +172,38 @@ export const InquiriesView: React.FC = () => {
     setTimeout(() => setCopiedEmail(false), 2000);
   };
 
-  const loadInquiries = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const data = await adminApi.getInquiries();
-      if (Array.isArray(data) && data.length > 0) {
-        // Ensure dates conform to 'MMM DD, YYYY' format
-        const formatted = data.map((item) => ({
-          ...item,
-          status: (item.status === 'Resolved' ? 'Resolved' : item.status === 'Read' ? 'Read' : 'New') as 'New' | 'Read' | 'Resolved',
-        }));
-        setInquiries(formatted);
-      } else {
-        setInquiries(INITIAL_MOCK_INQUIRIES);
-      }
-    } catch (err) {
-      console.warn('Backend API inquiries endpoint unavailable, using mock dataset:', err);
-      setInquiries(INITIAL_MOCK_INQUIRIES);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
-    loadInquiries();
-  }, [loadInquiries]);
+    let ignore = false;
+    adminApi
+      .getInquiries()
+      .then((data) => {
+        if (ignore) return;
+        if (Array.isArray(data) && data.length > 0) {
+          const formatted = data.map((item) => ({
+            ...item,
+            status: (item.status === 'Resolved' ? 'Resolved' : item.status === 'Read' ? 'Read' : 'New') as 'New' | 'Read' | 'Resolved',
+          }));
+          setInquiries(formatted);
+        } else {
+          setInquiries(INITIAL_MOCK_INQUIRIES);
+        }
+      })
+      .catch((err) => {
+        if (ignore) return;
+        console.warn('Backend API inquiries endpoint unavailable, using mock dataset:', err);
+        setInquiries(INITIAL_MOCK_INQUIRIES);
+      })
+      .finally(() => {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   // Read action: opens modal and marks 'New' inquiries as 'Read'
   const handleReadInquiry = (inquiry: AdminInquiryDto) => {
@@ -226,7 +233,11 @@ export const InquiriesView: React.FC = () => {
     try {
       await adminApi.toggleInquiryStatus(id);
     } catch (err) {
-      console.warn('Persisting inquiry status toggle via fallback state:', err);
+      console.warn('Could not persist inquiry status:', err);
+      if (target) {
+        setInquiries((prev) => prev.map((i) => (i.id === id ? { ...i, status: target.status } : i)));
+        setActiveMessageModal((prev) => (prev?.id === id ? { ...prev, status: target.status } : prev));
+      }
     }
   };
 

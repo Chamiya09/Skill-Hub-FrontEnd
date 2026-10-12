@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import {
   ShieldCheckIcon,
   LockIcon,
-  CheckIcon,
   TrashIcon,
   EyeIcon,
   EyeOffIcon,
@@ -12,9 +9,6 @@ import {
 } from '../components/common/Icons';
 
 export const CandidateSecurity: React.FC = () => {
-  const { logout } = useAuth();
-  const navigate = useNavigate();
-
   // Password Form States
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -24,14 +18,11 @@ export const CandidateSecurity: React.FC = () => {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
-  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
   // Danger Zone States
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Validation Flags
@@ -41,10 +32,9 @@ export const CandidateSecurity: React.FC = () => {
     newPassword.length > 0 && currentPassword.length > 0 && newPassword !== currentPassword;
 
   // Handle Password Update Submission
-  const handlePasswordUpdate = async (e: React.FormEvent) => {
+  const handlePasswordUpdate = (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError(null);
-    setPasswordSuccess(null);
 
     if (!currentPassword) {
       setPasswordError('Please provide your current account password.');
@@ -66,49 +56,17 @@ export const CandidateSecurity: React.FC = () => {
       return;
     }
 
-    try {
-      setIsUpdatingPassword(true);
-      // Simulate API request latency
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      setPasswordSuccess('Your account password has been successfully updated.');
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmNewPassword('');
-
-      setTimeout(() => {
-        setPasswordSuccess(null);
-      }, 5000);
-    } catch (err: any) {
-      console.error('Password update error:', err);
-      setPasswordError(err.message || 'Failed to update password. Please check your credentials.');
-    } finally {
-      setIsUpdatingPassword(false);
-    }
+    setPasswordError('Candidate password changes are unavailable until the server supports this action. Your password was not changed.');
   };
 
   // Handle Account Deletion
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = () => {
     if (deleteConfirmationText.trim().toUpperCase() !== 'DELETE') {
       setDeleteError('Please type "DELETE" into the confirmation field to proceed.');
       return;
     }
 
-    try {
-      setIsDeletingAccount(true);
-      setDeleteError(null);
-
-      // Simulate API call for deletion
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Clear authentication & redirect
-      logout();
-      navigate('/candidate-register', { replace: true });
-    } catch (err: any) {
-      console.error('Account deletion error:', err);
-      setDeleteError(err.message || 'Failed to delete account. Please try again later.');
-      setIsDeletingAccount(false);
-    }
+    setDeleteError('Candidate self-service account deletion is unavailable. Your account and session are unchanged.');
   };
 
   return (
@@ -126,14 +84,6 @@ export const CandidateSecurity: React.FC = () => {
           </p>
         </div>
       </div>
-
-      {/* Success Notification Alert */}
-      {passwordSuccess && (
-        <div className="auth-alert-success" style={{ marginBottom: '8px' }}>
-          <CheckIcon />
-          <span>{passwordSuccess}</span>
-        </div>
-      )}
 
       {/* Error Notification Alert */}
       {passwordError && (
@@ -298,30 +248,11 @@ export const CandidateSecurity: React.FC = () => {
           >
             <button
               type="submit"
-              disabled={isUpdatingPassword}
               className="settings-btn-save"
               style={{ minWidth: '180px' }}
             >
-              {isUpdatingPassword ? (
-                <>
-                  <div
-                    style={{
-                      width: '16px',
-                      height: '16px',
-                      border: '2px solid #ffffff',
-                      borderTopColor: 'transparent',
-                      borderRadius: '50%',
-                      animation: 'spin 0.8s linear infinite',
-                    }}
-                  />
-                  <span>Updating Password...</span>
-                </>
-              ) : (
-                <>
-                  <ShieldCheckIcon />
-                  <span>Update Password</span>
-                </>
-              )}
+              <ShieldCheckIcon />
+              <span>Update Password</span>
             </button>
           </div>
         </form>
@@ -476,7 +407,6 @@ export const CandidateSecurity: React.FC = () => {
             <div className="candidate-modal-footer">
               <button
                 type="button"
-                disabled={isDeletingAccount}
                 onClick={() => setShowDeleteModal(false)}
                 className="settings-btn-cancel"
               >
@@ -484,30 +414,12 @@ export const CandidateSecurity: React.FC = () => {
               </button>
               <button
                 type="button"
-                disabled={isDeletingAccount || deleteConfirmationText.trim().toUpperCase() !== 'DELETE'}
+                disabled={deleteConfirmationText.trim().toUpperCase() !== 'DELETE'}
                 onClick={handleDeleteAccount}
                 className="danger-btn-delete"
               >
-                {isDeletingAccount ? (
-                  <>
-                    <div
-                      style={{
-                        width: '14px',
-                        height: '14px',
-                        border: '2px solid #ffffff',
-                        borderTopColor: 'transparent',
-                        borderRadius: '50%',
-                        animation: 'spin 0.8s linear infinite',
-                      }}
-                    />
-                    <span>Deleting Account...</span>
-                  </>
-                ) : (
-                  <>
-                    <TrashIcon />
-                    <span>Permanently Delete</span>
-                  </>
-                )}
+                <TrashIcon />
+                <span>Permanently Delete</span>
               </button>
             </div>
           </div>

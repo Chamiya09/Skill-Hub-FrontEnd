@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import {
@@ -45,12 +45,21 @@ export const EditAboutModal: React.FC<EditAboutModalProps> = ({
   initialSummary = '',
   initialHighlights = [],
 }) => {
-  const [summary, setSummary] = useState('');
-  const [highlights, setHighlights] = useState<CandidateHighlightDto[]>([]);
+  const [summary, setSummary] = useState(initialSummary || '');
+  const [highlights, setHighlights] = useState<CandidateHighlightDto[]>(
+    initialHighlights && initialHighlights.length > 0 ? initialHighlights.map((h) => ({ ...h })) : []
+  );
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [prevSummary, setPrevSummary] = useState(initialSummary);
+  const [prevHighlights, setPrevHighlights] = useState(initialHighlights);
+
+  if (isOpen !== prevIsOpen || initialSummary !== prevSummary || initialHighlights !== prevHighlights) {
+    setPrevIsOpen(isOpen);
+    setPrevSummary(initialSummary);
+    setPrevHighlights(initialHighlights);
     if (isOpen) {
       setSummary(initialSummary || '');
       setHighlights(
@@ -60,7 +69,7 @@ export const EditAboutModal: React.FC<EditAboutModalProps> = ({
       );
       setErrorMsg(null);
     }
-  }, [isOpen, initialSummary, initialHighlights]);
+  }
 
   if (!isOpen) return null;
 
@@ -108,9 +117,9 @@ export const EditAboutModal: React.FC<EditAboutModalProps> = ({
 
       onSuccess(saved);
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to save about & summary:', err);
-      setErrorMsg(err.message || 'Unable to save changes. Please try again.');
+      setErrorMsg(err instanceof Error ? err.message : 'Unable to save changes. Please try again.');
     } finally {
       setLoading(false);
     }

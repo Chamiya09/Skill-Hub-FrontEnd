@@ -155,6 +155,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
   const [trackStatusFilter, setTrackStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
   const [trackSearchQuery, setTrackSearchQuery] = useState<string>('');
   const [trackSortBy, setTrackSortBy] = useState<'submissions' | 'newest' | 'threshold' | 'title'>('submissions');
+  const [nowTime] = useState(() => Date.now());
 
   const publishedTracksCount = useMemo(() => {
     return assessments.filter((t) => t.status === 'Published').length;
@@ -1588,7 +1589,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
               <select
                 id="assessment-sort-select"
                 value={trackSortBy}
-                onChange={(e) => setTrackSortBy(e.target.value as any)}
+                onChange={(e) => setTrackSortBy(e.target.value as 'submissions' | 'newest' | 'threshold' | 'title')}
               >
                 <option value="submissions">Most candidate submissions</option>
                 <option value="newest">Newest created</option>
@@ -1827,7 +1828,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                 <select
                   id="performance-sort-select"
                   value={submissionSortBy}
-                  onChange={(e) => setSubmissionSortBy(e.target.value as any)}
+                  onChange={(e) => setSubmissionSortBy(e.target.value as 'newest' | 'score' | 'name')}
                 >
                   <option value="newest">Newest submission</option>
                   <option value="score">Highest exam score</option>
@@ -2032,7 +2033,7 @@ export const TechnicalAssessments: React.FC<TechnicalAssessmentsProps> = ({
                           className="assessment-track-deadline"
                           style={{
                             color:
-                              new Date(track.expiresAt).getTime() < Date.now()
+                              new Date(track.expiresAt).getTime() < nowTime
                                 ? "#dc2626"
                                 : "#b45309",
                           }}

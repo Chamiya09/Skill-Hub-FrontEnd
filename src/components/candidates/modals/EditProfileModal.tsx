@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { candidateAuthApi, type UserDto } from '../../../services/api';
 import { EditIcon, XIcon, CheckIcon } from '../../common/Icons';
 
@@ -43,21 +43,26 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   onSuccess,
   initialData,
 }) => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [headline, setHeadline] = useState('');
-  const [phone, setPhone] = useState('');
-  const [location, setLocation] = useState('');
-  const [experience, setExperience] = useState('');
-  const [availability, setAvailability] = useState('');
-  const [website, setWebsite] = useState('');
-  const [linkedinUrl, setLinkedinUrl] = useState('');
-  const [githubUrl, setGithubUrl] = useState('');
+  const [firstName, setFirstName] = useState(initialData?.firstName || '');
+  const [lastName, setLastName] = useState(initialData?.lastName || '');
+  const [headline, setHeadline] = useState(initialData?.headline || '');
+  const [phone, setPhone] = useState(initialData?.phone || '');
+  const [location, setLocation] = useState(initialData?.location || '');
+  const [experience, setExperience] = useState(initialData?.experience || '');
+  const [availability, setAvailability] = useState(initialData?.availability || '');
+  const [website, setWebsite] = useState(initialData?.website || '');
+  const [linkedinUrl, setLinkedinUrl] = useState(initialData?.linkedinUrl || '');
+  const [githubUrl, setGithubUrl] = useState(initialData?.githubUrl || '');
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [prevInitialData, setPrevInitialData] = useState(initialData);
+
+  if (isOpen !== prevIsOpen || initialData !== prevInitialData) {
+    setPrevIsOpen(isOpen);
+    setPrevInitialData(initialData);
     if (isOpen) {
       setFirstName(initialData?.firstName || '');
       setLastName(initialData?.lastName || '');
@@ -71,7 +76,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       setGithubUrl(initialData?.githubUrl || '');
       setErrorMsg(null);
     }
-  }, [isOpen, initialData]);
+  }
 
   if (!isOpen) return null;
 
@@ -97,9 +102,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
       onSuccess(updated);
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to update candidate profile:', err);
-      setErrorMsg(err.message || 'Unable to update profile details. Please try again.');
+      setErrorMsg(err instanceof Error ? err.message : 'Unable to update profile details. Please try again.');
     } finally {
       setLoading(false);
     }

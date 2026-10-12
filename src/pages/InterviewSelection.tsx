@@ -114,17 +114,43 @@ export const InterviewSelection: React.FC = () => {
       ]);
       setInterviewSelections(selectionsData || []);
       setJobs(jobsData || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching interview selections:', err);
-      setErrorMessage(err.message || 'Failed to load interview selections.');
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to load interview selections.');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let ignore = false;
+    Promise.all([
+      assessmentsApi.getInterviewSelections(),
+      jobsApi.getJobs().catch(() => []),
+    ])
+      .then(([selectionsData, jobsData]) => {
+        if (!ignore) {
+          setInterviewSelections(selectionsData || []);
+          setJobs(jobsData || []);
+          setErrorMessage(null);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!ignore) {
+          console.error('Error fetching interview selections:', err);
+          setErrorMessage(err instanceof Error ? err.message : 'Failed to load interview selections.');
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   // Compute metrics
   const totalSelected = interviewSelections.length;
@@ -302,9 +328,9 @@ export const InterviewSelection: React.FC = () => {
       });
       showToast(`✓ Removed ${sub.candidateName || 'candidate'} from interview selection.`);
       fetchData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to remove candidate:', err);
-      alert(err.message || 'Failed to remove candidate from interview selection.');
+      alert(err instanceof Error ? err.message : 'Failed to remove candidate from interview selection.');
     }
   };
 
@@ -471,9 +497,9 @@ export const InterviewSelection: React.FC = () => {
       setIsScheduleModalOpen(false);
       setSchedulingCandidate(null);
       await fetchData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to schedule interview:', err);
-      setScheduleError(err?.message || 'Failed to schedule interview. Slot may be occupied.');
+      setScheduleError(err instanceof Error ? err.message : 'Failed to schedule interview. Slot may be occupied.');
     } finally {
       setIsSubmittingSchedule(false);
     }
@@ -500,9 +526,9 @@ export const InterviewSelection: React.FC = () => {
       );
       setHiringCandidate(null);
       await fetchData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to hire candidate:', err);
-      showToast(err?.message || 'Failed to hire candidate. Please try again.');
+      showToast(err instanceof Error ? err.message : 'Failed to hire candidate. Please try again.');
     } finally {
       setIsHiringSubmitting(false);
     }
@@ -662,9 +688,9 @@ export const InterviewSelection: React.FC = () => {
       showToast(`✓ Successfully batch scheduled ${successCount} candidates for ${batchDate}!`);
       setIsBatchModalOpen(false);
       await fetchData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed batch schedule:', err);
-      setBatchError(err?.message || 'Failed batch scheduling some candidates.');
+      setBatchError(err instanceof Error ? err.message : 'Failed batch scheduling some candidates.');
     } finally {
       setIsSubmittingBatch(false);
     }
@@ -881,7 +907,7 @@ export const InterviewSelection: React.FC = () => {
               <select
                 id="interview-score-filter"
                 value={scoreFilter}
-                onChange={(e) => setScoreFilter(e.target.value as any)}
+                onChange={(e) => setScoreFilter(e.target.value as 'all' | 'top' | 'high' | 'passed')}
               >
                 <option value="all">All exam scores</option>
                 <option value="top">Top scores (85%+)</option>
@@ -899,7 +925,7 @@ export const InterviewSelection: React.FC = () => {
               <select
                 id="interview-mode-filter"
                 value={modeFilter}
-                onChange={(e) => setModeFilter(e.target.value as any)}
+                onChange={(e) => setModeFilter(e.target.value as 'all' | 'Online' | 'Physical' | 'Unscheduled')}
               >
                 <option value="all">All delivery modes</option>
                 <option value="Online">Online (Virtual)</option>
@@ -917,7 +943,7 @@ export const InterviewSelection: React.FC = () => {
               <select
                 id="interview-integrity-filter"
                 value={integrityFilter}
-                onChange={(e) => setIntegrityFilter(e.target.value as any)}
+                onChange={(e) => setIntegrityFilter(e.target.value as 'all' | 'clean' | 'flagged')}
               >
                 <option value="all">All proctor results</option>
                 <option value="clean">Clean sessions (0 flags)</option>
@@ -934,7 +960,7 @@ export const InterviewSelection: React.FC = () => {
               <select
                 id="interview-sort-filter"
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'score-desc' | 'score-asc' | 'name')}
               >
                 <option value="newest">Newest selected</option>
                 <option value="oldest">Oldest selected</option>
@@ -1917,7 +1943,7 @@ export const InterviewSelection: React.FC = () => {
                                       ...prev,
                                       [s.id]: {
                                         ...prev[s.id],
-                                        meetingMode: e.target.value as any,
+                                        meetingMode: e.target.value as 'Online' | 'Physical',
                                       },
                                     }))
                                   }

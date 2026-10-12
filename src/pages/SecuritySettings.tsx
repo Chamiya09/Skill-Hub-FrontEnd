@@ -80,10 +80,10 @@ export const SecuritySettings: React.FC = () => {
       setTimeout(() => {
         setSuccessMessage(null);
       }, 5000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Password update error:', err);
       setErrorMessage(
-        err.message || 'Failed to update password. Please verify your current password.'
+        err instanceof Error ? err.message : 'Failed to update password. Please verify your current password.'
       );
     } finally {
       setIsSubmitting(false);

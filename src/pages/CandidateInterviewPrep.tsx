@@ -204,9 +204,10 @@ export const CandidateInterviewPrep: React.FC = () => {
         localStorage.setItem('skillhub_last_guide_id', guideId);
         navigate(`/candidate/interview-prep/guide/${guideId}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error generating prep guide:', err);
-      setError(err?.message || 'Failed to generate interview preparation guide. Please try again.');
+      const message = err instanceof Error ? err.message : (err as { message?: string })?.message;
+      setError(message || 'Failed to generate interview preparation guide. Please try again.');
       setGeneratingAppId(null);
       setActiveGeneratingApp(null);
     }
@@ -236,9 +237,10 @@ export const CandidateInterviewPrep: React.FC = () => {
 
       // Navigate to Study Dashboard to begin studying
       navigate(`/candidate/interview-prep/guide/${guideId}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error approving guide:', err);
-      setError(err?.message || 'Failed to approve and save study guidelines.');
+      const message = err instanceof Error ? err.message : (err as { message?: string })?.message;
+      setError(message || 'Failed to approve and save study guidelines.');
     } finally {
       setIsApproving(false);
     }
@@ -259,9 +261,10 @@ export const CandidateInterviewPrep: React.FC = () => {
       } else {
         throw new Error('Regeneration completed but could not load new guidelines.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error regenerating guide:', err);
-      setError(err?.message || 'Failed to regenerate study guidelines. Please try again.');
+      const message = err instanceof Error ? err.message : (err as { message?: string })?.message;
+      setError(message || 'Failed to regenerate study guidelines. Please try again.');
     } finally {
       setIsRegenerating(false);
     }

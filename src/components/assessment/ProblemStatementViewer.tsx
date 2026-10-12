@@ -140,7 +140,7 @@ function categorizeHeading(rawHeading: string): { category: SectionCategory; cle
 /**
  * Renders inline markdown text (bold, italic, inline code) safely into React nodes.
  */
-export function renderInlineMarkdown(text: string): React.ReactNode[] {
+function renderInlineMarkdown(text: string): React.ReactNode[] {
   if (!text) return [];
 
   // Match: `inline code`, **bold**, *italic*

@@ -62,8 +62,9 @@ export const AdminLogin: React.FC = () => {
       setAuthData(response.user, response.token);
 
       navigate('/skillhub-secure-admin/dashboard', { replace: true });
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Authentication failed. Please verify credentials.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : (err as { message?: string })?.message;
+      setErrorMessage(message || 'Authentication failed. Please verify credentials.');
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +80,7 @@ export const AdminLogin: React.FC = () => {
       <div className="auth-form-card animate-in fade-in duration-300">
         {/* Top Header Badge */}
         <div className="mb-6">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-900 text-emerald-400 border border-slate-700 mb-3 shadow-2xs">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-900 text-emerald-400 border border-slate-700 mb-3 shadow-2xs max-w-full flex-wrap">
             <ShieldCheck size={13} className="text-emerald-400" />
             <span>RESTRICTED ACCESS • SUPER ADMIN</span>
           </div>

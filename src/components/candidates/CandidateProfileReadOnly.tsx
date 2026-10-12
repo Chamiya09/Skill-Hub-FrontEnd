@@ -12,6 +12,8 @@ import {
 import {
   SparkleIcon,
   MailIcon,
+
+
   PhoneIcon,
   MapPinIcon,
   BriefcaseIcon,
@@ -123,30 +125,43 @@ export const CandidateProfileReadOnly: React.FC<CandidateProfileReadOnlyProps> =
   const [isLoading, setIsLoading] = useState<boolean>(!initialData && Boolean(candidateId));
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [prevInitialData, setPrevInitialData] = useState(initialData);
+
+  if (initialData !== prevInitialData) {
+    setPrevInitialData(initialData);
     if (initialData) {
       setProfileData(initialData);
       setIsLoading(false);
-      return;
+      setError(null);
     }
+  }
 
-    if (!candidateId) return;
+  useEffect(() => {
+    if (initialData || !candidateId) return;
+    let ignore = false;
+    jobApplicationsApi
+      .getCandidateProfileForEmployer(candidateId)
+      .then((data) => {
+        if (!ignore) {
+          setProfileData(data);
+          setError(null);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!ignore) {
+          console.error('Error fetching candidate digital CV:', err);
+          setError(err instanceof Error ? err.message : 'Failed to load candidate digital CV profile.');
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      });
 
-    const fetchCandidateCv = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await jobApplicationsApi.getCandidateProfileForEmployer(candidateId);
-        setProfileData(data);
-      } catch (err: any) {
-        console.error('Error fetching candidate digital CV:', err);
-        setError(err.message || 'Failed to load candidate digital CV profile.');
-      } finally {
-        setIsLoading(false);
-      }
+    return () => {
+      ignore = true;
     };
-
-    fetchCandidateCv();
   }, [candidateId, initialData]);
 
   useEffect(() => {
@@ -206,10 +221,6 @@ export const CandidateProfileReadOnly: React.FC<CandidateProfileReadOnlyProps> =
       {/* Top Bar with Badges & Creative Close Button */}
       <div className="candidate-cv-topbar">
         <div className="candidate-cv-topbar-left">
-          <span className="candidate-cv-verified-badge">
-            <SparkleIcon />
-            <span>Verified Digital CV</span>
-          </span>
           <span className="candidate-cv-id-badge">
             ID: {profileData.id ? profileData.id.substring(0, 8).toUpperCase() : 'N/A'}
           </span>
@@ -217,6 +228,7 @@ export const CandidateProfileReadOnly: React.FC<CandidateProfileReadOnlyProps> =
             • Confidential Employer Profile
           </span>
         </div>
+
 
         {onClose && (
           <button
@@ -461,7 +473,7 @@ export const CandidateProfileReadOnly: React.FC<CandidateProfileReadOnlyProps> =
             <div className="candidate-projects-list">
               {profileData.projects.map((proj: ProjectDto) => {
                 const { displayRole, techStack } = parseProjectDetails(proj.role);
-                const projectUrl = proj.link || proj.liveUrl || (proj as any).projectUrl;
+                const projectUrl = proj.link || proj.liveUrl || (proj as { projectUrl?: string }).projectUrl;
 
                 return (
                   <div key={proj.id} className="candidate-project-item">

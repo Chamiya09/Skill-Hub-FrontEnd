@@ -17,6 +17,8 @@ import {
   BriefcaseIcon,
   CheckIcon,
   ArrowRightIcon,
+
+
   BookmarkIcon,
   SearchIcon,
   SendIcon,
@@ -56,34 +58,50 @@ export const JobDetailsPublic: React.FC = () => {
     )
   )
 
-  const isExpired = Boolean(job?.deadline && new Date(job.deadline).getTime() < Date.now())
+  const [currentTime, setCurrentTime] = useState<number>(0)
+  const isExpired = Boolean(job?.deadline && currentTime > 0 && new Date(job.deadline).getTime() < currentTime)
+
+  const [prevId, setPrevId] = useState(id)
+  if (id !== prevId) {
+    setPrevId(id)
+    setHasApplied(false)
+    setApplyErrorMessage(null)
+  }
 
   // Scroll to top when job ID changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
-    setHasApplied(false)
-    setApplyErrorMessage(null)
   }, [id])
 
   // Fetch target job details
   useEffect(() => {
     if (!id) return
+    let ignore = false
 
-    const fetchJob = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const data = await publicJobsApi.getJobById(id)
-        setJob(data)
-      } catch (err: any) {
-        console.error('Error fetching job details:', err)
-        setError(err.message || 'Job vacancy could not be found or has expired.')
-      } finally {
-        setLoading(false)
-      }
+    publicJobsApi
+      .getJobById(id)
+      .then((data) => {
+        if (!ignore) {
+          setJob(data)
+          setCurrentTime(Date.now())
+          setError(null)
+        }
+      })
+      .catch((err: unknown) => {
+        if (!ignore) {
+          console.error('Error fetching job details:', err)
+          setError(err instanceof Error ? err.message : 'Job vacancy could not be found or has expired.')
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      ignore = true
     }
-
-    fetchJob()
   }, [id])
 
   // Check candidate application status
@@ -96,7 +114,7 @@ export const JobDetailsPublic: React.FC = () => {
         if (res && res.hasApplied) {
           setHasApplied(true)
         }
-      } catch (err) {
+      } catch {
         // Silently catch status check error
       }
     }
@@ -144,7 +162,7 @@ export const JobDetailsPublic: React.FC = () => {
       } else {
         await savedJobsApi.remove(id)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to update saved job status:', err)
       // Rollback optimistic state on error
       setIsBookmarked(!willBeSaved)
@@ -231,9 +249,9 @@ export const JobDetailsPublic: React.FC = () => {
       setHasApplied(true)
       setApplicationSubmitted(true)
       setTimeout(() => setApplicationSubmitted(false), 6000)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error submitting application:', err)
-      const msg = err.message || 'Failed to submit application.'
+      const msg = err instanceof Error ? err.message : 'Failed to submit application.'
       setApplyErrorMessage(msg)
       if (msg.toLowerCase().includes('already applied')) {
         setHasApplied(true)
@@ -492,23 +510,8 @@ export const JobDetailsPublic: React.FC = () => {
                   >
                     {dynamicCompanyName}
                   </Link>
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      background: '#eff6ff',
-                      color: '#2563eb',
-                      border: '1px solid #dbeafe',
-                      fontSize: '11.5px',
-                      fontWeight: 700,
-                      padding: '2px 8px',
-                      borderRadius: '9999px',
-                    }}
-                  >
-                    <CheckIcon /> Verified Employer
-                  </span>
                 </div>
+
 
                 <h1
                   style={{

@@ -51,9 +51,9 @@ export const AddSkillModal: React.FC<AddSkillModalProps> = ({
       // Reset form
       setSkillName('');
       setCategory('Languages & Core Stack');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to add skill:', err);
-      setErrorMsg(err.message || 'Unable to save skill. Please try again.');
+      setErrorMsg(err instanceof Error ? err.message : 'Unable to save skill. Please try again.');
     } finally {
       setLoading(false);
     }

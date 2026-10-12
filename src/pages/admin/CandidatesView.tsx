@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Users,
@@ -221,30 +221,38 @@ export const CandidatesView: React.FC = () => {
     setTimeout(() => setCopiedEmail(false), 2000);
   };
 
-  const loadCandidates = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const data = await adminApi.getCandidates();
-      if (Array.isArray(data) && data.length > 0) {
-        const normalized = data.map((c) => ({
-          ...c,
-          avatar: c.avatar && !c.avatar.includes('unsplash.com') ? c.avatar : '',
-        }));
-        setCandidates(normalized);
-      } else {
-        setCandidates(INITIAL_MOCK_CANDIDATES);
-      }
-    } catch (err) {
-      console.warn('Backend API candidates endpoint unavailable, running with mock dataset:', err);
-      setCandidates(INITIAL_MOCK_CANDIDATES);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
-    loadCandidates();
-  }, [loadCandidates]);
+    let ignore = false;
+    adminApi
+      .getCandidates()
+      .then((data) => {
+        if (ignore) return;
+        if (Array.isArray(data) && data.length > 0) {
+          const normalized = data.map((c) => ({
+            ...c,
+            avatar: c.avatar && !c.avatar.includes('unsplash.com') ? c.avatar : '',
+          }));
+          setCandidates(normalized);
+        } else {
+          setCandidates(INITIAL_MOCK_CANDIDATES);
+        }
+      })
+      .catch((err) => {
+        if (ignore) return;
+        console.warn('Backend API candidates endpoint unavailable, running with mock dataset:', err);
+        setCandidates(INITIAL_MOCK_CANDIDATES);
+      })
+      .finally(() => {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const toggleCandidateStatus = async (id: string) => {
     const target = candidates.find((c) => c.id === id);
@@ -265,7 +273,11 @@ export const CandidatesView: React.FC = () => {
       try {
         await adminApi.toggleCandidateStatus(id);
       } catch (err) {
-        console.warn('Persisting candidate status toggle via fallback state:', err);
+        console.warn('Could not persist candidate status:', err);
+        if (target) {
+          setCandidates((prev) => prev.map((c) => (c.id === id ? { ...c, status: target.status } : c)));
+          setActiveCandidateModal((prev) => (prev?.id === id ? { ...prev, status: target.status } : prev));
+        }
       }
     }
   };

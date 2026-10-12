@@ -2502,10 +2502,22 @@ export interface UnscheduledCandidateDto {
   reason: string;
 }
 
+export interface AlreadyScheduledCandidateDto {
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  date: string; // YYYY-MM-DD
+  timeSlot: string; // HH:mm - HH:mm
+  meetingMode: string; // "Online" | "Physical"
+  location: string;
+  status: string;
+}
+
 export interface ScheduleSummaryDto {
   totalCandidates: number;
   scheduledCount: number;
   unscheduledCount: number;
+  alreadyScheduledCount?: number;
   originalDateRange: string;
   effectiveDateRange: string;
   forwardDaysExtended: number;
@@ -2519,6 +2531,7 @@ export interface ScheduleProposalResponseDto {
   jobTitle: string;
   proposedSlots: ProposedSlotDto[];
   unscheduledCandidates: UnscheduledCandidateDto[];
+  alreadyScheduledCandidates?: AlreadyScheduledCandidateDto[];
   summary: ScheduleSummaryDto;
   isDraft: boolean;
 }

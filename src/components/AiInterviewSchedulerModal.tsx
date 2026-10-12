@@ -8,13 +8,20 @@ import {
   Link as LinkIcon,
   Copy,
   MapPin,
+  CheckCircle2,
+  CalendarCheck,
+  UserCheck,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import {
   type JobDto,
   eventsApi,
   jobsApi,
+  assessmentsApi,
   type ScheduleProposalResponseDto,
   type ConfirmInterviewScheduleDto,
+  type AlreadyScheduledCandidateDto,
 } from '../services/api';
 import './AiInterviewSchedulerModal.css';
 
@@ -82,6 +89,18 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
   >({});
   const [commonMeetingLinkInput, setCommonMeetingLinkInput] = useState<string>('');
   const [commonLocationInput, setCommonLocationInput] = useState<string>('');
+  const [alreadyScheduledCandidates, setAlreadyScheduledCandidates] = useState<AlreadyScheduledCandidateDto[]>([]);
+  const [isLoadingAlreadyScheduled, setIsLoadingAlreadyScheduled] = useState<boolean>(false);
+  const [isAlreadyScheduledExpanded, setIsAlreadyScheduledExpanded] = useState<boolean>(true);
+  const [isProposalAlreadyScheduledExpanded, setIsProposalAlreadyScheduledExpanded] = useState<boolean>(true);
+
+  // Active list of already-scheduled candidates (combines fetched & proposal-detected candidates)
+  const currentAlreadyScheduled =
+    scheduleProposal?.alreadyScheduledCandidates && scheduleProposal.alreadyScheduledCandidates.length > 0
+      ? scheduleProposal.alreadyScheduledCandidates
+      : alreadyScheduledCandidates;
+  const alreadyScheduledCount =
+    scheduleProposal?.summary?.alreadyScheduledCount ?? currentAlreadyScheduled.length;
 
   // Live count derived from HR's manual checkbox selections
   const liveScheduledCount = selectedProposedSlotIds.length;
@@ -98,6 +117,7 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
       setSelectedProposedSlotIds([]);
       setSlotConfigs({});
       setCommonMeetingLinkInput('');
+      setAlreadyScheduledCandidates([]);
 
       if (availableJobs && availableJobs.length > 0) {
         const activeJobs = availableJobs.filter((j) => j.status?.toLowerCase() !== 'deleted');
@@ -144,6 +164,56 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
     };
   }, [isOpen, availableJobs, initialJobVacancyId]);
 
+  // Query already-scheduled candidates for the chosen job vacancy
+  useEffect(() => {
+    let ignore = false;
+    if (isOpen && selectedVacancyId) {
+      setIsLoadingAlreadyScheduled(true);
+      assessmentsApi
+        .getInterviewSelections(selectedVacancyId)
+        .then((selections) => {
+          if (ignore) return;
+          const scheduled = (selections || [])
+            .filter((s) =>
+              Boolean(
+                s.scheduledEventId ||
+                s.scheduledDate ||
+                s.status === 'Ready for Interview' ||
+                s.status?.toLowerCase().includes('ready')
+              )
+            )
+            .map((s) => ({
+              candidateId: s.candidateId,
+              candidateName: s.candidateName || 'Candidate',
+              candidateEmail: s.candidateEmail || '',
+              date: s.scheduledDate || '',
+              timeSlot: s.scheduledTime || '',
+              meetingMode: s.scheduledMeetingMode || 'Online',
+              location: s.scheduledLocation || (s.scheduledMeetingMode === 'Physical' ? 'Company Office' : 'Online'),
+              status: s.status || 'Ready for Interview',
+            }));
+          setAlreadyScheduledCandidates(scheduled);
+        })
+        .catch((err) => {
+          if (ignore) return;
+          console.warn('Could not load already-scheduled candidates for vacancy:', err);
+          setAlreadyScheduledCandidates([]);
+        })
+        .finally(() => {
+          if (!ignore) {
+            setIsLoadingAlreadyScheduled(false);
+          }
+        });
+    } else if (!isOpen) {
+      setAlreadyScheduledCandidates([]);
+      setIsLoadingAlreadyScheduled(false);
+    }
+
+    return () => {
+      ignore = true;
+    };
+  }, [isOpen, selectedVacancyId]);
+
   if (!isOpen) return null;
 
   const handleGenerateSchedule = async (e: React.FormEvent) => {
@@ -168,6 +238,16 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
       });
 
       setScheduleProposal(proposal);
+      if (proposal.alreadyScheduledCandidates && proposal.alreadyScheduledCandidates.length > 0) {
+        setAlreadyScheduledCandidates((prev) => {
+          const map = new Map<string, AlreadyScheduledCandidateDto>();
+          (proposal.alreadyScheduledCandidates || []).forEach((c) => map.set(c.candidateId, c));
+          prev.forEach((c) => {
+            if (!map.has(c.candidateId)) map.set(c.candidateId, c);
+          });
+          return Array.from(map.values());
+        });
+      }
       setSelectedProposedSlotIds((proposal.proposedSlots || []).map((s) => s.slotId));
 
       const initialConfigs: Record<
@@ -184,9 +264,18 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
       setSlotConfigs(initialConfigs);
 
       if (proposal.proposedSlots.length === 0) {
-        setAiSchedulerError(
-          'No candidate interview slots could be generated. Ensure candidates are shortlisted or selected for interview for this role.'
-        );
+        const hasExisting =
+          (proposal.alreadyScheduledCandidates && proposal.alreadyScheduledCandidates.length > 0) ||
+          alreadyScheduledCandidates.length > 0;
+        if (hasExisting) {
+          setAiSchedulerError(
+            `All candidates for this requisition already have confirmed interview dates. See the "Already Scheduled Candidates" list below.`
+          );
+        } else {
+          setAiSchedulerError(
+            'No candidate interview slots could be generated. Ensure candidates are shortlisted or selected for interview for this role.'
+          );
+        }
       }
     } catch (err: unknown) {
       console.error('Failed to generate interview schedule proposal:', err);
@@ -414,6 +503,141 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
               </p>
             </div>
 
+            {/* Already Scheduled Candidates Information Card (View A: Configuration) */}
+            <div className="ai-already-scheduled-section">
+              <div
+                className="ai-already-scheduled-header"
+                onClick={() => setIsAlreadyScheduledExpanded((prev) => !prev)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setIsAlreadyScheduledExpanded((prev) => !prev);
+                  }
+                }}
+              >
+                <div className="ai-already-header-left">
+                  <div className="ai-already-icon-box">
+                    <UserCheck size={16} />
+                  </div>
+                  <div>
+                    <div className="ai-already-title">
+                      Already Scheduled Candidates
+                      <span className="ai-already-count-badge">
+                        {alreadyScheduledCandidates.length} Scheduled
+                      </span>
+                    </div>
+                    <p className="ai-already-subtitle">
+                      {alreadyScheduledCandidates.length === 0
+                        ? 'No candidates scheduled yet for this requisition'
+                        : `${alreadyScheduledCandidates.length} candidate(s) currently have interview bookings`}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="ai-already-header-right">
+                  {isLoadingAlreadyScheduled ? (
+                    <RefreshCw size={14} className="animate-spin text-emerald-600" />
+                  ) : (
+                    <button
+                      type="button"
+                      className="ai-already-toggle-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsAlreadyScheduledExpanded((prev) => !prev);
+                      }}
+                      title={isAlreadyScheduledExpanded ? 'Collapse' : 'Expand'}
+                    >
+                      {isAlreadyScheduledExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {isAlreadyScheduledExpanded && (
+                <div className="ai-already-content">
+                  {isLoadingAlreadyScheduled ? (
+                    <div className="ai-already-loading">
+                      <RefreshCw size={14} className="animate-spin" />
+                      <span>Checking calendar bookings for this vacancy...</span>
+                    </div>
+                  ) : alreadyScheduledCandidates.length === 0 ? (
+                    <div className="ai-already-empty">
+                      <CalendarCheck size={14} color="#059669" />
+                      <span>
+                        All shortlisted candidates are eligible for new slot assignment. Zero previous interview bookings found.
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="ai-already-note">
+                        <Sparkles size={13} color="#059669" />
+                        <span>
+                          The AI Scheduler automatically detects these existing appointments and avoids double-booking their calendar slots.
+                        </span>
+                      </div>
+                      <div className="ai-already-table-wrap">
+                        <table className="ai-already-table">
+                          <thead>
+                            <tr>
+                              <th>Candidate</th>
+                              <th>Date</th>
+                              <th>Time</th>
+                              <th>Mode</th>
+                              <th>Venue / Link</th>
+                              <th>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {alreadyScheduledCandidates.map((c) => (
+                              <tr key={c.candidateId}>
+                                <td>
+                                  <div className="c-name">{c.candidateName}</div>
+                                  <div className="c-email">{c.candidateEmail}</div>
+                                </td>
+                                <td className="nowrap">{c.date || 'TBD'}</td>
+                                <td className="nowrap time-cell">{c.timeSlot ? formatSingleTime(c.timeSlot) : 'TBD'}</td>
+                                <td>
+                                  <span className={`ai-mode-chip ${c.meetingMode?.toLowerCase() === 'physical' ? 'is-physical' : 'is-online'}`}>
+                                    {c.meetingMode || 'Online'}
+                                  </span>
+                                </td>
+                                <td>
+                                  {c.meetingMode?.toLowerCase() === 'physical' ? (
+                                    <span className="loc-text">{c.location || 'Company Office'}</span>
+                                  ) : c.location && c.location.startsWith('http') ? (
+                                    <a
+                                      href={c.location}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="link-anchor"
+                                      title="Open meeting link"
+                                    >
+                                      <LinkIcon size={12} />
+                                      <span>Meeting Link</span>
+                                    </a>
+                                  ) : (
+                                    <span className="loc-text">{c.location || 'Online Meet'}</span>
+                                  )}
+                                </td>
+                                <td>
+                                  <span className="ai-status-chip is-confirmed">
+                                    <CheckCircle2 size={11} />
+                                    <span>Confirmed</span>
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Date Window */}
             <div className="ai-scheduler-grid-2">
               <div className="ai-scheduler-field">
@@ -520,14 +744,19 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
         {scheduleProposal && (
           <div className="ai-proposal-view">
             {/* Metric Summary Cards */}
-            <div className="ai-proposal-metrics">
+            <div className="ai-proposal-metrics ai-proposal-metrics-4">
               <div className="ai-proposal-metric-card card-total">
                 <span>Candidates</span>
                 <strong>{scheduleProposal.summary.totalCandidates}</strong>
               </div>
 
+              <div className="ai-proposal-metric-card card-already-scheduled">
+                <span>Already Scheduled</span>
+                <strong>{alreadyScheduledCount}</strong>
+              </div>
+
               <div className="ai-proposal-metric-card card-scheduled">
-                <span>Scheduled</span>
+                <span>Proposed Slots</span>
                 <strong>{liveScheduledCount}</strong>
               </div>
 
@@ -550,6 +779,126 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                     (effective window: {scheduleProposal.summary.effectiveDateRange}) to avoid clashes and schedule all candidates.
                   </span>
                 </div>
+              </div>
+            )}
+
+            {/* Already Scheduled Candidates Panel (View B: Review & Protection) */}
+            {currentAlreadyScheduled.length > 0 && (
+              <div className="ai-already-scheduled-section is-proposal-card">
+                <div
+                  className="ai-already-scheduled-header"
+                  onClick={() => setIsProposalAlreadyScheduledExpanded((prev) => !prev)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setIsProposalAlreadyScheduledExpanded((prev) => !prev);
+                    }
+                  }}
+                >
+                  <div className="ai-already-header-left">
+                    <div className="ai-already-icon-box">
+                      <UserCheck size={16} />
+                    </div>
+                    <div>
+                      <div className="ai-already-title">
+                        Already Scheduled Candidates
+                        <span className="ai-already-count-badge">
+                          {currentAlreadyScheduled.length} Confirmed
+                        </span>
+                        <span className="ai-already-shield-badge">
+                          <CheckCircle2 size={11} />
+                          No Action Required
+                        </span>
+                      </div>
+                      <p className="ai-already-subtitle">
+                        These candidates already have confirmed interview dates and were preserved without conflict
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="ai-already-header-right">
+                    <button
+                      type="button"
+                      className="ai-already-toggle-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsProposalAlreadyScheduledExpanded((prev) => !prev);
+                      }}
+                      title={isProposalAlreadyScheduledExpanded ? 'Collapse' : 'Expand'}
+                    >
+                      {isProposalAlreadyScheduledExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {isProposalAlreadyScheduledExpanded && (
+                  <div className="ai-already-content">
+                    <div className="ai-already-note">
+                      <Bot size={14} color="#059669" />
+                      <span>
+                        The AI Agent safely protected these existing appointments. They are excluded from the approval list below so they won't be overwritten.
+                      </span>
+                    </div>
+
+                    <div className="ai-already-table-wrap">
+                      <table className="ai-already-table">
+                        <thead>
+                          <tr>
+                            <th>Candidate</th>
+                            <th>Interview Date</th>
+                            <th>Time Slot</th>
+                            <th>Delivery Mode</th>
+                            <th>Venue / Meeting Link</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {currentAlreadyScheduled.map((c) => (
+                            <tr key={c.candidateId}>
+                              <td>
+                                <div className="c-name">{c.candidateName}</div>
+                                <div className="c-email">{c.candidateEmail}</div>
+                              </td>
+                              <td className="nowrap font-medium">{c.date || 'TBD'}</td>
+                              <td className="nowrap time-cell">{c.timeSlot ? formatSingleTime(c.timeSlot) : 'TBD'}</td>
+                              <td>
+                                <span className={`ai-mode-chip ${c.meetingMode?.toLowerCase() === 'physical' ? 'is-physical' : 'is-online'}`}>
+                                  {c.meetingMode || 'Online'}
+                                </span>
+                              </td>
+                              <td>
+                                {c.meetingMode?.toLowerCase() === 'physical' ? (
+                                  <span className="loc-text">{c.location || 'Company Office'}</span>
+                                ) : c.location && c.location.startsWith('http') ? (
+                                  <a
+                                    href={c.location}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="link-anchor"
+                                    title="Open meeting link"
+                                  >
+                                    <LinkIcon size={12} />
+                                    <span>Meeting Link</span>
+                                  </a>
+                                ) : (
+                                  <span className="loc-text">{c.location || 'Online Meet'}</span>
+                                )}
+                              </td>
+                              <td>
+                                <span className="ai-status-chip is-confirmed">
+                                  <CheckCircle2 size={11} />
+                                  <span>Confirmed</span>
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -666,7 +1015,7 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                 {/* Right side: Count & Selection info */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a' }}>
-                    Proposed Appointments ({scheduleProposal.proposedSlots.length})
+                    Proposed New Appointments ({scheduleProposal.proposedSlots.length})
                   </div>
                   <div
                     style={{
@@ -715,13 +1064,26 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                     </tr>
                   </thead>
                   <tbody>
-                    {scheduleProposal.proposedSlots.map((slot) => {
-                      const isChecked = selectedProposedSlotIds.includes(slot.slotId);
-                      const cfg = slotConfigs[slot.slotId] || {
-                        meetingMode: 'Online',
-                        meetingLink: 'https://meet.google.com/interview-room',
-                        location: 'Online',
-                      };
+                    {scheduleProposal.proposedSlots.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} style={{ textAlign: 'center', padding: '24px 16px', color: '#64748b' }}>
+                          <CheckCircle2 size={24} color="#059669" style={{ margin: '0 auto 8px' }} />
+                          <div style={{ fontWeight: 700, color: '#0f172a' }}>
+                            All candidates for this vacancy already have scheduled interviews.
+                          </div>
+                          <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                            Zero pending candidates require new interview slots.
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      scheduleProposal.proposedSlots.map((slot) => {
+                        const isChecked = selectedProposedSlotIds.includes(slot.slotId);
+                        const cfg = slotConfigs[slot.slotId] || {
+                          meetingMode: 'Online',
+                          meetingLink: 'https://meet.google.com/interview-room',
+                          location: 'Online',
+                        };
                       const isOnline = cfg.meetingMode === 'Online';
 
                       return (
@@ -903,7 +1265,7 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                           </td>
                         </tr>
                       );
-                    })}
+                    }))}
                   </tbody>
                 </table>
               </div>

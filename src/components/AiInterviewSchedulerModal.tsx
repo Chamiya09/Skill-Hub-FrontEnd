@@ -187,30 +187,30 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
 
           const scheduledSet = new Set<string>();
 
-          // 1. Identify candidates who already have booked events in company calendar
+          // 1. Identify candidates who already have booked interview events for this vacancy
           (calendarEvents || []).forEach((e) => {
-            if (e.candidateId && (!e.jobVacancyId || e.jobVacancyId === selectedVacancyId)) {
+            if (
+              e.candidateId &&
+              e.jobVacancyId &&
+              e.jobVacancyId.toLowerCase() === selectedVacancyId.toLowerCase()
+            ) {
               scheduledSet.add(e.candidateId);
             }
           });
 
-          // 2. Identify candidates whose status in selections indicates already scheduled or selected
+          // 2. Identify candidates whose status indicates ALREADY SCHEDULED or HIRED
           (selections || []).forEach((s) => {
-            if (
-              s.scheduledEventId ||
-              s.isHired ||
-              s.status === 'Hired' ||
-              s.status === 'Scheduled' ||
-              s.status === 'Ready for Interview' ||
-              s.status === 'Selected' ||
-              s.status?.toLowerCase().includes('ready') ||
-              s.status?.toLowerCase().includes('schedul')
-            ) {
+            const hasBooking = Boolean(s.scheduledEventId);
+            const isReady = s.status === 'Ready for Interview' || Boolean(s.status?.toLowerCase().includes('ready'));
+            const isExplicitlyScheduled = s.status === 'Scheduled' || Boolean(s.status?.toLowerCase().includes('schedul'));
+            const isHired = s.isHired || s.status === 'Hired';
+
+            if (hasBooking || isReady || isExplicitlyScheduled || isHired) {
               scheduledSet.add(s.candidateId);
             }
           });
 
-          // 3. Filter only un-scheduled candidates who need an interview appointment
+          // 3. Filter candidates who are selected for interview / pending schedule (NOT in scheduledSet)
           const unScheduled = (selections || []).filter(
             (s) =>
               !scheduledSet.has(s.candidateId) &&
@@ -219,7 +219,6 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
               !s.scheduledEventId &&
               s.status !== 'Ready for Interview' &&
               s.status !== 'Scheduled' &&
-              s.status !== 'Selected' &&
               !s.status?.toLowerCase().includes('ready')
           );
 

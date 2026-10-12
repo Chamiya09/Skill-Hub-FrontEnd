@@ -40,9 +40,9 @@ export const CreateJob = () => {
       setTimeout(() => {
         navigate('/vacancies');
       }, 1000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error creating job vacancy:', err);
-      alert(err.message || 'Failed to create job vacancy in database.');
+      alert(err instanceof Error ? err.message : 'Failed to create job vacancy in database.');
     } finally {
       setIsSubmitting(false);
     }

@@ -483,7 +483,8 @@ export const CandidateExam: React.FC = () => {
       setPhase('in_progress');
     } catch (err: unknown) {
       console.error('Failed to start exam:', err);
-      setPhase('in_progress');
+      setErrorMessage(err instanceof Error ? err.message : 'Could not start the assessment. Please return to your assessments and try again.');
+      setPhase('error');
     }
   };
 
@@ -586,6 +587,7 @@ export const CandidateExam: React.FC = () => {
   const handleConfirmSubmit = async () => {
     if (!submissionId || !examPaper) return;
     isSubmittedRef.current = true;
+    setErrorMessage(null);
     setShowSubmitModal(false);
     setPhase('submitting');
 
@@ -1173,6 +1175,12 @@ export const CandidateExam: React.FC = () => {
           >
             <XIcon />
           </button>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div role="alert" style={{ padding: '10px 16px', background: '#7f1d1d', color: '#fff' }}>
+          {errorMessage}
         </div>
       )}
 

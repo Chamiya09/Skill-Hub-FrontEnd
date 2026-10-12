@@ -68,17 +68,17 @@ export const CompanySettings: React.FC = () => {
 
     return {
       companyName: currentUser?.companyName || cached?.companyName || '',
-      adminName: currentUser?.fullName || (currentUser as any)?.adminName || cached?.fullName || (cached as any)?.adminName || '',
-      contactEmail: currentUser?.email || (currentUser as any)?.contactEmail || cached?.email || (cached as any)?.contactEmail || '',
+      adminName: currentUser?.adminName || currentUser?.fullName || cached?.adminName || cached?.fullName || '',
+      contactEmail: currentUser?.contactEmail || currentUser?.email || cached?.contactEmail || cached?.email || '',
       website: currentUser?.website || cached?.website || '',
       industry: currentUser?.industry || cached?.industry || '',
-      phone: currentUser?.phone || (currentUser as any)?.phone || cached?.phone || (cached as any)?.phone || '',
-      companySize: currentUser?.companySize || (currentUser as any)?.companySize || cached?.companySize || (cached as any)?.companySize || '',
-      foundedYear: currentUser?.foundedYear || (currentUser as any)?.foundedYear || cached?.foundedYear || (cached as any)?.foundedYear || '',
+      phone: currentUser?.phone || cached?.phone || '',
+      companySize: currentUser?.companySize || cached?.companySize || '',
+      foundedYear: currentUser?.foundedYear || cached?.foundedYear || '',
       logoUrl: currentUser?.logoUrl || cached?.logoUrl || '',
-      linkedinUrl: currentUser?.linkedinUrl || (currentUser as any)?.linkedinUrl || cached?.linkedinUrl || (cached as any)?.linkedinUrl || '',
-      twitterUrl: currentUser?.twitterUrl || (currentUser as any)?.twitterUrl || cached?.twitterUrl || (cached as any)?.twitterUrl || '',
-      githubUrl: currentUser?.githubUrl || (currentUser as any)?.githubUrl || cached?.githubUrl || (cached as any)?.githubUrl || '',
+      linkedinUrl: currentUser?.linkedinUrl || cached?.linkedinUrl || '',
+      twitterUrl: currentUser?.twitterUrl || cached?.twitterUrl || '',
+      githubUrl: currentUser?.githubUrl || cached?.githubUrl || '',
       location: currentUser?.location || cached?.location || '',
       about: currentUser?.about || cached?.about || '',
     };
@@ -99,7 +99,9 @@ export const CompanySettings: React.FC = () => {
     setLayoutMode(mode);
     try {
       localStorage.setItem('skillhub_settings_layout_mode', mode);
-    } catch {}
+    } catch {
+      // The settings page remains available when browser storage is unavailable.
+    }
   };
 
   const hasLoadedRef = useRef(false);
@@ -128,7 +130,7 @@ export const CompanySettings: React.FC = () => {
           location: profile.location || prev.location || '',
           about: profile.about || prev.about || '',
         }));
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to load company profile:', err);
       }
     };
@@ -208,9 +210,9 @@ export const CompanySettings: React.FC = () => {
 
       setSuccessMessage('Company profile and workspace identity successfully updated.');
       setTimeout(() => setSuccessMessage(null), 4500);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to update company profile:', err);
-      setErrorMessage(err.message || 'Failed to save changes. Please try again.');
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to save changes. Please try again.');
     } finally {
       setIsSaving(false);
     }

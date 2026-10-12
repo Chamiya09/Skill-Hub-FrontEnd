@@ -116,24 +116,34 @@ export const HiringPipeline: React.FC = () => {
 
   // Load available published assessment tracks for the selected job when modal opens
   useEffect(() => {
-    if (assessmentCandidate && selectedJob) {
-      setLoadingTracks(true);
-      assessmentsApi.getTracksByJob(selectedJob.id)
-        .then((tracks) => {
-          setAvailableTracks(tracks || []);
-          if (tracks && tracks.length > 0) {
-            setSelectedAssessmentType(tracks[0].id);
-          } else {
-            setSelectedAssessmentType('');
-          }
-        })
-        .catch((err) => {
-          console.warn('Could not load assessment tracks:', err);
-          setAvailableTracks([]);
+    if (!assessmentCandidate || !selectedJob) return;
+    let ignore = false;
+    assessmentsApi
+      .getTracksByJob(selectedJob.id)
+      .then((tracks) => {
+        if (ignore) return;
+        setAvailableTracks(tracks || []);
+        if (tracks && tracks.length > 0) {
+          setSelectedAssessmentType(tracks[0].id);
+        } else {
           setSelectedAssessmentType('');
-        })
-        .finally(() => setLoadingTracks(false));
-    }
+        }
+      })
+      .catch((err) => {
+        if (ignore) return;
+        console.warn('Could not load assessment tracks:', err);
+        setAvailableTracks([]);
+        setSelectedAssessmentType('');
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoadingTracks(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, [assessmentCandidate, selectedJob]);
 
   // 5. Toast Feedback State
@@ -171,16 +181,53 @@ export const HiringPipeline: React.FC = () => {
       );
 
       setApplicantCounts(counts);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching jobs for hiring pipeline:', err);
-      setErrorMessage(err.message || 'Failed to load company job requisitions.');
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to load company job requisitions.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchJobs();
+    let ignore = false;
+    jobsApi
+      .getJobs()
+      .then(async (data: JobDto[]) => {
+        if (ignore) return;
+        setJobs(data);
+        const counts: Record<string, { total: number; shortlisted: number }> = {};
+        await Promise.all(
+          data.map(async (job) => {
+            try {
+              const shortlistedApps: ShortlistedApplicantDto[] = await jobApplicationsApi.getShortlisted(job.id);
+              const apps: JobApplicantDto[] = await jobApplicationsApi.getJobApplicants(job.id);
+              counts[job.id] = { total: apps.length, shortlisted: shortlistedApps.length };
+            } catch {
+              counts[job.id] = { total: 0, shortlisted: 0 };
+            }
+          })
+        );
+        if (!ignore) {
+          setApplicantCounts(counts);
+          setErrorMessage(null);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!ignore) {
+          console.error('Error fetching jobs for hiring pipeline:', err);
+          setErrorMessage(err instanceof Error ? err.message : 'Failed to load company job requisitions.');
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   // Fetch Shortlisted Candidates for the selected job using the dedicated endpoint
@@ -228,7 +275,7 @@ export const HiringPipeline: React.FC = () => {
       // Sort by AI score descending
       mapped.sort((a, b) => b.aiScore - a.aiScore);
       setShortlistedCandidates(mapped);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching shortlisted applicants:', err);
       showToast('Could not load candidates for this requisition.');
     } finally {
@@ -363,9 +410,9 @@ export const HiringPipeline: React.FC = () => {
       setAssessmentCandidate(null);
       setDispatchedModalData(dispatchRes);
       showToast(`✓ Skill assessment successfully dispatched to ${assessmentCandidate.name}!`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error dispatching assessment:', err);
-      showToast(err.message || 'Failed to dispatch skill assessment.');
+      showToast(err instanceof Error ? err.message : 'Failed to dispatch skill assessment.');
     } finally {
       setSendingAssessment(false);
     }
@@ -523,7 +570,7 @@ export const HiringPipeline: React.FC = () => {
             <select
               id="pipeline-sort-filter"
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e) => setSortBy(e.target.value as 'shortlisted' | 'applicants' | 'newest' | 'title')}
             >
               <option value="shortlisted">Most shortlisted</option>
               <option value="applicants">Most applicants</option>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { candidateCvApi, type ProjectDto } from '../../../services/api';
@@ -41,17 +41,32 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
   onSuccess,
   initialData,
 }) => {
-  const [projectName, setProjectName] = useState('');
-  const [role, setRole] = useState('');
-  const [techTags, setTechTags] = useState<string[]>(['React', 'TypeScript', 'Node.js']);
+  const [projectName, setProjectName] = useState(initialData?.projectName || '');
+  const [role, setRole] = useState(() => {
+    if (!initialData?.role) return '';
+    return initialData.role.includes('•') ? initialData.role.split('•')[0].trim() : initialData.role;
+  });
+  const [techTags, setTechTags] = useState<string[]>(() => {
+    if (!initialData) return ['React', 'TypeScript', 'Node.js'];
+    if (!initialData.role) return [];
+    if (initialData.role.includes('•')) {
+      return initialData.role.split('•')[1].split(',').map((t) => t.trim()).filter(Boolean);
+    }
+    return [];
+  });
   const [tagInput, setTagInput] = useState('');
-  const [link, setLink] = useState('');
-  const [description, setDescription] = useState('');
+  const [link, setLink] = useState(initialData?.link || '');
+  const [description, setDescription] = useState(initialData?.description || '');
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [prevInitialData, setPrevInitialData] = useState(initialData);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
+  if (initialData !== prevInitialData || isOpen !== prevIsOpen) {
+    setPrevInitialData(initialData);
+    setPrevIsOpen(isOpen);
     if (initialData) {
       setProjectName(initialData.projectName || '');
       // If role contains bullet/stack breakdown (e.g. "Lead • React, C#"), extract
@@ -81,7 +96,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
       setDescription('');
     }
     setErrorMsg(null);
-  }, [initialData, isOpen]);
+  }
 
   if (!isOpen) return null;
 
@@ -142,9 +157,9 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
 
       onSuccess(saved);
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to save project:', err);
-      setErrorMsg(err.message || 'Unable to save project. Please try again.');
+      setErrorMsg(err instanceof Error ? err.message : 'Unable to save project. Please try again.');
     } finally {
       setLoading(false);
     }

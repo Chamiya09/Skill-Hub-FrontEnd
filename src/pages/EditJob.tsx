@@ -17,31 +17,41 @@ export const EditJob = () => {
   // Load existing vacancy data from API
   useEffect(() => {
     if (!id) return;
-    const fetchJob = async () => {
-      try {
-        setIsLoading(true);
-        setErrorMessage(null);
-        const data = await jobsApi.getJobById(id);
-        setJobData({
-          title: data.title,
-          department: data.department,
-          location: data.location,
-          type: (data.employmentType as any) || 'Full-time',
-          experienceLevel: data.experienceLevel || 'Senior Level (5+ Yrs)',
-          status: (data.status as any) || 'Active',
-          salaryRange: data.salaryRange || '',
-          description: data.description || '',
-          benefits: data.whatWeOffer || '',
-        });
-      } catch (err: any) {
-        console.error('Error fetching job for edit:', err);
-        setErrorMessage(err.message || 'Failed to load job details from database.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    let ignore = false;
 
-    fetchJob();
+    jobsApi
+      .getJobById(id)
+      .then((data) => {
+        if (!ignore) {
+          setJobData({
+            title: data.title,
+            department: data.department,
+            location: data.location,
+            type: (data.employmentType as JobFormData['type']) || 'Full-time',
+            experienceLevel: data.experienceLevel || 'Senior Level (5+ Yrs)',
+            status: (data.status as JobFormData['status']) || 'Active',
+            salaryRange: data.salaryRange || '',
+            description: data.description || '',
+            benefits: data.whatWeOffer || '',
+          });
+          setErrorMessage(null);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!ignore) {
+          console.error('Error fetching job for edit:', err);
+          setErrorMessage(err instanceof Error ? err.message : 'Failed to load job details from database.');
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, [id]);
 
   const handleEditSubmit = async (data: JobFormData) => {
@@ -64,9 +74,9 @@ export const EditJob = () => {
       setTimeout(() => {
         navigate('/vacancies');
       }, 1000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error updating job:', err);
-      alert(err.message || 'Failed to update job vacancy.');
+      alert(err instanceof Error ? err.message : 'Failed to update job vacancy.');
     } finally {
       setIsSubmitting(false);
     }

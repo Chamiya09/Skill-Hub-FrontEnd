@@ -26,7 +26,9 @@ export const CandidateLayout: React.FC = () => {
       const next = !prev;
       try {
         localStorage.setItem('skillhub_candidate_sidebar_collapsed', String(next));
-      } catch {}
+      } catch {
+        // Sidebar state remains usable when browser storage is unavailable.
+      }
       return next;
     });
   }, []);

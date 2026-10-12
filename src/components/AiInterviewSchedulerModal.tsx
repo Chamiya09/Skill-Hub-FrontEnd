@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Bot,
   Sparkles,
@@ -89,28 +89,9 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
     ? Math.max(0, scheduleProposal.summary.totalCandidates - liveScheduledCount)
     : 0;
 
-  const fetchVacancies = useCallback(async () => {
-    try {
-      setVacanciesLoading(true);
-      const jobs = await jobsApi.getJobs();
-      const activeJobs = (jobs || []).filter((j) => j.status?.toLowerCase() !== 'deleted');
-      setVacancies(activeJobs);
-      if (activeJobs.length > 0) {
-        setSelectedVacancyId((prev) => {
-          if (initialJobVacancyId && activeJobs.some((v) => v.id === initialJobVacancyId)) {
-            return initialJobVacancyId;
-          }
-          return prev && activeJobs.some((v) => v.id === prev) ? prev : activeJobs[0].id;
-        });
-      }
-    } catch (err) {
-      console.warn('Could not load company vacancies for AI scheduler:', err);
-    } finally {
-      setVacanciesLoading(false);
-    }
-  }, [initialJobVacancyId]);
-
-  useEffect(() => {
+  const [prevIsOpen, setPrevIsOpen] = useState(false);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
       setAiSchedulerError(null);
       setScheduleProposal(null);
@@ -126,11 +107,42 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
         } else if (activeJobs.length > 0) {
           setSelectedVacancyId((prev) => (prev && activeJobs.some((v) => v.id === prev) ? prev : activeJobs[0].id));
         }
-      } else {
-        fetchVacancies();
       }
     }
-  }, [isOpen, availableJobs, initialJobVacancyId, fetchVacancies]);
+  }
+
+  useEffect(() => {
+    let ignore = false;
+    if (isOpen && (!availableJobs || availableJobs.length === 0)) {
+      jobsApi.getJobs()
+        .then((jobs) => {
+          if (ignore) return;
+          const activeJobs = (jobs || []).filter((j) => j.status?.toLowerCase() !== 'deleted');
+          setVacancies(activeJobs);
+          if (activeJobs.length > 0) {
+            setSelectedVacancyId((prev) => {
+              if (initialJobVacancyId && activeJobs.some((v) => v.id === initialJobVacancyId)) {
+                return initialJobVacancyId;
+              }
+              return prev && activeJobs.some((v) => v.id === prev) ? prev : activeJobs[0].id;
+            });
+          }
+        })
+        .catch((err) => {
+          if (ignore) return;
+          console.warn('Could not load company vacancies for AI scheduler:', err);
+        })
+        .finally(() => {
+          if (!ignore) {
+            setVacanciesLoading(false);
+          }
+        });
+    }
+
+    return () => {
+      ignore = true;
+    };
+  }, [isOpen, availableJobs, initialJobVacancyId]);
 
   if (!isOpen) return null;
 

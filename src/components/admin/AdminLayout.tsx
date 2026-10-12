@@ -49,7 +49,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       const next = !prev;
       try {
         localStorage.setItem('skillhub_admin_sidebar_collapsed', String(next));
-      } catch {}
+      } catch {
+        // Sidebar state remains usable when browser storage is unavailable.
+      }
       return next;
     });
   }, []);

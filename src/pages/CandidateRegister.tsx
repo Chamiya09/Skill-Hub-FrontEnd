@@ -172,10 +172,11 @@ export const CandidateRegister: React.FC = () => {
       setTimeout(() => {
         navigate('/candidate/profile', { replace: true });
       }, 500);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Candidate registration error:', err);
+      const message = err instanceof Error ? err.message : (err as { message?: string })?.message;
       setErrorMessage(
-        err.message || 'Failed to register candidate account. Please check your information and try again.'
+        message || 'Failed to register candidate account. Please check your information and try again.'
       );
     } finally {
       setLoading(false);

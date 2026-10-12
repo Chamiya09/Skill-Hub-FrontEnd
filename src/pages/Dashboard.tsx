@@ -81,7 +81,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ defaultTab = 'overview' })
       const next = !prev
       try {
         localStorage.setItem('skillhub_sidebar_collapsed', String(next))
-      } catch {}
+      } catch {
+        // Sidebar state remains usable when browser storage is unavailable.
+      }
       return next
     })
   }, [])

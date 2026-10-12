@@ -62,8 +62,9 @@ export const AdminLogin: React.FC = () => {
       setAuthData(response.user, response.token);
 
       navigate('/skillhub-secure-admin/dashboard', { replace: true });
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Authentication failed. Please verify credentials.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : (err as { message?: string })?.message;
+      setErrorMessage(message || 'Authentication failed. Please verify credentials.');
     } finally {
       setIsLoading(false);
     }

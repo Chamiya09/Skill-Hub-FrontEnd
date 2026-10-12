@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { candidateCvApi, type ExperienceDto } from '../../../services/api';
@@ -33,18 +33,23 @@ export const AddExperienceModal: React.FC<AddExperienceModalProps> = ({
   onSuccess,
   initialData,
 }) => {
-  const [title, setTitle] = useState('');
-  const [company, setCompany] = useState('');
-  const [location, setLocation] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [isCurrent, setIsCurrent] = useState(false);
-  const [description, setDescription] = useState('');
+  const [title, setTitle] = useState(initialData?.title || '');
+  const [company, setCompany] = useState(initialData?.company || '');
+  const [location, setLocation] = useState(initialData?.location || '');
+  const [startDate, setStartDate] = useState(initialData?.startDate || '');
+  const [endDate, setEndDate] = useState(initialData?.endDate || '');
+  const [isCurrent, setIsCurrent] = useState(!!initialData?.isCurrent);
+  const [description, setDescription] = useState(initialData?.description || '');
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [prevInitialData, setPrevInitialData] = useState(initialData);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
+  if (initialData !== prevInitialData || isOpen !== prevIsOpen) {
+    setPrevInitialData(initialData);
+    setPrevIsOpen(isOpen);
     if (initialData) {
       setTitle(initialData.title || '');
       setCompany(initialData.company || '');
@@ -63,7 +68,7 @@ export const AddExperienceModal: React.FC<AddExperienceModalProps> = ({
       setDescription('');
     }
     setErrorMsg(null);
-  }, [initialData, isOpen]);
+  }
 
   if (!isOpen) return null;
 
@@ -97,9 +102,9 @@ export const AddExperienceModal: React.FC<AddExperienceModalProps> = ({
 
       onSuccess(saved);
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to save experience:', err);
-      setErrorMsg(err.message || 'Unable to save experience. Please try again.');
+      setErrorMsg(err instanceof Error ? err.message : 'Unable to save experience. Please try again.');
     } finally {
       setLoading(false);
     }

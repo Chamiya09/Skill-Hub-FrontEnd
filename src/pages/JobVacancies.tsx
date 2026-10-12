@@ -74,8 +74,8 @@ export const JobVacancies = () => {
         title: j.title,
         department: j.department,
         location: j.location,
-        type: (j.employmentType as any) || 'Full-time',
-        status: (j.status as any) || 'Active',
+        type: (j.employmentType as JobVacancyItem['type']) || 'Full-time',
+        status: (j.status as JobVacancyItem['status']) || 'Active',
         experienceLevel: j.experienceLevel,
         salaryRange: j.salaryRange || '',
         applicantsCount: j.applicantsCount || 0,
@@ -87,16 +87,52 @@ export const JobVacancies = () => {
         deadline: j.deadline,
       }));
       setVacancies(mapped);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching jobs:', err);
-      setErrorMessage(err.message || 'Failed to load job vacancies.');
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to load job vacancies.');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchJobs();
+    let ignore = false;
+    jobsApi
+      .getJobs()
+      .then((data) => {
+        if (!ignore) {
+          const mapped: JobVacancyItem[] = data.map((j) => ({
+            id: j.id,
+            title: j.title,
+            department: j.department,
+            location: j.location,
+            type: (j.employmentType as JobVacancyItem['type']) || 'Full-time',
+            status: (j.status as JobVacancyItem['status']) || 'Active',
+            experienceLevel: j.experienceLevel,
+            salaryRange: j.salaryRange || '',
+            applicantsCount: j.applicantsCount || 0,
+            aiMatchScore: 95,
+            postedDate: j.createdAt ? j.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+            description: j.description,
+            benefits: j.whatWeOffer || '',
+            tags: j.tags || [],
+            deadline: j.deadline,
+          }));
+          setVacancies(mapped);
+          setErrorMessage(null);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!ignore) {
+          console.error('Error fetching jobs:', err);
+          setErrorMessage(err instanceof Error ? err.message : 'Failed to load job vacancies.');
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      });
 
     const handleProfileUpdate = () => {
       fetchJobs();
@@ -104,6 +140,7 @@ export const JobVacancies = () => {
 
     window.addEventListener('skillhub_company_profile_updated', handleProfileUpdate);
     return () => {
+      ignore = true;
       window.removeEventListener('skillhub_company_profile_updated', handleProfileUpdate);
     };
   }, []);
@@ -224,9 +261,9 @@ export const JobVacancies = () => {
       }
       setIsJobModalOpen(false);
       await fetchJobs();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving job vacancy:', err);
-      alert(err.message || 'Failed to save job vacancy.');
+      alert(err instanceof Error ? err.message : 'Failed to save job vacancy.');
     } finally {
       setIsSubmitting(false);
     }
@@ -242,9 +279,9 @@ export const JobVacancies = () => {
       setVacancies((prev) => prev.filter((v) => v.id !== vacancyToDelete.id));
       setVacancyToDelete(null);
       showToast(`Vacancy "${deletedTitle}" permanently deleted from database.`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error deleting job vacancy:', err);
-      alert(err.message || 'Failed to delete job vacancy.');
+      alert(err instanceof Error ? err.message : 'Failed to delete job vacancy.');
     } finally {
       setIsDeleting(false);
     }
@@ -433,7 +470,7 @@ export const JobVacancies = () => {
             <select
               id="vacancies-sort-filter"
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'applicants' | 'title')}
             >
               <option value="newest">Newest first</option>
               <option value="oldest">Oldest first</option>

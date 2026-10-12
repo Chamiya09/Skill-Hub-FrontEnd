@@ -81,9 +81,10 @@ export const PublicCompanyProfile: React.FC = () => {
         }
         setCompany(data.company);
         setJobs(data.jobs || []);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to load public company profile:', err);
-        setError(err.message || 'Unable to retrieve company information.');
+        const message = err instanceof Error ? err.message : (err as { message?: string })?.message;
+        setError(message || 'Unable to retrieve company information.');
         setCompany(null);
         setJobs([]);
       } finally {

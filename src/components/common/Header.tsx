@@ -15,7 +15,7 @@ export interface DashboardConfig {
  * - Company   -> "Employer Dashboard" -> /company/dashboard (with /dashboard alias)
  * - Candidate -> "My Dashboard"       -> /candidate/dashboard
  */
-export const getDashboardConfig = (role?: string): DashboardConfig => {
+const getDashboardConfig = (role?: string): DashboardConfig => {
   const normalizedRole = role?.trim().toLowerCase()
 
   switch (normalizedRole) {

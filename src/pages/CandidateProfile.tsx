@@ -324,17 +324,72 @@ export const CandidateProfile: React.FC = () => {
         };
       }
       setProfileData(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load candidate profile:', err);
-      setError(err?.message || 'Failed to load profile data from the database. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to load profile data from the database. Please try again.');
     } finally {
       setIsLoading(false);
     }
   }, [currentUser]);
 
   useEffect(() => {
-    loadProfileData();
-  }, [loadProfileData]);
+    let ignore = false;
+    const fetchProfile = async () => {
+      try {
+        let data: CandidateProfileResponseDto;
+        try {
+          data = await candidateCvApi.getProfile();
+        } catch {
+          const [cv, user] = await Promise.all([
+            candidateCvApi.getCv(),
+            candidateAuthApi.getMe().catch(() => currentUser),
+          ]);
+          data = {
+            id: user?.id || '',
+            firstName: user?.firstName,
+            lastName: user?.lastName,
+            fullName: user?.fullName || '',
+            email: user?.email || '',
+            headline: user?.headline,
+            phone: user?.phone,
+            location: user?.location,
+            experience: user?.experience,
+            availability: user?.availability,
+            avatarUrl: user?.avatarUrl,
+            website: user?.website,
+            linkedinUrl: user?.linkedinUrl,
+            githubUrl: user?.githubUrl,
+            summary: cv.summary || user?.about,
+            keyHighlights: cv.keyHighlights || [],
+            experiences: cv.experiences || [],
+            educations: cv.educations || [],
+            projects: cv.projects || [],
+            skills: cv.skills || [],
+            certifications: cv.certifications || [],
+          };
+        }
+        if (!ignore) {
+          setProfileData(data);
+          setError(null);
+        }
+      } catch (err: unknown) {
+        if (!ignore) {
+          console.error('Failed to load candidate profile:', err);
+          setError(err instanceof Error ? err.message : 'Failed to load profile data from the database. Please try again.');
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchProfile();
+
+    return () => {
+      ignore = true;
+    };
+  }, [currentUser]);
 
   // Delete Item Handlers
   const handleDeleteExperience = async (id: string) => {
@@ -346,8 +401,8 @@ export const CandidateProfile: React.FC = () => {
         experiences: prev.experiences.filter((item) => item.id !== id),
       } : null));
       setSuccessMsg('Experience entry removed.');
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to delete experience.');
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Failed to delete experience.');
     }
   };
 
@@ -360,8 +415,8 @@ export const CandidateProfile: React.FC = () => {
         educations: prev.educations.filter((item) => item.id !== id),
       } : null));
       setSuccessMsg('Education entry removed.');
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to delete education entry.');
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Failed to delete education entry.');
     }
   };
 
@@ -374,8 +429,8 @@ export const CandidateProfile: React.FC = () => {
         certifications: prev.certifications.filter((item) => item.id !== id),
       } : null));
       setSuccessMsg('Certification entry removed.');
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to delete certification.');
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Failed to delete certification.');
     }
   };
 
@@ -388,8 +443,8 @@ export const CandidateProfile: React.FC = () => {
         projects: prev.projects.filter((item) => item.id !== id),
       } : null));
       setSuccessMsg('Project removed.');
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to delete project.');
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Failed to delete project.');
     }
   };
 
@@ -402,8 +457,8 @@ export const CandidateProfile: React.FC = () => {
         skills: prev.skills.filter((item) => item.id !== id),
       } : null));
       setSuccessMsg(`Skill "${name || 'entry'}" removed.`);
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to delete skill.');
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Failed to delete skill.');
     }
   };
 
@@ -847,7 +902,7 @@ export const CandidateProfile: React.FC = () => {
           <div className="candidate-projects-list">
             {projects.map((proj) => {
               const { displayRole, techStack } = parseProjectDetails(proj.role);
-              const projectUrl = proj.link || proj.liveUrl || (proj as any).projectUrl;
+              const projectUrl = proj.link || proj.liveUrl || (proj as { projectUrl?: string }).projectUrl;
 
               return (
                 <div key={proj.id} className="candidate-project-item">

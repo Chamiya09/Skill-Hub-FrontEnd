@@ -81,12 +81,9 @@ export const authStorage = {
     return localStorage.getItem('skillhub_jwt_token') || localStorage.getItem('skillhub_admin_token');
   },
   getUser(): UserDto | null {
-    let raw: string | null = null;
-    if (this.isAdminPortal()) {
-      raw = localStorage.getItem('skillhub_admin_user') || localStorage.getItem('skillhub_user');
-    } else {
-      raw = localStorage.getItem('skillhub_user') || localStorage.getItem('skillhub_admin_user');
-    }
+    const raw = this.isAdminPortal()
+      ? localStorage.getItem('skillhub_admin_user') || localStorage.getItem('skillhub_user')
+      : localStorage.getItem('skillhub_user') || localStorage.getItem('skillhub_admin_user');
     if (!raw) return null;
     try {
       return JSON.parse(raw);
@@ -128,7 +125,7 @@ export const authStorage = {
     if (raw) {
       try {
         const u = JSON.parse(raw);
-        const matchesId = u.id === id || (u as any).companyId === id;
+        const matchesId = u.id === id || (u as { companyId?: string }).companyId === id;
         const matchesEmail = email && (
           (u.email && u.email.toLowerCase() === email.toLowerCase()) ||
           (u.contactEmail && u.contactEmail.toLowerCase() === email.toLowerCase())
@@ -268,7 +265,7 @@ async function request<T>(
     const data = await response.json();
 
     // Check if response contains user profile with isSuspended status
-    if (data && typeof data === 'object' && (data as any).isSuspended === true) {
+    if (data && typeof data === 'object' && (data as { isSuspended?: unknown }).isSuspended === true) {
       const raw = localStorage.getItem('skillhub_user');
       if (raw) {
         try {

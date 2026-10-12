@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider } from "./context/AuthProvider";
 import { Header } from "./components/common/Header";
 import { Footer } from "./components/common/Footer";
 import { ProtectedRoute } from "./components/common/ProtectedRoute";
@@ -40,7 +40,7 @@ function InterviewPrepGuideRedirect() {
   return <Navigate to={`/candidate/interview-prep/guide/${id}`} replace />;
 }
 
-function AppContent() {
+export function AppContent() {
   const location = useLocation();
   const isDashboardOrAuth =
     location.pathname === "/company-login" ||

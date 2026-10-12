@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jobsApi, jobApplicationsApi, type JobDto } from '../services/api';
 import { AIScreeningModal } from '../components/candidates/AIScreeningModal';
@@ -34,8 +34,7 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
   const [sortBy, setSortBy] = useState<'priority' | 'applicants' | 'newest' | 'title'>('priority');
   const [selectedJobForModal, setSelectedJobForModal] = useState<JobDto | null>(null);
 
-  // Fetch company jobs and applicant counts
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     try {
       setLoading(true);
       setErrorMessage(null);
@@ -57,16 +56,56 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
       );
 
       setApplicantCounts(countsMap);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching jobs for AI screening selector:', err);
-      setErrorMessage(err.message || 'Failed to load company job requisitions.');
+      const message = err instanceof Error ? err.message : (err as { message?: string })?.message;
+      setErrorMessage(message || 'Failed to load company job requisitions.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
+  // Fetch company jobs and applicant counts
   useEffect(() => {
-    fetchJobs();
+    let ignore = false;
+    jobsApi
+      .getJobs()
+      .then(async (data) => {
+        if (ignore) return;
+        setJobs(data);
+
+        const published = (data || []).filter((j) => (j.status || 'Active').toLowerCase() !== 'draft');
+        const countsMap: Record<string, number> = {};
+
+        await Promise.allSettled(
+          published.map(async (job) => {
+            try {
+              const apps = await jobApplicationsApi.getJobApplicants(job.id);
+              countsMap[job.id] = apps.length;
+            } catch {
+              countsMap[job.id] = 0;
+            }
+          })
+        );
+
+        if (ignore) return;
+        setApplicantCounts(countsMap);
+      })
+      .catch((err: unknown) => {
+        if (ignore) return;
+        console.error('Error fetching jobs for AI screening selector:', err);
+        const message = err instanceof Error ? err.message : (err as { message?: string })?.message;
+        setErrorMessage(message || 'Failed to load company job requisitions.');
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   // Filter out Draft jobs if desired, but keep Active and Closed
@@ -312,7 +351,7 @@ export const PipelineJobSelector: React.FC<PipelineJobSelectorProps> = ({ onSele
             <select
               id="pipeline-sort-filter"
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e) => setSortBy(e.target.value as 'priority' | 'applicants' | 'newest' | 'title')}
             >
               <option value="priority">Screening ready first</option>
               <option value="applicants">Most applicants</option>

@@ -34,29 +34,57 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const [candData, compData, inqData] = await Promise.all([
-        adminApi.getCandidates(),
-        adminApi.getCompanies(),
-        adminApi.getInquiries(),
-      ]);
-      setCandidates(candData);
-      setCompanies(compData);
-      setInquiries(inqData);
-    } catch (err: any) {
-      console.error('Failed to load admin overview metrics:', err);
-      setError(err.message || 'Failed to fetch platform metrics from database');
-    } finally {
-      setIsLoading(false);
-    }
+  const loadData = useCallback(() => {
+    setIsLoading(true);
+    setError(null);
+    Promise.all([
+      adminApi.getCandidates(),
+      adminApi.getCompanies(),
+      adminApi.getInquiries(),
+    ])
+      .then(([candData, compData, inqData]) => {
+        setCandidates(candData);
+        setCompanies(compData);
+        setInquiries(inqData);
+        setError(null);
+      })
+      .catch((err: unknown) => {
+        console.error('Failed to load admin overview metrics:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch platform metrics from database');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let ignore = false;
+    Promise.all([
+      adminApi.getCandidates(),
+      adminApi.getCompanies(),
+      adminApi.getInquiries(),
+    ])
+      .then(([candData, compData, inqData]) => {
+        if (!ignore) {
+          setCandidates(candData);
+          setCompanies(compData);
+          setInquiries(inqData);
+          setError(null);
+          setIsLoading(false);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!ignore) {
+          console.error('Failed to load admin overview metrics:', err);
+          setError(err instanceof Error ? err.message : 'Failed to fetch platform metrics from database');
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   // Computed metrics
   const totalCandidatesCount = candidates.length;

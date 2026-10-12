@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Building2,
   Search,
@@ -210,32 +210,39 @@ export const CompaniesView: React.FC = () => {
     setTimeout(() => setCopiedEmail(false), 2000);
   };
 
-  const loadCompanies = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const data = await adminApi.getCompanies();
-      if (Array.isArray(data) && data.length > 0) {
-        // Normalize any legacy status and strip unsplash placeholders
-        const normalized = data.map((c) => ({
-          ...c,
-          logo: c.logo && !c.logo.includes('unsplash.com') ? c.logo : '',
-          status: (c.status === 'Active' ? 'Active' : 'Suspended') as 'Active' | 'Suspended',
-        }));
-        setCompanies(normalized);
-      } else {
-        setCompanies(INITIAL_MOCK_COMPANIES);
-      }
-    } catch (err) {
-      console.warn('Backend API companies endpoint unavailable, using mock dataset:', err);
-      setCompanies(INITIAL_MOCK_COMPANIES);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
-    loadCompanies();
-  }, [loadCompanies]);
+    let ignore = false;
+    adminApi
+      .getCompanies()
+      .then((data) => {
+        if (ignore) return;
+        if (Array.isArray(data) && data.length > 0) {
+          const normalized = data.map((c) => ({
+            ...c,
+            logo: c.logo && !c.logo.includes('unsplash.com') ? c.logo : '',
+            status: (c.status === 'Active' ? 'Active' : 'Suspended') as 'Active' | 'Suspended',
+          }));
+          setCompanies(normalized);
+        } else {
+          setCompanies(INITIAL_MOCK_COMPANIES);
+        }
+      })
+      .catch((err) => {
+        if (ignore) return;
+        console.warn('Backend API companies endpoint unavailable, using mock dataset:', err);
+        setCompanies(INITIAL_MOCK_COMPANIES);
+      })
+      .finally(() => {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const toggleCompanyStatus = async (id: string) => {
     const target = companies.find((c) => c.id === id);
@@ -251,18 +258,23 @@ export const CompaniesView: React.FC = () => {
       setActiveCompanyModal((prev) => (prev ? { ...prev, status: nextStatus } : null));
     }
 
-    // Broadcast instant cross-tab & cross-window suspension synchronization
-    authStorage.syncAccountSuspension(id, target?.contactEmail, isSuspended);
-
     try {
       await adminApi.toggleUserSuspend(id);
     } catch {
       try {
         await adminApi.toggleCompanyStatus(id);
       } catch (err) {
-        console.warn('Persisting company status toggle via fallback state:', err);
+        console.warn('Could not persist company status:', err);
+        if (target) {
+          setCompanies((prev) => prev.map((c) => (c.id === id ? { ...c, status: target.status } : c)));
+          setActiveCompanyModal((prev) => (prev?.id === id ? { ...prev, status: target.status } : prev));
+        }
+        return;
       }
     }
+
+    // Notify other tabs only after the server confirms the new status.
+    authStorage.syncAccountSuspension(id, target?.contactEmail, isSuspended);
   };
 
   const filteredCompanies = companies.filter((c) => {

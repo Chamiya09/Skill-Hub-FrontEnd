@@ -12,8 +12,8 @@ import {
 } from '../components/common/Icons'
 
 export const Contact = () => {
-  const auth = useAuth() as any
-  const user = auth?.user ?? auth?.currentUser ?? null
+  const { currentUser } = useAuth()
+  const user = currentUser
 
   const isCandidate = Boolean(user && user.role?.toLowerCase() === 'candidate')
   const isCompany = Boolean(user && (user.role?.toLowerCase() === 'company' || user.role?.toLowerCase() === 'employer'))
@@ -65,9 +65,10 @@ export const Contact = () => {
         organization,
       })
       setFormSubmitted(true)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to dispatch inquiry to backend:', err)
-      setSubmitError(err.message || 'Failed to submit inquiry. Please try again.')
+      const message = err instanceof Error ? err.message : (err as { message?: string })?.message;
+      setSubmitError(message || 'Failed to submit inquiry. Please try again.')
     } finally {
       setIsSubmitting(false)
     }

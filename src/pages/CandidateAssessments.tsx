@@ -57,6 +57,7 @@ export const CandidateAssessments: React.FC = () => {
   const [scorecardDetail, setScorecardDetail] = useState<SubmissionDetailDto | null>(null);
   const [scorecardLoading, setScorecardLoading] = useState<boolean>(false);
   const [scorecardError, setScorecardError] = useState<string | null>(null);
+  const [nowTime] = useState(() => Date.now());
 
   useEffect(() => {
     let isMounted = true;
@@ -134,7 +135,7 @@ export const CandidateAssessments: React.FC = () => {
 
   const checkIsExpired = (item: CandidateAssessmentListItemDto) => {
     if (checkIsCompleted(item) || checkIsBlocked(item)) return false;
-    return Boolean(item.isExpired) || (Boolean(item.expiresAt) && new Date(item.expiresAt!).getTime() < Date.now());
+    return Boolean(item.isExpired) || (Boolean(item.expiresAt) && new Date(item.expiresAt!).getTime() < nowTime);
   };
 
   const companyOptions = Array.from(

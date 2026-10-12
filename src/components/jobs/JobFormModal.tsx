@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import {
@@ -88,12 +88,10 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
   const [stepError, setStepError] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState<string>('');
 
-  // Track previous open state to prevent modal state resets on re-render
-  const prevIsOpenRef = useRef(false);
-
-  // Sync state ONLY when the modal transitions from closed to open
-  useEffect(() => {
-    if (isOpen && !prevIsOpenRef.current) {
+  const [prevIsOpen, setPrevIsOpen] = useState(false);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
       setCurrentStep(1);
       setStepError(null);
       setTagInput('');
@@ -107,8 +105,7 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
         setFormData(defaultJobData);
       }
     }
-    prevIsOpenRef.current = isOpen;
-  }, [isOpen, initialData]);
+  }
 
   const handleAddTag = (rawTag: string) => {
     const trimmed = rawTag.trim().replace(/^,+|,+$/g, '');

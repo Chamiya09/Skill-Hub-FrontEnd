@@ -134,16 +134,15 @@ describe('AI Interview Scheduler Modal - Unified Proposal Table Path', () => {
       />
     )
 
-    // Form inputs and clean helper are present
-    expect(await screen.findByText(/1 candidate\(s\) currently have interview bookings/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Generate Clash-Free Schedule/i })).toBeInTheDocument()
+    // Form inputs are present
+    expect(await screen.findByRole('button', { name: /Generate Clash-Free Schedule/i })).toBeInTheDocument()
 
     // No table rendered in the first popup form (View A)
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
     expect(screen.queryByText('Kasun Perera')).not.toBeInTheDocument()
   })
 
-  it('TC206 displays table in View B with only first-time schedule candidates and empty unscheduled candidates, not already-scheduled ones', async () => {
+  it('TC206 displays 3 clean metric cards and table with only first-time schedule candidates and empty unscheduled rows', async () => {
     const user = userEvent.setup()
     render(
       <AiInterviewSchedulerModal
@@ -159,8 +158,11 @@ describe('AI Interview Scheduler Modal - Unified Proposal Table Path', () => {
     await user.click(generateBtn)
 
     // View B: Proposal review path
-    // 1. Metric card for Already Scheduled is shown
-    expect(await screen.findByText('Already Scheduled')).toBeInTheDocument()
+    // 1. Clean 3 metric cards are shown (Already Scheduled card is not shown)
+    expect(await screen.findByText('Candidates')).toBeInTheDocument()
+    expect(screen.getByText('Proposed Slots')).toBeInTheDocument()
+    expect(screen.getByText('Unscheduled')).toBeInTheDocument()
+    expect(screen.queryByText('Already Scheduled')).not.toBeInTheDocument()
 
     // 2. Table rendered in second popup form (View B)
     const table = screen.getByRole('table')

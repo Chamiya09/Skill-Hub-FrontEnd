@@ -14,10 +14,8 @@ import {
   type JobDto,
   eventsApi,
   jobsApi,
-  assessmentsApi,
   type ScheduleProposalResponseDto,
   type ConfirmInterviewScheduleDto,
-  type AlreadyScheduledCandidateDto,
 } from '../services/api';
 import './AiInterviewSchedulerModal.css';
 
@@ -85,18 +83,6 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
   >({});
   const [commonMeetingLinkInput, setCommonMeetingLinkInput] = useState<string>('');
   const [commonLocationInput, setCommonLocationInput] = useState<string>('');
-  const [alreadyScheduledCandidates, setAlreadyScheduledCandidates] = useState<AlreadyScheduledCandidateDto[]>([]);
-  const [, setIsLoadingAlreadyScheduled] = useState<boolean>(false);
-
-  // Active list of already-scheduled candidates (combines fetched & proposal-detected candidates)
-  const currentAlreadyScheduled =
-    scheduleProposal?.alreadyScheduledCandidates && scheduleProposal.alreadyScheduledCandidates.length > 0
-      ? scheduleProposal.alreadyScheduledCandidates
-      : alreadyScheduledCandidates;
-  const alreadyScheduledCount =
-    scheduleProposal?.summary?.alreadyScheduledCount ?? currentAlreadyScheduled.length;
-
-
   // Live count derived from HR's manual checkbox selections
   const liveScheduledCount = selectedProposedSlotIds.length;
   const liveUnscheduledCount = scheduleProposal
@@ -112,7 +98,6 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
       setSelectedProposedSlotIds([]);
       setSlotConfigs({});
       setCommonMeetingLinkInput('');
-      setAlreadyScheduledCandidates([]);
 
       if (availableJobs && availableJobs.length > 0) {
         const activeJobs = availableJobs.filter((j) => j.status?.toLowerCase() !== 'deleted');
@@ -159,56 +144,7 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
     };
   }, [isOpen, availableJobs, initialJobVacancyId]);
 
-  // Query already-scheduled candidates for the chosen job vacancy
-  useEffect(() => {
-    let ignore = false;
-    if (isOpen && selectedVacancyId) {
-      setIsLoadingAlreadyScheduled(true);
-      assessmentsApi
-        .getInterviewSelections(selectedVacancyId)
-        .then((selections) => {
-          if (ignore) return;
-          const scheduled = (selections || [])
-            .filter((s) =>
-              Boolean(
-                s.scheduledEventId ||
-                s.scheduledDate ||
-                (s.scheduledTime && s.scheduledTime.trim() !== '') ||
-                s.status === 'Scheduled' ||
-                s.status === 'Interview Scheduled'
-              )
-            )
-            .map((s) => ({
-              candidateId: s.candidateId,
-              candidateName: s.candidateName || 'Candidate',
-              candidateEmail: s.candidateEmail || '',
-              date: s.scheduledDate || '',
-              timeSlot: s.scheduledTime || '',
-              meetingMode: s.scheduledMeetingMode || 'Online',
-              location: s.scheduledLocation || (s.scheduledMeetingMode === 'Physical' ? 'Company Office' : 'Online'),
-              status: s.status || 'Scheduled',
-            }));
-          setAlreadyScheduledCandidates(scheduled);
-        })
-        .catch((err) => {
-          if (ignore) return;
-          console.warn('Could not load already-scheduled candidates for vacancy:', err);
-          setAlreadyScheduledCandidates([]);
-        })
-        .finally(() => {
-          if (!ignore) {
-            setIsLoadingAlreadyScheduled(false);
-          }
-        });
-    } else if (!isOpen) {
-      setAlreadyScheduledCandidates([]);
-      setIsLoadingAlreadyScheduled(false);
-    }
 
-    return () => {
-      ignore = true;
-    };
-  }, [isOpen, selectedVacancyId]);
 
   if (!isOpen) return null;
 
@@ -234,16 +170,6 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
       });
 
       setScheduleProposal(proposal);
-      if (proposal.alreadyScheduledCandidates && proposal.alreadyScheduledCandidates.length > 0) {
-        setAlreadyScheduledCandidates((prev) => {
-          const map = new Map<string, AlreadyScheduledCandidateDto>();
-          (proposal.alreadyScheduledCandidates || []).forEach((c) => map.set(c.candidateId, c));
-          prev.forEach((c) => {
-            if (!map.has(c.candidateId)) map.set(c.candidateId, c);
-          });
-          return Array.from(map.values());
-        });
-      }
       setSelectedProposedSlotIds((proposal.proposedSlots || []).map((s) => s.slotId));
 
       const initialConfigs: Record<
@@ -260,18 +186,9 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
       setSlotConfigs(initialConfigs);
 
       if (proposal.proposedSlots.length === 0) {
-        const hasExisting =
-          (proposal.alreadyScheduledCandidates && proposal.alreadyScheduledCandidates.length > 0) ||
-          alreadyScheduledCandidates.length > 0;
-        if (hasExisting) {
-          setAiSchedulerError(
-            `All candidates for this requisition already have confirmed interview dates. See the "Already Scheduled Candidates" list below.`
-          );
-        } else {
-          setAiSchedulerError(
-            'No candidate interview slots could be generated. Ensure candidates are shortlisted or selected for interview for this role.'
-          );
-        }
+        setAiSchedulerError(
+          'No candidate interview slots could be generated. Ensure candidates are shortlisted or selected for interview for this role.'
+        );
       }
     } catch (err: unknown) {
       console.error('Failed to generate interview schedule proposal:', err);
@@ -496,11 +413,6 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
               </select>
               <p className="ai-scheduler-field-helper">
                 The AI agent will fetch candidates in &quot;Interview Selection&quot; (or Shortlisted) for this requisition.
-                {alreadyScheduledCandidates.length > 0 && (
-                  <span style={{ color: '#059669', fontWeight: 600 }}>
-                    {' '}• {alreadyScheduledCandidates.length} candidate(s) currently have interview bookings
-                  </span>
-                )}
               </p>
             </div>
 
@@ -610,15 +522,10 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
         {scheduleProposal && (
           <div className="ai-proposal-view">
             {/* Metric Summary Cards */}
-            <div className="ai-proposal-metrics ai-proposal-metrics-4">
+            <div className="ai-proposal-metrics">
               <div className="ai-proposal-metric-card card-total">
                 <span>Candidates</span>
                 <strong>{scheduleProposal.summary.totalCandidates}</strong>
-              </div>
-
-              <div className="ai-proposal-metric-card card-already-scheduled">
-                <span>Already Scheduled</span>
-                <strong>{alreadyScheduledCount}</strong>
               </div>
 
               <div className="ai-proposal-metric-card card-scheduled">
@@ -763,7 +670,7 @@ export const AiInterviewSchedulerModal: React.FC<AiInterviewSchedulerModalProps>
                 {/* Right side: Count & Selection info */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a' }}>
-                    First-Time Schedule Candidates
+                    Proposed Appointments ({scheduleProposal.proposedSlots.length})
                   </div>
                   <div
                     style={{

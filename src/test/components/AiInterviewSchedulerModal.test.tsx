@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AiInterviewSchedulerModal } from '../../components/AiInterviewSchedulerModal'
@@ -82,7 +82,14 @@ const mockProposal: ScheduleProposalResponseDto = {
       isExtendedSearch: false,
     },
   ],
-  unscheduledCandidates: [],
+  unscheduledCandidates: [
+    {
+      candidateId: 'cand-3',
+      candidateName: 'Kamal Gunaratne',
+      candidateEmail: 'kamal@test.lk',
+      reason: 'No available slot within working hours',
+    },
+  ],
   alreadyScheduledCandidates: [
     {
       candidateId: 'cand-1',
@@ -96,9 +103,9 @@ const mockProposal: ScheduleProposalResponseDto = {
     },
   ],
   summary: {
-    totalCandidates: 2,
+    totalCandidates: 3,
     scheduledCount: 1,
-    unscheduledCount: 0,
+    unscheduledCount: 1,
     alreadyScheduledCount: 1,
     originalDateRange: '2026-10-18 to 2026-10-22',
     effectiveDateRange: '2026-10-18 to 2026-10-22',
@@ -116,8 +123,8 @@ beforeEach(() => {
   vi.mocked(eventsApi.generateInterviewSchedule).mockReset().mockResolvedValue(mockProposal)
 })
 
-describe('AI Interview Scheduler Modal - Already Scheduled Candidates Path', () => {
-  it('TC205 renders already-scheduled candidates in View A configuration path', async () => {
+describe('AI Interview Scheduler Modal - Unified Proposal Table Path', () => {
+  it('TC205 verifies View A configuration form does not render a table, keeping clean parameter inputs', async () => {
     render(
       <AiInterviewSchedulerModal
         isOpen={true}
@@ -127,19 +134,16 @@ describe('AI Interview Scheduler Modal - Already Scheduled Candidates Path', () 
       />
     )
 
-    // Check title and badge
-    expect(await screen.findByText('Already Scheduled Candidates')).toBeInTheDocument()
-    expect(await screen.findByText('1 Scheduled')).toBeInTheDocument()
+    // Form inputs and clean helper are present
+    expect(await screen.findByText(/1 candidate\(s\) currently have interview bookings/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Generate Clash-Free Schedule/i })).toBeInTheDocument()
 
-    // Check candidate details in table
-    expect(await screen.findByText('Kasun Perera')).toBeInTheDocument()
-    expect(screen.getByText('kasun@test.lk')).toBeInTheDocument()
-    expect(screen.getByText('2026-10-18')).toBeInTheDocument()
-    expect(screen.getByText(/10:00 AM/i)).toBeInTheDocument()
-    expect(screen.getByText('Confirmed')).toBeInTheDocument()
+    // No table rendered in the first popup form (View A)
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    expect(screen.queryByText('Kasun Perera')).not.toBeInTheDocument()
   })
 
-  it('TC206 displays Already Scheduled metric card and dedicated review panel in View B proposal review path', async () => {
+  it('TC206 displays table in View B with only first-time schedule candidates and empty unscheduled candidates, not already-scheduled ones', async () => {
     const user = userEvent.setup()
     render(
       <AiInterviewSchedulerModal
@@ -150,23 +154,29 @@ describe('AI Interview Scheduler Modal - Already Scheduled Candidates Path', () 
       />
     )
 
-    // Wait for initial load
-    await screen.findByText('Kasun Perera')
-
-    // Submit form to generate proposal
+    // Submit form in View A to generate proposal
     const generateBtn = screen.getByRole('button', { name: /Generate Clash-Free Schedule/i })
     await user.click(generateBtn)
 
     // View B: Proposal review path
-    // 1. Metric card for Already Scheduled
+    // 1. Metric card for Already Scheduled is shown
     expect(await screen.findByText('Already Scheduled')).toBeInTheDocument()
 
-    // 2. Dedicated Already Scheduled review panel with no action required
-    expect(screen.getByText('No Action Required')).toBeInTheDocument()
-    expect(screen.getByText(/safely protected these existing appointments/i)).toBeInTheDocument()
+    // 2. Table rendered in second popup form (View B)
+    const table = screen.getByRole('table')
+    expect(table).toBeInTheDocument()
 
-    // 3. Proposed new slots for unscheduled candidates
-    expect(screen.getByText(/Proposed New Appointments/i)).toBeInTheDocument()
-    expect(screen.getByText('Nimali Silva')).toBeInTheDocument()
+    // 3. First-time schedule candidate with interactive controls and status
+    expect(within(table).getByText('Nimali Silva')).toBeInTheDocument()
+    expect(within(table).getByText('2026-10-19')).toBeInTheDocument()
+    expect(within(table).getByText('Proposed Slot')).toBeInTheDocument()
+
+    // 4. Already scheduled candidate is NOT in the table (no need to show them in the table)
+    expect(within(table).queryByText('Kasun Perera')).not.toBeInTheDocument()
+
+    // 5. Unscheduled candidate (could not be scheduled in this first-time schedule) shown as Empty / Not Scheduled in table
+    expect(within(table).getByText('Kamal Gunaratne')).toBeInTheDocument()
+    expect(within(table).getByText('Empty')).toBeInTheDocument()
+    expect(within(table).getAllByText('Not Scheduled').length).toBe(2)
   })
 })

@@ -944,3 +944,58 @@
   color: #047857;
   border: 1px solid #a7f3d0;
 }
+
+.ai-status-chip.is-proposed {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.ai-status-chip.is-unscheduled {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.ai-status-chip.is-deselected {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+.ai-slots-table tr.is-already-scheduled-row {
+  background: #fcfefe;
+}
+
+.ai-slots-table tr.is-already-scheduled-row:hover {
+  background: #f0fdf4;
+}
+
+.ai-slots-table tr.is-unscheduled-row {
+  background: #fffafa;
+}
+
+.ai-slots-table tr.is-unscheduled-row:hover {
+  background: #fef2f2;
+}
+
+.ai-empty-text {
+  font-style: italic;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.ai-empty-reason {
+  font-size: 11px;
+  color: #b91c1c;
+  background: #fef2f2;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid #fecaca;
+  display: inline-block;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
+}
